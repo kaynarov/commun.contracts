@@ -7,7 +7,7 @@
 #include <common/dispatchers.hpp>
 #include <eosio.token/eosio.token.hpp>
 
-namespace golos {
+namespace commun {
 
 void bancor::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     require_auth(_self);
@@ -16,8 +16,8 @@ void bancor::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) 
     eosio_assert(sym.is_valid(), "invalid symbol name");
     eosio_assert(maximum_supply.is_valid(), "invalid supply");
     eosio_assert(maximum_supply.amount > 0, "max-supply must be positive");
-    eosio_assert(0 <  cw  && cw  <= 10000, "invalid cw");
-    eosio_assert(0 <= fee && fee <= 10000, "invalid fee");
+    eosio_assert(0 <  cw  && cw  <= 10000, "connector weight must be between 0.01% and 100% (1-10000)");
+    eosio_assert(0 <= fee && fee <= 10000, "fee must be between 0% and 100% (0-10000)");
     stats statstable(_self, sym.code().raw());
     auto existing = statstable.find(sym.code().raw());
     eosio_assert( existing == statstable.end(), "token with symbol already exists" );
@@ -192,7 +192,7 @@ void bancor::close(name owner, const symbol& symbol) {
    acnts.erase( it );
 }
 
-} /// namespace eosio
+} /// namespace commun
 
-DISPATCH_WITH_TRANSFER(golos::bancor, on_reserve_transfer,
+DISPATCH_WITH_TRANSFER(commun::bancor, on_reserve_transfer,
     (create)(issue)(transfer)(open)(close)(retire))

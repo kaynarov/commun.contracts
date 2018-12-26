@@ -27,7 +27,7 @@ struct bancor_token_api: base_contract_api {
                     return std::tie(l.permission.actor, l.permission.permission) <
                         std::tie(r.permission.actor, r.permission.permission);
                 });
-            _tester->set_authority(issuer, golos::config::invoice_name, auth, "owner");
+            _tester->set_authority(issuer, commun::config::invoice_name, auth, "owner");
         }
         
         return push(N(create), _code, args()

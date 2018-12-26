@@ -5,7 +5,7 @@
 #include "../bancor.token/include/bancor.token/config.hpp"
 
 
-namespace cfg = golos::config;
+namespace cfg = commun::config;
 using namespace eosio::testing;
 using namespace eosio::chain;
 using namespace fc;

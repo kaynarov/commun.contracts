@@ -16,7 +16,7 @@ inline eosio::chain::name operator ""_n() {
 }
 #endif
 
-namespace golos { namespace config {
+namespace commun { namespace config {
 
 // contracts
 static const auto control_name = "gls.ctrl"_n;
@@ -59,4 +59,4 @@ constexpr int64_t seconds_to_blocks(int64_t sec) {
     return time_to_blocks(sec * 1e6);
 }
 
-} // golos::config
+} // commun::config

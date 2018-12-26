@@ -12,7 +12,7 @@ extern "C" { \
                 EOSIO_DISPATCH_HELPER(TYPE, MEMBERS) \
             } \
             /* does not allow destructor of thiscontract to run: eosio_exit(0); */ \
-        } else if (code == golos::config::token_name.value && action == "transfer"_n.value) { \
+        } else if (code == commun::config::token_name.value && action == "transfer"_n.value) { \
             eosio::execute_action(eosio::name(receiver), eosio::name(code), &TYPE::TRANSFER); \
         } \
    } \

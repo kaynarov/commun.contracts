@@ -16,7 +16,7 @@ namespace eosiosystem {
    class system_contract;
 }
 
-namespace golos { //shouldn't we rename it “commun” everywhere?
+namespace commun {
 
 using std::string;
 using namespace eosio;
@@ -87,7 +87,7 @@ private:
         asset    supply;
         asset    max_supply;
         asset    reserve;
-        int16_t  cw;
+        int16_t  cw; //connector weight
         int16_t fee;
         name     issuer;
         uint64_t primary_key()const { return supply.symbol.code().raw(); }
@@ -133,4 +133,4 @@ private:
         return asset(static_cast<int64_t>(new_supply) - st.supply.amount, st.supply.symbol);
     }
 };
-} /// namespace eosio
+} /// namespace commun
