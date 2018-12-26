@@ -194,5 +194,5 @@ void bancor::close(name owner, const symbol& symbol) {
 
 } /// namespace commun
 
-DISPATCH_WITH_TRANSFER(commun::bancor, on_reserve_transfer,
+DISPATCH_WITH_TRANSFER(commun::bancor, commun::config::token_name, on_reserve_transfer,
     (create)(issue)(transfer)(open)(close)(retire))
