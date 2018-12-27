@@ -1,0 +1,3 @@
+[submodule "cyberway.contracts"]
+	path = cyberway.contracts
+	url = https://github.com/GolosChain/cyberway.contracts.git
