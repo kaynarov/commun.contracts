@@ -1,0 +1,110 @@
+{
+    "version": "cyberway::abi/1.0",
+    "structs": [
+            {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {"type": "asset", "name": "maximum_supply"},
+                {"type": "int16", "name": "cw"},
+                {"type": "int16", "name": "fee"}
+            ]
+        },{
+            "name": "claimrefund",
+            "base": "",
+            "fields": [
+                {"type": "name",        "name": "bidder"},
+                {"type": "symbol_code", "name": "sym_code"}
+            ]
+        },{
+            "name": "checkwin",
+            "base": "",
+            "fields": []
+        },{
+            "name": "name_bid_state",
+            "base": "",
+            "fields": [
+                {"type": "uint64",         "name": "id"},
+                {"type": "time_point_sec", "name": "last_win"},
+                {"type": "time_point_sec", "name": "last_checkwin"}
+            ]
+        },{
+            "name": "name_bid",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code",     "name": "sym_code"},
+                {"type": "name",            "name": "high_bidder"},
+                {"type": "int64",           "name": "high_bid"},
+                {"type": "time_point_sec",  "name": "last_bid_time"}
+            ]
+        },{
+            "name": "name_bid_refund",
+            "base": "",
+            "fields": [
+                {"type": "name",  "name": "bidder"},
+                {"type": "asset", "name": "amount"}
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "create",
+            "type": "create",
+            "ricardian_contract": ""
+        },{
+            "name": "claimrefund",
+            "type": "claimrefund",
+            "ricardian_contract": ""
+        },{
+            "name": "checkwin",
+            "type": "checkwin",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "namebid",
+            "type": "name_bid",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "sym_code", "order": "asc"}
+                    ]
+                },{
+                    "name": "highbid",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "high_bid", "order": "desc"},
+                        {"field": "sym_code", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "namebidrefnd",
+            "type": "name_bid_refund",
+            "indexes": [{
+                "name": "primary",
+                "unique": "true",
+                "orders": [
+                    {"field": "bidder", "order": "asc"}
+                ]
+            }]
+        },{
+            "name": "namebidstate",
+            "type": "name_bid_state",
+            "indexes": [{
+                "name": "primary",
+                "unique": "true",
+                "orders": [
+                    {"field": "id", "order": "asc"}
+                ]
+            }]
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": [],
+    "abi_extensions": []
+}

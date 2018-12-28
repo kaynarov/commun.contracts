@@ -31,7 +31,9 @@ endif()
 
 
 # include_directories(AFTER ${BOOST_ROOT}/include)
+add_subdirectory(reserve.emit)
 add_subdirectory(bancor.token)
+add_subdirectory(registrar)
 
 if (APPLE)
    set(OPENSSL_ROOT "/usr/local/opt/openssl")

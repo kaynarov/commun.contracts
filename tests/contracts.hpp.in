@@ -9,6 +9,11 @@ namespace eosio { namespace testing {
 struct contracts {
     static std::vector<uint8_t> bancor_wasm() { return read_wasm(COMMUN_CONTRACTS "bancor.token/bancor.token.wasm"); }
     static std::vector<char>    bancor_abi()  { return read_abi (COMMUN_CONTRACTS "bancor.token/bancor.token.abi"); }
+    static std::vector<uint8_t> registrar_wasm() { return read_wasm(COMMUN_CONTRACTS "registrar/registrar.wasm"); }
+    static std::vector<char>    registrar_abi()  { return read_abi (COMMUN_CONTRACTS "registrar/registrar.abi"); }
+    static std::vector<uint8_t> reserve_emit_wasm() { return read_wasm(COMMUN_CONTRACTS "reserve.emit/reserve.emit.wasm"); }
+    static std::vector<char>    reserve_emit_abi()  { return read_abi (COMMUN_CONTRACTS "reserve.emit/reserve.emit.abi"); }
+
 
     static std::vector<uint8_t> system_wasm() { return read_wasm(CYBERWAY_CONTRACTS "eosio.system/eosio.system.wasm"); }
     static std::string          system_wast() { return read_wast(CYBERWAY_CONTRACTS "eosio.system/eosio.system.wast"); }
