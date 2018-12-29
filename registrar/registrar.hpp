@@ -4,6 +4,7 @@
 #include <eosiolib/privileged.hpp>
 #include <eosiolib/singleton.hpp>
 #include <string>
+#include "parameters.hpp"
 
 namespace commun {
 
@@ -58,9 +59,14 @@ using state_singleton = eosio::singleton<"namebidstate"_n, name_bid_state>;
 
 class [[eosio::contract("registrar")]] registrar: public eosio::contract {
     void add_refund(name payer, name bidder, int64_t amount, symbol_code sym_code);
+    registrar_param_singleton _cfg;
+    registrar_param_state props() { return _cfg.get(); }
 public:
-
-    using contract::contract;
+    registrar(name self, name code, datastream<const char*> ds)
+        : contract(self, code, ds)
+        , _cfg(_self, _self.value) {}
+    [[eosio::action]] void validateprms(std::vector<registrar_param>);
+    [[eosio::action]] void setparams(std::vector<registrar_param>);
 
     [[eosio::action]] void checkwin();
     void on_transfer(name from, name to, asset quantity, std::string memo);

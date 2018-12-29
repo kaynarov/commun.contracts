@@ -1,5 +1,13 @@
 {
     "version": "cyberway::abi/1.0",
+    "variants": [{
+        "name": "registrar_param",
+        "types": [
+            "token_param",
+            "market_param",
+            "checkwin_param"
+        ]
+    }],
     "structs": [
             {
             "name": "create",
@@ -58,11 +66,55 @@
                 {"type": "name",  "name": "bidder"},
                 {"type": "asset", "name": "amount"}
             ]
+        },{
+            "name": "token_param",
+            "base": "",
+            "fields": [
+                {"type": "symbol", "name": "sym"}
+            ]
+        },{
+            "name": "market_param",
+            "base": "",
+            "fields": [
+                {"type": "uint32", "name": "bid_increment_denom"},
+                {"type": "int16", "name": "bancor_creation_fee"}
+            ]
+        },{
+            "name": "checkwin_param",
+            "base": "",
+            "fields": [
+                {"type": "uint32", "name": "interval"},
+                {"type": "uint32", "name": "min_time_from_last_win"},
+                {"type": "uint32", "name": "min_time_from_last_bid_start"},
+                {"type": "uint32", "name": "min_time_from_last_bid_step"},
+                {"type": "uint32", "name": "max_bid_checks"}
+            ]
+        },{
+            "name": "registrar_param_state",
+            "fields": [
+                {"type": "uint64",         "name": "id"},
+                {"type": "token_param",    "name": "token"},
+                {"type": "market_param",   "name": "market"},
+                {"type": "checkwin_param", "name": "checkwin"}
+            ]
+        },{
+            "name": "setparams",
+            "fields": [
+                {"type": "registrar_param[]", "name": "params"}
+            ]
         }
     ],
     "types": [],
     "actions": [
         {
+            "name": "setparams",
+            "type": "setparams",
+            "ricardian_contract": ""
+        },{
+            "name": "validateprms",
+            "type": "setparams",
+            "ricardian_contract": ""
+        },{
             "name": "create",
             "type": "create",
             "ricardian_contract": ""
@@ -82,6 +134,18 @@
     ],
     "tables": [
         {
+            "name": "regparams",
+            "type": "registrar_param_state",
+            "indexes" : [
+                {
+                    "name": "primary",
+                    "unique": true,
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
             "name": "namebid",
             "type": "name_bid",
             "indexes": [

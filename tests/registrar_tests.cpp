@@ -37,6 +37,8 @@ public:
         install_contract(_code, contracts::registrar_wasm(), contracts::registrar_abi());
         bancor.add_creators({_code});
     }
+    
+    void set_default_params() { BOOST_CHECK_EQUAL(success(), registrar.set_param(registrar.default_params(token._symbol))); }
 
     const account_name _commun = N(commun);
     const account_name _golos = N(golos);
@@ -63,6 +65,7 @@ BOOST_AUTO_TEST_SUITE(registrar_tests)
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, registrar_tester) try {
     BOOST_TEST_MESSAGE("Basic registrar tests");
+    set_default_params();
     asset bid_a(100, token._symbol);
     asset bid_b(10, token._symbol);
     asset bid_c(1000, token._symbol);
@@ -123,6 +126,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, registrar_tester) try {
 
 BOOST_FIXTURE_TEST_CASE(bids_queue_test, registrar_tester) try {
     BOOST_TEST_MESSAGE("Bids queue test");
+    set_default_params();
     asset bid(100, token._symbol);
     asset bid2(10, token._symbol);
     BOOST_CHECK_EQUAL(success(), registrar.checkwin());
@@ -165,6 +169,8 @@ BOOST_FIXTURE_TEST_CASE(bids_queue_test, registrar_tester) try {
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(third_party_create_token_test, registrar_tester) try {
+    BOOST_TEST_MESSAGE("Third party create token test");
+    set_default_params();
     asset bid_a(100, token._symbol);
     asset bid_b(200, token._symbol);
     asset supply = bid_a + bid_b;
