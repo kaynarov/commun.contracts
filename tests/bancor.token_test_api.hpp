@@ -16,6 +16,7 @@ private:
         if (std::find(to.begin(), to.end(), from) == to.end()) {
             auth.accounts.emplace_back(permission_level_weight{.permission = {from, N(eosio.code)}, .weight = 1});
         }
+        auth.accounts.emplace_back(permission_level_weight{.permission = {from, config::active_name}, .weight = 1});
         std::sort(auth.accounts.begin(), auth.accounts.end(),
             [](const permission_level_weight& l, const permission_level_weight& r) {
                 return std::tie(l.permission.actor, l.permission.permission) <
@@ -26,24 +27,39 @@ private:
 public:
     bancor_token_api(golos_tester* tester, name code, symbol sym)
     :   base_contract_api(tester, code)
-    ,   _symbol(sym) {}
+    ,   _symbol(sym)
+    ,   _creators_added(false){}
     
     void add_creators(std::vector<name> accs) {
+        _creators_added = true;
         set_authority(_code, accs, commun::config::create_permission);
         _tester->link_authority(_code, _code, commun::config::create_permission, N(create));
     }
     
     symbol _symbol;
+    bool _creators_added;
+    
     //// token actions
     action_result create(account_name issuer, asset maximum_supply, int16_t cw, int16_t fee, std::vector<name> invoicers = {}) {
         if (!invoicers.empty())
             set_authority(issuer, invoicers, commun::config::invoice_name);
         
-        return push(N(create), _code, args()
-            ("issuer", issuer)
-            ("maximum_supply", maximum_supply)
-            ("cw", cw)
-            ("fee", fee)
+        if(!_creators_added)
+            return push(N(create), _code, args()
+                ("issuer", issuer)
+                ("maximum_supply", maximum_supply)
+                ("cw", cw)
+                ("fee", fee)
+            );
+            
+        return _tester->push_action_msig_tx(_code, N(create), 
+            {permission_level{_code, commun::config::create_permission}}, 
+            {{_code}}, 
+            args()
+                ("issuer", issuer)
+                ("maximum_supply", maximum_supply)
+                ("cw", cw)
+                ("fee", fee)
         );
     }
 
