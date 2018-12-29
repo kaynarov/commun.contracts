@@ -61,13 +61,14 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, registrar_tester) try {
     asset bid_b(10, token._symbol);
     asset bid_c(1000, token._symbol);
     asset bid_b2(1500, token._symbol);
-    asset supply = bid_a + bid_b + bid_c + bid_b2;
+    asset bid_c2(2000, token._symbol);
+    asset supply = bid_a + bid_b + bid_c + bid_b2 + bid_c2;
     BOOST_CHECK_EQUAL(success(), registrar.checkwin());
-    
+
     BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, bid_a, ""));
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _bob,   bid_b + bid_b2, ""));
-    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, bid_c, ""));
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, bid_c + bid_c2, ""));
     BOOST_TEST_MESSAGE("--- alice bids " << bid_a);
     BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, bid_a, cfg::bid_prefix + token_code_str));
     BOOST_TEST_MESSAGE("--- bob is trying to bet " << bid_b);
@@ -83,13 +84,24 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, registrar_tester) try {
     BOOST_TEST_MESSAGE("--- waiting");
     
     produce_blocks(cfg::min_time_from_last_bid_start * 1000 / cfg::block_interval_ms + 1);
+    BOOST_TEST_MESSAGE("--- bob is trying to bet " << bid_b2);
     BOOST_CHECK_EQUAL(err.closed, token.transfer(_bob, _code, bid_b2, cfg::bid_prefix + token_code_str));
+    produce_block();
+    BOOST_TEST_MESSAGE("--- carol sets price " << asset(bid_b2.get_amount() * 2, token._symbol));
+    BOOST_CHECK_EQUAL(success(), registrar.setprice(_carol, bancor._symbol.to_symbol_code(), asset(bid_b2.get_amount() * 2, token._symbol)));
     BOOST_TEST_MESSAGE("--- bob is trying to bet " << bid_b2);
+    BOOST_CHECK_EQUAL(err.insufficient_bid, token.transfer(_bob, _code, bid_b2, cfg::bid_prefix + token_code_str));
+    produce_block();
+    BOOST_TEST_MESSAGE("--- carol sets price " << bid_b2);
+    BOOST_CHECK_EQUAL(success(), registrar.setprice(_carol, bancor._symbol.to_symbol_code(), bid_b2));
+    BOOST_TEST_MESSAGE("--- bob bets " << bid_b2);
+    BOOST_CHECK_EQUAL(success(), token.transfer(_bob, _code, bid_b2, cfg::bid_prefix + token_code_str));
+    produce_block();
     BOOST_CHECK_EQUAL(token.get_stats()["supply"].as<asset>(), supply);
-    BOOST_TEST_MESSAGE("--- carol creates token");
-    BOOST_CHECK_EQUAL(success(), registrar.create(_carol, asset(100500, bancor._symbol), 10000, 0));
-    BOOST_TEST_MESSAGE("--- bob is trying to bet " << bid_b2);
-    BOOST_CHECK_EQUAL(err.already_exists, token.transfer(_bob, _code, bid_b2, cfg::bid_prefix + token_code_str));
+    BOOST_TEST_MESSAGE("--- bob creates token");
+    BOOST_CHECK_EQUAL(success(), registrar.create(_bob, asset(100500, bancor._symbol), 10000, 0));
+    BOOST_TEST_MESSAGE("--- carol is trying to bet " << bid_c2);
+    BOOST_CHECK_EQUAL(err.already_exists, token.transfer(_carol, _code, bid_c2, cfg::bid_prefix + token_code_str));
     produce_block();
     asset fee(static_cast<eosio::chain::int128_t>(bid_c.get_amount()) * cfg::bancor_creation_fee / cfg::_100percent, token._symbol);
     supply -= fee;

@@ -25,6 +25,13 @@ struct registrar_api: base_contract_api {
             ("fee", fee)
         );
     }
+    
+    action_result setprice(account_name owner, symbol_code sym_code, asset price) {
+        return push(N(setprice), owner, args()
+            ("sym_code", sym_code)
+            ("price", price)
+        );
+    }
 };
 
 }} // eosio::testing

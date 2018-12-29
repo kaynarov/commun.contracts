@@ -25,6 +25,12 @@ struct [[eosio::table, eosio::contract("registrar")]] name_bid {
     int64_t by_high_bid()   const { return high_bid; }      // ordered desc, check abi
 };
 
+struct [[eosio::table, eosio::contract("registrar")]] name_ask {
+    symbol_code     sym_code;
+    int64_t         price;
+    uint64_t primary_key()  const { return sym_code.raw(); }
+};
+
 struct [[eosio::table, eosio::contract("registrar")]] name_bid_refund {
     name  bidder;
     asset amount;
@@ -35,6 +41,9 @@ struct [[eosio::table, eosio::contract("registrar")]] name_bid_refund {
 using name_bid_tbl = eosio::multi_index<"namebid"_n, name_bid,
     eosio::indexed_by<"highbid"_n, eosio::const_mem_fun<name_bid, int64_t, &name_bid::by_high_bid> >
 >;
+
+using name_ask_tbl = eosio::multi_index<"nameask"_n, name_ask>;
+
 using name_bid_refund_tbl = eosio::multi_index< "namebidrefnd"_n, name_bid_refund>;
 
 struct [[eosio::table("state"), eosio::contract("registrar")]] name_bid_state {
@@ -57,7 +66,7 @@ public:
     void on_transfer(name from, name to, asset quantity, std::string memo);
     [[eosio::action]] void claimrefund(name bidder, symbol_code sym_code);
     [[eosio::action]] void create(asset maximum_supply, int16_t cw, int16_t fee);
-    
+    [[eosio::action]] void setprice(symbol_code sym_code, asset price);
 };
 
 } /// commun

@@ -57,7 +57,7 @@ void registrar::checkwin() {
 }
 
 void registrar::on_transfer(name from, name to, asset quantity, std::string memo) {
-    if(_self != to)
+    if (_self != to)
         return;
     const size_t pref_size = config::bid_prefix.size();
     const size_t memo_size = memo.size();
@@ -83,11 +83,22 @@ void registrar::on_transfer(name from, name to, asset quantity, std::string memo
             set_bid(b);
         });
     } else {
-        eosio_assert(current->high_bid > 0, "this auction has already closed"); //TODO: ask?
-        eosio_assert(quantity.amount - current->high_bid > (current->high_bid / config::bid_increment_denom), "insufficient bid");
+        eosio_assert(current->high_bid != 0, "SYSTEM: incorrect high bid");
         eosio_assert(current->high_bidder != from, "account is already highest bidder");
-        add_refund(from, current->high_bidder, current->high_bid, sym_code);
-        bids.modify(current, from, set_bid);
+        if (current->high_bid > 0) {
+            eosio_assert(quantity.amount - current->high_bid > (current->high_bid / config::bid_increment_denom), "insufficient bid");
+            add_refund(from, current->high_bidder, current->high_bid, sym_code);
+            bids.modify(current, from, set_bid);
+        }
+        else {
+            name_ask_tbl asks(_self, _self.value);
+            auto ask = asks.find(sym_code.raw());
+            eosio_assert(ask != asks.end(), "this auction has already closed");
+            eosio_assert(ask->price <= quantity.amount, "insufficient bid");
+            asks.erase(ask);
+            bids.modify(current, name(), [&](auto& r) { r.high_bidder = from; });
+            add_refund(from, current->high_bidder, quantity.amount, sym_code); //TODO:? fee
+        }
     }
 }
 
@@ -139,7 +150,7 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
     require_auth(current->high_bidder);
     eosio_assert(current->high_bid < 0, "auction is not closed yet");
     auto bid_amount = -current->high_bid;
-    if(bancor::exist(config::bancor_name, sym_code)) { //exotic situation but not impossible
+    if (bancor::exist(config::bancor_name, sym_code)) { //exotic situation but not impossible
         add_refund(_self, current->high_bidder, bid_amount, sym_code);
         return;
     }
@@ -149,14 +160,14 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
     print(name{current->high_bidder}, " create ", sym_code, ": reserve = ", reserve, ", payed fee = ", payed_fee, "\n");
     INLINE_ACTION_SENDER(bancor, create) (config::bancor_name, {config::bancor_name, config::create_permission},
         {current->high_bidder, maximum_supply, cw, fee});
-    if(reserve.amount > 0)
+    if (reserve.amount > 0)
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {
             _self,
             config::bancor_name,
             reserve,
             config::restock_prefix + sym_code.to_string()
         });
-    if(payed_fee.amount > 0)
+    if (payed_fee.amount > 0)
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {
             _self,
             token::get_issuer(config::token_name, config::reserve_token.code()),
@@ -167,8 +178,30 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
     bids.erase(current);
 }
 
+void registrar::setprice(symbol_code sym_code, asset price) {
+    name_bid_tbl bids(_self, _self.value);
+    eosio_assert(price.is_valid(), "invalid price");
+    eosio_assert(price.symbol == config::reserve_token, "asset must be reserve token");
+    auto current = bids.find(sym_code.raw());
+    eosio_assert(current != bids.end(), "no active bid for token symbol");
+    require_auth(current->high_bidder);
+    eosio_assert(current->high_bid < 0, "auction is not closed yet");
+    
+    name_ask_tbl asks(_self, _self.value);
+    auto ask = asks.find(sym_code.raw());
+    
+    if (ask != asks.end() && price.amount != 0)
+        asks.modify(ask, name(), [&](auto& a) { a.price = price.amount; });
+    else if (ask != asks.end() && price.amount == 0)
+        asks.erase(ask);
+    else if (ask == asks.end() && price.amount != 0)
+        asks.emplace(current->high_bidder, [&](auto& a) { a.sym_code = sym_code; a.price = price.amount; });
+    else
+        eosio_assert(false, "invalid amount");
+}
+
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::registrar, commun::config::token_name, on_transfer,
-    (checkwin)(claimrefund)(create)
+    (checkwin)(claimrefund)(create)(setprice)
 )

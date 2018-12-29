@@ -10,6 +10,13 @@
                 {"type": "int16", "name": "fee"}
             ]
         },{
+            "name": "setprice",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "sym_code"},
+                {"type": "asset",       "name": "price"}
+            ]
+        },{
             "name": "claimrefund",
             "base": "",
             "fields": [
@@ -38,6 +45,13 @@
                 {"type": "time_point_sec",  "name": "last_bid_time"}
             ]
         },{
+            "name": "name_ask",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code",     "name": "sym_code"},
+                {"type": "int64",           "name": "price"},
+            ]
+        },{
             "name": "name_bid_refund",
             "base": "",
             "fields": [
@@ -60,6 +74,10 @@
             "name": "checkwin",
             "type": "checkwin",
             "ricardian_contract": ""
+        },{
+            "name": "setprice",
+            "type": "setprice",
+            "ricardian_contract": ""
         }
     ],
     "tables": [
@@ -78,6 +96,18 @@
                     "unique": "true",
                     "orders": [
                         {"field": "high_bid", "order": "desc"},
+                        {"field": "sym_code", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "nameask",
+            "type": "name_ask",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
                         {"field": "sym_code", "order": "asc"}
                     ]
                 }
