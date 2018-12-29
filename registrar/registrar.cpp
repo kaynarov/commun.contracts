@@ -96,15 +96,15 @@ void registrar::on_transfer(name from, name to, asset quantity, std::string memo
             eosio_assert(ask != asks.end(), "this auction has already closed");
             eosio_assert(ask->price <= quantity.amount, "insufficient bid");
             asks.erase(ask);
-            bids.modify(current, name(), [&](auto& r) { r.high_bidder = from; });
             add_refund(from, current->high_bidder, quantity.amount, sym_code); //TODO:? fee
+            bids.modify(current, name(), [&](auto& r) { r.high_bidder = from; });
         }
     }
 }
 
 void registrar::add_refund(name payer, name bidder, int64_t amount, symbol_code sym_code) {
     name_bid_refund_tbl refunds_table(_self, sym_code.raw());
-
+    print("refund to ", name{bidder}, " on ", sym_code.to_string(), ", amount = ", amount, "\n"); 
     auto it = refunds_table.find(bidder.value);
     if (it != refunds_table.end()) {
         refunds_table.modify(it, name(), [&](auto& r) {
@@ -151,6 +151,8 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
     eosio_assert(current->high_bid < 0, "auction is not closed yet");
     auto bid_amount = -current->high_bid;
     if (bancor::exist(config::bancor_name, sym_code)) { //exotic situation but not impossible
+        print("bancor token already exists\n");
+        //we have to refund, so no assert here. otherwise claimrefund will have more sophisticated logic
         add_refund(_self, current->high_bidder, bid_amount, sym_code);
         return;
     }
