@@ -77,7 +77,8 @@
             "base": "",
             "fields": [
                 {"type": "uint32", "name": "bid_increment_denom"},
-                {"type": "int16", "name": "bancor_creation_fee"}
+                {"type": "int16", "name": "bancor_creation_fee"},
+                {"type": "int16", "name": "sale_fee"}
             ]
         },{
             "name": "checkwin_param",

@@ -11,6 +11,7 @@ const uint32_t min_time_from_last_bid_step = 60 * 60 * 3 / time_denom;
 const size_t max_bid_checks = 64;
 const uint32_t bid_increment_denom = 10;
 const int16_t bancor_creation_fee = 3000;
+const int16_t sale_fee = 0;
 
 }}
 
@@ -62,11 +63,13 @@ struct registrar_api: base_contract_api {
     }
     static std::string market_param(
         uint32_t bid_increment_denom = commun::config::bid_increment_denom, 
-        int16_t bancor_creation_fee = commun::config::bancor_creation_fee
+        int16_t bancor_creation_fee = commun::config::bancor_creation_fee,
+        int16_t sale_fee = commun::config::sale_fee
     ) {
         return std::string() + "['market_param',{"
             "'bid_increment_denom':"+std::to_string(bid_increment_denom) +
-            ",'bancor_creation_fee':"+std::to_string(bancor_creation_fee) + "}]";
+            ",'bancor_creation_fee':"+std::to_string(bancor_creation_fee) + 
+            ",'sale_fee':"+std::to_string(sale_fee) + "}]";
     }
     
     static std::string checkwin_param(

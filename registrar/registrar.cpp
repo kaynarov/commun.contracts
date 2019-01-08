@@ -70,6 +70,16 @@ void registrar::checkwin() {
     tx.send(sender_id, _self);
 }
 
+void registrar::retire_fee(int64_t amount) {
+    if (amount > 0)
+        INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {
+            _self,
+            token::get_issuer(config::token_name, props().token.sym.code()),
+            asset(amount, props().token.sym),
+            config::retire_memo
+        });
+}
+
 void registrar::on_transfer(name from, name to, asset quantity, std::string memo) {
     if (_self != to)
         return;
@@ -110,13 +120,17 @@ void registrar::on_transfer(name from, name to, asset quantity, std::string memo
             eosio_assert(ask != asks.end(), "this auction has already closed");
             eosio_assert(ask->price <= quantity.amount, "insufficient bid");
             asks.erase(ask);
-            add_refund(from, current->high_bidder, quantity.amount, sym_code); //TODO:? fee
+            auto amount_for_seller = net_amount(quantity.amount, props().market.sale_fee);
+            add_refund(from, current->high_bidder, amount_for_seller, sym_code);
+            retire_fee(quantity.amount - amount_for_seller);
             bids.modify(current, name(), [&](auto& r) { r.high_bidder = from; });
         }
     }
 }
 
 void registrar::add_refund(name payer, name bidder, int64_t amount, symbol_code sym_code) {
+    if(amount == 0)
+        return;
     name_bid_refund_tbl refunds_table(_self, sym_code.raw());
     print("refund to ", name{bidder}, " on ", sym_code.to_string(), ", amount = ", amount, "\n"); 
     auto it = refunds_table.find(bidder.value);
@@ -170,12 +184,11 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
         add_refund(_self, current->high_bidder, bid_amount, sym_code);
         return;
     }
-    int64_t restock_amount = (static_cast<int128_t>(bid_amount) * (config::_100percent - props().market.bancor_creation_fee)) / config::_100percent;
-    asset reserve(restock_amount, props().token.sym);
-    asset payed_fee(bid_amount - restock_amount, props().token.sym);
-    print(name{current->high_bidder}, " create ", sym_code, ": reserve = ", reserve, ", payed fee = ", payed_fee, "\n");
+    
     INLINE_ACTION_SENDER(bancor, create) (config::bancor_name, {config::bancor_name, config::create_permission},
         {current->high_bidder, maximum_supply, cw, fee});
+
+    asset reserve(net_amount(bid_amount, props().market.bancor_creation_fee), props().token.sym);
     if (reserve.amount > 0)
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {
             _self,
@@ -183,14 +196,8 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
             reserve,
             config::restock_prefix + sym_code.to_string()
         });
-    if (payed_fee.amount > 0)
-        INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {
-            _self,
-            token::get_issuer(config::token_name, props().token.sym.code()),
-            payed_fee,
-            config::retire_memo
-        });
-        
+
+    retire_fee(bid_amount - reserve.amount); 
     bids.erase(current);
 }
 

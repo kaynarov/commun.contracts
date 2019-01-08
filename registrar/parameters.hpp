@@ -15,11 +15,14 @@ struct token : immutable_parameter {
 struct market : parameter {
     uint32_t bid_increment_denom;
     int16_t bancor_creation_fee;
+    int16_t sale_fee;
 
     void validate() const override {
         eosio_assert(bid_increment_denom > 0, "bid_increment_denom can't be 0");
-        eosio_assert(0 <= bid_increment_denom && bid_increment_denom <= 10000,
-            "bid_increment_denom must be between 0% and 100% (0-10000)");
+        eosio_assert(0 <= bancor_creation_fee && bancor_creation_fee <= 10000,
+            "bancor_creation_fee must be between 0% and 100% (0-10000)");
+        eosio_assert(0 <= sale_fee && sale_fee <= 10000,
+            "sale_fee must be between 0% and 100% (0-10000)");
     }
 };
 
@@ -38,7 +41,7 @@ struct checkwin : parameter {
 } //param
 
 using token_param = param_wrapper<param::token, 1>;
-using market_param = param_wrapper<param::market, 2>;
+using market_param = param_wrapper<param::market, 3>;
 using checkwin_param = param_wrapper<param::checkwin, 5>;
 
 using registrar_param = std::variant<token_param, market_param, checkwin_param>;

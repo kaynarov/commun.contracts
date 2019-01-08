@@ -72,6 +72,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, registrar_tester) try {
     asset bid_b2(1500, token._symbol);
     asset bid_c2(2000, token._symbol);
     asset supply = bid_a + bid_b + bid_c + bid_b2 + bid_c2;
+    auto sale_fee = 0.1;
     BOOST_CHECK_EQUAL(success(), registrar.checkwin());
 
     BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
@@ -103,13 +104,17 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, registrar_tester) try {
     BOOST_CHECK_EQUAL(success(), registrar.setprice(_carol, bancor._symbol.to_symbol_code(), asset(bid_b2.get_amount() * 2, token._symbol)));
     BOOST_TEST_MESSAGE("--- bob is trying to bid " << bid_b2);
     BOOST_CHECK_EQUAL(err.insufficient_bid, token.transfer(_bob, _code, bid_b2, cfg::bid_prefix + token_code_str));
+    BOOST_CHECK_EQUAL(success(), registrar.set_param(
+        registrar.market_param(commun::config::bid_increment_denom, commun::config::bancor_creation_fee, sale_fee * cfg::_100percent)));
     produce_block();
     BOOST_TEST_MESSAGE("--- carol sets price " << bid_b2);
     BOOST_CHECK_EQUAL(success(), registrar.setprice(_carol, bancor._symbol.to_symbol_code(), bid_b2));
     BOOST_TEST_MESSAGE("--- bob bets " << bid_b2);
     BOOST_CHECK_EQUAL(success(), token.transfer(_bob, _code, bid_b2, cfg::bid_prefix + token_code_str));
     produce_block();
-    BOOST_CHECK_EQUAL(token.get_account(_carol)["balance"].as<asset>(), bid_c2 + bid_b2);
+    asset sale_fee_quantity(bid_b2.get_amount() * sale_fee, token._symbol);
+    supply -= sale_fee_quantity;
+    BOOST_CHECK_EQUAL(token.get_account(_carol)["balance"].as<asset>(), bid_c2 + bid_b2 - sale_fee_quantity);
     
     BOOST_CHECK_EQUAL(token.get_stats()["supply"].as<asset>(), supply);
     BOOST_TEST_MESSAGE("--- bob creates token");
