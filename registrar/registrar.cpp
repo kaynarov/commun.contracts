@@ -71,13 +71,14 @@ void registrar::checkwin() {
 }
 
 void registrar::retire_fee(int64_t amount) {
-    if (amount > 0)
+    if (amount > 0) {
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {
             _self,
             token::get_issuer(config::token_name, props().token.sym.code()),
             asset(amount, props().token.sym),
             config::retire_memo
         });
+    }
 }
 
 void registrar::on_transfer(name from, name to, asset quantity, std::string memo) {
@@ -120,9 +121,9 @@ void registrar::on_transfer(name from, name to, asset quantity, std::string memo
             eosio_assert(ask != asks.end(), "this auction has already closed");
             eosio_assert(ask->price <= quantity.amount, "insufficient bid");
             asks.erase(ask);
-            auto amount_for_seller = net_amount(quantity.amount, props().market.sale_fee);
-            add_refund(from, current->high_bidder, amount_for_seller, sym_code);
-            retire_fee(quantity.amount - amount_for_seller);
+            auto fee_amount = get_fee_amount(quantity.amount, props().market.sale_fee);
+            add_refund(from, current->high_bidder, quantity.amount - fee_amount, sym_code);
+            retire_fee(fee_amount);
             bids.modify(current, name(), [&](auto& r) { r.high_bidder = from; });
         }
     }
@@ -187,17 +188,19 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
     
     INLINE_ACTION_SENDER(bancor, create) (config::bancor_name, {config::bancor_name, config::create_permission},
         {current->high_bidder, maximum_supply, cw, fee});
-
-    asset reserve(net_amount(bid_amount, props().market.bancor_creation_fee), props().token.sym);
-    if (reserve.amount > 0)
+    
+    auto fee_amount = get_fee_amount(bid_amount, props().market.bancor_creation_fee);
+    asset reserve(bid_amount - fee_amount, props().token.sym);
+    if (reserve.amount > 0) {
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {
             _self,
             config::bancor_name,
             reserve,
             config::restock_prefix + sym_code.to_string()
         });
+    }
 
-    retire_fee(bid_amount - reserve.amount); 
+    retire_fee(fee_amount);
     bids.erase(current);
 }
 

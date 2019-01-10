@@ -59,8 +59,8 @@ using state_singleton = eosio::singleton<"namebidstate"_n, name_bid_state>;
 
 class [[eosio::contract("registrar")]] registrar: public eosio::contract {
     void add_refund(name payer, name bidder, int64_t amount, symbol_code sym_code);
-    static int64_t net_amount(int64_t amount, int16_t fee) {
-        return (static_cast<int128_t>(amount) * (config::_100percent - fee)) / config::_100percent;
+    static int64_t get_fee_amount(int64_t total_amount, int16_t fee) {
+        return (static_cast<int128_t>(total_amount) * fee) / config::_100percent;
     };
     void retire_fee(int64_t amount);
     registrar_param_singleton _cfg;
