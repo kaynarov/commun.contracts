@@ -12,10 +12,6 @@
 #include <string>
 #include <cmath>
 
-namespace eosiosystem {
-   class system_contract;
-}
-
 namespace commun {
 
 using std::string;
@@ -44,6 +40,11 @@ public:
     void close(name owner, const symbol& symbol);
     
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
+    
+    static inline bool exist(name token_contract_account, symbol_code sym_code) {
+        stats statstable(token_contract_account, sym_code.raw());
+        return statstable.find(sym_code.raw()) != statstable.end();
+    }
 
     static inline asset get_supply(name token_contract_account, symbol_code sym_code) {
         stats statstable(token_contract_account, sym_code.raw());

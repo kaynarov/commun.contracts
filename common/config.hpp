@@ -21,11 +21,13 @@ namespace commun { namespace config {
 // contracts
 static const auto control_name = "gls.ctrl"_n;
 static const auto social_name = "gls.social"_n;
-static const auto vesting_name = "gls.vesting"_n;
+static const auto vesting_name = "cmmn.vesting"_n;
 static const auto publish_name = "gls.publish"_n;
-static const auto charge_name = "gls.charge"_n;
+static const auto charge_name = "cmmn.charge"_n;
 static const auto emission_name = "gls.emit"_n;
 static const auto workers_name = "gls.worker"_n;
+static const auto bancor_name = "cmmn.token"_n;
+static const auto registrar_name = "cmmn.reg"_n;
 static const auto token_name = "eosio.token"_n;
 static const auto internal_name = "eosio"_n;
 
@@ -49,6 +51,8 @@ static constexpr int64_t blocks_per_year = int64_t(365)*24*60*60*1000/block_inte
 #else
     static const auto reserve_token = eosio::chain::symbol(4, "COMMUN");
 #endif
+
+static const std::string retire_memo = "retire";
 
 } // config
 

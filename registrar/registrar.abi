@@ -1,0 +1,205 @@
+{
+    "version": "cyberway::abi/1.0",
+    "variants": [{
+        "name": "registrar_param",
+        "types": [
+            "token_param",
+            "market_param",
+            "checkwin_param"
+        ]
+    }],
+    "structs": [
+            {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {"type": "asset", "name": "maximum_supply"},
+                {"type": "int16", "name": "cw"},
+                {"type": "int16", "name": "fee"}
+            ]
+        },{
+            "name": "setprice",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "sym_code"},
+                {"type": "asset",       "name": "price"}
+            ]
+        },{
+            "name": "claimrefund",
+            "base": "",
+            "fields": [
+                {"type": "name",        "name": "bidder"},
+                {"type": "symbol_code", "name": "sym_code"}
+            ]
+        },{
+            "name": "checkwin",
+            "base": "",
+            "fields": []
+        },{
+            "name": "name_bid_state",
+            "base": "",
+            "fields": [
+                {"type": "uint64",         "name": "id"},
+                {"type": "time_point_sec", "name": "last_win"},
+                {"type": "time_point_sec", "name": "last_checkwin"}
+            ]
+        },{
+            "name": "name_bid",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code",     "name": "sym_code"},
+                {"type": "name",            "name": "high_bidder"},
+                {"type": "int64",           "name": "high_bid"},
+                {"type": "time_point_sec",  "name": "last_bid_time"}
+            ]
+        },{
+            "name": "name_ask",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code",     "name": "sym_code"},
+                {"type": "int64",           "name": "price"},
+            ]
+        },{
+            "name": "name_bid_refund",
+            "base": "",
+            "fields": [
+                {"type": "name",  "name": "bidder"},
+                {"type": "asset", "name": "amount"}
+            ]
+        },{
+            "name": "token_param",
+            "base": "",
+            "fields": [
+                {"type": "symbol", "name": "sym"}
+            ]
+        },{
+            "name": "market_param",
+            "base": "",
+            "fields": [
+                {"type": "uint32", "name": "bid_increment_denom"},
+                {"type": "int16", "name": "bancor_creation_fee"},
+                {"type": "int16", "name": "sale_fee"}
+            ]
+        },{
+            "name": "checkwin_param",
+            "base": "",
+            "fields": [
+                {"type": "uint32", "name": "interval"},
+                {"type": "uint32", "name": "min_time_from_last_win"},
+                {"type": "uint32", "name": "min_time_from_last_bid_start"},
+                {"type": "uint32", "name": "min_time_from_last_bid_step"},
+                {"type": "uint32", "name": "max_bid_checks"}
+            ]
+        },{
+            "name": "registrar_param_state",
+            "fields": [
+                {"type": "uint64",         "name": "id"},
+                {"type": "token_param",    "name": "token"},
+                {"type": "market_param",   "name": "market"},
+                {"type": "checkwin_param", "name": "checkwin"}
+            ]
+        },{
+            "name": "setparams",
+            "fields": [
+                {"type": "registrar_param[]", "name": "params"}
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "setparams",
+            "type": "setparams",
+            "ricardian_contract": ""
+        },{
+            "name": "validateprms",
+            "type": "setparams",
+            "ricardian_contract": ""
+        },{
+            "name": "create",
+            "type": "create",
+            "ricardian_contract": ""
+        },{
+            "name": "claimrefund",
+            "type": "claimrefund",
+            "ricardian_contract": ""
+        },{
+            "name": "checkwin",
+            "type": "checkwin",
+            "ricardian_contract": ""
+        },{
+            "name": "setprice",
+            "type": "setprice",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "regparams",
+            "type": "registrar_param_state",
+            "indexes" : [
+                {
+                    "name": "primary",
+                    "unique": true,
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "namebid",
+            "type": "name_bid",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "sym_code", "order": "asc"}
+                    ]
+                },{
+                    "name": "highbid",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "high_bid", "order": "desc"},
+                        {"field": "sym_code", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "nameask",
+            "type": "name_ask",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "sym_code", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "namebidrefnd",
+            "type": "name_bid_refund",
+            "indexes": [{
+                "name": "primary",
+                "unique": "true",
+                "orders": [
+                    {"field": "bidder", "order": "asc"}
+                ]
+            }]
+        },{
+            "name": "namebidstate",
+            "type": "name_bid_state",
+            "indexes": [{
+                "name": "primary",
+                "unique": "true",
+                "orders": [
+                    {"field": "id", "order": "asc"}
+                ]
+            }]
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": [],
+    "abi_extensions": []
+}

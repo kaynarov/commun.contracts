@@ -2,6 +2,6 @@
 #include <common/config.hpp>
 
 namespace commun { namespace config {
-const std::string restock_prefix = "restock: ";
-static const auto create_permission = "create"_n;
+const std::string bid_prefix = "bid: ";
+
 }} // commun::config
