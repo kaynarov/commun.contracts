@@ -1,0 +1,94 @@
+{
+    "version": "cyberway::abi/1.1",
+    "structs": [
+        {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "token",
+                    "type": "name"
+                },
+                {
+                    "name": "ctrl",
+                    "type": "name"
+                },
+                {
+                    "name": "vesting",
+                    "type": "name"
+                },
+                {
+                    "name": "emit",
+                    "type": "name"
+                },
+                {
+                    "name": "charge",
+                    "type": "name"
+                },
+                {
+                    "name": "posting",
+                    "type": "name"
+                },
+                {
+                    "name": "social",
+                    "type": "name"
+                },
+                {
+                    "name": "referral",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "community",
+            "base": "create",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "create",
+            "type": "create"
+        },
+        {
+            "name": "update",
+            "type": "create"
+        }
+    ],
+    "events": [],
+    "tables": [
+        {
+            "name": "community",
+            "type": "community",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                },
+                {
+                    "name": "bytoken",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "token", "order": "asc"},
+                        {"field": "symbol", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ],
+    "variants": [],
+    "abi_extensions": []
+}

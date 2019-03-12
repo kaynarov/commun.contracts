@@ -50,10 +50,8 @@ protected:
 
 public:
     golos_tester(name code): tester(), _code(code), _chaindb(control->chaindb()) {
-        std::cout << "golos_tester()" << std::endl;
     }
     ~golos_tester() {
-        std::cout << "~golos_tester()" << std::endl;
     }
 
     void install_contract(account_name acc, const std::vector<uint8_t>& wasm, const std::vector<char>& abi, bool produce = true);
@@ -66,13 +64,18 @@ public:
         std::vector<permission_level> perms, std::vector<account_name> signers, const variant_object& data);
     action_result push_tx(signed_transaction&& tx);
 
-    // table helpers
-    const table_id_object* find_table(name code, uint64_t scope, name tbl) const;
-    // Note: uses `lower_bound`, so caller must check id of returned value
-    std::vector<char> get_tbl_row(name code, uint64_t scope, name tbl, uint64_t id) const;
-    std::vector<std::vector<char>> get_all_rows(name code, uint64_t scope, name table, bool strict = true) const;
-    fc::variant get_tbl_struct(name code, uint64_t scope, name tbl, uint64_t id, const std::string& n) const;
-    fc::variant get_tbl_singleton(name code, uint64_t scope, name tbl, const string &n) const;
+    template<typename Key>
+    fc::variant get_chaindb_lower_bound_struct(name code, uint64_t scope, name tbl, name indx, const Key& key, const std::string& n) const {
+        variant r;
+        try {
+            bytes data = fc::raw::pack(key);
+            const auto& finfo = _chaindb.lower_bound({code, scope, tbl, indx}, data.data(), data.size());
+            r = _chaindb.value_at_cursor({code, finfo.cursor});
+        } catch (...) {
+            // key not found
+        }
+        return r;
+    }
 
     fc::variant get_chaindb_struct(name code, uint64_t scope, name tbl, uint64_t id, const std::string& n) const;
     fc::variant get_chaindb_singleton(name code, uint64_t scope, name tbl, const std::string& n) const;

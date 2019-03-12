@@ -14,6 +14,12 @@ struct contracts {
     static std::vector<uint8_t> reserve_emit_wasm() { return read_wasm(COMMUN_CONTRACTS "reserve.emit/reserve.emit.wasm"); }
     static std::vector<char>    reserve_emit_abi()  { return read_abi (COMMUN_CONTRACTS "reserve.emit/reserve.emit.abi"); }
 
+    static std::vector<uint8_t> commun_token_wasm() { return read_wasm(COMMUN_CONTRACTS "commun.token/commun.token.wasm"); }
+    static std::vector<char>    commun_token_abi()  { return read_abi (COMMUN_CONTRACTS "commun.token/commun.token.abi"); }
+
+    static std::vector<uint8_t> commun_list_wasm() { return read_wasm(COMMUN_CONTRACTS "commun.list/commun.list.wasm"); }
+    static std::vector<char>    commun_list_abi()  { return read_abi (COMMUN_CONTRACTS "commun.list/commun.list.abi"); }
+
 
     static std::vector<uint8_t> system_wasm() { return read_wasm(CYBERWAY_CONTRACTS "eosio.system/eosio.system.wasm"); }
     static std::string          system_wast() { return read_wast(CYBERWAY_CONTRACTS "eosio.system/eosio.system.wast"); }
