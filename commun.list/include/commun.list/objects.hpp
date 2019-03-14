@@ -6,6 +6,7 @@ namespace commun::structures {
 using namespace eosio;
 
 struct community {
+    uint64_t id;
     symbol symbol;
     name ctrl;
     name emit;
@@ -15,20 +16,19 @@ struct community {
     name vesting;
     name posting;
     name referral;
-    uint64_t id;
 
     uint64_t primary_key() const {
         return id;
     }
 
-    std::tuple<uint64_t, uint64_t> secondary_key() const {
-        return {symbol.raw(), token.value};
+    std::tuple<eosio::symbol, eosio::name> secondary_key() const {
+        return {symbol, token};
     }
 };
 
 }
 
 namespace commun::tables {
-    using community_index = eosio::indexed_by<"bytoken"_n, eosio::const_mem_fun<structures::community, std::tuple<uint64_t, uint64_t>, &structures::community::secondary_key>>;
+    using community_index = eosio::indexed_by<"secondary"_n, eosio::const_mem_fun<structures::community, std::tuple<eosio::symbol, eosio::name>, &structures::community::secondary_key>>;
     using community = eosio::multi_index<"community"_n, structures::community, community_index>;
 }

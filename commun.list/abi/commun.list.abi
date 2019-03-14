@@ -45,11 +45,47 @@
         },
         {
             "name": "community",
-            "base": "create",
+            "base": "",
             "fields": [
                 {
                     "name": "id",
                     "type": "uint64"
+                },
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "token",
+                    "type": "name"
+                },
+                {
+                    "name": "ctrl",
+                    "type": "name"
+                },
+                {
+                    "name": "vesting",
+                    "type": "name"
+                },
+                {
+                    "name": "emit",
+                    "type": "name"
+                },
+                {
+                    "name": "charge",
+                    "type": "name"
+                },
+                {
+                    "name": "posting",
+                    "type": "name"
+                },
+                {
+                    "name": "social",
+                    "type": "name"
+                },
+                {
+                    "name": "referral",
+                    "type": "name"
                 }
             ]
         }
@@ -79,11 +115,11 @@
                     ]
                 },
                 {
-                    "name": "bytoken",
+                    "name" : "secondary",
                     "unique": "true",
                     "orders": [
-                        {"field": "token", "order": "asc"},
-                        {"field": "symbol", "order": "asc"}
+                        {"field": "symbol", "order": "asc"},
+                        {"field": "token", "order": "asc"}
                     ]
                 }
             ]

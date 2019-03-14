@@ -15,11 +15,13 @@ static const auto _token = symbol(3, token_code_str);
 class commun_list_tester : public golos_tester {
 protected:
     commun_token_api token;
+    commun_list_api community;
 
 public:
     commun_list_tester()
         : golos_tester(cfg::commun_list_name)
         , token({this, cfg::commun_token_name, _token})
+        , community({this, cfg::commun_list_name})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas,
             cfg::registrar_name, cfg::token_name, cfg::bancor_name, cfg::commun_list_name});
@@ -36,25 +38,40 @@ public:
     const account_name _nicolas = N(nicolas);
 
     void create_token() {
-        token.create( N(alice), token.make_asset(1000));
+        token.create( cfg::commun_token_name, token.make_asset(1000));
         auto stats = token.get_stats();
         BOOST_TEST_MESSAGE(fc::json::to_string(stats));
         produce_blocks(1);
-    };
+    }
     
     auto get_cur_time() {
         return control->head_block_time().time_since_epoch();
-    };
+    }
 
     struct errors: contract_error_messages {
-        const string community_exists = amsg("insufficient bid");
+        const string community_exists = amsg("community exists");
+        const string community_not_exists = amsg("community not exists");
     } err;
 };
 
 BOOST_AUTO_TEST_SUITE(community_list_tests)
 
-BOOST_FIXTURE_TEST_CASE(create_commun_list, commun_list_tester) try {
+BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
     create_token();
+    BOOST_CHECK_EQUAL(success(), community.create_record(_token, cfg::commun_token_name));
+
+    produce_blocks(10);
+
+    BOOST_CHECK_EQUAL(err.community_exists, community.create_record(_token, cfg::commun_token_name));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(update_community, commun_list_tester) try {
+    create_token();
+
+    BOOST_CHECK_EQUAL(err.community_not_exists, community.update_record(_token, cfg::commun_token_name, _bob, _carol));
+
+    BOOST_CHECK_EQUAL(success(), community.create_record(_token, cfg::commun_token_name));
+    BOOST_CHECK_EQUAL(success(), community.update_record(_token, cfg::commun_token_name, _bob, _carol));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()
