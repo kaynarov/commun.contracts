@@ -1,12 +1,12 @@
 #include <commun.list.hpp>
-#include <commun.token.hpp>
+#include "bancor.token.hpp"
 
 using namespace commun;
 
 void commun_list::create(symbol symbol, name token, name ctrl, name vesting, name emit,
                          name charge, name posting, name social, name referral) {
     require_auth(token);
-    auto issuer = commun::token::get_issuer(token, symbol.code()); // TODO verification of validity of a token
+    eosio_assert(commun::bancor::exist(token, symbol.code()), "not found token");
 
     tables::community community_tbl(_self, _self.value);
     auto community_index = community_tbl.get_index<"secondary"_n>();
@@ -30,7 +30,7 @@ void commun_list::update(symbol symbol, name token, name ctrl, name vesting, nam
                          name charge, name posting, name social, name referral) {
     require_auth(token);
 
-    auto issuer = commun::token::get_issuer(token, symbol.code()); // TODO verification of validity of a token
+    eosio_assert(commun::bancor::exist(token, symbol.code()), "not found token");
 
     tables::community community_tbl(_self, _self.value);
     auto community_index = community_tbl.get_index<"secondary"_n>();

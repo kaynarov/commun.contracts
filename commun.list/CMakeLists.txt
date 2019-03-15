@@ -3,7 +3,7 @@ add_executable(commun.list.wasm ${CMAKE_CURRENT_SOURCE_DIR}/src/commun.list.cpp)
 target_include_directories(commun.list.wasm
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include/commun.list
-   ${CMAKE_CURRENT_SOURCE_DIR}/../commun.token/include/commun.token
+   ${CMAKE_CURRENT_SOURCE_DIR}/../bancor.token/include/bancor.token
    ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set_target_properties(commun.list.wasm
