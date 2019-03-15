@@ -56,15 +56,7 @@
                     "type": "symbol"
                 },
                 {
-                    "name": "token",
-                    "type": "name"
-                },
-                {
                     "name": "ctrl",
-                    "type": "name"
-                },
-                {
-                    "name": "vesting",
                     "type": "name"
                 },
                 {
@@ -72,15 +64,23 @@
                     "type": "name"
                 },
                 {
+                    "name": "token",
+                    "type": "name"
+                },
+                {
                     "name": "charge",
                     "type": "name"
                 },
                 {
-                    "name": "posting",
+                    "name": "social",
                     "type": "name"
                 },
                 {
-                    "name": "social",
+                    "name": "vesting",
+                    "type": "name"
+                },
+                {
+                    "name": "posting",
                     "type": "name"
                 },
                 {
