@@ -7,7 +7,7 @@
 
 #include <eosiolib/asset.hpp>
 #include <eosiolib/eosio.hpp>
-#include "bancor.token/config.hpp"
+#include "config.hpp"
 
 #include <string>
 #include <cmath>

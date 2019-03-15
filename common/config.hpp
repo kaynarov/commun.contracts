@@ -28,6 +28,8 @@ static const auto emission_name = "gls.emit"_n;
 static const auto workers_name = "gls.worker"_n;
 static const auto bancor_name = "cmmn.token"_n;
 static const auto registrar_name = "cmmn.reg"_n;
+static const auto commun_list_name = "cmmn.list"_n;
+static const auto commun_token_name = "cmmn.token"_n;
 static const auto token_name = "eosio.token"_n;
 static const auto internal_name = "eosio"_n;
 

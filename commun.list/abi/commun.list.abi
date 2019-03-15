@@ -1,0 +1,130 @@
+{
+    "version": "cyberway::abi/1.1",
+    "structs": [
+        {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "token",
+                    "type": "name"
+                },
+                {
+                    "name": "ctrl",
+                    "type": "name"
+                },
+                {
+                    "name": "vesting",
+                    "type": "name"
+                },
+                {
+                    "name": "emit",
+                    "type": "name"
+                },
+                {
+                    "name": "charge",
+                    "type": "name"
+                },
+                {
+                    "name": "posting",
+                    "type": "name"
+                },
+                {
+                    "name": "social",
+                    "type": "name"
+                },
+                {
+                    "name": "referral",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "community",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "ctrl",
+                    "type": "name"
+                },
+                {
+                    "name": "emit",
+                    "type": "name"
+                },
+                {
+                    "name": "token",
+                    "type": "name"
+                },
+                {
+                    "name": "charge",
+                    "type": "name"
+                },
+                {
+                    "name": "social",
+                    "type": "name"
+                },
+                {
+                    "name": "vesting",
+                    "type": "name"
+                },
+                {
+                    "name": "posting",
+                    "type": "name"
+                },
+                {
+                    "name": "referral",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "create",
+            "type": "create"
+        },
+        {
+            "name": "update",
+            "type": "create"
+        }
+    ],
+    "events": [],
+    "tables": [
+        {
+            "name": "community",
+            "type": "community",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                },
+                {
+                    "name" : "secondary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "symbol", "order": "asc"},
+                        {"field": "token", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ],
+    "variants": [],
+    "abi_extensions": []
+}

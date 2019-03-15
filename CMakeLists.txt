@@ -35,6 +35,8 @@ add_subdirectory(reserve.emit)
 add_subdirectory(bancor.token)
 add_subdirectory(registrar)
 
+add_subdirectory(commun.list)
+
 if (APPLE)
    set(OPENSSL_ROOT "/usr/local/opt/openssl")
 elseif (UNIX)
@@ -42,4 +44,4 @@ elseif (UNIX)
 endif()
 set(SECP256K1_ROOT "/usr/local")
 
-include(UnitTestsExternalProject.txt)
+#include(UnitTestsExternalProject.txt)
