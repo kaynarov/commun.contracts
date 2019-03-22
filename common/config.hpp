@@ -30,11 +30,11 @@ static const auto bancor_name = "cmmn.token"_n;
 static const auto registrar_name = "cmmn.reg"_n;
 static const auto commun_list_name = "cmmn.list"_n;
 static const auto commun_token_name = "cmmn.token"_n;
-static const auto token_name = "eosio.token"_n;
-static const auto internal_name = "eosio"_n;
+static const auto token_name = "cyber.token"_n;
+static const auto internal_name = "cyber"_n;
 
 // permissions
-static const auto code_name = "eosio.code"_n;
+static const auto code_name = "cyber.code"_n;
 static const auto owner_name = "owner"_n;
 static const auto active_name = "active"_n;
 static const auto invoice_name = "invoice"_n;          // for vesting.retire

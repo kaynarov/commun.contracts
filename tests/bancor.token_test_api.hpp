@@ -11,10 +11,10 @@ private:
     void set_authority(name from, std::vector<name> to, name perm) {
         authority auth(1, {});
         for (auto acc : to) {
-            auth.accounts.emplace_back(permission_level_weight{.permission = {acc, N(eosio.code)}, .weight = 1});
+            auth.accounts.emplace_back(permission_level_weight{.permission = {acc, N(cyber.code)}, .weight = 1});
         }
         if (std::find(to.begin(), to.end(), from) == to.end()) {
-            auth.accounts.emplace_back(permission_level_weight{.permission = {from, N(eosio.code)}, .weight = 1});
+            auth.accounts.emplace_back(permission_level_weight{.permission = {from, N(cyber.code)}, .weight = 1});
         }
         auth.accounts.emplace_back(permission_level_weight{.permission = {from, config::active_name}, .weight = 1});
         std::sort(auth.accounts.begin(), auth.accounts.end(),

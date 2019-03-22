@@ -3,7 +3,7 @@ add_executable(bancor.token.wasm ${CMAKE_CURRENT_SOURCE_DIR}/src/bancor.token.cp
 target_include_directories(bancor.token.wasm
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include
-   ${CMAKE_CURRENT_SOURCE_DIR}/../cyberway.contracts/eosio.token/include
+   ${CMAKE_CURRENT_SOURCE_DIR}/../cyberway.contracts/cyber.token/include
    ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set_target_properties(bancor.token.wasm

@@ -1,6 +1,6 @@
 #include "registrar.hpp"
 #include "config.hpp"
-#include <eosio.token/eosio.token.hpp>
+#include <cyber.token/cyber.token.hpp>
 #include <bancor.token/bancor.token.hpp>
 #include <bancor.token/config.hpp>
 #include <eosiolib/transaction.hpp>

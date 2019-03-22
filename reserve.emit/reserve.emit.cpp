@@ -1,4 +1,4 @@
-#include <eosio.token/eosio.token.hpp>
+#include <cyber.token/cyber.token.hpp>
 #include <common/dispatchers.hpp>
 #include <common/config.hpp>
 

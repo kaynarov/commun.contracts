@@ -1,6 +1,6 @@
 #include "golos_tester.hpp"
 #include "bancor.token_test_api.hpp"
-#include "eosio.token_test_api.hpp"
+#include "cyber.token_test_api.hpp"
 #include "contracts.hpp"
 #include "../bancor.token/include/bancor.token/config.hpp"
 
@@ -15,7 +15,7 @@ static const auto bancor_token_name = "bancor.token"_n;
 
 class bancor_token_tester : public golos_tester {
 protected:
-    eosio_token_api token;
+    cyber_token_api token;
     bancor_token_api bancor;
 
 public:
