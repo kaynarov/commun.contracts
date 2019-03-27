@@ -42,6 +42,7 @@ add_subdirectory(reserve.emit)
 add_subdirectory(bancor.token)
 add_subdirectory(registrar)
 add_subdirectory(commun.list)
+add_subdirectory(commun.social)
 
 if (APPLE)
    set(OPENSSL_ROOT "/usr/local/opt/openssl")

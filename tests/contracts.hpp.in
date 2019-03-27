@@ -20,6 +20,9 @@ struct contracts {
     static std::vector<uint8_t> commun_list_wasm() { return read_wasm(COMMUN_CONTRACTS "commun.list/commun.list.wasm"); }
     static std::vector<char>    commun_list_abi()  { return read_abi (COMMUN_CONTRACTS "commun.list/commun.list.abi"); }
 
+    static std::vector<uint8_t> commun_social_wasm() { return read_wasm(COMMUN_CONTRACTS "commun.social/commun.social.wasm"); }
+    static std::vector<char>    commun_social_abi()  { return read_abi (COMMUN_CONTRACTS "commun.social/commun.social.abi"); }
+
 
     static std::vector<uint8_t> system_wasm() { return read_wasm(CYBERWAY_CONTRACTS "cyber.system/cyber.system.wasm"); }
     static std::string          system_wast() { return read_wast(CYBERWAY_CONTRACTS "cyber.system/cyber.system.wast"); }

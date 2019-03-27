@@ -32,6 +32,7 @@ static const auto commun_list_name = "cmmn.list"_n;
 static const auto commun_token_name = "cmmn.token"_n;
 static const auto token_name = "cyber.token"_n;
 static const auto internal_name = "cyber"_n;
+static const auto commun_social_name = "cmmn.social"_n;
 
 // permissions
 static const auto code_name = "cyber.code"_n;

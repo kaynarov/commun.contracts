@@ -1,0 +1,223 @@
+{
+    "version": "cyberway::abi/1.1",
+    "structs": [
+        {
+            "name": "pinblock_record",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "pinning",
+                    "type": "bool"
+                },
+                {
+                    "name": "blocking",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "reputation_record",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "reputation",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "updatemeta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "avatar_url",
+                    "type": "string"
+                },
+                {
+                    "name": "cover_url",
+                    "type": "string"
+                },
+                {
+                    "name": "biography",
+                    "type": "string"
+                },
+                {
+                    "name": "facebook",
+                    "type": "string"
+                },
+                {
+                    "name": "telegram",
+                    "type": "string"
+                },
+                {
+                    "name": "whatsapp",
+                    "type": "string"
+                },
+                {
+                    "name": "wechat",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "pin",
+            "base": "",
+            "fields": [
+                {
+                    "name": "pinner",
+                    "type": "name"
+                },
+                {
+                    "name": "pinning",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "block",
+            "base": "",
+            "fields": [
+                {
+                    "name": "blocker",
+                    "type": "name"
+                },
+                {
+                    "name": "blocking",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "createreput",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "changereput",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                },
+                {
+                    "name": "author",
+                    "type": "name"
+                },
+                {
+                    "name": "rshares",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "changereput_event",
+            "base": "",
+            "fields": [
+                {
+                    "name": "author",
+                    "type": "name"
+                },
+                {
+                    "name": "reputation",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "delete",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "pin",
+            "type": "pin"
+        },
+        {
+            "name": "unpin",
+            "type": "pin"
+        },
+        {
+            "name": "block",
+            "type": "block"
+        },
+        {
+            "name": "unblock",
+            "type": "block"
+        },
+        {
+            "name": "createreput",
+            "type": "createreput"
+        },
+        {
+            "name": "changereput",
+            "type": "changereput"
+        },
+        {
+            "name": "updatemeta",
+            "type": "updatemeta"
+        },
+        {
+            "name": "deletemeta",
+            "type": "delete"
+        },
+        {
+            "name": "deletereput",
+            "type": "delete"
+        }
+    ],
+    "events": [
+        {"name": "changereput", "type": "changereput_event"}
+    ],
+    "tables": [
+        {
+            "name": "pinblock",
+            "type": "pinblock_record",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "account", "order": "asc"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "reputation",
+            "type": "reputation_record",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ],
+    "variants": [],
+    "abi_extensions": []
+}
