@@ -83,36 +83,11 @@ void bancor::retire(asset quantity, string memo) {
 }
 
 void bancor::transfer(name from, name to, asset quantity, string memo) {
-    eosio_assert(from != to, "cannot transfer to self" );
-    require_auth(from );
-    eosio_assert(is_account( to ), "to account does not exist");
-    auto sym_code = quantity.symbol.code();
-    stats statstable(_self, sym_code.raw());
-    const auto& st = statstable.get(sym_code.raw(), "token with symbol does not exist");
+     do_transfer(from, to, quantity, memo);
+}
 
-    require_recipient(from);
-    require_recipient(to);
-
-    eosio_assert(quantity.is_valid(), "invalid quantity");
-    eosio_assert(quantity.amount > 0, "must transfer positive quantity");
-    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
-    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
-   
-    sub_balance(from, quantity);
-    if (to != st.issuer) {
-        auto payer = has_auth(to) ? to : from;
-        add_balance(to, quantity, payer);
-    }
-    else {
-        auto sub_reserve = calc_reserve_quantity(st, quantity);
-        statstable.modify(st, same_payer, [&](auto& s) {
-            s.reserve -= sub_reserve;
-            s.supply -= quantity;
-        });
-        
-        INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
-            {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
-    }
+void bancor::payment(name from, name to, asset quantity, std::string memo) {
+     do_transfer(from, to, quantity, memo, true);
 }
 
 void bancor::on_reserve_transfer(name from, name to, asset quantity, std::string memo) {
@@ -157,6 +132,7 @@ void bancor::add_balance(name owner, asset value, name ram_payer) {
    if (to == to_acnts.end()) {
       to_acnts.emplace( ram_payer, [&]( auto& a ){
         a.balance = value;
+        a.payments.symbol = value.symbol;
       });
    } else {
       to_acnts.modify(to, same_payer, [&](auto& a) {
@@ -179,6 +155,7 @@ void bancor::open(name owner, const symbol& symbol, name ram_payer) {
    if (it == acnts.end()) {
       acnts.emplace(ram_payer, [&](auto& a){
         a.balance = asset{0, symbol};
+        a.payments = asset{0, symbol};
       });
    }
 }
@@ -192,7 +169,79 @@ void bancor::close(name owner, const symbol& symbol) {
    acnts.erase( it );
 }
 
+void bancor::add_payment( name owner, asset value, name ram_payer ) {
+   accounts to_acnts( _self, owner.value );
+   auto to = to_acnts.find( value.symbol.code().raw() );
+   if( to == to_acnts.end() ) {
+      to_acnts.emplace( ram_payer, [&]( auto& a ){
+        a.balance.symbol = value.symbol;
+        a.payments = value;
+      });
+   } else {
+      to_acnts.modify( to, same_payer, [&]( auto& a ) {
+        a.payments += value;
+      });
+   }
+}
+
+void bancor::claim( name owner, asset quantity )
+{
+   require_auth( owner );
+
+   eosio_assert( quantity.is_valid(), "invalid quantity" );
+   eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+
+   accounts owner_acnts( _self, owner.value );
+   auto account = owner_acnts.find( quantity.symbol.code().raw() );
+   eosio_assert( account != owner_acnts.end(), "not found object account" );
+   eosio_assert( quantity.symbol == account->payments.symbol, "symbol precision mismatch" );
+   eosio_assert( account->payments >= quantity, "insufficient funds" );
+   owner_acnts.modify( account, owner, [&]( auto& a ) {
+       a.balance += quantity;
+       a.payments -= quantity;
+   });
+}
+
+void bancor::do_transfer(name from, name to, const asset &quantity, const string &memo, bool payment)
+{
+        eosio_assert( from != to, "cannot transfer to self" );
+        require_auth( from );
+        eosio_assert( is_account( to ), "to account does not exist");
+        auto sym = quantity.symbol.code();
+        stats statstable( _self, sym.raw() );
+        const auto& st = statstable.get( sym.raw() );
+
+        eosio_assert( quantity.is_valid(), "invalid quantity" );
+        eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+        eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+        eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+
+        sub_balance(from, quantity);
+        auto payer = has_auth(to) ? to : from;
+
+        if (payment)
+            add_payment( to, quantity, payer );
+        else {
+            if (to != st.issuer) {
+                require_recipient( from );
+                require_recipient( to );
+
+                add_balance( to, quantity, payer );
+            }
+            else {
+                auto sub_reserve = calc_reserve_quantity(st, quantity);
+                statstable.modify(st, same_payer, [&](auto& s) {
+                    s.reserve -= sub_reserve;
+                    s.supply -= quantity;
+                });
+
+                INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
+                {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
+            }
+        }
+}
+
 } /// namespace commun
 
 DISPATCH_WITH_TRANSFER(commun::bancor, commun::config::token_name, on_reserve_transfer,
-    (create)(issue)(transfer)(open)(close)(retire))
+    (create)(issue)(transfer)(payment)(open)(close)(claim)(retire))

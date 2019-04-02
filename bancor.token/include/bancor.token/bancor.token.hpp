@@ -32,13 +32,19 @@ public:
 
     [[eosio::action]]
     void transfer(name from, name to, asset quantity, string memo);
-    
+
+    [[eosio::action]]
+    void payment(name from, name to, asset quantity, string memo);
+
     [[eosio::action]]
     void open(name owner, const symbol& symbol, name ram_payer);
 
     [[eosio::action]]
     void close(name owner, const symbol& symbol);
-    
+
+    [[eosio::action]]
+    void claim(name owner, asset quantity);
+
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
     
     static inline bool exist(name token_contract_account, symbol_code sym_code) {
@@ -80,6 +86,7 @@ public:
 private:
     struct [[eosio::table]] account {
         asset    balance;
+        asset    payments;
 
         uint64_t primary_key()const { return balance.symbol.code().raw(); }
     };
@@ -99,6 +106,7 @@ private:
 
     void sub_balance(name owner, asset value);
     void add_balance(name owner, asset value, name ram_payer);
+    void add_payment(name owner, asset value, name ram_payer);
     
     using real_type = double; //should we use fixed point? or maybe we should use floating point everywere (?)
     
@@ -133,5 +141,7 @@ private:
         eosio_assert(new_supply <= static_cast<real_type>(std::numeric_limits<int64_t>::max()), "invalid supply, int64_t overflow");
         return asset(static_cast<int64_t>(new_supply) - st.supply.amount, st.supply.symbol);
     }
+
+    void do_transfer( name  from, name  to, const asset& quantity, const string& memo, bool payment = false );
 };
 } /// namespace commun
