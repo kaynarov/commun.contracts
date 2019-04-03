@@ -8,11 +8,11 @@ steps:
     command: ".buildkite/steps/publish-image.sh"
     branches: "master develop ci-*"
 
-  - wait
+#  - wait
 
-  - label: ":cop::skin-tone-2: deploy check"
-    command: ".buildkite/steps/deploy-test.sh"
-    timeout: 20
+#  - label: ":cop::skin-tone-2: deploy check"
+#    command: ".buildkite/steps/deploy-test.sh"
+#    timeout: 20
 
   - wait
 
