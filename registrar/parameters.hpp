@@ -1,6 +1,6 @@
 #pragma once
-#include <common/parameter.hpp>
-#include <common/config.hpp>
+#include <commun/parameter.hpp>
+#include <commun/config.hpp>
 #include <eosiolib/singleton.hpp>
 namespace commun { namespace param {
 using eosio::symbol_code;

@@ -3,7 +3,7 @@ set(BUILD_CYBERWAY_CHAINDB_MONGO TRUE CACHE BOOL "Build chaindb based on mongodb
 cmake_minimum_required( VERSION 3.5 )
 
 set(EOSIO_VERSION_MIN "1.4")
-set(EOSIO_VERSION_SOFT_MAX "1.4")
+set(EOSIO_VERSION_SOFT_MAX "1.6")
 #set(EOSIO_VERSION_HARD_MAX "")
 
 find_package(eosio)
@@ -28,7 +28,7 @@ enable_testing()
 
 configure_file(${CMAKE_SOURCE_DIR}/contracts.hpp.in ${CMAKE_BINARY_DIR}/contracts.hpp)
 
-include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
 file(GLOB UNIT_TESTS "*.cpp" "*.hpp")
 
@@ -36,4 +36,5 @@ add_eosio_test(unit_test ${UNIT_TESTS})
 target_include_directories(unit_test
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/..
+   ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )

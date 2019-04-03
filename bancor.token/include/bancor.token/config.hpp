@@ -1,5 +1,6 @@
 #pragma once
-#include <common/config.hpp>
+#include <commun/config.hpp>
+
 
 namespace commun { namespace config {
 const std::string restock_prefix = "restock: ";

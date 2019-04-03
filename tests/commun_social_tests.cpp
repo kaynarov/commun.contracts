@@ -1,7 +1,7 @@
 #include "golos_tester.hpp"
 #include "commun_social_test_api.hpp"
 #include "contracts.hpp"
-#include "../common/config.hpp"
+#include <commun/config.hpp>
 
 
 namespace cfg = commun::config;

@@ -1,5 +1,5 @@
 #include <commun.list.hpp>
-#include "bancor.token.hpp"
+#include "bancor.token/bancor.token.hpp"
 
 using namespace commun;
 

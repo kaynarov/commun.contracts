@@ -1,7 +1,6 @@
 #pragma once
 #include "test_api_helper.hpp"
-#include "../common/config.hpp"
-#include "../bancor.token/include/bancor.token/config.hpp"
+#include <bancor.token/include/bancor.token/config.hpp>
 
 namespace eosio { namespace testing {
 

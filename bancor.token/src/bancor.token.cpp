@@ -4,7 +4,7 @@
  */
 
 #include "bancor.token/bancor.token.hpp"
-#include <common/dispatchers.hpp>
+#include <commun/dispatchers.hpp>
 #include <cyber.token/cyber.token.hpp>
 
 namespace commun {

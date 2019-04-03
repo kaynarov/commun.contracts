@@ -2,7 +2,6 @@
 #include "bancor.token_test_api.hpp"
 #include "commun_list_test_api.hpp"
 #include "contracts.hpp"
-#include "../common/config.hpp"
 
 
 namespace cfg = commun::config;

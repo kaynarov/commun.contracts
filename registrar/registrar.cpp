@@ -4,8 +4,8 @@
 #include <bancor.token/bancor.token.hpp>
 #include <bancor.token/config.hpp>
 #include <eosiolib/transaction.hpp>
-#include <common/dispatchers.hpp>
-#include <common/parameter_ops.hpp>
+#include <commun/dispatchers.hpp>
+#include <commun/parameter_ops.hpp>
 
 namespace commun {
 using std::vector;

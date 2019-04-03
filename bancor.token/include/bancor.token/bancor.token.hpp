@@ -111,7 +111,7 @@ private:
     using real_type = double; //should we use fixed point? or maybe we should use floating point everywere (?)
     
     static inline real_type get_cw(const currency_stats& st) {
-        return static_cast<real_type>(st.cw) / static_cast<real_type>(config::_100percent);
+        return static_cast<real_type>(st.cw) / static_cast<real_type>(commun::config::_100percent);
     }
     
     static inline asset calc_reserve_quantity(const currency_stats& st, asset token_quantity) {
@@ -122,7 +122,7 @@ private:
         int64_t ret = 0;
         if(token_quantity.amount == st.supply.amount)
             ret = st.reserve.amount;
-        else if(st.cw == config::_100percent)
+        else if(st.cw == commun::config::_100percent)
             ret = static_cast<int64_t>((static_cast<int128_t>(token_quantity.amount) * st.reserve.amount) / st.supply.amount);
         else {
             real_type sell_prop = static_cast<real_type>(token_quantity.amount) / static_cast<real_type>(st.supply.amount);
@@ -130,7 +130,7 @@ private:
         }
         
         if(st.fee)
-            ret = (static_cast<int128_t>(ret) * (config::_100percent - st.fee)) / config::_100percent;
+            ret = (static_cast<int128_t>(ret) * (commun::config::_100percent - st.fee)) / commun::config::_100percent;
         return asset(ret, st.reserve.symbol);
     }
 
