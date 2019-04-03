@@ -10,10 +10,14 @@ COPY --from=cyberway /opt/cyberway /opt/cyberway
 
 ARG branch=master
 
-# TODO: Can't use https api here, because ssh used for CI runner with private repos:
+# TODO: Can't use https api here, because ssh used for CI runners with private repo:
 # ADD https://api.github.com/repos/GolosChain/commun.contracts/git/refs/heads/$branch /etc/version.json
 
-RUN git clone -b $branch git@github.com:GolosChain/commun.contracts.git --recursive
+# TODO: Can't use even ssh here, because there are no ssh keys in docker image (located only on the runner itself). So, we must use COPY here:
+# RUN git clone -b $branch git@github.com:GolosChain/commun.contracts.git --recursive
+COPY . .
+
+RUN ls -lah && pwd
 
 #RUN cd commun.contracts/cyberway.contracts \
 #    && echo ":$(git rev-parse HEAD)" > version \

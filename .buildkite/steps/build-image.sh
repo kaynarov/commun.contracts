@@ -10,5 +10,4 @@ else
     BUILDTYPE="latest"
 fi
 
-cd Docker
-docker build -t cyberway/commun.contracts:${IMAGETAG} --build-arg branch=${BRANCHNAME} --build-arg buildtype=${BUILDTYPE} .
+docker build -t cyberway/commun.contracts:${IMAGETAG} --build-arg branch=${BRANCHNAME} --build-arg buildtype=${BUILDTYPE} -f Docker/Dockerfile .
