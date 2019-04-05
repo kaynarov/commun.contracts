@@ -1,52 +1,30 @@
 #include <commun.list.hpp>
-#include "bancor.token/bancor.token.hpp"
+#include <bancor.token/bancor.token.hpp>
+#include <golos.vesting/golos.vesting.hpp>
+#include <commun/config.hpp>
 
 using namespace commun;
 
-void commun_list::create(symbol symbol, name token, name ctrl, name vesting, name emit,
-                         name charge, name posting, name social, name referral) {
-    require_auth(token);
-    eosio_assert(commun::bancor::exist(token, symbol.code()), "not found token");
+void commun_list::create(std::string community_name, symbol_code token_name,
+                         structures::community_contracts contracts) {
+
+    eosio_assert(commun::bancor::exist(config::bancor_name, token_name), "not found token");
+    eosio_assert(golos::vesting::exists(config::vesting_name, token_name), "not found vesting token");
+
+    require_auth(_self);
 
     tables::community community_tbl(_self, _self.value);
-    auto community_index = community_tbl.get_index<"secondary"_n>();
-    eosio_assert(community_index.find({symbol, token}) == community_index.end(), "community exists");
 
-    community_tbl.emplace(token, [&](auto& item) {
-        item.id = community_tbl.available_primary_key();
-        item.symbol = symbol;
-        item.ctrl = ctrl;
-        item.emit = emit;
-        item.token = token;
-        item.charge = charge;
-        item.social = social;
-        item.vesting = vesting;
-        item.posting = posting;
-        item.referral = referral;
+    eosio_assert(community_tbl.find(token_name.raw()) == community_tbl.end(), "community token exists");
+
+    auto community_index = community_tbl.get_index<"byname"_n>();
+    eosio_assert(community_index.find(community_name) == community_index.end(), "community exists");
+
+    community_tbl.emplace(_self, [&](auto& item) {
+        item.token_name = token_name;
+        item.community_name = community_name;
+        item.contracts = contracts;
     });
 }
 
-void commun_list::update(symbol symbol, name token, name ctrl, name vesting, name emit,
-                         name charge, name posting, name social, name referral) {
-    require_auth(token);
-
-    eosio_assert(commun::bancor::exist(token, symbol.code()), "not found token");
-
-    tables::community community_tbl(_self, _self.value);
-    auto community_index = community_tbl.get_index<"secondary"_n>();
-    auto community_point = community_index.find({symbol, token});
-
-    eosio_assert(community_point != community_index.end(), "community not exists");
-
-    community_index.modify(community_point, token, [&](auto& item) {
-        item.ctrl = ctrl;
-        item.emit = emit;
-        item.charge = charge;
-        item.social = social;
-        item.vesting = vesting;
-        item.posting = posting;
-        item.referral = referral;
-    });
-}
-
-EOSIO_DISPATCH(commun::commun_list, (create)(update))
+EOSIO_DISPATCH(commun::commun_list, (create))

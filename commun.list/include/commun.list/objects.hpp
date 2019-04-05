@@ -5,30 +5,29 @@ namespace commun::structures {
 
 using namespace eosio;
 
-struct community {
-    uint64_t id;
-    symbol symbol;
+struct community_contracts {
     name ctrl;
     name emit;
-    name token;
     name charge;
     name social;
-    name vesting;
-    name posting;
-    name referral;
+    name publish;
+};
+
+struct community {
+    symbol_code token_name;
+    std::string community_name;
+    community_contracts contracts;
 
     uint64_t primary_key() const {
-        return id;
-    }
-
-    std::tuple<eosio::symbol, eosio::name> secondary_key() const {
-        return {symbol, token};
+        return token_name.raw();
     }
 };
 
 }
 
 namespace commun::tables {
-    using community_index = eosio::indexed_by<"secondary"_n, eosio::const_mem_fun<structures::community, std::tuple<eosio::symbol, eosio::name>, &structures::community::secondary_key>>;
-    using community = eosio::multi_index<"community"_n, structures::community, community_index>;
+    using namespace eosio;
+
+    using cmmn_name_index = eosio::indexed_by<"byname"_n, eosio::member<structures::community, std::string, &structures::community::community_name>>;
+    using community = eosio::multi_index<"community"_n, structures::community, cmmn_name_index>;
 }

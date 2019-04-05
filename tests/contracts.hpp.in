@@ -4,7 +4,8 @@
 namespace eosio { namespace testing {
 
 #define COMMUN_CONTRACTS "${CMAKE_BINARY_DIR}/../"
-#define CYBERWAY_CONTRACTS "${CMAKE_BINARY_DIR}/../../cyberway.contracts/build/"
+#define GOLOS_CONTRACTS "${CMAKE_BINARY_DIR}/../golos.contracts/"
+#define CYBERWAY_CONTRACTS "${CMAKE_BINARY_DIR}/../../golos.contracts/cyberway.contracts/build/"
 
 struct contracts {
     static std::vector<uint8_t> bancor_wasm() { return read_wasm(COMMUN_CONTRACTS "bancor.token/bancor.token.wasm"); }
@@ -23,6 +24,8 @@ struct contracts {
     static std::vector<uint8_t> commun_social_wasm() { return read_wasm(COMMUN_CONTRACTS "commun.social/commun.social.wasm"); }
     static std::vector<char>    commun_social_abi()  { return read_abi (COMMUN_CONTRACTS "commun.social/commun.social.abi"); }
 
+    static std::vector<uint8_t> golos_vesting_wasm() { return read_wasm(GOLOS_CONTRACTS "golos.vesting/golos.vesting.wasm"); }
+    static std::vector<char>    golos_vesting_abi()  { return read_abi (GOLOS_CONTRACTS "golos.vesting/golos.vesting.abi"); }
 
     static std::vector<uint8_t> system_wasm() { return read_wasm(CYBERWAY_CONTRACTS "cyber.system/cyber.system.wasm"); }
     static std::string          system_wast() { return read_wast(CYBERWAY_CONTRACTS "cyber.system/cyber.system.wast"); }

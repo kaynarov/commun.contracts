@@ -2,104 +2,39 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
-            "name": "create",
+            "name": "community_contracts",
             "base": "",
             "fields": [
-                {
-                    "name": "symbol",
-                    "type": "symbol"
-                },
-                {
-                    "name": "token",
-                    "type": "name"
-                },
-                {
-                    "name": "ctrl",
-                    "type": "name"
-                },
-                {
-                    "name": "vesting",
-                    "type": "name"
-                },
-                {
-                    "name": "emit",
-                    "type": "name"
-                },
-                {
-                    "name": "charge",
-                    "type": "name"
-                },
-                {
-                    "name": "posting",
-                    "type": "name"
-                },
-                {
-                    "name": "social",
-                    "type": "name"
-                },
-                {
-                    "name": "referral",
-                    "type": "name"
-                }
+                {"name": "ctrl", "type": "name"},
+                {"name": "emit", "type": "name"},
+                {"name": "charge", "type": "name"},
+                {"name": "social","type": "name"},
+                {"name": "publish", "type": "name"}
             ]
         },
         {
             "name": "community",
             "base": "",
             "fields": [
-                {
-                    "name": "id",
-                    "type": "uint64"
-                },
-                {
-                    "name": "symbol",
-                    "type": "symbol"
-                },
-                {
-                    "name": "ctrl",
-                    "type": "name"
-                },
-                {
-                    "name": "emit",
-                    "type": "name"
-                },
-                {
-                    "name": "token",
-                    "type": "name"
-                },
-                {
-                    "name": "charge",
-                    "type": "name"
-                },
-                {
-                    "name": "social",
-                    "type": "name"
-                },
-                {
-                    "name": "vesting",
-                    "type": "name"
-                },
-                {
-                    "name": "posting",
-                    "type": "name"
-                },
-                {
-                    "name": "referral",
-                    "type": "name"
-                }
+                {"name": "token_name", "type": "symbol_code"},
+                {"name": "community_name", "type": "string"},
+                {"name": "contracts", "type": "community_contracts"}
+            ]
+        },
+        {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {"name": "community_name", "type": "string"},
+                {"name": "token_name", "type": "symbol_code"},
+                {"name": "contracts", "type": "community_contracts"}
             ]
         }
     ],
     "types": [],
     "actions": [
-        {
-            "name": "create",
-            "type": "create"
-        },
-        {
-            "name": "update",
-            "type": "create"
-        }
+        {"name": "create", "type": "create"},
+        {"name": "update", "type": "create"}
     ],
     "events": [],
     "tables": [
@@ -111,15 +46,14 @@
                     "name": "primary",
                     "unique": "true",
                     "orders": [
-                        {"field": "id", "order": "asc"}
+                        {"field": "token_name", "order": "asc"}
                     ]
                 },
                 {
-                    "name" : "secondary",
+                    "name" : "byname",
                     "unique": "true",
                     "orders": [
-                        {"field": "symbol", "order": "asc"},
-                        {"field": "token", "order": "asc"}
+                        {"field": "community_name", "order": "asc"}
                     ]
                 }
             ]

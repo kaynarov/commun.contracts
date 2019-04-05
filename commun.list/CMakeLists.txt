@@ -4,4 +4,5 @@ target_include_directories(commun.list.wasm
    ${CMAKE_CURRENT_SOURCE_DIR}/include/commun.list
    ${CMAKE_CURRENT_SOURCE_DIR}/../bancor.token/include
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+   ${CMAKE_CURRENT_SOURCE_DIR}/../golos.contracts
    )
