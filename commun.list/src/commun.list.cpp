@@ -27,4 +27,15 @@ void commun_list::create(std::string community_name, symbol_code token_name,
     });
 }
 
-EOSIO_DISPATCH(commun::commun_list, (create))
+void commun_list::addinfo(symbol_code token_name, std::string community_name, 
+                          std::string ticker, std::string avatar, std::string cover_img_link, 
+                          std::string description, std::string rules) {
+    require_auth(commun::bancor::get_issuer(config::bancor_name, token_name));
+    
+    tables::community community_tbl(_self, _self.value);
+    auto community_index = community_tbl.get_index<"byname"_n>();
+    auto community_itr = community_index.find(community_name);
+    eosio_assert(community_itr != community_index.end(), "community doesn't exist");
+}
+
+EOSIO_DISPATCH(commun::commun_list, (create)(addinfo))

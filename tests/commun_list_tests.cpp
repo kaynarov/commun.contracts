@@ -58,6 +58,7 @@ public:
         const string community_symbol_code_exists = amsg("community token exists");
         const string not_found_token = amsg("not found token");
         const string not_found_vesting_token = amsg("not found vesting token");
+        const string no_community = amsg("community doesn't exist");
     } err;
 };
 
@@ -76,6 +77,19 @@ BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
 
     BOOST_CHECK_EQUAL(err.community_symbol_code_exists, community.create_record(cfg::bancor_name, "commynity 1", _token.to_symbol_code(), {N(), N(), cfg::bancor_name, N(), N()}));
     BOOST_CHECK_EQUAL(err.community_exists, community.create_record(cfg::bancor_name, "commynity 1", _token_e.to_symbol_code(), {N(), N(), cfg::bancor_name, N(), N()}));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(add_info_test, commun_list_tester) try {
+    BOOST_TEST_MESSAGE("add info test");
+
+    create_token(_token);
+
+    BOOST_TEST_MESSAGE("--- checking community for existence");
+    BOOST_CHECK_EQUAL(err.no_community, community.add_info(cfg::bancor_name, _token.to_symbol_code(), "community_name"));
+
+    BOOST_TEST_MESSAGE("--- checking that info was added successfully");
+    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::bancor_name, "commynity_name", _token.to_symbol_code(), {N(), N(), cfg::bancor_name, N(), N()}));
+    BOOST_CHECK_EQUAL(success(), community.add_info(cfg::bancor_name, _token.to_symbol_code(), "community_name"));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()
