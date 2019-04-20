@@ -23,6 +23,7 @@ unlockTimeout = 999999999
 
 _communAccounts = [
     # name           contract
+    ('cmmn.owner',   None),
     ('cmmn.token',   'bancor.token'),
     ('cmmn.vesting', 'golos.vesting'),
     ('cmmn.list',    'commun.list'),
@@ -198,7 +199,7 @@ def stepInstallContracts():
             retry(args.cleos + 'set contract %s %s' % (acc.name, args.contracts_dir + acc.contract))
 
 def stepCreateTokens():
-    retry(args.cleos + 'push action cyber.token create ' + jsonArg(["cyber.token", intToTokenCommun(10000000000*10000)]) + ' -p cyber.token')
+    retry(args.cleos + 'push action cyber.token create ' + jsonArg(["cmmn.owner", intToTokenCommun(10000000000*10000)]) + ' -p cyber.token')
     sleep(1)
 
 # Command Line Arguments

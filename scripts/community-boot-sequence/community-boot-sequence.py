@@ -100,11 +100,11 @@ def intToCurrency(value, precision, symbol):
 def intToToken(value):
     return intToCurrency(value, args.token_precision, args.symbol)
 
-def intToTokenCommun(value):
-    return intToCurrency(value, 4, 'COMMUN')
-
 def intToVesting(value):
     return intToCurrency(value, args.vesting_precision, args.symbol)
+
+def intToCommun(value):
+    return intToCurrency(value, 4, 'COMMUN')
 
 # --------------------- EOSIO functions ---------------------------------------
 
@@ -146,29 +146,27 @@ def createAuthority(keys, accounts):
 
 # --------------------- COMMUN functions ---------------------------------------
 
+def openCommunBalance(account):
+    retry(args.cleos + 'push action cyber.token open' +
+        jsonArg([account, '4,COMMUN', account]) + '-p %s'%account)
+
+def openTokenBalance(account):
+    retry(args.cleos + 'push action cmmn.token open' +
+        jsonArg([account, args.token, account]) + '-p %s'%account)
+
 def openVestingBalance(account):
     retry(args.cleos + 'push action cmmn.vesting open' +
         jsonArg([account, args.vesting, account]) + '-p %s'%account)
 
-def openTokenBalance(account):
-    retry(args.cleos + 'push action cyber.token open' +
-        jsonArg([account, '4,COMMUN', account]) + '-p %s'%account)
+def issueCommunToken(account, amount, memo='memo'):
+    retry(args.cleos + 'push action cyber.token issue ' + jsonArg([account, amount, memo]) + ' -p cmmn.owner')
 
-def openBancorTokenBalance(account):
-    retry(args.cleos + 'push action cmmn.token open' +
-        jsonArg([account, args.token, account]) + '-p %s'%account)
+def buyToken(account, amount):
+    issueCommunToken(account, intToCommun(amount * 10000), "issue commun token")
+    transfer(account, 'cmmn.token', intToCommun(amount * 10000), args.symbol)
 
-def issueToken(account, amount, memo='memo'):
-    retry(args.cleos + 'push action cyber.token issue ' + jsonArg([account, amount, memo]) + ' -p cyber.token')
-
-def issueBancorToken(account, amount):
-    retry(args.cleos + 'push action cmmn.token issue ' + jsonArg([account, amount, 'community memo']) + ' -p c.issuer')
-
-def buyVesting(account, amount): 
-    issueToken(account, intToTokenCommun(amount * 10000), 'community memo')
-    transfer(account, 'cmmn.token', intToTokenCommun(amount * 10000), 'restock: ' + args.symbol)
-    issueBancorToken(account, intToToken(amount * 10000))
-    bancorTransfer(account, 'cmmn.vesting', intToToken(amount * 10000), 'send to: ' + account)   # buy vesting
+def buyVesting(account, amount):
+    bancorTransfer(account, 'cmmn.vesting', intToToken(amount * (10 ** args.token_precision)), 'send to: ' + account)   # buy vesting
 
 def registerWitness(ctrl, witness):
     retry(args.cleos + 'push action ' + ctrl + ' regwitness' + jsonArg({
@@ -284,11 +282,13 @@ def stepInstallContracts():
             retry(args.cleos + 'set contract %s %s' % (acc.name, args.contracts_dir + acc.contract))
 
 def stepCreateTokens():
-    retry(args.cleos + 'push action cmmn.token create ' + jsonArg(["c.issuer", intToToken(10000000000*1000), 10000, 100]) + ' -p cmmn.token')
+    retry(args.cleos + 'push action cmmn.token create ' + jsonArg(["c.issuer", intToToken(1000000000*1000), 10000, 100]) + ' -p cmmn.token')
     retry(args.cleos + 'push action cmmn.vesting create ' + jsonArg([args.vesting, 'c.ctrl']) + '-p c.issuer')
+    retry(args.cleos + 'push action cyber.token issue ' + jsonArg(["c.issuer", intToCommun(500000000*10000), ""]) + ' -p cmmn.owner')
+    retry(args.cleos + 'push action cyber.token transfer ' + jsonArg(["c.issuer", "cmmn.token", intToCommun(500000000*10000), "restock: " + args.symbol]) + ' -p c.issuer')
+    retry(args.cleos + 'push action cmmn.token issue ' + jsonArg(["c.issuer", intToToken(500000000*1000), "initial supply"]) + ' -p c.issuer')
     for acc in communAccounts:
         openTokenBalance(acc.name)
-        openBancorTokenBalance(acc.name)
     sleep(1)
 
 def createCommunity():
@@ -366,8 +366,11 @@ def createWitnessAccounts():
     for i in range(firstWitness, firstWitness + numWitness):
         a = accounts[i]
         createAccount('cyber', a['name'], a['pub'])
+        openCommunBalance(a['name'])
+        openTokenBalance(a['name'])
         openVestingBalance(a['name'])
-        buyVesting(a['name'], 10000000)
+        buyToken(a['name'], 1000000)
+        buyVesting(a['name'], 100000)   # TODO buy vesting on all community token
         registerWitness('c.ctrl', a['name'])
         voteWitness('c.ctrl', a['name'], a['name'])
 
@@ -414,8 +417,11 @@ def addUsers():
     for i in range(0, firstWitness-1):
         a = accounts[i]
         createAccount('cyber', a['name'], a['pub'])
+        openCommunBalance(a['name'])
+        openTokenBalance(a['name'])
         openVestingBalance(a['name'])
-        buyVesting(a['name'], 5)
+        buyToken(a['name'], 1000)
+        buyVesting(a['name'], 100)  # TODO Buy vesting on all community token
 
 # Command Line Arguments
 
