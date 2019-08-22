@@ -5,8 +5,7 @@
 
 using namespace commun;
 
-void commun_list::create(std::string community_name, symbol_code token_name,
-                         structures::community_contracts contracts) {
+void commun_list::create(symbol_code token_name, std::string community_name) {
 
     eosio_assert(commun::bancor::exist(config::bancor_name, token_name), "not found token");
     eosio_assert(golos::vesting::exists(config::vesting_name, token_name), "not found vesting token");
@@ -23,7 +22,6 @@ void commun_list::create(std::string community_name, symbol_code token_name,
     community_tbl.emplace(_self, [&](auto& item) {
         item.token_name = token_name;
         item.community_name = community_name;
-        item.contracts = contracts;
     });
 }
 

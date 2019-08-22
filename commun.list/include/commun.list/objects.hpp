@@ -5,18 +5,9 @@ namespace commun::structures {
 
 using namespace eosio;
 
-struct community_contracts {
-    name ctrl;
-    name emit;
-    name charge;
-    name social;
-    name publish;
-};
-
 struct community {
     symbol_code token_name;
     std::string community_name;
-    community_contracts contracts;
 
     uint64_t primary_key() const {
         return token_name.raw();

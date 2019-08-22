@@ -208,15 +208,8 @@ def unvotePost(voter, author, permlink):
 def regestrationCommunity():
     run(args.cleos + 'push action cmmn.list create ' + jsonArg(
         {
-            'community_name':'community 1',
             'token_name':args.symbol,
-            'contracts':{
-                'ctrl':'c.ctrl',
-                'emit':'c.emit',
-                'charge':'c.charge',
-                'social':'c.social',
-                'publish':'c.publish'
-            }
+            'community_name':'community 1',
         }) + '-p cmmn.list')
 
 def infoCommunity():
