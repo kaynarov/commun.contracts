@@ -1,4 +1,4 @@
-#include <eosiolib/event.hpp>
+#include <eosio/event.hpp>
 #include <commun.social.hpp>
 
 using namespace commun;
@@ -6,16 +6,16 @@ using namespace commun;
 void commun_social::pin(name pinner, name pinning) {
     require_auth(pinner);
 
-    eosio_assert(is_account(pinning), "Pinning account doesn't exist.");
-    eosio_assert(pinner != pinning, "You cannot pin yourself");
+    check(is_account(pinning), "Pinning account doesn't exist.");
+    check(pinner != pinning, "You cannot pin yourself");
 
     tables::pinblock_table table(_self, pinner.value);
     auto itr = table.find(pinning.value);
     bool item_exists = (itr != table.end());
 
     if (item_exists) {
-        eosio_assert(!itr->blocking, "You have blocked this account. Unblock it before pinning");
-        eosio_assert(!itr->pinning, "You already have pinned this account");
+        check(!itr->blocking, "You have blocked this account. Unblock it before pinning");
+        check(!itr->pinning, "You already have pinned this account");
 
         table.modify(itr, name(), [&](auto& item){
             item.pinning = true;
@@ -32,13 +32,13 @@ void commun_social::pin(name pinner, name pinning) {
 void commun_social::unpin(name pinner, name pinning) {
     require_auth(pinner);
 
-    eosio_assert(pinner != pinning, "You cannot unpin yourself");
+    check(pinner != pinning, "You cannot unpin yourself");
 
     tables::pinblock_table table(_self, pinner.value);
     auto itr = table.find(pinning.value);
     bool item_exists = (itr != table.end());
 
-    eosio_assert(item_exists && itr->pinning, "You have not pinned this account");
+    check(item_exists && itr->pinning, "You have not pinned this account");
 
     table.modify(itr, name(), [&](auto& item){
         item.pinning = false;
@@ -55,15 +55,15 @@ bool commun_social::record_is_empty(structures::pinblock_record record) {
 void commun_social::block(name blocker, name blocking) {
     require_auth(blocker);
 
-    eosio_assert(is_account(blocking), "Blocking account doesn't exist.");
-    eosio_assert(blocker != blocking, "You cannot block yourself");
+    check(is_account(blocking), "Blocking account doesn't exist.");
+    check(blocker != blocking, "You cannot block yourself");
 
     tables::pinblock_table table(_self, blocker.value);
     auto itr = table.find(blocking.value);
     bool item_exists = (itr != table.end());
 
     if (item_exists) {
-        eosio_assert(!itr->blocking, "You already have blocked this account");
+        check(!itr->blocking, "You already have blocked this account");
 
         table.modify(itr, name(), [&](auto& item){
             item.pinning = false;
@@ -81,13 +81,13 @@ void commun_social::block(name blocker, name blocking) {
 void commun_social::unblock(name blocker, name blocking) {
     require_auth(blocker);
 
-    eosio_assert(blocker != blocking, "You cannot unblock yourself");
+    check(blocker != blocking, "You cannot unblock yourself");
 
     tables::pinblock_table table(_self, blocker.value);
     auto itr = table.find(blocking.value);
     bool item_exists = (itr != table.end());
 
-    eosio_assert(item_exists && itr->blocking, "You have not blocked this account");
+    check(item_exists && itr->blocking, "You have not blocked this account");
 
     table.modify(itr, name(), [&](auto& item){
         item.blocking = false;
@@ -146,7 +146,7 @@ void commun_social::deletereput(name account) {
 
     tables::reputation_singleton reputation_tbl(_self, account.value);
     auto acc_rep = reputation_tbl.get_or_default();
-    eosio_assert(acc_rep.reputation != 0, "The reputation has already removed");
+    check(acc_rep.reputation != 0, "The reputation has already removed");
     reputation_tbl.remove();
 }
 

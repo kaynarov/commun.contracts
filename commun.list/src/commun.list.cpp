@@ -8,17 +8,17 @@ using namespace commun;
 void commun_list::create(std::string community_name, symbol_code token_name,
                          structures::community_contracts contracts) {
 
-    eosio_assert(commun::bancor::exist(config::bancor_name, token_name), "not found token");
-    eosio_assert(golos::vesting::exists(config::vesting_name, token_name), "not found vesting token");
+    check(commun::bancor::exist(config::bancor_name, token_name), "not found token");
+    check(golos::vesting::exists(config::vesting_name, token_name), "not found vesting token");
 
     require_auth(_self);
 
     tables::community community_tbl(_self, _self.value);
 
-    eosio_assert(community_tbl.find(token_name.raw()) == community_tbl.end(), "community token exists");
+    check(community_tbl.find(token_name.raw()) == community_tbl.end(), "community token exists");
 
     auto community_index = community_tbl.get_index<"byname"_n>();
-    eosio_assert(community_index.find(community_name) == community_index.end(), "community exists");
+    check(community_index.find(community_name) == community_index.end(), "community exists");
 
     community_tbl.emplace(_self, [&](auto& item) {
         item.token_name = token_name;
@@ -35,7 +35,7 @@ void commun_list::addinfo(symbol_code token_name, std::string community_name,
     tables::community community_tbl(_self, _self.value);
     auto community_index = community_tbl.get_index<"byname"_n>();
     auto community_itr = community_index.find(community_name);
-    eosio_assert(community_itr != community_index.end(), "community doesn't exist");
+    check(community_itr != community_index.end(), "community doesn't exist");
 }
 
 EOSIO_DISPATCH(commun::commun_list, (create)(addinfo))

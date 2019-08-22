@@ -3,7 +3,7 @@
 #include <cyber.token/cyber.token.hpp>
 #include <bancor.token/bancor.token.hpp>
 #include <bancor.token/config.hpp>
-#include <eosiolib/transaction.hpp>
+#include <eosio/transaction.hpp>
 #include <commun/dispatchers.hpp>
 #include <commun/parameter_ops.hpp>
 
@@ -29,7 +29,7 @@ void registrar::setparams(vector<registrar_param> params) {
 //this action mostly copypasted from cyber.domain.cpp
 void registrar::checkwin() {
     require_auth(_self);
-    const int64_t now = ::now();  // int64 to prevent overflows (can only happen if something broken)
+    const int64_t now = eosio::current_time_point().sec_since_epoch();  // int64 to prevent overflows (can only happen if something broken)
     auto tnow = time_point_sec(now);
  
     auto state = state_singleton(_self, _self.value);
@@ -37,7 +37,7 @@ void registrar::checkwin() {
     auto s = exists ? state.get() : name_bid_state{tnow, tnow};
     
     if (exists) {
-        eosio_assert(now >= s.last_checkwin.utc_seconds, "SYSTEM: last_checkwin is in future");  // must be impossible
+        check(now >= s.last_checkwin.utc_seconds, "SYSTEM: last_checkwin is in future");  // must be impossible
 
         if ((now - s.last_win.utc_seconds) >= props().checkwin.min_time_from_last_win) {
             name_bid_tbl bids(_self, _self.value);
@@ -86,11 +86,11 @@ void registrar::on_transfer(name from, name to, asset quantity, std::string memo
         return;
     const size_t pref_size = config::bid_prefix.size();
     const size_t memo_size = memo.size();
-    eosio_assert((memo_size > pref_size) && memo.substr(0, pref_size) == config::bid_prefix, "incorrect bid format");
+    check((memo_size > pref_size) && memo.substr(0, pref_size) == config::bid_prefix, "incorrect bid format");
     auto sym_code = symbol_code(memo.substr(pref_size).c_str());
-    eosio_assert(!bancor::exist(config::bancor_name, sym_code), "bancor token already exists");
-    eosio_assert(quantity.symbol == props().token.sym, "asset must be reserve token");
-    eosio_assert(quantity.amount > 0, "insufficient bid"); //? fee
+    check(!bancor::exist(config::bancor_name, sym_code), "bancor token already exists");
+    check(quantity.symbol == props().token.sym, "asset must be reserve token");
+    check(quantity.amount > 0, "insufficient bid"); //? fee
     
     name_bid_tbl bids(_self, _self.value);
     print(name{from}, " bid ", quantity, " on ", sym_code.to_string(), "\n"); 
@@ -98,7 +98,7 @@ void registrar::on_transfer(name from, name to, asset quantity, std::string memo
     const auto set_bid = [&](auto& b) {
         b.high_bidder = from;
         b.high_bid = quantity.amount;
-        b.last_bid_time = time_point_sec{::now()};
+        b.last_bid_time = time_point_sec{eosio::current_time_point().sec_since_epoch()};
     };
     
     auto current = bids.find(sym_code.raw());
@@ -108,18 +108,18 @@ void registrar::on_transfer(name from, name to, asset quantity, std::string memo
             set_bid(b);
         });
     } else {
-        eosio_assert(current->high_bid != 0, "SYSTEM: incorrect high bid");
-        eosio_assert(current->high_bidder != from, "account is already highest bidder");
+        check(current->high_bid != 0, "SYSTEM: incorrect high bid");
+        check(current->high_bidder != from, "account is already highest bidder");
         if (current->high_bid > 0) {
-            eosio_assert(quantity.amount - current->high_bid > (current->high_bid / props().market.bid_increment_denom), "insufficient bid");
+            check(quantity.amount - current->high_bid > (current->high_bid / props().market.bid_increment_denom), "insufficient bid");
             add_refund(from, current->high_bidder, current->high_bid, sym_code);
             bids.modify(current, from, set_bid);
         }
         else {
             name_ask_tbl asks(_self, _self.value);
             auto ask = asks.find(sym_code.raw());
-            eosio_assert(ask != asks.end(), "this auction has already closed");
-            eosio_assert(ask->price <= quantity.amount, "insufficient bid");
+            check(ask != asks.end(), "this auction has already closed");
+            check(ask->price <= quantity.amount, "insufficient bid");
             asks.erase(ask);
             auto fee_amount = get_fee_amount(quantity.amount, props().market.sale_fee);
             add_refund(from, current->high_bidder, quantity.amount - fee_amount, sym_code);
@@ -162,7 +162,7 @@ void registrar::claimrefund(name bidder, symbol_code sym_code) {
     //require_auth(anyone);
     name_bid_refund_tbl refunds_table(_self, sym_code.raw());
     auto it = refunds_table.find(bidder.value);
-    eosio_assert( it != refunds_table.end(), "refund not found" );
+    check( it != refunds_table.end(), "refund not found" );
     eosio::token::get_balance(config::token_name, bidder, props().token.sym.code()); //commun dapp does not have to pay for ram if bidder has closed a balance
     
     INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
@@ -175,9 +175,9 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
     name_bid_tbl bids(_self, _self.value);
     auto sym_code = maximum_supply.symbol.code();
     auto current = bids.find(sym_code.raw());
-    eosio_assert(current != bids.end(), "no active bid for token symbol");
+    check(current != bids.end(), "no active bid for token symbol");
     require_auth(current->high_bidder);
-    eosio_assert(current->high_bid < 0, "auction is not closed yet");
+    check(current->high_bid < 0, "auction is not closed yet");
     auto bid_amount = -current->high_bid;
     if (bancor::exist(config::bancor_name, sym_code)) { //exotic situation but not impossible
         print("bancor token already exists\n");
@@ -206,12 +206,12 @@ void registrar::create(asset maximum_supply, int16_t cw, int16_t fee) {
 
 void registrar::setprice(symbol_code sym_code, asset price) {
     name_bid_tbl bids(_self, _self.value);
-    eosio_assert(price.is_valid(), "invalid price");
-    eosio_assert(price.symbol == props().token.sym, "asset must be reserve token");
+    check(price.is_valid(), "invalid price");
+    check(price.symbol == props().token.sym, "asset must be reserve token");
     auto current = bids.find(sym_code.raw());
-    eosio_assert(current != bids.end(), "no active bid for token symbol");
+    check(current != bids.end(), "no active bid for token symbol");
     require_auth(current->high_bidder);
-    eosio_assert(current->high_bid < 0, "auction is not closed yet");
+    check(current->high_bid < 0, "auction is not closed yet");
     
     name_ask_tbl asks(_self, _self.value);
     auto ask = asks.find(sym_code.raw());
@@ -223,7 +223,7 @@ void registrar::setprice(symbol_code sym_code, asset price) {
     else if (ask == asks.end() && price.amount != 0)
         asks.emplace(current->high_bidder, [&](auto& a) { a.sym_code = sym_code; a.price = price.amount; });
     else
-        eosio_assert(false, "invalid amount");
+        check(false, "invalid amount");
 }
 
 } // commun

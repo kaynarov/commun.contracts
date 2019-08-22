@@ -12,17 +12,16 @@ uint64_t hash64(const std::string& s) {
 
 
 void golos_tester::install_contract(
-    account_name acc, const vector<uint8_t>& wasm, const vector<char>& abi, bool produce
+    account_name acc, const vector<uint8_t>& wasm, const vector<char>& abi, bool produce, const private_key_type* signer
 ) {
-    set_code(acc, wasm);
-    set_abi (acc, abi.data());
+    set_code(acc, wasm, signer);
+    set_abi (acc, abi.data(), signer);
     if (produce)
         produce_block();
-    const auto& accnt = control->chaindb().get<account_object,by_name>(acc);
+    const auto& accnt = _chaindb.get<account_object>(acc);
     abi_def abi_d;
     BOOST_CHECK_EQUAL(abi_serializer::to_abi(accnt.abi, abi_d), true);
     _abis[acc].set_abi(abi_d, abi_serializer_max_time);
-    _chaindb.add_abi(acc, abi_d);
 };
 
 vector<permission> golos_tester::get_account_permissions(account_name a) {
@@ -117,7 +116,7 @@ variant golos_tester::get_chaindb_struct(name code, uint64_t scope, name tbl, ui
 ) const {
     variant r;
     try {
-        r = _chaindb.value_by_pk({code, scope, tbl}, id);
+        r = _chaindb.object_by_pk({code, scope, tbl}, id).value;
     } catch (...) {
         // key not found
     }
@@ -132,15 +131,25 @@ variant golos_tester::get_chaindb_singleton(name code, uint64_t scope, name tbl,
 
 vector<variant> golos_tester::get_all_chaindb_rows(name code, uint64_t scope, name tbl, bool strict) const {
     vector<variant> all;
-    auto info = _chaindb.lower_bound({code, scope, tbl, N(primary)}, nullptr, 0);
+    auto info = _chaindb.lower_bound({code, scope, tbl, N(primary)}, cyberway::chaindb::cursor_kind::ManyRecords,nullptr, 0);
     cyberway::chaindb::cursor_request cursor = {code, info.cursor};
-    for (auto pk = _chaindb.current(cursor); pk != cyberway::chaindb::end_primary_key; pk = _chaindb.next(cursor)) {
-        auto v = _chaindb.value_at_cursor(cursor);
+    auto v = _chaindb.object_at_cursor(cursor).value;
+    if (strict) {
+        BOOST_TEST_REQUIRE(!v.is_null());
+    } else if (v.is_null()) {
+        return all;
+    }
+
+    auto prev = _chaindb.current(cursor);
+    do {
         all.push_back(v);
-    }
-    if (!all.size()) {
-        BOOST_TEST_REQUIRE(!strict);
-    }
+        auto pk = _chaindb.next(cursor);
+        if (pk == cyberway::chaindb::primary_key::End) {
+            break;
+        }
+        prev = pk;
+        v = _chaindb.object_at_cursor(cursor).value;
+    } while (!v.is_null());
     return all;
 }
 

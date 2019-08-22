@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include <eosiolib/asset.hpp>
-#include <eosiolib/eosio.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/eosio.hpp>
 #include "config.hpp"
 
 #include <string>
@@ -115,8 +115,8 @@ private:
     }
     
     static inline asset calc_reserve_quantity(const currency_stats& st, asset token_quantity) {
-        eosio_assert(token_quantity.amount >= 0, "can't convert negative quantity");
-        eosio_assert(token_quantity.amount <= st.supply.amount, "can't convert more than supply");
+        check(token_quantity.amount >= 0, "can't convert negative quantity");
+        check(token_quantity.amount <= st.supply.amount, "can't convert more than supply");
         if(token_quantity.amount == 0)
             return asset(0, st.reserve.symbol);
         int64_t ret = 0;
@@ -135,10 +135,10 @@ private:
     }
 
     static inline asset calc_token_quantity(const currency_stats& st, asset reserve_quantity) {
-        eosio_assert(st.reserve.amount > 0, "token has no reserve");
+        check(st.reserve.amount > 0, "token has no reserve");
         real_type buy_prop = static_cast<real_type>(reserve_quantity.amount) / static_cast<real_type>(st.reserve.amount);
         real_type new_supply = static_cast<real_type>(st.supply.amount) * std::pow(1.0 + buy_prop, get_cw(st));
-        eosio_assert(new_supply <= static_cast<real_type>(std::numeric_limits<int64_t>::max()), "invalid supply, int64_t overflow");
+        check(new_supply <= static_cast<real_type>(std::numeric_limits<int64_t>::max()), "invalid supply, int64_t overflow");
         return asset(static_cast<int64_t>(new_supply) - st.supply.amount, st.supply.symbol);
     }
 

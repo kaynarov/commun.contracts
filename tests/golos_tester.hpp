@@ -49,12 +49,15 @@ protected:
     std::map<account_name, abi_serializer> _abis;
 
 public:
-    golos_tester(name code): tester(), _code(code), _chaindb(control->chaindb()) {
+    golos_tester(name code, bool push_genesis = true)
+    : tester(base_tester::default_config("_GOLOSTEST_"), push_genesis)
+    , _code(code)
+    , _chaindb(control->chaindb()) {
     }
     ~golos_tester() {
     }
 
-    void install_contract(account_name acc, const std::vector<uint8_t>& wasm, const std::vector<char>& abi, bool produce = true);
+    void install_contract(account_name acc, const std::vector<uint8_t>& wasm, const std::vector<char>& abi, bool produce = true, const private_key_type* signer = nullptr);
 
     std::vector<permission> get_account_permissions(account_name a);
 
@@ -63,19 +66,6 @@ public:
     action_result push_action_msig_tx(account_name code, action_name name,
         std::vector<permission_level> perms, std::vector<account_name> signers, const variant_object& data);
     action_result push_tx(signed_transaction&& tx);
-
-    template<typename Key>
-    fc::variant get_chaindb_lower_bound_struct(name code, uint64_t scope, name tbl, name indx, const Key& key, const std::string& n) const {
-        variant r;
-        try {
-            bytes data = fc::raw::pack(key);
-            const auto& finfo = _chaindb.lower_bound({code, scope, tbl, indx}, data.data(), data.size());
-            r = _chaindb.value_at_cursor({code, finfo.cursor});
-        } catch (...) {
-            // key not found
-        }
-        return r;
-    }
 
     fc::variant get_chaindb_struct(name code, uint64_t scope, name tbl, uint64_t id, const std::string& n) const;
     fc::variant get_chaindb_singleton(name code, uint64_t scope, name tbl, const std::string& n) const;
