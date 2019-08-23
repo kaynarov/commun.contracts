@@ -4,8 +4,7 @@
 namespace eosio { namespace testing {
 
 #define COMMUN_CONTRACTS "${CMAKE_BINARY_DIR}/../"
-#define GOLOS_CONTRACTS "${CMAKE_BINARY_DIR}/../golos.contracts/"
-#define CYBERWAY_CONTRACTS "${CMAKE_BINARY_DIR}/../../golos.contracts/cyberway.contracts/build/"
+#define CYBERWAY_CONTRACTS "${CMAKE_BINARY_DIR}/../../cyberway.contracts/build/"
 
 struct contracts {
     static std::vector<uint8_t> bancor_wasm() { return read_wasm(COMMUN_CONTRACTS "bancor.token/bancor.token.wasm"); }
@@ -24,15 +23,15 @@ struct contracts {
     static std::vector<uint8_t> commun_social_wasm() { return read_wasm(COMMUN_CONTRACTS "commun.social/commun.social.wasm"); }
     static std::vector<char>    commun_social_abi()  { return read_abi (COMMUN_CONTRACTS "commun.social/commun.social.abi"); }
 
-    static std::vector<uint8_t> golos_vesting_wasm() { return read_wasm(GOLOS_CONTRACTS "golos.vesting/golos.vesting.wasm"); }
-    static std::vector<char>    golos_vesting_abi()  { return read_abi (GOLOS_CONTRACTS "golos.vesting/golos.vesting.abi"); }
+    static std::vector<uint8_t> golos_vesting_wasm() { return read_wasm(COMMUN_CONTRACTS "golos.vesting/golos.vesting.wasm"); }
+    static std::vector<char>    golos_vesting_abi()  { return read_abi (COMMUN_CONTRACTS "golos.vesting/golos.vesting.abi"); }
 
     static std::vector<uint8_t> system_wasm() { return read_wasm(CYBERWAY_CONTRACTS "cyber.system/cyber.system.wasm"); }
     static std::string          system_wast() { return read_wast(CYBERWAY_CONTRACTS "cyber.system/cyber.system.wast"); }
     static std::vector<char>    system_abi()  { return read_abi (CYBERWAY_CONTRACTS "cyber.system/cyber.system.abi"); }
-    static std::vector<uint8_t> token_wasm()  { return read_wasm("/root/62/commun.contracts/golos.contracts/cyberway.contracts/build/cyber.token/cyber.token.wasm"); }
-    static std::string          token_wast()  { return read_wast("/root/62/commun.contracts/golos.contracts/cyberway.contracts/build/cyber.token/cyber.token.wast"); }
-    static std::vector<char>    token_abi()   { return read_abi ("/root/62/commun.contracts/golos.contracts/cyberway.contracts/build/cyber.token/cyber.token.abi"); }
+    static std::vector<uint8_t> token_wasm()  { return read_wasm(CYBERWAY_CONTRACTS "cyber.token/cyber.token.wasm"); }
+    static std::string          token_wast()  { return read_wast(CYBERWAY_CONTRACTS "cyber.token/cyber.token.wast"); }
+    static std::vector<char>    token_abi()   { return read_abi (CYBERWAY_CONTRACTS "cyber.token/cyber.token.abi"); }
     static std::vector<uint8_t> msig_wasm()   { return read_wasm(CYBERWAY_CONTRACTS "cyber.msig/cyber.msig.wasm"); }
     static std::string          msig_wast()   { return read_wast(CYBERWAY_CONTRACTS "cyber.msig/cyber.msig.wast"); }
     static std::vector<char>    msig_abi()    { return read_abi (CYBERWAY_CONTRACTS "cyber.msig/cyber.msig.abi"); }
