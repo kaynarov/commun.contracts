@@ -38,19 +38,12 @@ extern "C" {
             execute_action(&publication::reblog);
         if (NN(erasereblog) == action)
             execute_action(&publication::erase_reblog);
-        if (NN(deletevotes) == action)
-            execute_action(&publication::deletevotes);
     }
 #undef NN
 }
 
 struct posting_params_setter: set_params_visitor<posting_state> {
-    std::optional<st_bwprovider> new_bwprovider;
     using set_params_visitor::set_params_visitor;
-
-    bool operator()(const max_vote_changes_prm& param) {
-        return set_param(param, &posting_state::max_vote_changes_param);
-    }
 
     bool operator()(const max_comment_depth_prm& param) {
         return set_param(param, &posting_state::max_comment_depth_param);
@@ -59,11 +52,7 @@ struct posting_params_setter: set_params_visitor<posting_state> {
     bool operator()(const social_acc_prm& param) {
         return set_param(param, &posting_state::social_acc_param);
     }
-
-    bool operator()(const bwprovider_prm& p) {
-        new_bwprovider = p;
-        return set_param(p, &posting_state::bwprovider_param);
-    }};
+};
 
 // cached to prevent unneeded db access
 const posting_state& publication::params() {
@@ -99,11 +88,6 @@ void publication::create_message(
     }
 
     tables::permlink_table permlink_table(_self, message_id.author.value);
-    tables::message_table message_table(_self, _self.value);
-    uint64_t message_pk = permlink_table.available_primary_key();
-    if (message_pk == 0)
-        message_pk = 1;
-
     auto permlink_index = permlink_table.get_index<"byvalue"_n>();
     auto permlink_itr = permlink_index.find(message_id.permlink);
     eosio::check(permlink_itr == permlink_index.end(), "This message already exists.");
@@ -125,14 +109,8 @@ void publication::create_message(
     }
     eosio::check(level <= max_comment_depth_param.max_comment_depth, "publication::create_message: level > MAX_COMMENT_DEPTH");
 
-    message_table.emplace(message_id.author, [&]( auto &item ) {
-        item.author = message_id.author;
-        item.id = message_pk;
-        item.date = static_cast<uint64_t>(eosio::current_time_point().time_since_epoch().count());
-    });
-
     permlink_table.emplace(message_id.author, [&]( auto &item) {
-        item.id = message_pk;
+        item.id = permlink_table.available_primary_key();
         item.parentacc = parent_id.author;
         item.parent_id = parent_pk;
         item.value = message_id.permlink;
@@ -162,9 +140,6 @@ void publication::delete_message(structures::mssgid message_id) {
     eosio::check(permlink_itr != permlink_index.end(), "Permlink doesn't exist.");
     eosio::check(permlink_itr->childcount == 0, "You can't delete comment with child comments.");
 
-    tables::message_table message_table(_self, _self.value);
-    auto mssg_itr = message_table.find(permlink_itr->id);
-
     if (permlink_itr->parentacc) {
         tables::permlink_table parent_table(_self, permlink_itr->parentacc.value);
         auto parent_itr = parent_table.find(permlink_itr->parent_id);
@@ -175,16 +150,6 @@ void publication::delete_message(structures::mssgid message_id) {
         });
     }
     permlink_index.erase(permlink_itr);
-
-    if (mssg_itr == message_table.end()) {
-        return;
-    }
-
-    cancel_deferred((static_cast<uint128_t>(mssg_itr->id) << 64) | message_id.author.value);
-
-    auto remove_id = mssg_itr->id;
-    message_table.erase(mssg_itr);
-    send_deletevotes_trx(remove_id, message_id.author, message_id.author);
 }
 
 void publication::upvote(name voter, structures::mssgid message_id, uint16_t weight) {
@@ -203,45 +168,6 @@ void publication::unvote(name voter, structures::mssgid message_id) {
     set_vote(voter, message_id, 0);
 }
 
-void publication::providebw_for_trx(transaction& trx, const permission_level& provider) {
-    if (provider.actor != name()) {
-        trx.actions.emplace_back(action{provider, "cyber"_n, "providebw"_n, std::make_tuple(provider.actor, _self)});
-    }
-}
-
-void publication::send_deletevotes_trx(int64_t message_id, name author, name payer) {
-    transaction trx(eosio::current_time_point() + eosio::seconds(config::deletevotes_expiration_sec));
-    trx.actions.emplace_back(action{permission_level(_self, config::code_name), _self, "deletevotes"_n, std::make_tuple(message_id, author)});
-    providebw_for_trx(trx, params().bwprovider_param.provider);
-    trx.delay_sec = 0;
-    trx.send((static_cast<uint128_t>(message_id) << 64) | author.value, payer);
-}
-
-void publication::deletevotes(int64_t message_id, name author) {
-    require_auth(_self);
-
-    tables::vote_table vote_table(_self, author.value);
-    auto votetable_index = vote_table.get_index<"messageid"_n>();
-    auto vote_itr = votetable_index.lower_bound(std::make_tuple(message_id, INT64_MAX));
-    size_t i = 0;
-    for (auto vote_etr = votetable_index.end(); vote_itr != vote_etr;) {
-        if (config::max_deletions_per_trx <= i++) {
-            break;
-        }
-        auto& vote = *vote_itr;
-        ++vote_itr;
-        if (vote.message_id != message_id) {
-            vote_itr = votetable_index.end();
-            break;
-        }
-        vote_table.erase(vote);
-    }
-
-    if (vote_itr != votetable_index.end()) {
-        send_deletevotes_trx(message_id, author, _self);
-    }
-}
-
 void publication::set_vote(name voter, const structures::mssgid& message_id, int16_t weight) {
 
 }
@@ -250,13 +176,7 @@ void publication::set_params(std::vector<posting_params> params) {
     require_auth(_self);
     posting_params_singleton cfg(_self, _self.value);
     param_helper::check_params(params, cfg.exists());
-    auto setter = param_helper::set_parameters<posting_params_setter>(params, cfg, _self);
-    if (setter.new_bwprovider) {
-        auto provider = setter.new_bwprovider->provider;
-        if (provider.actor != name()) {
-            dispatch_inline("cyber"_n, "providebw"_n, {provider}, std::make_tuple(provider.actor, _self));
-        }
-    }
+    param_helper::set_parameters<posting_params_setter>(params, cfg, _self);
 }
 
 void publication::reblog(name rebloger, structures::mssgid message_id, std::string headermssg, std::string bodymssg) {
@@ -298,18 +218,6 @@ bool publication::validate_permlink(std::string permlink) {
         }
     }
     return true;
-}
-
-const auto& publication::get_message(const tables::message_table& messages, const structures::mssgid& message_id) {
-    tables::permlink_table permlink_table(_self, message_id.author.value);
-    auto permlink_index = permlink_table.get_index<"byvalue"_n>();
-    auto permlink_itr = permlink_index.find(message_id.permlink);
-    // rare case - not critical for performance
-    eosio::check(permlink_itr != permlink_index.end(), "Permlink doesn't exist.");
-
-    auto message_itr = messages.find(permlink_itr->id);
-    eosio::check(message_itr != messages.end(), "Message doesn't exist in cashout window.");
-    return *message_itr;
 }
 
 } // golos

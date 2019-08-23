@@ -27,10 +27,8 @@
   "variants": [{
     "name": "posting_param",
     "types": [
-      "st_max_vote_changes"
       "st_max_comment_depth",
-      "st_social_acc",
-      "st_bwprovider"
+      "st_social_acc"
     ]
   }],
   "structs": [
@@ -60,24 +58,6 @@
             "name": "idx",
             "type": "index_t"
         }
-    ]
-  },
-  {
-    "name": "message",
-    "base": "",
-    "fields": [
-      {
-        "name": "author",
-        "type": "name"
-      },
-      {
-        "name": "id",
-        "type": "uint64"
-      },
-      {
-        "name": "date",
-        "type": "uint64"
-      }
     ]
   },
   {
@@ -217,52 +197,12 @@
     ]
   },
   {
-    "name": "voteinfo",
-    "base": "",
-    "fields": [
-      {
-        "name": "id",
-        "type": "uint64"
-      },
-      {
-        "name": "message_id",
-        "type": "uint64"
-      },
-      {
-        "name": "voter",
-        "type": "name"
-      },
-      {
-        "name": "weight",
-        "type": "signed_percent_t"
-      },
-      {
-        "name": "time",
-        "type": "uint64"
-      },
-      {
-        "name": "count",
-        "type": "uint8"
-      }
-    ]
-  },
-  {
     "name": "createacc",
     "base": "",
     "fields": [
       {
         "name": "name",
         "type": "name"
-      }
-    ]
-  },
-  {
-    "name": "st_max_vote_changes",
-    "base": "",
-    "fields": [
-      {
-        "name": "value",
-        "type": "uint8"
       }
     ]
   },
@@ -287,14 +227,6 @@
     ]
   },
   {
-     "name": "st_bwprovider",
-     "base": "",
-     "fields": [
-        {"type": "name", "name": "actor"},
-        {"type": "name", "name": "permission"}
-     ]
-  },
-  {
     "name": "posting_state",
     "base": "",
     "fields": [
@@ -303,20 +235,12 @@
         "type": "uint64"
       },
       {
-        "name": "max_vote_changes",
-        "type": "st_max_vote_changes"
-      },
-      {
         "name": "max_comment_depth",
         "type": "st_max_comment_depth"
       },
       {
         "name": "social_acc",
         "type": "st_social_acc"
-      },
-      {
-        "name": "bwprovider",
-        "type": "st_bwprovider"
       }
     ]
   },
@@ -365,20 +289,6 @@
             "type": "mssgid"
         }
     ]
-  },
-  {
-    "name": "deletevotes",
-    "base": "",
-    "fields": [
-        {
-            "name": "message_id",
-            "type": "int64"
-        },
-        {
-            "name": "author",
-            "type": "name"
-        }
-    ]
   }
   ],
   "events": [
@@ -423,26 +333,9 @@
   {
     "name": "erasereblog",
     "type": "erasereblog"
-  },
-  {
-    "name": "deletevotes",
-    "type": "deletevotes"
   }
   ],
   "tables": [
-  {
-    "name": "message",
-    "type": "message",
-    "indexes": [
-       {
-          "name": "primary",
-          "unique": "true",
-          "orders": [
-              {"field": "id", "order": "asc"}
-          ]
-       }
-    ]
-  },
   {
       "name": "permlink",
       "type": "permlink",
@@ -462,35 +355,6 @@
             ]
          }
       ]
-  },
-  {
-    "name": "vote",
-    "type": "voteinfo",
-    "indexes": [
-       {
-          "name": "primary",
-          "unique": "true",
-          "orders": [
-              {"field": "id", "order": "asc"}
-          ]
-       },
-       {
-          "name": "messageid",
-          "unique": "false",
-          "orders": [
-              {"field": "message_id", "order": "asc"},
-              {"field": "curatorsw", "order": "desc"}
-          ]
-       },
-       {
-          "name": "byvoter",
-          "unique": "true",
-          "orders": [
-              {"field": "message_id", "order": "asc"},
-              {"field": "voter", "order": "asc"}
-          ]
-       }
-    ]
   },
   {
     "name": "pstngparams",

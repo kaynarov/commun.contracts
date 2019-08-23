@@ -9,11 +9,6 @@ namespace golos {
     using namespace eosio;
     using namespace commun;
 
-    struct st_max_vote_changes : parameter {
-        uint8_t max_vote_changes;
-    };
-    using max_vote_changes_prm = param_wrapper<st_max_vote_changes, 1>;
-
     struct st_max_comment_depth : parameter {
         uint16_t max_comment_depth;
 
@@ -34,27 +29,13 @@ namespace golos {
     };
     using social_acc_prm = param_wrapper<st_social_acc, 1>;
 
-    struct st_bwprovider: parameter {
-        permission_level provider;
-
-        void validate() const override {
-            eosio::check((provider.actor != name()) == (provider.permission != name()), "actor and permission must be set together");
-            // check that contract can use cyber:providebw done in setparams
-            // (we need know contract account to make this check)
-        }
-    };
-    using bwprovider_prm = param_wrapper<st_bwprovider,1>;
-
-    using posting_params = std::variant<max_vote_changes_prm, 
-          max_comment_depth_prm, social_acc_prm, bwprovider_prm>;
+    using posting_params = std::variant<max_comment_depth_prm, social_acc_prm>;
 
     struct [[eosio::table]] posting_state {
-        max_vote_changes_prm max_vote_changes_param;
         max_comment_depth_prm max_comment_depth_param;
         social_acc_prm social_acc_param;
-        bwprovider_prm bwprovider_param;
 
-        static constexpr int params_count = 4;
+        static constexpr int params_count = 2;
     };
     using posting_params_singleton = eosio::singleton<"pstngparams"_n, posting_state>;
 
