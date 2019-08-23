@@ -1,6 +1,5 @@
 #include <commun.list.hpp>
 #include <bancor.token/bancor.token.hpp>
-#include <golos.vesting/golos.vesting.hpp>
 #include <commun/config.hpp>
 
 using namespace commun;
@@ -9,7 +8,6 @@ void commun_list::create(std::string community_name, symbol_code token_name,
                          structures::community_contracts contracts) {
 
     check(commun::bancor::exist(config::bancor_name, token_name), "not found token");
-    check(golos::vesting::exists(config::vesting_name, token_name), "not found vesting token");
 
     require_auth(_self);
 
