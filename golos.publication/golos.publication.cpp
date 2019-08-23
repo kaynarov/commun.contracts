@@ -1,10 +1,11 @@
 #include "golos.publication.hpp"
 #include <eosio/event.hpp>
-#include <golos.social/golos.social.hpp>
 #include <common/upsert.hpp>
 #include "utils.hpp"
 #include "objects.hpp"
 #include <cyberway.contracts/common/util.hpp>
+#include <commun.social/commun.social.hpp>
+
 
 namespace golos {
 
@@ -95,7 +96,7 @@ void publication::create_message(
 
     if (parent_id.author) {
         if (social_acc_param.account) {
-            eosio::check(!social::is_blocking(social_acc_param.account, parent_id.author, message_id.author),
+            eosio::check(!commun::commun_social::is_blocking(social_acc_param.account, parent_id.author, message_id.author),
                     "You are blocked by this account");
         }
     }
