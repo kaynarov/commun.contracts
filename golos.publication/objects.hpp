@@ -2,7 +2,6 @@
 #include <eosio/eosio.hpp>
 #include "types.h"
 #include "config.hpp"
-#include <common/calclib/atmsp_storable.h>
 #include <eosio/time.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/singleton.hpp>

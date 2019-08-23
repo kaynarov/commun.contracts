@@ -1,6 +1,5 @@
 #include <bancor.token_test_api.hpp>
 #include <commun_list_test_api.hpp>
-#include <commun.vesting_test_api.hpp>
 #include "contracts.hpp"
 
 
@@ -11,27 +10,23 @@ using namespace fc;
 static const auto token_code_str = "GLS";
 static const auto _token = symbol(3, token_code_str);
 static const auto _token_e = symbol(3, "SLG");
-static const auto _vesting = symbol(6, token_code_str);
 
 class commun_list_tester : public golos_tester {
 protected:
     bancor_token_api token;
     commun_list_api community;
-    commun_vesting_api vesting;
 
 public:
     commun_list_tester()
         : golos_tester(cfg::commun_list_name)
         , token({this, cfg::bancor_name, _token})
         , community({this, cfg::commun_list_name})
-        , vesting({this, cfg::vesting_name, _vesting})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas,
-            cfg::control_name, cfg::bancor_name, cfg::commun_list_name, cfg::vesting_name, cfg::invoice_name});
+            cfg::control_name, cfg::bancor_name, cfg::commun_list_name, cfg::invoice_name});
         produce_block();
         install_contract(cfg::bancor_name, contracts::bancor_wasm(), contracts::bancor_abi());
         install_contract(cfg::commun_list_name, contracts::commun_list_wasm(), contracts::commun_list_abi());
-        install_contract(cfg::vesting_name, contracts::golos_vesting_wasm(), contracts::golos_vesting_abi());
     }
 
     const account_name _commun = N(commun);
@@ -44,9 +39,6 @@ public:
     void create_token(symbol symbol_token) {
         BOOST_CHECK_EQUAL(success(), token.create(cfg::bancor_name, asset(1000000, symbol_token), 10000, 1));
         produce_blocks(1);
-
-        BOOST_CHECK_EQUAL(success(), vesting.create_vesting(cfg::bancor_name, symbol_token, commun::config::control_name));
-        produce_blocks(1);
     }
     
     auto get_cur_time() {
@@ -57,7 +49,6 @@ public:
         const string community_exists = amsg("community exists");
         const string community_symbol_code_exists = amsg("community token exists");
         const string not_found_token = amsg("not found token");
-        const string not_found_vesting_token = amsg("not found vesting token");
         const string no_community = amsg("community doesn't exist");
     } err;
 };

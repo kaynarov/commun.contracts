@@ -1,6 +1,5 @@
 #include "golos.publication.hpp"
 #include <eosio/event.hpp>
-#include <common/upsert.hpp>
 #include "utils.hpp"
 #include "objects.hpp"
 #include <cyberway.contracts/common/util.hpp>
@@ -8,8 +7,6 @@
 
 
 namespace golos {
-
-using namespace atmsp::storable;
 
 extern "C" {
     void apply(uint64_t receiver, uint64_t code, uint64_t action) {

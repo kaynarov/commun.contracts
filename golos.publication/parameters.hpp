@@ -1,12 +1,13 @@
 #pragma once
 #include <eosio/singleton.hpp>
-#include <common/parameter.hpp>
-#include <common/parameter_ops.hpp>
-#include <common/config.hpp>
+#include <commun/parameter.hpp>
+#include <commun/parameter_ops.hpp>
+#include <commun/config.hpp>
 
 namespace golos {
 
     using namespace eosio;
+    using namespace commun;
 
     struct st_max_vote_changes : parameter {
         uint8_t max_vote_changes;

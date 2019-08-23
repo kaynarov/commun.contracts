@@ -1,7 +1,9 @@
 #pragma once
-#include <common/config.hpp>
+#include <commun/config.hpp>
 
 namespace golos { namespace config {
+
+	using namespace commun::config;
 
 constexpr unsigned deletevotes_expiration_sec = 3*60*60;
 

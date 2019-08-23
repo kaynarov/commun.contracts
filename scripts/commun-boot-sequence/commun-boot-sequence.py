@@ -25,7 +25,6 @@ _communAccounts = [
     # name           contract
     ('cmmn.owner',   None),
     ('cmmn.token',   'bancor.token'),
-    ('cmmn.vesting', 'golos.vesting'),
     ('cmmn.list',    'commun.list'),
     ('resrv.emit',   'reserve.emit'),
     ('registrar',    'registrar'),
@@ -191,7 +190,6 @@ def createCommunAccounts():
     for acc in communAccounts:
         if not (args.golos_genesis and acc.inGenesis):
             createAccount('cyber', acc.name, args.public_key)
-    updateAuth('cmmn.vesting', 'active', 'owner', [args.public_key], ['cmmn.vesting@cyber.code'])
 
 def stepInstallContracts():
     for acc in communAccounts:
