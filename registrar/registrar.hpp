@@ -1,8 +1,8 @@
 #pragma once
-#include <eosiolib/asset.hpp>
-#include <eosiolib/time.hpp>
-#include <eosiolib/privileged.hpp>
-#include <eosiolib/singleton.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/time.hpp>
+#include <eosio/privileged.hpp>
+#include <eosio/singleton.hpp>
 #include <string>
 #include "parameters.hpp"
 

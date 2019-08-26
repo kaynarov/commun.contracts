@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config.hpp"
-#include <eosiolib/dispatcher.hpp>
+#include <eosio/dispatcher.hpp>
 
 
 #define DISPATCH_WITH_TRANSFER(TYPE, TOKEN, TRANSFER, MEMBERS) \

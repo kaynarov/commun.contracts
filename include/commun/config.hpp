@@ -6,6 +6,7 @@
 #   define STRINGIFY_(x) #x
 #   define STRINGIFY(x) STRINGIFY_(x)
 #   define N(x) eosio::name(STRINGIFY(x))
+#   include <eosio/symbol.hpp>
 #endif
 
 #ifdef UNIT_TEST_ENV
@@ -21,7 +22,6 @@ namespace commun { namespace config {
 // contracts
 static const auto control_name = "gls.ctrl"_n;
 static const auto social_name = "gls.social"_n;
-static const auto vesting_name = "cmmn.vesting"_n;
 static const auto publish_name = "gls.publish"_n;
 static const auto charge_name = "cmmn.charge"_n;
 static const auto emission_name = "gls.emit"_n;

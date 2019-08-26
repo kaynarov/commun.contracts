@@ -1,5 +1,5 @@
-#include <eosiolib/eosio.hpp>
-
+#include <eosio/eosio.hpp>
+#include <eosio/asset.hpp>
 
 namespace commun::structures {
 

@@ -1,0 +1,375 @@
+{
+  "version": "cyberway::abi/1.1",
+  "types": [
+    {
+      "new_type_name": "base_t",
+      "type": "int64"
+    },{
+      "new_type_name": "wide_t",
+      "type": "int128"
+    },{
+      "new_type_name": "index_t",
+      "type": "uint64"
+    },{
+      "new_type_name": "enum_t",
+      "type": "uint8"
+    },{
+      "new_type_name": "counter_t",
+      "type": "uint64"
+    },{
+      "new_type_name": "percent_t",
+      "type": "uint16"
+    },{
+      "new_type_name": "signed_percent_t",
+      "type": "int16"
+    }
+  ],
+  "variants": [{
+    "name": "posting_param",
+    "types": [
+      "st_max_comment_depth",
+      "st_social_acc"
+    ]
+  }],
+  "structs": [
+  {
+    "name":"mssgid",
+    "base": "",
+    "fields": [
+        {
+            "name": "author",
+            "type": "name"
+        },
+        {
+            "name": "permlink",
+            "type": "string"
+        }
+    ]
+  },
+  {
+    "name": "value",
+    "base": "",
+    "fields": [
+        {
+            "name": "kind",
+            "type": "enum_t"
+        },
+        {
+            "name": "idx",
+            "type": "index_t"
+        }
+    ]
+  },
+  {
+      "name": "permlink",
+      "base": "",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint64"
+        },
+        {
+          "name": "parentacc",
+          "type": "name"
+        },
+        {
+          "name": "parent_id",
+          "type": "uint64"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        },
+        {
+          "name": "level",
+          "type": "uint16"
+        },
+        {
+          "name": "childcount",
+          "type": "uint32"
+        }
+      ]
+  },
+  {
+    "name": "createmssg",
+    "base": "",
+    "fields": [
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "parent_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "headermssg",
+        "type": "string"
+      },
+      {
+        "name": "bodymssg",
+        "type": "string"
+      },
+      {
+        "name": "languagemssg",
+        "type": "string"
+      },
+      {
+        "name": "tags",
+        "type": "string[]"
+      },
+      {
+        "name": "jsonmetadata",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "name": "updatemssg",
+    "base": "",
+    "fields": [
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "headermssg",
+        "type": "string"
+      },
+      {
+        "name": "bodymssg",
+        "type": "string"
+      },
+      {
+        "name": "languagemssg",
+        "type": "string"
+      },
+      {
+        "name": "tags",
+        "type": "string[]"
+      },
+      {
+        "name": "jsonmetadata",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "name": "deletemssg",
+    "base": "",
+    "fields": [
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      }
+    ]
+  },
+  {
+    "name": "vote",
+    "base": "",
+    "fields": [
+      {
+        "name": "voter",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "weight",
+        "type": "percent_t"
+      }
+    ]
+  },
+  {
+    "name": "unvote",
+    "base": "",
+    "fields": [
+      {
+        "name": "voter",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      }
+    ]
+  },
+  {
+    "name": "createacc",
+    "base": "",
+    "fields": [
+      {
+        "name": "name",
+        "type": "name"
+      }
+    ]
+  },
+  {
+    "name": "st_max_comment_depth",
+    "base": "",
+    "fields": [
+      {
+        "name": "value",
+        "type": "uint16"
+      }
+    ]
+  },
+  {
+    "name": "st_social_acc",
+    "base": "",
+    "fields": [
+      {
+        "name": "value",
+        "type": "name"
+      }
+    ]
+  },
+  {
+    "name": "posting_state",
+    "base": "",
+    "fields": [
+      {
+        "name": "id",
+        "type": "uint64"
+      },
+      {
+        "name": "max_comment_depth",
+        "type": "st_max_comment_depth"
+      },
+      {
+        "name": "social_acc",
+        "type": "st_social_acc"
+      }
+    ]
+  },
+  {
+    "name": "setparams",
+    "base": "",
+    "fields": [
+      {
+        "name": "params",
+        "type": "posting_param[]"
+      }
+    ]
+  },
+  {
+    "name": "reblog",
+    "base": "",
+    "fields": [
+        {
+            "name": "rebloger",
+            "type": "name"
+        },
+        {
+            "name": "message_id",
+            "type": "mssgid"
+        },
+        {
+            "name": "headermssg",
+            "type": "string"
+        },
+        {
+            "name": "bodymssg",
+            "type": "string"
+        }
+    ]
+  },
+  {
+    "name": "erasereblog",
+    "base": "",
+    "fields": [
+        {
+            "name": "rebloger",
+            "type": "name"
+        },
+        {
+            "name": "message_id",
+            "type": "mssgid"
+        }
+    ]
+  }
+  ],
+  "events": [
+  ],
+  "actions": [
+  {
+    "name": "createmssg",
+    "type": "createmssg"
+  },
+  {
+    "name": "updatemssg",
+    "type": "updatemssg"
+  },
+  {
+    "name": "deletemssg",
+    "type": "deletemssg"
+  },
+  {
+    "name": "upvote",
+    "type": "vote"
+  },
+  {
+    "name": "downvote",
+    "type": "vote"
+  },
+  {
+    "name": "unvote",
+    "type": "unvote"
+  },
+  {
+    "name": "createacc",
+    "type": "createacc"
+  },
+  {
+    "name": "setparams",
+    "type": "setparams"
+  },
+  {
+    "name": "reblog",
+    "type": "reblog"
+  },
+  {
+    "name": "erasereblog",
+    "type": "erasereblog"
+  }
+  ],
+  "tables": [
+  {
+      "name": "permlink",
+      "type": "permlink",
+      "indexes": [
+         {
+            "name": "primary",
+            "unique": "true",
+            "orders": [
+                {"field": "id", "order": "asc"}
+            ]
+         },
+         {
+            "name": "byvalue",
+            "unique": "true",
+            "orders": [
+                {"field": "value", "order": "asc"}
+            ]
+         }
+      ]
+  },
+  {
+    "name": "pstngparams",
+    "type": "posting_state",
+    "indexes": [
+       {
+          "name": "primary",
+          "unique": "true",
+          "orders": [
+              {"field": "id", "order": "asc"}
+          ]
+       }
+    ]
+  }
+  ],
+  "error_messages": [],
+  "abi_extensions": []
+}

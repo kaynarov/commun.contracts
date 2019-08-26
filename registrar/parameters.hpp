@@ -1,14 +1,14 @@
 #pragma once
 #include <commun/parameter.hpp>
 #include <commun/config.hpp>
-#include <eosiolib/singleton.hpp>
+#include <eosio/singleton.hpp>
 namespace commun { namespace param {
 using eosio::symbol_code;
     
 struct token : immutable_parameter {
     symbol sym;
     void validate() const override {
-        eosio_assert(sym.is_valid(), "invalid token");
+        check(sym.is_valid(), "invalid token");
     }
 };
     
@@ -18,10 +18,10 @@ struct market : parameter {
     int16_t sale_fee;
 
     void validate() const override {
-        eosio_assert(bid_increment_denom > 0, "bid_increment_denom can't be 0");
-        eosio_assert(0 <= bancor_creation_fee && bancor_creation_fee <= 10000,
+        check(bid_increment_denom > 0, "bid_increment_denom can't be 0");
+        check(0 <= bancor_creation_fee && bancor_creation_fee <= 10000,
             "bancor_creation_fee must be between 0% and 100% (0-10000)");
-        eosio_assert(0 <= sale_fee && sale_fee <= 10000,
+        check(0 <= sale_fee && sale_fee <= 10000,
             "sale_fee must be between 0% and 100% (0-10000)");
     }
 };
@@ -34,7 +34,7 @@ struct checkwin : parameter {
     uint32_t max_bid_checks;
 
     void validate() const override {
-        eosio_assert(max_bid_checks > 0, "max_bid_checks can't be 0");
+        check(max_bid_checks > 0, "max_bid_checks can't be 0");
     }
 };
     

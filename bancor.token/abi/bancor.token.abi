@@ -201,7 +201,7 @@
                     "name": "primary",
                     "unique": "true",
                     "orders": [
-                        {"field": "balance.sym", "order": "asc"}
+                        {"field": "balance._sym", "order": "asc"}
                     ]
                 }
             ]
@@ -214,7 +214,7 @@
                     "name": "primary",
                     "unique": "true",
                     "orders": [
-                        {"field": "supply.sym", "order": "asc"}
+                        {"field": "supply._sym", "order": "asc"}
                     ]
                 }
             ]

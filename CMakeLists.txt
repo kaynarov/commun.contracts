@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(commun_dapp_contracts VERSION 0.1.0)
 
-set(EOSIO_CDT_VERSION_MIN "1.4")
-set(EOSIO_CDT_VERSION_SOFT_MAX "1.5")
+set(EOSIO_CDT_VERSION_MIN "1.6")
+set(EOSIO_CDT_VERSION_SOFT_MAX "1.7")
 #set(EOSIO_CDT_VERSION_HARD_MAX "")
 
 find_package(eosio.cdt)
@@ -37,15 +37,16 @@ macro(add_contract_with_abi TARGET ABIFILE)
    install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.abi DESTINATION ${CMAKE_INSTALL_PREFIX}/${TARGET}/)
 endmacro()
 
-function(add_golos_subdirectory REPO TOKEN_INCLUDE_PATH TOKEN_HEADER_FILE TOKEN_CLASS TOKEN_NAME VESTING_NAME)
-    add_subdirectory(${REPO})
-endfunction()
+set(TOKEN_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cyberway.contracts/cyber.token/include")
+set(TOKEN_HEADER_FILE "cyberway.contracts/cyber.token/include/cyber.token/cyber.token.hpp")
 
-set(COMMUN_TOKEN_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bancor.token/include ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(COMMUN_TOKEN_HEADER_FILE "bancor.token/bancor.token.hpp")
-set(COMMUN_TOKEN_CLASS "commun::bancor")
-set(COMMUN_TOKEN_NAME "cmmn.token")
-set(COMMUN_VESTING_NAME "cmmn.vesting")
+if (NOT DEFINED TOKEN_CLASS)
+    set(TOKEN_CLASS "eosio::token")
+endif(NOT DEFINED TOKEN_CLASS)
+
+if (NOT DEFINED TOKEN_NAME)
+    set(TOKEN_NAME "cyber.token")
+endif(NOT DEFINED TOKEN_NAME)
 
 # include_directories(AFTER ${BOOST_ROOT}/include)
 add_subdirectory(registrar)
@@ -53,8 +54,7 @@ add_subdirectory(commun.list)
 add_subdirectory(commun.social)
 add_subdirectory(reserve.emit)
 add_subdirectory(bancor.token)
-
-add_golos_subdirectory(golos.contracts "${COMMUN_TOKEN_INCLUDE_PATH}" ${COMMUN_TOKEN_HEADER_FILE} ${COMMUN_TOKEN_CLASS} ${COMMUN_TOKEN_NAME} ${COMMUN_VESTING_NAME})
+add_subdirectory(golos.publication)
 
 if (APPLE)
    set(OPENSSL_ROOT "/usr/local/opt/openssl")
