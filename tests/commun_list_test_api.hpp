@@ -7,7 +7,7 @@ struct commun_list_api: base_contract_api {
     commun_list_api(golos_tester* tester, name code)
         :   base_contract_api(tester, code) {}
 
-    action_result create_record(name sender, std::string community_name, symbol_code token_name) {
+    action_result create_record(name sender, symbol_code token_name, std::string community_name) {
         return push(N(create), sender, args()
                     ("token_name", token_name)
                     ("community_name", community_name)
