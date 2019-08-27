@@ -6,29 +6,29 @@ using namespace commun;
 void commun_social::pin(name pinner, name pinning) {
     require_auth(pinner);
 
-    eosio_assert(is_account(pinning), "Pinning account doesn't exist.");
-    eosio_assert(pinner != pinning, "You cannot pin yourself");
+    eosio::check(is_account(pinning), "Pinning account doesn't exist.");
+    eosio::check(pinner != pinning, "You cannot pin yourself");
 }
 
 void commun_social::unpin(name pinner, name pinning) {
     require_auth(pinner);
 
-    eosio_assert(is_account(pinning), "Pinning account doesn't exist.");
-    eosio_assert(pinner != pinning, "You cannot unpin yourself");
+    eosio::check(is_account(pinning), "Pinning account doesn't exist.");
+    eosio::check(pinner != pinning, "You cannot unpin yourself");
 }
 
 void commun_social::block(name blocker, name blocking) {
     require_auth(blocker);
 
-    eosio_assert(is_account(blocking), "Blocking account doesn't exist.");
-    eosio_assert(blocker != blocking, "You cannot block yourself");
+    eosio::check(is_account(blocking), "Blocking account doesn't exist.");
+    eosio::check(blocker != blocking, "You cannot block yourself");
 }
 
 void commun_social::unblock(name blocker, name blocking) {
     require_auth(blocker);
 
-    eosio_assert(is_account(blocking), "Blocking account doesn't exist.");
-    eosio_assert(blocker != blocking, "You cannot unblock yourself");
+    eosio::check(is_account(blocking), "Blocking account doesn't exist.");
+    eosio::check(blocker != blocking, "You cannot unblock yourself");
 }
 
 void commun_social::updatemeta(std::string avatar_url, std::string cover_url, 

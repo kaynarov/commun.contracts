@@ -80,13 +80,6 @@ void publication::create_message(
     const auto& max_comment_depth_param = params().max_comment_depth_param;
     const auto& social_acc_param = params().social_acc_param;
 
-    if (parent_id.author) {
-        if (social_acc_param.account) {
-            eosio::check(!commun::commun_social::is_blocking(social_acc_param.account, parent_id.author, message_id.author),
-                    "You are blocked by this account");
-        }
-    }
-
     tables::permlink_table permlink_table(_self, message_id.author.value);
     auto permlink_index = permlink_table.get_index<"byvalue"_n>();
     auto permlink_itr = permlink_index.find(message_id.permlink);
