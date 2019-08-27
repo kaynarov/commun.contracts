@@ -19,15 +19,6 @@ public:
                                       std::string telegram, std::string whatsapp, 
                                       std::string wechat);
     [[eosio::action]] void deletemeta(name account);
-
-    static inline bool is_blocking(name code, name blocker, name blocking) {
-        tables::pinblock_table table(code, blocker.value);
-        auto itr = table.find(blocking.value);
-        return (itr != table.end() && itr->blocking);
-    }
-
-private:
-    bool record_is_empty(structures::pinblock_record record);
 };
 
 }

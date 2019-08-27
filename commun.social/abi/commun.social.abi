@@ -2,24 +2,6 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
-            "name": "pinblock_record",
-            "base": "",
-            "fields": [
-                {
-                    "name": "account",
-                    "type": "name"
-                },
-                {
-                    "name": "pinning",
-                    "type": "bool"
-                },
-                {
-                    "name": "blocking",
-                    "type": "bool"
-                }
-            ]
-        },
-        {
             "name": "updatemeta",
             "base": "",
             "fields": [
@@ -120,19 +102,6 @@
         }
     ],
     "tables": [
-        {
-            "name": "pinblock",
-            "type": "pinblock_record",
-            "indexes": [
-                {
-                    "name": "primary",
-                    "unique": "true",
-                    "orders": [
-                        {"field": "account", "order": "asc"}
-                    ]
-                }
-            ]
-        }
     ],
     "variants": [],
     "abi_extensions": []
