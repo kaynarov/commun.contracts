@@ -1,7 +1,6 @@
 #include "commun.publication.hpp"
 #include <eosio/event.hpp>
 #include "objects.hpp"
-#include <cyberway.contracts/common/util.hpp>
 #include <commun.social/commun.social.hpp>
 
 

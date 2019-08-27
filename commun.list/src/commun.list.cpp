@@ -1,12 +1,12 @@
 #include <commun.list.hpp>
-#include <bancor.token/bancor.token.hpp>
+#include <commun.point/commun.point.hpp>
 #include <commun/config.hpp>
 
 using namespace commun;
 
 void commun_list::create(symbol_code token_name, std::string community_name) {
 
-    check(commun::bancor::exist(config::bancor_name, token_name), "not found token");
+    check(commun::point::exist(config::commun_point_name, token_name), "not found token");
 
     require_auth(_self);
 
@@ -26,7 +26,7 @@ void commun_list::create(symbol_code token_name, std::string community_name) {
 void commun_list::addinfo(symbol_code token_name, std::string community_name, 
                           std::string ticker, std::string avatar, std::string cover_img_link, 
                           std::string description, std::string rules) {
-    require_auth(commun::bancor::get_issuer(config::bancor_name, token_name));
+    require_auth(commun::point::get_issuer(config::commun_point_name, token_name));
     
     tables::community community_tbl(_self, _self.value);
     auto community_index = community_tbl.get_index<"byname"_n>();

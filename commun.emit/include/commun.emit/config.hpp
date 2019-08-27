@@ -3,6 +3,5 @@
 
 
 namespace commun { namespace config {
-const std::string restock_prefix = "restock: ";
-static const auto create_permission = "create"_n;
+static const auto mscsreward_perm_name = "mscsrwrdperm"_n; 
 }} // commun::config
