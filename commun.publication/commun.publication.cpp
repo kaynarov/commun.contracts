@@ -1,12 +1,11 @@
-#include "golos.publication.hpp"
+#include "commun.publication.hpp"
 #include <eosio/event.hpp>
-#include "utils.hpp"
 #include "objects.hpp"
 #include <cyberway.contracts/common/util.hpp>
 #include <commun.social/commun.social.hpp>
 
 
-namespace golos {
+namespace commun {
 
 extern "C" {
     void apply(uint64_t receiver, uint64_t code, uint64_t action) {
@@ -213,4 +212,4 @@ bool publication::validate_permlink(std::string permlink) {
     return true;
 }
 
-} // golos
+} // commun

@@ -7,7 +7,7 @@
 #include <eosio/singleton.hpp>
 #include <eosio/crypto.hpp>
 
-namespace golos { namespace structures {
+namespace commun { namespace structures {
 
 using namespace eosio;
 
@@ -59,4 +59,4 @@ using permlink_table = multi_index<N(permlink), structures::permlink, permlink_i
 }
 
 
-} // golos
+} // commun

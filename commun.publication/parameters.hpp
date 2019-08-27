@@ -4,10 +4,9 @@
 #include <commun/parameter_ops.hpp>
 #include <commun/config.hpp>
 
-namespace golos {
+namespace commun {
 
     using namespace eosio;
-    using namespace commun;
 
     struct st_max_comment_depth : parameter {
         uint16_t max_comment_depth;
@@ -39,4 +38,4 @@ namespace golos {
     };
     using posting_params_singleton = eosio::singleton<"pstngparams"_n, posting_state>;
 
-} //golos
+} //commun

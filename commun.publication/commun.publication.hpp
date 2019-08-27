@@ -3,7 +3,7 @@
 #include "parameters.hpp"
 #include <eosio/transaction.hpp>
 
-namespace golos {
+namespace commun {
 
 using namespace eosio;
 
@@ -29,4 +29,4 @@ private:
     bool validate_permlink(std::string permlink);
 };
 
-} // golos
+} // commun

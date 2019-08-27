@@ -25,7 +25,7 @@ _communAccounts = [
     # name           contract
     ('c.ctrl',    'golos.ctrl'),
     ('c.emit',    'golos.emit'),
-    ('c.publish', 'golos.publication'),
+    ('c.publish', 'commun.publication'),
     ('c.social',  'commun.social'),
     ('c.charge',  'golos.charge'),
     ('c.ref',     'golos.referral'),
