@@ -2,32 +2,11 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
-            "name": "community_contracts",
-            "base": "",
-            "fields": [
-                {"name": "ctrl", "type": "name"},
-                {"name": "emit", "type": "name"},
-                {"name": "charge", "type": "name"},
-                {"name": "social","type": "name"},
-                {"name": "publish", "type": "name"}
-            ]
-        },
-        {
             "name": "community",
             "base": "",
             "fields": [
                 {"name": "token_name", "type": "symbol_code"},
-                {"name": "community_name", "type": "string"},
-                {"name": "contracts", "type": "community_contracts"}
-            ]
-        },
-        {
-            "name": "create",
-            "base": "",
-            "fields": [
-                {"name": "community_name", "type": "string"},
-                {"name": "token_name", "type": "symbol_code"},
-                {"name": "contracts", "type": "community_contracts"}
+                {"name": "community_name", "type": "string"}
             ]
         },
         {
@@ -67,7 +46,7 @@
     ],
     "types": [],
     "actions": [
-        {"name": "create", "type": "create"},
+        {"name": "create", "type": "community"},
         {"name": "addinfo", "type": "addinfo"}
     ],
     "events": [],
