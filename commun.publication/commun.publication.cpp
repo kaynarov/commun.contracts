@@ -135,7 +135,6 @@ void publication::delete_message(structures::mssgid message_id) {
     if (permlink_itr->parentacc) {
         tables::permlink_table parent_table(_self, permlink_itr->parentacc.value);
         auto parent_itr = parent_table.find(permlink_itr->parent_id);
-        eosio::check(parent_itr != parent_table.end(), "Parent permlink doesn't exist.");
 
         parent_table.modify(*parent_itr, eosio::same_payer, [&](auto& item) {
             --item.childcount;

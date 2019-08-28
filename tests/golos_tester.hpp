@@ -67,6 +67,19 @@ public:
         std::vector<permission_level> perms, std::vector<account_name> signers, const variant_object& data);
     action_result push_tx(signed_transaction&& tx);
 
+    template<typename Key>
+    fc::variant get_chaindb_lower_bound_struct(name code, uint64_t scope, name tbl, name indx, const Key& key, const std::string& n) const {
+        variant r;
+        try {
+            bytes data = fc::raw::pack(key);
+            const auto& finfo = _chaindb.lower_bound({code, scope, tbl, indx}, cyberway::chaindb::cursor_kind::ManyRecords, data.data(), data.size());
+            r = _chaindb.object_at_cursor({code, finfo.cursor}).value;
+        } catch (...) {
+            // key not found
+        }
+        return r;
+    }
+
     fc::variant get_chaindb_struct(name code, uint64_t scope, name tbl, uint64_t id, const std::string& n) const;
     fc::variant get_chaindb_singleton(name code, uint64_t scope, name tbl, const std::string& n) const;
     std::vector<fc::variant> get_all_chaindb_rows(name code, uint64_t scope, name tbl, bool strict) const;
