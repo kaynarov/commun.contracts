@@ -22,7 +22,7 @@ namespace commun { namespace config {
 // contracts
 static const auto control_name = "gls.ctrl"_n;
 static const auto social_name = "gls.social"_n;
-static const auto publish_name = "gls.publish"_n;
+static const auto publish_name = "cmmn.publish"_n;
 static const auto charge_name = "cmmn.charge"_n;
 static const auto emission_name = "gls.emit"_n;
 static const auto workers_name = "gls.worker"_n;
