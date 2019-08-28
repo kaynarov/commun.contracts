@@ -61,24 +61,29 @@
     ]
   },
   {
-      "name": "permlink",
+      "name": "vertex_struct",
       "base": "",
       "fields": [
         {
           "name": "id",
           "type": "uint64"
         },
+        
         {
-          "name": "parentacc",
+          "name": "creator",
           "type": "name"
         },
         {
-          "name": "parent_id",
+          "name": "tracery",
           "type": "uint64"
         },
         {
-          "name": "value",
-          "type": "string"
+          "name": "parent_creator",
+          "type": "name"
+        },
+        {
+          "name": "parent_tracery",
+          "type": "uint64"
         },
         {
           "name": "level",
@@ -94,6 +99,10 @@
     "name": "createmssg",
     "base": "",
     "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
       {
         "name": "message_id",
         "type": "mssgid"
@@ -129,6 +138,10 @@
     "base": "",
     "fields": [
       {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
         "name": "message_id",
         "type": "mssgid"
       },
@@ -159,6 +172,10 @@
     "base": "",
     "fields": [
       {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
         "name": "message_id",
         "type": "mssgid"
       }
@@ -168,6 +185,10 @@
     "name": "vote",
     "base": "",
     "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
       {
         "name": "voter",
         "type": "name"
@@ -187,22 +208,16 @@
     "base": "",
     "fields": [
       {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
         "name": "voter",
         "type": "name"
       },
       {
         "name": "message_id",
         "type": "mssgid"
-      }
-    ]
-  },
-  {
-    "name": "createacc",
-    "base": "",
-    "fields": [
-      {
-        "name": "name",
-        "type": "name"
       }
     ]
   },
@@ -249,6 +264,10 @@
     "base": "",
     "fields": [
       {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
         "name": "params",
         "type": "posting_param[]"
       }
@@ -258,6 +277,10 @@
     "name": "reblog",
     "base": "",
     "fields": [
+        {
+            "name": "commun_code",
+            "type": "symbol_code"
+        },
         {
             "name": "rebloger",
             "type": "name"
@@ -280,6 +303,10 @@
     "name": "erasereblog",
     "base": "",
     "fields": [
+        {
+            "name": "commun_code",
+            "type": "symbol_code"
+        },
         {
             "name": "rebloger",
             "type": "name"
@@ -319,10 +346,6 @@
     "type": "unvote"
   },
   {
-    "name": "createacc",
-    "type": "createacc"
-  },
-  {
     "name": "setparams",
     "type": "setparams"
   },
@@ -337,8 +360,8 @@
   ],
   "tables": [
   {
-      "name": "permlink",
-      "type": "permlink",
+      "name": "vertex",
+      "type": "vertex_struct",
       "indexes": [
          {
             "name": "primary",
@@ -348,10 +371,11 @@
             ]
          },
          {
-            "name": "byvalue",
+            "name": "bykey",
             "unique": "true",
             "orders": [
-                {"field": "value", "order": "asc"}
+                {"field": "creator", "order": "asc"},
+                {"field": "tracery", "order": "asc"}
             ]
          }
       ]

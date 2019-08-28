@@ -6,12 +6,11 @@
 #include <eosio/asset.hpp>
 #include <eosio/singleton.hpp>
 #include <eosio/crypto.hpp>
+#include <commun.gallery/commun.gallery.hpp>
 
 namespace commun { namespace structures {
 
 using namespace eosio;
-
-using counter_t = uint64_t;
 
 struct mssgid {
     mssgid() = default;
@@ -23,40 +22,37 @@ struct mssgid {
         return author == value.author &&
                permlink == value.permlink;
     }
+    
+    uint64_t tracery() const {
+        auto hash = sha256(permlink.c_str(), permlink.size());
+        return *(reinterpret_cast<const uint64_t *>(&hash));
+    }
 
     EOSLIB_SERIALIZE(mssgid, (author)(permlink))
 };
 
-struct permlink {
-    permlink() = default;
-
+struct vertex {
     uint64_t id;
-    name parentacc;
-    uint64_t parent_id;
-    std::string value;
+    name     creator;
+    uint64_t tracery;
+    name     parent_creator;
+    uint64_t parent_tracery;
     uint16_t level;
     uint32_t childcount;
 
-    uint64_t primary_key() const {
-        return id;
-    }
+    uint64_t primary_key() const { return id; }
 
-    std::string secondary_key() const {
-        return value;
-    }
+    using key_t = gallery_base::mosaic_key_t;
+    key_t by_key()const { return std::make_tuple(creator, tracery); }
 };
 
 } // structures
 
-namespace tables {
 
 using namespace eosio;
 
-using permlink_id_index = indexed_by<N(primary), const_mem_fun<structures::permlink, uint64_t, &structures::permlink::primary_key>>;
-using permlink_value_index = indexed_by<N(byvalue), const_mem_fun<structures::permlink, std::string, &structures::permlink::secondary_key>>;
-using permlink_table = multi_index<N(permlink), structures::permlink, permlink_id_index, permlink_value_index>;
-
-}
-
+using vertex_id_index  = indexed_by<N(primary), const_mem_fun<structures::vertex, uint64_t, &structures::vertex::primary_key> >;
+using vertex_key_index = indexed_by<N(bykey), const_mem_fun<structures::vertex, structures::vertex::key_t, &structures::vertex::by_key> >;
+using vertices = multi_index<N(vertex), structures::vertex, vertex_id_index, vertex_key_index>;
 
 } // commun

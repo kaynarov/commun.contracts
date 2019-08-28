@@ -8,6 +8,7 @@ namespace cfg = commun::config;
 using namespace eosio::testing;
 using namespace eosio::chain;
 using namespace fc;
+static const auto point_code_str = "GLS";
 
 class commun_publication_tester : public golos_tester {
 protected:
@@ -18,7 +19,7 @@ protected:
 public:
     commun_publication_tester()
         : golos_tester(cfg::publish_name)
-        , post({this, cfg::publish_name})
+        , post({this, cfg::publish_name, symbol(0, point_code_str).to_symbol_code()})
         , _users{_code, N(jackiechan), N(brucelee), N(chucknorris)} {
         create_accounts(_users);
         produce_block();
