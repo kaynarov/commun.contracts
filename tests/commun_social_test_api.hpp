@@ -35,19 +35,19 @@ struct commun_social_api: base_contract_api {
         );
     }
 
-    action_result update_meta(std::string avatar_url, std::string cover_url, 
-                              std::string biography, std::string facebook, 
-                              std::string telegram, std::string whatsapp, 
-                              std::string wechat) {
-        return push(N(updatemeta), _code, args()
-                    ("avatar_url", avatar_url)
-                    ("cover_url", cover_url)
-                    ("biography", biography)
-                    ("facebook", facebook)
-                    ("telegram", telegram)
-                    ("whatsapp", whatsapp)
-                    ("wechat", wechat)
-                    );
+    action_result update_meta(account_name account,
+            std::string avatar_url, std::string cover_url, std::string biography,
+            std::string facebook, std::string telegram, std::string whatsapp, std::string wechat) {
+        return push(N(updatemeta), account, args()
+            ("account", account)
+            ("avatar_url", avatar_url)
+            ("cover_url", cover_url)
+            ("biography", biography)
+            ("facebook", facebook)
+            ("telegram", telegram)
+            ("whatsapp", whatsapp)
+            ("wechat", wechat)
+        );
     }
 
     action_result deletemeta(account_name account) {

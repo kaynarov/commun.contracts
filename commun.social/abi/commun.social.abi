@@ -2,9 +2,41 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
+            "name": "pin",
+            "base": "",
+            "fields": [
+                {
+                    "name": "pinner",
+                    "type": "name"
+                },
+                {
+                    "name": "pinning",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "block",
+            "base": "",
+            "fields": [
+                {
+                    "name": "blocker",
+                    "type": "name"
+                },
+                {
+                    "name": "blocking",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "updatemeta",
             "base": "",
             "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
                 {
                     "name": "avatar_url",
                     "type": "string"
@@ -36,35 +68,7 @@
             ]
         },
         {
-            "name": "pin",
-            "base": "",
-            "fields": [
-                {
-                    "name": "pinner",
-                    "type": "name"
-                },
-                {
-                    "name": "pinning",
-                    "type": "name"
-                }
-            ]
-        },
-        {
-            "name": "block",
-            "base": "",
-            "fields": [
-                {
-                    "name": "blocker",
-                    "type": "name"
-                },
-                {
-                    "name": "blocking",
-                    "type": "name"
-                }
-            ]
-        },
-        {
-            "name": "delete",
+            "name": "deletemeta",
             "base": "",
             "fields": [
                 {
@@ -98,7 +102,7 @@
         },
         {
             "name": "deletemeta",
-            "type": "delete"
+            "type": "deletemeta"
         }
     ],
     "tables": [
