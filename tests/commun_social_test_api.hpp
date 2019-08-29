@@ -35,7 +35,7 @@ struct commun_social_api: base_contract_api {
         );
     }
 
-    action_result update_meta(account_name account,
+    action_result updatemeta(account_name account,
             std::string avatar_url, std::string cover_url, std::string biography,
             std::string facebook, std::string telegram, std::string whatsapp, std::string wechat) {
         return push(N(updatemeta), account, args()
