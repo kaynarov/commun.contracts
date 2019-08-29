@@ -1,4 +1,4 @@
-#include "objects.hpp"
+#include "types.h"
 
 namespace commun {
 
@@ -14,9 +14,7 @@ public:
     [[eosio::action]] void block(name blocker, name blocking);
     [[eosio::action]] void unblock(name blocker, name blocking);
 
-    [[eosio::action]] void updatemeta(name account,
-        std::string avatar_url, std::string cover_url, std::string biography,
-        std::string facebook, std::string telegram, std::string whatsapp, std::string wechat);
+    [[eosio::action]] void updatemeta(name account, accountmeta meta);
     [[eosio::action]] void deletemeta(name account);
 };
 

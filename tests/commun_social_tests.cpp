@@ -78,13 +78,20 @@ BOOST_FIXTURE_TEST_CASE(block_unblock_test, commun_social_tester) try {
 BOOST_FIXTURE_TEST_CASE(update_meta_test, commun_social_tester) try {
     BOOST_TEST_MESSAGE("update meta test");
 
+    accountmeta meta;
     BOOST_CHECK_EQUAL("missing authority of dave", social.push(N(updatemeta), "erin"_n, social.args()
-        ("account", "dave"_n)("avatar_url", "")("cover_url", "")("biography", "")
-        ("facebook", "")("telegram", "")("whatsapp", "")("wechat", "")));
-    BOOST_CHECK_EQUAL(success(), social.updatemeta("dave"_n,
-        "https://cdn.foobar.test/avatar.png", "http://bestcovers/cover1.jpg",
-        "My biography is very short",
-        "facebook", "telegram", "whatsapp", "wechat"));
+        ("account", "dave"_n)("meta", meta)));
+    BOOST_CHECK_EQUAL(success(), social.updatemeta("dave"_n, meta));
+    meta.avatar_url = "";
+    BOOST_CHECK_EQUAL(success(), social.updatemeta("dave"_n, meta));
+    meta.avatar_url = "https://cdn.foobar.test/avatar.png";
+    meta.cover_url  = "http://bestcovers/cover1.jpg";
+    meta.biography  = "My biography is very short";
+    meta.facebook   = "facebook";
+    meta.telegram   = "telegram";
+    meta.whatsapp   = "whatsapp";
+    meta.wechat     = "wechat";
+    BOOST_CHECK_EQUAL(success(), social.updatemeta("dave"_n, meta));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(delete_meta_test, commun_social_tester) try {

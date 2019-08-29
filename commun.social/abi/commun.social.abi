@@ -30,6 +30,40 @@
             ]
         },
         {
+            "name": "accountmeta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "avatar_url",
+                    "type": "string?"
+                },
+                {
+                    "name": "cover_url",
+                    "type": "string?"
+                },
+                {
+                    "name": "biography",
+                    "type": "string?"
+                },
+                {
+                    "name": "facebook",
+                    "type": "string?"
+                },
+                {
+                    "name": "telegram",
+                    "type": "string?"
+                },
+                {
+                    "name": "whatsapp",
+                    "type": "string?"
+                },
+                {
+                    "name": "wechat",
+                    "type": "string?"
+                }
+            ]
+        },
+        {
             "name": "updatemeta",
             "base": "",
             "fields": [
@@ -38,32 +72,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "avatar_url",
-                    "type": "string"
-                },
-                {
-                    "name": "cover_url",
-                    "type": "string"
-                },
-                {
-                    "name": "biography",
-                    "type": "string"
-                },
-                {
-                    "name": "facebook",
-                    "type": "string"
-                },
-                {
-                    "name": "telegram",
-                    "type": "string"
-                },
-                {
-                    "name": "whatsapp",
-                    "type": "string"
-                },
-                {
-                    "name": "wechat",
-                    "type": "string"
+                    "name": "meta",
+                    "type": "accountmeta"
                 }
             ]
         },
