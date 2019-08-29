@@ -10,6 +10,13 @@ uint64_t hash64(const std::string& s) {
     return fc::sha256::hash(s.c_str(), s.size())._hash[0];
 }
 
+authority create_code_authority(const std::vector<name> contracts) {
+    authority auth(1, {});
+    for (const auto contract: contracts) {
+        auth.accounts.push_back({.permission = {contract, config::eosio_code_name}, .weight = 1});
+    }
+    return auth;
+}
 
 void golos_tester::install_contract(
     account_name acc, const vector<uint8_t>& wasm, const vector<char>& abi, bool produce, const private_key_type* signer
@@ -151,6 +158,34 @@ vector<variant> golos_tester::get_all_chaindb_rows(name code, uint64_t scope, na
         v = _chaindb.object_at_cursor(cursor).value;
     } while (!v.is_null());
     return all;
+}
+
+void golos_tester::delegate_authority(account_name from, std::vector<account_name> to,
+        account_name code, action_name type, permission_name req,
+        permission_name parent, permission_name prov) {
+
+    authority auth(1, {});
+    for (auto u : to) {
+        auth.accounts.emplace_back(permission_level_weight{.permission = {u, prov}, .weight = 1});
+    }
+    std::sort(auth.accounts.begin(), auth.accounts.end(),
+        [](const permission_level_weight& l, const permission_level_weight& r) {
+            return std::tie(l.permission.actor, l.permission.permission) <
+                std::tie(r.permission.actor, r.permission.permission);
+        });
+    set_authority(from, req, auth, parent, { { from, config::active_name } }, {
+        eosio::testing::base_tester::get_private_key(from, name{config::active_name}.to_string())
+    });
+    link_authority(from, code, req, type);
+}
+
+signed_block_ptr golos_tester::wait_block(const uint32_t n) {
+    BOOST_TEST_REQUIRE(control->head_block_num() <= n);
+    auto b = control->head_block_state()->block;
+    while (control->head_block_num() < n) {
+        b = produce_block();
+    }
+    return b;
 }
 
 }} // eosio::tesing

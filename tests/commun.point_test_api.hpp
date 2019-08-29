@@ -1,11 +1,11 @@
 #pragma once
 #include "test_api_helper.hpp"
-#include <bancor.token/include/bancor.token/config.hpp>
+#include <commun.point/include/commun.point/config.hpp>
 
 namespace eosio { namespace testing {
 
 
-struct bancor_token_api: base_contract_api {
+struct commun_point_api: base_contract_api {
 private:
     void set_authority(name from, std::vector<name> to, name perm) {
         authority auth(1, {});
@@ -24,7 +24,7 @@ private:
         _tester->set_authority(from, perm, auth, "owner");
     }
 public:
-    bancor_token_api(golos_tester* tester, name code, symbol sym)
+    commun_point_api(golos_tester* tester, name code, symbol sym)
     :   base_contract_api(tester, code)
     ,   _symbol(sym)
     ,   _creators_added(false){}
@@ -61,6 +61,10 @@ public:
                 ("fee", fee)
         );
     }
+    
+    action_result set_freezer(account_name freezer) {
+        return push(N(setfreezer), _code, args()("freezer", freezer));
+    }
 
     action_result issue(account_name issuer, account_name to, asset quantity, string memo) {
         return push(N(issue), issuer, args()
@@ -94,25 +98,33 @@ public:
         if (v.is_object()) {
             auto o = mvo(v);
             o["supply"] = o["supply"].as<asset>().to_string();
-            o["max_supply"] = o["max_supply"].as<asset>().to_string();
             o["reserve"] = o["reserve"].as<asset>().to_string();
             v = o;
         }
         return v;
     }
-
-    variant get_account(account_name acc) {
-        auto v = get_struct(acc, N(accounts), _symbol.to_symbol_code().value, "account");
+    
+    int64_t get_supply() {
+        auto sname = _symbol.to_symbol_code().value;
+        auto v = get_struct(sname, N(stat), sname, "currency_stats");
         if (v.is_object()) {
             auto o = mvo(v);
-            o["balance"] = o["balance"].as<asset>().to_string();
-            v = o;
+            return o["supply"].as<asset>().get_amount();
         }
-        return v;
+        return 0;
+    }
+    
+    int64_t get_amount(account_name acc) {
+        auto v = get_struct(acc, N(account), _symbol.to_symbol_code().value, "account");
+        if (v.is_object()) {
+            auto o = mvo(v);
+            return o["balance"].as<asset>().get_amount();
+        }
+        return 0;
     }
 
     std::vector<variant> get_accounts(account_name user) {
-        return _tester->get_all_chaindb_rows(_code, user, N(accounts), false);
+        return _tester->get_all_chaindb_rows(_code, user, N(account), false);
     }
 };
 

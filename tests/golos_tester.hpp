@@ -27,6 +27,7 @@
 namespace eosio { namespace testing {
 
 uint64_t hash64(const std::string& arg);
+authority create_code_authority(const std::vector<name> contracts);
 
 // TODO: maybe use native db struct
 struct permission {
@@ -66,6 +67,9 @@ public:
     action_result push_action_msig_tx(account_name code, action_name name,
         std::vector<permission_level> perms, std::vector<account_name> signers, const variant_object& data);
     action_result push_tx(signed_transaction&& tx);
+    void delegate_authority(account_name from, std::vector<account_name> to,
+        account_name code, action_name type, permission_name req,
+        permission_name parent = N(active), permission_name prov = config::eosio_code_name);
 
     template<typename Key>
     fc::variant get_chaindb_lower_bound_struct(name code, uint64_t scope, name tbl, name indx, const Key& key, const std::string& n) const {
@@ -83,6 +87,7 @@ public:
     fc::variant get_chaindb_struct(name code, uint64_t scope, name tbl, uint64_t id, const std::string& n) const;
     fc::variant get_chaindb_singleton(name code, uint64_t scope, name tbl, const std::string& n) const;
     std::vector<fc::variant> get_all_chaindb_rows(name code, uint64_t scope, name tbl, bool strict) const;
+    signed_block_ptr wait_block(const uint32_t n);
 };
 
 

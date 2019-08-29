@@ -1,0 +1,174 @@
+{
+    "version": "cyberway::abi/1.1",
+    "structs": [
+        {
+            "name": "account_stuct",
+            "base": "",
+            "fields": [
+                { "type": "asset",        "name": "balance" }
+            ]
+        },{
+            "name": "stat_struct",
+            "base": "",
+            "fields": [
+                { "type": "asset",        "name": "supply" },
+                { "type": "asset",        "name": "reserve" }
+            ]
+        },{
+            "name": "param_struct",
+            "base": "",
+            "fields": [
+                { "type": "asset",        "name": "max_supply" },
+                { "type": "int16",        "name": "cw" },
+                { "type": "int16",        "name": "fee" },
+                { "type": "name",         "name": "issuer" }
+            ]
+        },{
+            "name": "singlparam_struct",
+            "fields": [
+                {"type": "uint64",         "name": "id"},
+                {"type": "name",           "name": "point_freezer"}
+            ]
+        },{
+            "name": "close_args",
+            "base": "",
+            "fields": [
+                { "type": "name",         "name": "owner" },
+                { "type": "symbol",       "name": "symbol" }
+            ]
+        },{
+            "name": "create_args",
+            "base": "",
+            "fields": [
+                { "type": "name",         "name": "issuer" },
+                { "type": "asset",        "name": "maximum_supply" },
+                { "type": "int16",        "name": "cw" },
+                { "type": "int16",        "name": "fee" }
+            ]
+        },{
+            "name": "issue_args",
+            "base": "",
+            "fields": [
+                { "type": "name",         "name": "to" },
+                { "type": "asset",        "name": "quantity" },
+                { "type": "string",       "name": "memo" }
+            ]
+        },{
+            "name": "open_args",
+            "base": "",
+            "fields": [
+                { "type": "name",         "name": "owner" },
+                { "type": "symbol",       "name": "symbol" },
+                { "type": "name",         "name": "ram_payer" }
+            ]
+        },{
+            "name": "setfreezer_args",
+            "base": "",
+            "fields": [
+                { "type": "name",         "name": "freezer" }
+            ]
+        },{
+            "name": "retire_args",
+            "base": "",
+            "fields": [
+                { "type": "asset",        "name": "quantity" },
+                { "type": "string",       "name": "memo" }
+            ]
+        },{
+            "name": "transfer_args",
+            "base": "",
+            "fields": [
+                { "type": "name",         "name": "from" },
+                { "type": "name",         "name": "to" },
+                { "type": "asset",        "name": "quantity" },
+                { "type": "string",       "name": "memo" }
+            ]
+        }
+    ],
+    "types": [],
+    "actions": [
+        {
+            "name": "close",
+            "type": "close_args",
+            "ricardian_contract": ""
+        },{
+            "name": "create",
+            "type": "create_args",
+            "ricardian_contract": ""
+        },{
+            "name": "setfreezer",
+            "type": "setfreezer_args",
+            "ricardian_contract": ""
+        },{
+            "name": "issue",
+            "type": "issue_args",
+            "ricardian_contract": ""
+        },{
+            "name": "open",
+            "type": "open_args",
+            "ricardian_contract": ""
+        },{
+            "name": "retire",
+            "type": "retire_args",
+            "ricardian_contract": ""
+        },{
+            "name": "transfer",
+            "type": "transfer_args",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "account",
+            "type": "account_stuct",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "balance._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "stat",
+            "type": "stat_struct",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "supply._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "param",
+            "type": "param_struct",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "max_supply._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "singlparam",
+            "type": "singlparam_struct",
+            "indexes" : [
+                {
+                    "name": "primary",
+                    "unique": true,
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": [],
+    "abi_extensions": []
+}

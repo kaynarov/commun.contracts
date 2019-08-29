@@ -18,8 +18,10 @@ struct mssgid {
 };
 
 struct commun_posting_api: base_contract_api {
-    commun_posting_api(golos_tester* tester, name code)
-    :   base_contract_api(tester, code) {}
+    symbol_code commun_code;
+    commun_posting_api(golos_tester* tester, name code, symbol_code cmmn_code)
+    :   base_contract_api(tester, code)
+        ,commun_code(cmmn_code) {}
 
     action_result create_msg(
         mssgid message_id,
@@ -31,6 +33,7 @@ struct commun_posting_api: base_contract_api {
         std::string json_metadata = "jsonmetadata"
     ) {
         return push(N(createmssg), message_id.author, args()
+            ("commun_code", commun_code)
             ("message_id", message_id)
             ("parent_id", parent_id)
             ("headermssg", title)
@@ -50,6 +53,7 @@ struct commun_posting_api: base_contract_api {
         std::string json_metadata
     ) {
         return push(N(updatemssg), message_id.author, args()
+            ("commun_code", commun_code)
             ("message_id", message_id)
             ("headermssg", title)
             ("bodymssg", body)
@@ -61,12 +65,14 @@ struct commun_posting_api: base_contract_api {
 
     action_result delete_msg(mssgid message_id) {
         return push(N(deletemssg), message_id.author, args()
+            ("commun_code", commun_code)
             ("message_id", message_id)
         );
     }
 
     action_result set_params(std::string json_params) {
         return push(N(setparams), _code, args()
+            ("commun_code", commun_code)
             ("params", json_str_to_obj(json_params)));
     }
 
@@ -84,22 +90,6 @@ struct commun_posting_api: base_contract_api {
 
     string get_str_social_acc(name social_acc) {
         return string("['st_social_acc', {'value':'") + name{social_acc}.to_string() + "'}]";
-    }
-
-    //// posting tables
-    variant get_permlink(account_name acc, uint64_t id) {
-        return _tester->get_chaindb_struct(_code, acc, N(permlink), id, "permlink");
-    }
-
-    variant get_permlink(mssgid message_id) {
-        variant obj = _tester->get_chaindb_lower_bound_struct(_code, message_id.author, N(permlink), N(byvalue),
-                                                              message_id.get_unique_key(), "message");
-        if (!obj.is_null() && obj.get_object().size()) {
-            if(obj["value"].as<std::string>() == message_id.permlink) {
-                return obj;
-            }
-        }
-        return variant();
     }
 
     const uint16_t max_comment_depth = 127;
