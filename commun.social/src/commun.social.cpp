@@ -31,11 +31,8 @@ void commun_social::unblock(name blocker, name blocking) {
     eosio::check(blocker != blocking, "You cannot unblock yourself");
 }
 
-void commun_social::updatemeta(std::string avatar_url, std::string cover_url, 
-                               std::string biography, std::string facebook, 
-                               std::string telegram, std::string whatsapp, 
-                               std::string wechat) {
-    require_auth(_self);
+void commun_social::updatemeta(name account, accountmeta meta) {
+    require_auth(account);
 }
 
 void commun_social::deletemeta(name account) {

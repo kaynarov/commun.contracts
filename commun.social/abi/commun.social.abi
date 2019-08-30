@@ -2,40 +2,6 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
-            "name": "updatemeta",
-            "base": "",
-            "fields": [
-                {
-                    "name": "avatar_url",
-                    "type": "string"
-                },
-                {
-                    "name": "cover_url",
-                    "type": "string"
-                },
-                {
-                    "name": "biography",
-                    "type": "string"
-                },
-                {
-                    "name": "facebook",
-                    "type": "string"
-                },
-                {
-                    "name": "telegram",
-                    "type": "string"
-                },
-                {
-                    "name": "whatsapp",
-                    "type": "string"
-                },
-                {
-                    "name": "wechat",
-                    "type": "string"
-                }
-            ]
-        },
-        {
             "name": "pin",
             "base": "",
             "fields": [
@@ -64,7 +30,55 @@
             ]
         },
         {
-            "name": "delete",
+            "name": "accountmeta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "avatar_url",
+                    "type": "string?"
+                },
+                {
+                    "name": "cover_url",
+                    "type": "string?"
+                },
+                {
+                    "name": "biography",
+                    "type": "string?"
+                },
+                {
+                    "name": "facebook",
+                    "type": "string?"
+                },
+                {
+                    "name": "telegram",
+                    "type": "string?"
+                },
+                {
+                    "name": "whatsapp",
+                    "type": "string?"
+                },
+                {
+                    "name": "wechat",
+                    "type": "string?"
+                }
+            ]
+        },
+        {
+            "name": "updatemeta",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "meta",
+                    "type": "accountmeta"
+                }
+            ]
+        },
+        {
+            "name": "deletemeta",
             "base": "",
             "fields": [
                 {
@@ -98,7 +112,7 @@
         },
         {
             "name": "deletemeta",
-            "type": "delete"
+            "type": "deletemeta"
         }
     ],
     "tables": [
