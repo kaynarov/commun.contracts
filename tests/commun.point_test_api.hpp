@@ -62,7 +62,7 @@ public:
         );
     }
     
-    action_result set_freezer(account_name freezer) {
+    action_result setfreezer(account_name freezer) {
         return push(N(setfreezer), _code, args()("freezer", freezer));
     }
 
@@ -74,11 +74,25 @@ public:
         );
     }
 
+    action_result retire(account_name issuer, asset quantity, string memo) {
+        return push(N(retire), issuer, args()
+            ("quantity", quantity)
+            ("memo", memo)
+        );
+    }
+
     action_result open(account_name owner, symbol symbol, account_name payer) {
-        return push(N(open), owner, args()
+        return push(N(open), payer, args()
             ("owner", owner)
             ("symbol", symbol)
             ("ram_payer", payer)
+        );
+    }
+
+    action_result close(account_name owner, symbol symbol) {
+        return push(N(close), owner, args()
+            ("owner", owner)
+            ("symbol", symbol)
         );
     }
 
@@ -92,6 +106,20 @@ public:
     }
 
     //// token tables
+    variant get_params() {
+        return get_params(_symbol);
+    }
+    variant get_params(symbol sym) {
+        auto sname = sym.to_symbol_code().value;
+        auto v = get_struct(sname, N(param), sname, "param");
+        if (v.is_object()) {
+            auto o = mvo(v);
+            o["max_supply"] = o["max_supply"].as<asset>().to_string();
+            v = o;
+        }
+        return v;
+    }
+
     variant get_stats() {
         auto sname = _symbol.to_symbol_code().value;
         auto v = get_struct(sname, N(stat), sname, "currency_stats");
@@ -125,6 +153,10 @@ public:
 
     std::vector<variant> get_accounts(account_name user) {
         return _tester->get_all_chaindb_rows(_code, user, N(account), false);
+    }
+
+    variant get_singparams() {
+        return _tester->get_chaindb_singleton(_code, _code, N(singlparam), "");
     }
 };
 
