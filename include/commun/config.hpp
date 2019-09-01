@@ -22,7 +22,6 @@ namespace commun { namespace config {
 // contracts
 static const auto control_name = "gls.ctrl"_n;
 static const auto social_name = "gls.social"_n;
-static const auto publish_name = "cmmn.publish"_n;
 static const auto charge_name = "cmmn.charge"_n;
 static const auto emission_name = "gls.emit"_n;
 static const auto workers_name = "gls.worker"_n;
@@ -34,6 +33,7 @@ static const auto commun_gallery_name = "cmmn.gallery"_n;
 static const auto token_name = "cyber.token"_n;
 static const auto internal_name = "cyber"_n;
 static const auto commun_social_name = "cmmn.social"_n;
+static const auto publish_name = commun_gallery_name;
 
 // permissions
 static const auto code_name = "cyber.code"_n;

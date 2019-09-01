@@ -250,9 +250,9 @@
                 { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
                 { "name": "bykey", "unique": "true", "orders": [
                     {"field": "creator", "order": "asc"}, {"field": "tracery", "order": "asc"} ] },
-                { "name": "bycommrating", "unique": "true", "orders": [
+                { "name": "bycommrating", "unique": "false", "orders": [
                     {"field": "status", "order": "asc"}, {"field": "comm_rating", "order": "desc"} ] },
-                { "name": "byleadrating", "unique": "true", "orders": [
+                { "name": "byleadrating", "unique": "false", "orders": [
                     {"field": "status", "order": "asc"}, {"field": "lead_rating", "order": "desc"} ] }
             ]
         },{

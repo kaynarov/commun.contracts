@@ -8,17 +8,16 @@
 #include <eosio/crypto.hpp>
 #include <commun.gallery/commun.gallery.hpp>
 
-namespace commun { namespace structures {
-
+namespace commun { 
 using namespace eosio;
 
-struct mssgid {
-    mssgid() = default;
+struct mssgid_t {
+    mssgid_t() = default;
 
     name author;
     std::string permlink;
 
-    bool operator==(const mssgid& value) const {
+    bool operator==(const mssgid_t& value) const {
         return author == value.author &&
                permlink == value.permlink;
     }
@@ -27,11 +26,9 @@ struct mssgid {
         auto hash = sha256(permlink.c_str(), permlink.size());
         return *(reinterpret_cast<const uint64_t *>(&hash));
     }
-
-    EOSLIB_SERIALIZE(mssgid, (author)(permlink))
 };
 
-struct vertex {
+struct vertex_t {
     uint64_t id;
     name     creator;
     uint64_t tracery;
@@ -46,13 +43,19 @@ struct vertex {
     key_t by_key()const { return std::make_tuple(creator, tracery); }
 };
 
-} // structures
-
+struct acc_param_t {
+    name account;
+    uint16_t actions_per_day; //? maybe actions_per_period is better 
+    std::vector<name> providers;
+    uint64_t primary_key() const { return account.value; }
+};
 
 using namespace eosio;
 
-using vertex_id_index  = indexed_by<N(primary), const_mem_fun<structures::vertex, uint64_t, &structures::vertex::primary_key> >;
-using vertex_key_index = indexed_by<N(bykey), const_mem_fun<structures::vertex, structures::vertex::key_t, &structures::vertex::by_key> >;
-using vertices = multi_index<N(vertex), structures::vertex, vertex_id_index, vertex_key_index>;
+using vertex_id_index  = indexed_by<N(primary), const_mem_fun<vertex_t, uint64_t, &vertex_t::primary_key> >;
+using vertex_key_index = indexed_by<N(bykey), const_mem_fun<vertex_t, vertex_t::key_t, &vertex_t::by_key> >;
+using vertices = multi_index<N(vertex), vertex_t, vertex_id_index, vertex_key_index>;
+
+using accparams = eosio::multi_index<"accparam"_n, acc_param_t>;
 
 } // commun

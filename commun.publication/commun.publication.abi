@@ -32,6 +32,96 @@
     ]
   }],
   "structs": [
+          {
+            "name": "mosaic_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",        "name": "id" },
+                { "type": "name",          "name": "creator" },
+                { "type": "uint64",        "name": "tracery" },
+                { "type": "uint16",        "name": "royalty" },
+                { "type": "time_point",    "name": "created" },
+                { "type": "uint16",        "name": "gem_count" },
+                { "type": "int64",         "name": "points" },
+                { "type": "int64",         "name": "shares" },
+                { "type": "int64",         "name": "damn_points" },
+                { "type": "int64",         "name": "damn_shares" },
+                { "type": "int64",         "name": "reward" },
+                { "type": "int64",         "name": "comm_rating" },
+                { "type": "int64",         "name": "lead_rating" },
+                { "type": "uint8",         "name": "status" },
+                { "type": "name[]",        "name": "slaps" }
+            ]
+        },{
+            "name": "gem_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",        "name": "id" },
+                { "type": "uint64",        "name": "mosaic_id" },
+                { "type": "time_point",    "name": "claim_date" },
+                { "type": "int64",         "name": "points" },
+                { "type": "int64",         "name": "shares" },
+                { "type": "name",          "name": "owner" },
+                { "type": "name",          "name": "creator" },
+                { "type": "uint16",        "name": "fee" }
+            ]
+        },{
+            "name": "inclusion_struct",
+            "base": "",
+            "fields": [
+                { "type": "asset",         "name": "quantity" }
+            ]
+        },{
+            "name": "param_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",         "name": "id" },
+                { "type": "symbol",         "name": "commun_symbol" },
+                { "type": "int64",          "name": "collection_period" },
+                { "type": "int64",          "name": "evaluation_period" },
+                { "type": "int64",          "name": "masaic_active_period" },
+                { "type": "uint16",         "name": "max_royalty" },
+                { "type": "uint8",          "name": "ban_threshold" },
+                { "type": "uint8",          "name": "rewarded_num" },
+                { "type": "int64",          "name": "comm_points_grade_sum" },
+                { "type": "int64[]",        "name": "comm_grades" },
+                { "type": "int64[]",        "name": "lead_grades" }
+            ]
+        },{
+            "name": "stat_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",         "name": "id" },
+                { "type": "time_point",     "name": "latest_reward" }
+            ]
+        },{
+            "name": "provision_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",         "name": "id" },
+                { "type": "name",           "name": "grantor" },
+                { "type": "name",           "name": "recipient" },
+                { "type": "uint16",        "name": "fee" },
+                { "type": "int64",          "name": "total" },
+                { "type": "int64",          "name": "frozen" }
+            ]
+        },{
+            "name": "mosaic_key",
+            "base": "",
+            "fields": [
+                { "type": "name",           "name": "creator" },
+                { "type": "uint64",         "name": "tracery" }
+            ]
+        },{
+            "name": "advice_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",         "name": "id" },
+                { "type": "name",           "name": "leader" },
+                { "type": "mosaic_key[]",   "name": "favorites" }
+            ]
+        },
+  
   {
     "name":"mssgid",
     "base": "",
@@ -95,6 +185,24 @@
         }
       ]
   },
+ {
+      "name": "acc_param",
+      "base": "",
+      "fields": [
+        {
+          "name": "account",
+          "type": "name"
+        },
+        {
+          "name": "actions_per_day",
+          "type": "uint16"
+        },
+        {
+          "name": "providers",
+          "type": "name[]"
+        }
+      ]
+  },
   {
     "name": "createmssg",
     "base": "",
@@ -130,6 +238,10 @@
       {
         "name": "jsonmetadata",
         "type": "string"
+      },
+      {
+        "name": "curators_prcnt",
+        "type": "uint16"
       }
     ]
   },
@@ -316,7 +428,35 @@
             "type": "mssgid"
         }
     ]
-  }
+  },{
+            "name": "claim_args",
+            "base": "",
+            "fields": [
+                { "type": "name",                   "name": "mosaic_creator" },
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "gem_owner" },
+                { "type": "name?",                   "name": "gem_creator" },
+                { "type": "name?",                  "name": "recipient" },
+                { "type": "bool?",                  "name": "eager" }
+            ]
+        },{
+            "name": "addproviders_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "recipient" },
+                { "type": "name[]",                 "name": "providers" }
+            ]
+        },{
+            "name": "setfrequency_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "account" },
+                { "type": "uint16",                 "name": "actions_per_day" }
+            ]
+        }
   ],
   "events": [
   ],
@@ -346,6 +486,10 @@
     "type": "unvote"
   },
   {
+    "name": "claim",
+    "type": "claim_args"
+  },
+  {
     "name": "setparams",
     "type": "setparams"
   },
@@ -356,9 +500,94 @@
   {
     "name": "erasereblog",
     "type": "erasereblog"
+  },
+  {
+    "name": "addproviders",
+    "type": "addproviders_args"
+  },
+  {
+    "name": "setfrequency",
+    "type": "setfrequency_args"
   }
   ],
   "tables": [
+          {
+            "name": "inclusion",
+            "type": "inclusion_struct",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "quantity._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "stat",
+            "type": "stat_struct",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "param",
+            "type": "param_struct",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        },{
+            "name": "mosaic",
+            "type": "mosaic_struct",
+            "indexes": [
+                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
+                { "name": "bykey", "unique": "true", "orders": [
+                    {"field": "creator", "order": "asc"}, {"field": "tracery", "order": "asc"} ] },
+                { "name": "bycommrating", "unique": "false", "orders": [
+                    {"field": "status", "order": "asc"}, {"field": "comm_rating", "order": "desc"} ] },
+                { "name": "byleadrating", "unique": "false", "orders": [
+                    {"field": "status", "order": "asc"}, {"field": "lead_rating", "order": "desc"} ] }
+            ]
+        },{
+            "name": "gem",
+            "type": "gem_struct",
+            "indexes": [
+                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
+                { "name": "bykey", "unique": "true", "orders": [
+                    {"field": "mosaic_id", "order": "asc"}, {"field": "owner", "order": "asc"}, {"field": "creator", "order": "asc"} ] },
+                { "name": "bycreator", "unique": "true", "orders": [
+                    {"field": "mosaic_id", "order": "asc"}, {"field": "creator", "order": "asc"}, {"field": "owner", "order": "asc"} ] },
+                { "name": "byclaim", "unique": "false", "orders": [
+                    {"field": "mosaic_id", "order": "asc"}, {"field": "owner", "order": "asc"}, {"field": "claim_date", "order": "asc"} ] }
+            ]
+        },{
+            "name": "provision",
+            "type": "provision_struct",
+            "indexes": [
+                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
+                { "name": "bykey", "unique": "true", "orders": [
+                    {"field": "grantor", "order": "asc"}, {"field": "recipient", "order": "asc"} ] }
+            ]
+        },{
+            "name": "advice",
+            "type": "advice_struct",
+            "indexes": [
+                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] }
+            ]
+        },
+  
+  
   {
       "name": "vertex",
       "type": "vertex_struct",
@@ -379,6 +608,17 @@
             ]
          }
       ]
+  },
+  {
+      "name": "accparam",
+      "type": "acc_param",
+        "indexes": [{
+            "name": "primary",
+            "unique": "true",
+            "orders": [
+                {"field": "account", "order": "asc"}
+            ]
+        }]
   },
   {
     "name": "pstngparams",
