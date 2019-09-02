@@ -18,14 +18,7 @@ namespace eosio { namespace testing {
     using namespace eosio;
 #endif
 
-struct forumprops {
-    forumprops() = default;
-
-    name social_contract = name();
-};
-
 #ifdef UNIT_TEST_ENV
 }} // eosio::testing
-FC_REFLECT(eosio::testing::forumprops, (social_contract))
 #endif
 
