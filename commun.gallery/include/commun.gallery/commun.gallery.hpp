@@ -681,7 +681,7 @@ protected:
         auto provs_index = provs_table.get_index<"bykey"_n>();
         auto prov_itr = provs_index.find(std::make_tuple(grantor, recipient));
         bool exists = prov_itr != provs_index.end();
-        bool enable = !quantity.amount && !fee.has_value();
+        bool enable = quantity.amount || fee.has_value();
         
         if (exists && enable) {
             provs_index.modify(prov_itr, name(), [&](auto& item) {
