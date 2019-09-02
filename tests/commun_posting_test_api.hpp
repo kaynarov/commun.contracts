@@ -30,7 +30,9 @@ struct commun_posting_api: base_contract_api {
         std::string body = "bodymssg",
         std::string language = "languagemssg",
         std::vector<std::string> tags = {"tag"},
-        std::string json_metadata = "jsonmetadata"
+        std::string json_metadata = "jsonmetadata",
+        uint16_t curators_prcnt = 5000
+        
     ) {
         return push(N(createmssg), message_id.author, args()
             ("commun_code", commun_code)
@@ -41,6 +43,7 @@ struct commun_posting_api: base_contract_api {
             ("languagemssg", language)
             ("tags", tags)
             ("jsonmetadata", json_metadata)
+            ("curators_prcnt", curators_prcnt)
         );
     }
 

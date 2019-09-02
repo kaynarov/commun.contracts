@@ -24,6 +24,7 @@ using namespace eosio;
 class gallery_base {
 public:
     using mosaic_key_t = std::tuple<name, uint64_t>;
+    using opt_providers_t = std::optional<std::vector<std::pair<name, int64_t> > >; 
 
 protected:
 
@@ -224,7 +225,7 @@ private:
         return point::get_reserve_quantity(config::commun_point_name, quantity, false).amount;
     }
     
-    static int64_t get_points_sum(const asset& quantity, const std::optional<std::vector<std::pair<name, int64_t> > >& providers) {
+    static int64_t get_points_sum(const asset& quantity, const opt_providers_t& providers) {
         int64_t ret = quantity.amount;
         if (providers.has_value()) {
             for (const auto& p : *providers) {
@@ -234,7 +235,7 @@ private:
         return ret;
     }
     
-    void chop_gem(name _self, symbol commun_symbol, const structures::gem& gem,
+    void chop_gem(name _self, symbol commun_symbol, const structures::gem& gem, bool no_rewards = false,
                     const std::optional<name>& recipient = std::optional<name>()) {
     
         auto commun_code = commun_symbol.code();
@@ -244,7 +245,7 @@ private:
         
         int64_t reward = 0;
         bool damn = gem.shares < 0;
-        if (damn == (mosaic->banned())) {
+        if (!no_rewards && damn == (mosaic->banned())) {
             reward = damn ? 
                 safe_prop(mosaic->reward, -gem.shares, mosaic->damn_shares) :
                 safe_prop(mosaic->reward,  gem.shares, mosaic->shares);
@@ -565,8 +566,7 @@ protected:
         };});
     }
 
-    void create_mosaic(name _self, name creator, uint64_t tracery, asset quantity, uint16_t royalty,
-                                        std::optional<std::vector<std::pair<name, int64_t> > > providers) {
+    void create_mosaic(name _self, name creator, uint64_t tracery, asset quantity, uint16_t royalty, opt_providers_t providers) {
         require_auth(creator);
         auto commun_symbol = quantity.symbol;
         auto commun_code   = commun_symbol.code();
@@ -607,8 +607,7 @@ protected:
         }
     }
         
-    void add_to_mosaic(name _self, name mosaic_creator, uint64_t tracery, asset quantity, bool damn, name gem_creator, 
-                                       std::optional<std::vector<std::pair<name, int64_t> > > providers) {
+    void add_to_mosaic(name _self, name mosaic_creator, uint64_t tracery, asset quantity, bool damn, name gem_creator, opt_providers_t providers) {
         require_auth(gem_creator);
         auto commun_symbol = quantity.symbol;
         auto commun_code = commun_symbol.code();
@@ -649,7 +648,7 @@ protected:
         }
     }
     
-    void claim_gem(name _self, name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, std::optional<name> recipient) {
+    void claim_gem(name _self, name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, std::optional<name> recipient, bool eager) {
         mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
         auto mosaic = mosaics_idx.find(std::make_tuple(mosaic_creator, tracery));
@@ -662,7 +661,9 @@ protected:
         
         maybe_issue_reward(_self, param);
         
-        check(now > mosaic->created + eosio::seconds(param.evaluation_period), "evaluation period isn't over yet");
+        bool premature = now <= mosaic->created + eosio::seconds(param.evaluation_period);
+        check(!premature || eager, "evaluation period isn't over yet");
+        
         gems gems_table(_self, commun_code.raw());
         auto gems_idx = gems_table.get_index<"bykey"_n>();
         auto gem = gems_idx.find(std::make_tuple(mosaic->id, gem_owner, gem_creator.value_or(gem_owner)));
@@ -670,7 +671,7 @@ protected:
         if (now < gem->claim_date) {
             require_auth(gem_owner);
         }
-        chop_gem(_self, param.commun_symbol, *gem, recipient);
+        chop_gem(_self, param.commun_symbol, *gem, premature, recipient);
         gems_idx.erase(gem);
     }
     
@@ -778,18 +779,16 @@ public:
         create_gallery(_self, commun_symbol);
     }
 
-    [[eosio::action]] void createmosaic(name creator, uint64_t tracery, asset quantity, uint16_t royalty,
-                                        std::optional<std::vector<std::pair<name, int64_t> > > providers) {
+    [[eosio::action]] void createmosaic(name creator, uint64_t tracery, asset quantity, uint16_t royalty, opt_providers_t providers) {
         create_mosaic(_self, creator, tracery, quantity, royalty, providers);
     }
         
-    [[eosio::action]] void addtomosaic(name mosaic_creator, uint64_t tracery, asset quantity, bool damn, name gem_creator, 
-                                       std::optional<std::vector<std::pair<name, int64_t> > > providers) {
+    [[eosio::action]] void addtomosaic(name mosaic_creator, uint64_t tracery, asset quantity, bool damn, name gem_creator, opt_providers_t providers) {
         add_to_mosaic(_self, mosaic_creator, tracery, quantity, damn, gem_creator, providers);
     }
     
     [[eosio::action]] void claimgem(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, std::optional<name> recipient) {
-        claim_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator, recipient);
+        claim_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator, recipient, false);
     }
     
     [[eosio::action]] void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {

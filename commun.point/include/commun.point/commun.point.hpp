@@ -60,7 +60,7 @@ public:
 
     static inline asset get_balance(name token_contract_account, name owner, symbol_code commun_code) {
         accounts accountstable(token_contract_account, owner.value);
-        const auto& ac = accountstable.get(commun_code.raw());
+        const auto& ac = accountstable.get(commun_code.raw(), "balance does not exist");
         return ac.balance;
     }
 
