@@ -1,6 +1,9 @@
 #pragma once
 #include "test_api_helper.hpp"
 #include <contracts.hpp>
+#include <commun/config.hpp>
+
+namespace cfg = commun::config;
 
 namespace eosio { namespace testing {
 
@@ -8,8 +11,8 @@ struct mssgid {
     eosio::chain::name author;
     std::string permlink;
 
-    auto get_unique_key() const {
-        return permlink;
+    uint64_t tracery() const {
+        return fc::hash64(permlink.c_str(), permlink.size());
     }
 
     bool operator ==(const mssgid& rhs) const {
@@ -73,6 +76,73 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
+    action_result reblog_msg(
+        account_name rebloger,
+        mssgid message_id,
+        std::string title = "headermssg",
+        std::string body = "bodymssg"
+    ) {
+        return push(N(reblog), rebloger, args()
+            ("commun_code", commun_code)
+            ("rebloger", rebloger)
+            ("message_id", message_id)
+            ("headermssg", title)
+            ("bodymssg", body)
+        );
+    }
+
+    action_result erase_reblog_msg(
+        account_name rebloger,
+        mssgid message_id
+    ) {
+        return push(N(erasereblog), rebloger, args()
+            ("commun_code", commun_code)
+            ("rebloger", rebloger)
+            ("message_id", message_id)
+        );
+    }
+
+    action_result upvote(account_name voter, mssgid message_id, uint16_t weight = cfg::_100percent) {
+        return push(N(upvote), voter, args()
+            ("commun_code", commun_code)
+            ("voter", voter)
+            ("message_id", message_id)
+            ("weight", weight)
+        );
+    }
+    action_result downvote(account_name voter, mssgid message_id, uint16_t weight = cfg::_100percent) {
+        return push(N(downvote), voter, args()
+            ("commun_code", commun_code)
+            ("voter", voter)
+            ("message_id", message_id)
+            ("weight", weight)
+        );
+    }
+    action_result unvote(account_name voter, mssgid message_id) {
+        return push(N(unvote), voter, args()
+            ("commun_code", commun_code)
+            ("voter", voter)
+            ("message_id", message_id)
+        );
+    }
+    // TODO: claim(), but this is mostly same as unvote
+
+    action_result addproviders(account_name recipient, std::vector<account_name> providers) {
+        return push(N(addproviders), recipient, args()
+            ("commun_code", commun_code)
+            ("recipient", recipient)
+            ("providers", providers)
+        );
+    }
+
+    action_result setfrequency(account_name account, uint16_t actions_per_day) {
+        return push(N(setfrequency), account, args()
+            ("commun_code", commun_code)
+            ("account", account)
+            ("actions_per_day", actions_per_day)
+        );
+    }
+
     action_result set_params(std::string json_params) {
         return push(N(setparams), _code, args()
             ("commun_code", commun_code)
@@ -93,6 +163,21 @@ struct commun_posting_api: base_contract_api {
 
     string get_str_social_acc(name social_acc) {
         return string("['st_social_acc', {'value':'") + name{social_acc}.to_string() + "'}]";
+    }
+
+    variant get_vertex(mssgid message_id) {
+        variant obj = _tester->get_chaindb_lower_bound_struct(_code, commun_code.value, N(vertex), N(bykey),
+            message_id.tracery(), "message");
+        if (!obj.is_null() && obj.get_object().size()) {
+            if (obj["creator"] == message_id.author.to_string() && obj["tracery"].as<uint64_t>() == message_id.tracery()) {
+                return obj;
+            }
+        }
+        return variant();
+    }
+
+    variant get_accparam(account_name acc) {
+        return _tester->get_chaindb_struct(_code, commun_code.value, N(accparam), acc.value, "accparam");
     }
 
     const uint16_t max_comment_depth = 127;
