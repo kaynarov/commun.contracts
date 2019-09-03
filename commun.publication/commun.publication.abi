@@ -441,7 +441,7 @@
                 { "type": "bool?",                  "name": "eager" }
             ]
         },{
-            "name": "addproviders_args",
+            "name": "setproviders_args",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
@@ -455,6 +455,32 @@
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "account" },
                 { "type": "uint16",                 "name": "actions_per_day" }
+            ]
+        },{
+            "name": "provide_args",
+            "base": "",
+            "fields": [
+                { "type": "name",                   "name": "grantor" },
+                { "type": "name",                   "name": "recipient" },
+                { "type": "asset",                  "name": "quantity" },
+                { "type": "uint16?",                "name": "fee" }
+            ]
+        },{
+            "name": "advise_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "leader" },
+                { "type": "mosaic_key[]",           "name": "favorites" }
+            ]
+        },{
+            "name": "slap_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "leader" },
+                { "type": "name",                   "name": "mosaic_creator" },
+                { "type": "uint64",                 "name": "tracery" }
             ]
         }
   ],
@@ -502,12 +528,24 @@
     "type": "erasereblog"
   },
   {
-    "name": "addproviders",
-    "type": "addproviders_args"
+    "name": "setproviders",
+    "type": "setproviders_args"
   },
   {
     "name": "setfrequency",
     "type": "setfrequency_args"
+  },
+  {
+    "name": "provide",
+    "type": "provide_args"
+  },
+  {
+    "name": "advise",
+    "type": "advise_args"
+  },
+  {
+    "name": "slap",
+    "type": "slap_args"
   }
   ],
   "tables": [

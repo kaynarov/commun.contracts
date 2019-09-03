@@ -38,10 +38,16 @@ extern "C" {
             execute_action(&publication::reblog);
         if (NN(erasereblog) == action)
             execute_action(&publication::erase_reblog);
-        if (NN(addproviders) == action)
-            execute_action(&publication::addproviders);
+        if (NN(setproviders) == action)
+            execute_action(&publication::setproviders);
         if (NN(setfrequency) == action)
             execute_action(&publication::setfrequency);
+        if (NN(provide) == action)
+            execute_action(&publication::provide);
+        if (NN(advise) == action)
+            execute_action(&publication::advise);
+        if (NN(slap) == action)
+            execute_action(&publication::slap);
     }
 #undef NN
 }
@@ -334,34 +340,24 @@ gallery_base::opt_providers_t publication::get_providers(symbol_code commun_code
     return ret.size() ? gallery_base::opt_providers_t(ret) : gallery_base::opt_providers_t();
 }
 
-void publication::addproviders(symbol_code commun_code, name recipient, std::vector<name> providers) {
+void publication::setproviders(symbol_code commun_code, name recipient, std::vector<name> providers) {
     require_auth(recipient);
-    gallery_base::params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-    accparams accparams_table(_self, commun_code.raw());
-    auto acc_param = get_acc_param(accparams_table, commun_code, recipient);
-    
-    accparams_table.modify(acc_param, name(), [&](auto& a) {
-        a.providers.insert(a.providers.end(), providers.begin(), providers.end());
-        sort(a.providers.begin(), a.providers.end());
-        a.providers.erase(unique(a.providers.begin(), a.providers.end()), a.providers.end());
-    });
     
     provs provs_table(_self, commun_code.raw());
     auto provs_index = provs_table.get_index<"bykey"_n>();
-    for (size_t n = 0; n < acc_param->providers.size(); n++) {
-        auto prov_name = acc_param->providers[n];
+    for (size_t n = 0; n < providers.size(); n++) {
+        auto prov_name = providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, recipient));
         if (prov_itr == provs_index.end() || !point::balance_exists(config::commun_point_name, prov_name, commun_code)) {
-            accparams_table.modify(acc_param, name(), [&](auto& a) { a.providers[n] = name(); });
+            providers[n] = name();
         }
     }
-    accparams_table.modify(acc_param, name(), [&](auto& a) {
-        a.providers.erase(
-            std::remove_if(a.providers.begin(), a.providers.end(), [](const name& p) { return p == name(); }),
-            a.providers.end());
-    });
-    eosio::check(acc_param->providers.size() <= config::max_providers_num, "too many providers");
+    providers.erase(std::remove_if(providers.begin(), providers.end(), [](const name& p) { return p == name(); }), providers.end());
+    eosio::check(providers.size() <= config::max_providers_num, "too many providers");
+    
+    accparams accparams_table(_self, commun_code.raw());
+    auto acc_param = get_acc_param(accparams_table, commun_code, recipient);
+    accparams_table.modify(acc_param, name(), [&](auto& a) { a.providers = providers; });
 }
 
 void publication::setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day) {
@@ -369,6 +365,18 @@ void publication::setfrequency(symbol_code commun_code, name account, uint16_t a
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, account);
     accparams_table.modify(acc_param, name(), [&](auto& a) { a.actions_per_day = actions_per_day; });
+}
+
+void publication::provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
+    provide_points(_self, grantor, recipient, quantity, fee);
+}
+
+void publication::advise(symbol_code commun_code, name leader, std::vector<mosaic_key_t> favorites) {
+    advise_mosaics(_self, commun_code, leader, favorites);
+}
+
+void publication::slap(symbol_code commun_code, name leader, name mosaic_creator, uint64_t tracery) {
+    slap_mosaic(_self, commun_code, leader, mosaic_creator, tracery);
 }
 
 } // commun

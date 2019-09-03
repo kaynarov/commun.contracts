@@ -27,8 +27,13 @@ public:
     void set_params(symbol_code commun_code, std::vector<posting_params> params);
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string headermssg, std::string bodymssg);
     void erase_reblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
-    void addproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
+    void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
     void setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day);
+    
+    void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee);
+    void advise(symbol_code commun_code, name leader, std::vector<mosaic_key_t> favorites);
+    //TODO: void checkadvice (symbol_code commun_code, name leader);
+    void slap(symbol_code commun_code, name leader, name mosaic_creator, uint64_t tracery);
 private:
     gallery_base::opt_providers_t get_providers(symbol_code commun_code, name account, uint16_t weight = config::_100percent);
     accparams::const_iterator get_acc_param(accparams& accparams_table, symbol_code commun_code, name account);
