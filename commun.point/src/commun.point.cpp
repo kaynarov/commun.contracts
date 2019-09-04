@@ -147,12 +147,14 @@ void point::sub_balance(name owner, asset value) {
    accounts accounts_table(_self, owner.value);
 
    const auto& from = accounts_table.get( value.symbol.code().raw(), "no balance object found");
-   
+
+   auto avail_balance = from.balance.amount;
    auto singparam = singparams(_self, _self.value);
    auto point_freezer = singparam.exists() ? singparam.get().point_freezer : name();
    if (point_freezer) {
-       check(from.balance.amount - gallery::get_frozen_amount(point_freezer, owner, value.symbol.code()) >= value.amount, "overdrawn balance");
+       avail_balance -= gallery::get_frozen_amount(point_freezer, owner, value.symbol.code());
    }
+   check(avail_balance >= value.amount, "overdrawn balance");
 
    accounts_table.modify(from, owner, [&](auto& a) {
          a.balance -= value;
