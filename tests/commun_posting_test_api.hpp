@@ -180,6 +180,10 @@ struct commun_posting_api: base_contract_api {
         return _tester->get_chaindb_struct(_code, commun_code.value, N(accparam), acc.value, "accparam");
     }
 
+    uint64_t tracery(std::string permlink) const {
+        return mssgid{name(), permlink}.tracery();
+    }
+
     const uint16_t max_comment_depth = 127;
 };
 

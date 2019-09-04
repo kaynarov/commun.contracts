@@ -1,4 +1,4 @@
-#include "golos_tester.hpp"
+#include "gallery_tester.hpp"
 #include "commun.point_test_api.hpp"
 #include "commun.gallery_test_api.hpp"
 #include "cyber.token_test_api.hpp"
@@ -18,7 +18,7 @@ static const auto _point = symbol(3, point_code_str);
 using commun::config::commun_point_name;
 using commun::config::commun_gallery_name;
 using commun::config::commun_emit_name;
-class commun_gallery_tester : public golos_tester {
+class commun_gallery_tester : public gallery_tester {
 protected:
     cyber_token_api token;
     commun_point_api point;
@@ -26,7 +26,7 @@ protected:
     
 public:
     commun_gallery_tester()
-        : golos_tester(commun_gallery_name)
+        : gallery_tester(commun_gallery_name)
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, commun_point_name, _point})
         , gallery({this, _code, _point})
@@ -122,17 +122,17 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
-    BOOST_CHECK_EQUAL(err.no_balance, gallery.create(point._symbol));
+    BOOST_CHECK_EQUAL(errgallery.no_balance, gallery.create(point._symbol));
     BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
     BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
-    BOOST_CHECK_EQUAL(err.overdrawn_balance, gallery.createmosaic(_alice, 1, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
-    BOOST_CHECK_EQUAL(err.insufficient_quantity(_alice), gallery.createmosaic(_alice, 1, asset(min_gem_points - 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_alice, 1, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.insufficient_quantity(_alice), gallery.createmosaic(_alice, 1, asset(min_gem_points - 1, point._symbol), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, asset(min_gem_points, point._symbol), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
 
     produce_block();
     produce_block(fc::seconds(commun::config::default_evaluation_period - (cfg::block_interval_ms / 1000)));
-    BOOST_CHECK_EQUAL(err.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
 
     produce_blocks(1);
 
@@ -150,7 +150,7 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("create gallery tests");
     int64_t supply  = 5000000000000;
 
-    BOOST_CHECK_EQUAL(err.no_balance, gallery.create(point._symbol));
+    BOOST_CHECK_EQUAL(errgallery.no_balance, gallery.create(point._symbol));
     BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
     BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
     BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
@@ -176,15 +176,15 @@ BOOST_FIXTURE_TEST_CASE(createmosaic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
 
-    BOOST_CHECK_EQUAL(err.overdrawn_balance, gallery.createmosaic(_alice, 1, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
-    BOOST_CHECK_EQUAL(err.insufficient_quantity(_alice), gallery.createmosaic(_alice, 1, asset(min_gem_points - 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_alice, 1, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.insufficient_quantity(_alice), gallery.createmosaic(_alice, 1, asset(min_gem_points - 1, point._symbol), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, asset(min_gem_points, point._symbol), royalty));
 
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("addtomosaic tests");
-    BOOST_CHECK_EQUAL(err.no_mosaic, gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     init();
 
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
@@ -199,7 +199,7 @@ BOOST_FIXTURE_TEST_CASE(claimgem_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     produce_block();
     produce_block(fc::seconds(commun::config::default_evaluation_period - (cfg::block_interval_ms / 1000)));
-    BOOST_CHECK_EQUAL(err.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
 
     produce_blocks(1);
 
@@ -211,7 +211,7 @@ BOOST_FIXTURE_TEST_CASE(claimgem_tests, commun_gallery_tester) try {
 BOOST_FIXTURE_TEST_CASE(provide_tests, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("provide tests");
 
-    BOOST_CHECK_EQUAL(err.no_points_provided, gallery.provide(_alice, _carol, asset(1000, point._symbol)));
+    BOOST_CHECK_EQUAL(errgallery.no_points_provided, gallery.provide(_alice, _carol, asset(1000, point._symbol)));
     BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _carol, asset(0, point._symbol)));
 
 } FC_LOG_AND_RETHROW()

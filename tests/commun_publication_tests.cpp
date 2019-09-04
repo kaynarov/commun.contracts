@@ -1,4 +1,4 @@
-#include "golos_tester.hpp"
+#include "gallery_tester.hpp"
 #include "commun_posting_test_api.hpp"
 #include "commun.point_test_api.hpp"
 #include "cyber.token_test_api.hpp"
@@ -15,7 +15,7 @@ using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 
-class commun_publication_tester : public golos_tester {
+class commun_publication_tester : public gallery_tester {
 protected:
     cyber_token_api token;
     commun_point_api point;
@@ -25,7 +25,7 @@ protected:
 
 public:
     commun_publication_tester()
-        : golos_tester(cfg::publish_name)
+        : gallery_tester(cfg::publish_name)
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, cfg::commun_point_name, _point})
         , post({this, cfg::publish_name, symbol(0, point_code_str).to_symbol_code()})
@@ -79,7 +79,7 @@ public:
             BOOST_CHECK_EQUAL(success(), point.transfer(_golos, u, asset(supply / _users.size(), point._symbol)));
         }
     }
-    
+
     const account_name _commun = N(commun);
     const account_name _golos = N(golos);
     int64_t supply;
@@ -114,6 +114,18 @@ public:
 
 BOOST_AUTO_TEST_SUITE(commun_publication_tests)
 
+BOOST_FIXTURE_TEST_CASE(set_params, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Params testing.");
+
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(1000000000, point._symbol), 10000, 1));
+
+    BOOST_CHECK_EQUAL(errgallery.no_balance, post.init_default_params());
+
+    BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
+    BOOST_CHECK_EQUAL(success(), post.init_default_params());
+    produce_block();
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Create message testing.");
     init();
@@ -138,15 +150,20 @@ BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.wrong_curators_prcnt, post.create_msg({N(brucelee), "test-title"},
         {N(), "parentprmlnk"}, "headermssg", "body", "", {""}, "", cfg::_100percent+1));
 
-    BOOST_TEST_MESSAGE("--- creating post and checking it.");
+    BOOST_TEST_MESSAGE("--- creating post.");
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
     produce_block();
+    BOOST_TEST_MESSAGE("--- checking its mosaic.");
+    auto mos = get_mosaic(_code, _point, N(brucelee), post.tracery("permlink"));
+    BOOST_CHECK(!mos.is_null());
 
-    BOOST_TEST_MESSAGE("--- checking hierarchy.");
+    BOOST_TEST_MESSAGE("--- testing hierarchy.");
     BOOST_CHECK_EQUAL(err.msg_exists, post.create_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(err.parent_no_message, post.create_msg({N(jackiechan), "child"}, {N(notexist), "parent"}));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(jackiechan), "child"}, {N(brucelee), "permlink"}));
+    BOOST_CHECK(!get_mosaic(_code, _point, N(jackiechan), post.tracery("child")).is_null());
+
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(nesting_level_test, commun_publication_tester) try {
@@ -186,7 +203,9 @@ BOOST_FIXTURE_TEST_CASE(delete_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.delete_children, post.delete_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(success(), post.delete_msg({N(jackiechan), "child"}));
+    BOOST_CHECK(get_mosaic(_code, _point, N(jackiechan), post.tracery("child")).is_null());
     BOOST_CHECK_EQUAL(success(), post.delete_msg({N(brucelee), "permlink"}));
+    BOOST_CHECK(get_mosaic(_code, _point, N(brucelee), post.tracery("permlink")).is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
@@ -233,9 +252,13 @@ BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     auto vote_brucelee = [&](auto weight){ return post.upvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(err.no_param, vote_brucelee(1));
     init();
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_0, vote_brucelee(0));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
+    BOOST_CHECK_EQUAL(success(), vote_brucelee(cfg::_100percent));
+    auto gem = get_gem(_code, _point, 0, N(brucelee));
+    BOOST_CHECK(!gem.is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
@@ -244,9 +267,27 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     auto vote_brucelee = [&](auto weight){ return post.downvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(err.no_param, vote_brucelee(1));
     init();
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_0, vote_brucelee(0));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
+    BOOST_CHECK_EQUAL(success(), vote_brucelee(cfg::_100percent));
+    auto gem = get_gem(_code, _point, 0, N(brucelee));
+    BOOST_CHECK(!gem.is_null());
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Unvote testing.");
+    init();
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
+    // TODO: it removes post (mosaic) BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(brucelee), "permlink"}, 123));
+    produce_block();
+    BOOST_CHECK(!get_gem(_code, _point, 0, N(chucknorris)).is_null());
+    BOOST_CHECK_EQUAL(success(), post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
+    BOOST_CHECK(get_gem(_code, _point, 0, N(chucknorris)).is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(addproviders, commun_publication_tester) try {
