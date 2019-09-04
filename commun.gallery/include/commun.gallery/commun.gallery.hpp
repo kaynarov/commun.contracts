@@ -104,7 +104,7 @@ struct structures {
         
         int64_t collection_period;
         int64_t evaluation_period;
-        int64_t masaic_active_period;
+        int64_t mosaic_active_period;
         uint16_t max_royalty; // <= 100%
         uint8_t ban_threshold;
         uint8_t rewarded_num;
@@ -548,7 +548,7 @@ protected:
             .commun_symbol = commun_symbol,
             .collection_period = config::default_collection_period,
             .evaluation_period = config::default_evaluation_period,
-            .masaic_active_period = config::default_masaic_active_period,
+            .mosaic_active_period = config::default_mosaic_active_period,
             .max_royalty = config::default_max_royalty,
             .ban_threshold = config::default_ban_threshold,
             .rewarded_num = config::default_rewarded_num,
@@ -594,7 +594,7 @@ protected:
             .shares = 0,
         };});
         
-        auto claim_date = now + eosio::seconds(param.masaic_active_period);
+        auto claim_date = now + eosio::seconds(param.mosaic_active_period);
         
         if (providers.has_value()) {
             for (const auto& p : *providers) {
@@ -633,7 +633,7 @@ protected:
             shares_abs -= pay_royalties(_self, commun_code, mosaic->id, mosaic_creator, safe_pct(mosaic->royalty, shares_abs));
         }
 
-        auto claim_date = mosaic->created + eosio::seconds(param.masaic_active_period);
+        auto claim_date = mosaic->created + eosio::seconds(param.mosaic_active_period);
         
         if (providers.has_value()) {
             for (const auto& p : *providers) {
