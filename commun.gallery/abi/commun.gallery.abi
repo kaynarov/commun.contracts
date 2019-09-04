@@ -54,7 +54,7 @@
                 { "type": "symbol",         "name": "commun_symbol" },
                 { "type": "int64",          "name": "collection_period" },
                 { "type": "int64",          "name": "evaluation_period" },
-                { "type": "int64",          "name": "masaic_active_period" },
+                { "type": "int64",          "name": "mosaic_active_period" },
                 { "type": "uint16",         "name": "max_royalty" },
                 { "type": "uint8",          "name": "ban_threshold" },
                 { "type": "uint8",          "name": "rewarded_num" },

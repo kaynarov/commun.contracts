@@ -32,7 +32,7 @@ public:
 private:
     gallery_base::opt_providers_t get_providers(symbol_code commun_code, name account, uint16_t weight = config::_100percent);
     accparams::const_iterator get_acc_param(accparams& accparams_table, symbol_code commun_code, name account);
-    static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t actions_per_day, int64_t masaic_active_period, 
+    static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t actions_per_day, int64_t mosaic_active_period, 
                                         int64_t actual_limit = std::numeric_limits<int64_t>::max());
     const posting_state& params(symbol_code commun_code);
     void set_vote(symbol_code commun_code, name voter, const mssgid_t &message_id, int16_t weight);

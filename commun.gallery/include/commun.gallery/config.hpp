@@ -10,7 +10,7 @@ static constexpr int64_t default_evaluation_period   = 10 * 24 * 60 * 60;
 
 static constexpr uint16_t default_max_royalty = _100percent;
 
-static constexpr int64_t default_masaic_active_period      = 14 * 24 * 60 * 60;
+static constexpr int64_t default_mosaic_active_period      = 14 * 24 * 60 * 60;
 
 static constexpr uint8_t max_grages_num = 30;
 static constexpr uint8_t max_rewarded_num = 25;

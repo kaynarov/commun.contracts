@@ -128,7 +128,7 @@ void publication::create_message(
             point::get_balance(config::commun_point_name, message_id.author, commun_code).amount, 
             get_frozen_amount(_self, message_id.author, commun_code),
             acc_param->actions_per_day, 
-            param.masaic_active_period), 
+            param.mosaic_active_period), 
         param.commun_symbol);
 
     create_mosaic(_self, message_id.author, tracery, quantity, config::_100percent - curators_prcnt, get_providers(commun_code, message_id.author));    
@@ -219,7 +219,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
             point::get_balance(config::commun_point_name, voter, commun_code).amount, 
             get_frozen_amount(_self, voter, commun_code),
             acc_param->actions_per_day, 
-            param.masaic_active_period)), 
+            param.mosaic_active_period)), 
         param.commun_symbol);
     
     add_to_mosaic(_self, message_id.author, message_id.tracery(), quantity, weight < 0, voter, get_providers(commun_code, message_id.author, abs_weight));
@@ -288,13 +288,13 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
     return ret;
 }
 
-int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t actions_per_day, int64_t masaic_active_period, int64_t actual_limit) {
+int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t actions_per_day, int64_t mosaic_active_period, int64_t actual_limit) {
     int64_t available = balance - frozen;
     if (available <= 0 || actual_limit <= 0) {
         return 0;
     }
     static const int64_t seconds_per_day = 24 * 60 * 60;
-    int64_t actions_per_period = std::max<int64_t>(safe_prop(actions_per_day, masaic_active_period, seconds_per_day), 1);
+    int64_t actions_per_period = std::max<int64_t>(safe_prop(actions_per_day, mosaic_active_period, seconds_per_day), 1);
     int64_t points_per_action = balance / actions_per_period;
     return std::min(points_per_action ? std::min(available, points_per_action) : available, actual_limit);
 }
@@ -315,7 +315,7 @@ gallery_base::opt_providers_t publication::get_providers(symbol_code commun_code
                 prov_itr->total, 
                 prov_itr->frozen,
                 acc_param->actions_per_day, 
-                param.masaic_active_period,
+                param.mosaic_active_period,
                 point::get_balance(config::commun_point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code)));
         
             if (amount) {
