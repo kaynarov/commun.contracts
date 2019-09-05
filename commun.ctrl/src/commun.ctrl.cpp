@@ -1,13 +1,14 @@
-#include "golos.ctrl/golos.ctrl.hpp"
-#include "golos.ctrl/config.hpp"
-#include <golos.vesting/golos.vesting.hpp>
-#include <common/parameter_ops.hpp>
-#include <common/dispatchers.hpp>
-#include <cyber.bios/cyber.bios.hpp>
+#include "commun.ctrl/commun.ctrl.hpp"
+#include "commun.ctrl/config.hpp"
+#include "commun.point/commun.point.hpp"
+//#include <golos.vesting/golos.vesting.hpp>
+#include <commun/parameter_ops.hpp>
+#include <commun/dispatchers.hpp>
+//#include <cyber.system/native.hpp>
 #include <eosio/transaction.hpp>
 #include <eosio/event.hpp>
 
-namespace golos {
+namespace commun {
 
 
 using namespace eosio;
@@ -97,40 +98,41 @@ void control::setparams(vector<ctrl_param> params) {
 
 void control::on_transfer(name from, name to, asset quantity, string memo) {
     if (!_cfg.exists() || quantity.symbol.code() != props().token.code)
-            return; // distribute only community token
+        return; // distribute only community token
 
-    if (to == _self && quantity.amount > 0) {
-        // Don't check `from` for now, just distribute to top witnesses
-        auto total = quantity.amount;
-        auto top = top_witnesses();
-        auto n = top.size();
-        if (n == 0) {
-            print("nobody in top");
-            return;
-        }
-
-        auto token = quantity.symbol;
-        static const auto memo = "emission";
-        auto random = tapos_block_prefix();     // trx.ref_block_prefix; can generate hash from timestamp insead
-        auto winner = top[random % n];          // witness, who will receive fraction after reward division
-        auto reward = total / n;
-
-        vector<eosio::token::recipient> top_recipients;
-        for (const auto& w: top) {
-            if (w == winner)
-                continue;
-
-            if (reward <= 0)
-                continue;
-
-            top_recipients.push_back({w, asset(reward, token), memo});
-            total -= reward;
-        }
-        top_recipients.push_back({winner, asset(total, token), memo});
-
-        INLINE_ACTION_SENDER(token, bulkpayment)(config::token_name, {_self, config::code_name},
-                            {_self, top_recipients});
-    }
+// Commun TODO: process income funds
+//    if (to == _self && quantity.amount > 0) {
+//        // Don't check `from` for now, just distribute to top witnesses
+//        auto total = quantity.amount;
+//        auto top = top_witnesses();
+//        auto n = top.size();
+//        if (n == 0) {
+//            print("nobody in top");
+//            return;
+//        }
+//
+//        auto token = quantity.symbol;
+//        static const auto memo = "emission";
+//        auto random = tapos_block_prefix();     // trx.ref_block_prefix; can generate hash from timestamp insead
+//        auto winner = top[random % n];          // witness, who will receive fraction after reward division
+//        auto reward = total / n;
+//
+//        vector<eosio::token::recipient> top_recipients;
+//        for (const auto& w: top) {
+//            if (w == winner)
+//                continue;
+//
+//            if (reward <= 0)
+//                continue;
+//
+//            top_recipients.push_back({w, asset(reward, token), memo});
+//            total -= reward;
+//        }
+//        top_recipients.push_back({winner, asset(total, token), memo});
+//
+//        INLINE_ACTION_SENDER(token, bulkpayment)(config::token_name, {_self, config::code_name},
+//                            {_self, top_recipients});
+//    }
 }
 
 void control::regwitness(name witness, string url) {
@@ -147,7 +149,7 @@ void control::regwitness(name witness, string url) {
         };
     });
 
-    update_auths();
+    //update_auths();
 }
 
 // TODO: special action to free memory?
@@ -161,7 +163,7 @@ void control::unregwitness(name witness) {
     witness_table.erase(*it);
 
     //TODO remove votes for witness
-    update_auths();
+    //update_auths();
 }
 
 void control::stopwitness(name witness) {
@@ -237,7 +239,7 @@ void control::unvotewitn(name voter, name witness) {
 
 void control::changevest(name who, asset diff) {
     if (!_cfg.exists()) return;       // allow silent exit if changing vests before community created
-    require_auth(token::get_issuer(config::token_name, diff.symbol.code()));
+    require_auth(config::commun_point_name);
     eosio::check(diff.amount != 0, "diff is 0. something broken");          // in normal conditions sender must guarantee it
     eosio::check(diff.symbol.code() == props().token.code, "wrong symbol. something broken");  // in normal conditions sender must guarantee it
     change_voter_vests(who, diff.amount);
@@ -257,7 +259,7 @@ void control::change_voter_vests(name voter, share_type diff) {
 }
 
 void control::apply_vote_weight(name voter, name witness, bool add) {
-    const auto power = vesting::get_account_vesting(config::vesting_name, voter, props().token.code).amount;
+    const auto power = point::get_balance(config::commun_point_name, voter, props().token.code).amount;
     if (power > 0) {
         update_witnesses_weights({witness}, add ? power : -power);
     }
@@ -278,78 +280,79 @@ void control::update_witnesses_weights(vector<name> witnesses, share_type diff) 
         }
     }
 
-    update_auths();
+    //update_auths();
 }
 
-void control::update_auths() {
-    msig_auth_singleton tbl(_self, _self.value);
-    const auto& top_auths = tbl.get_or_default();
-
-    auto now = eosio::current_time_point();
-    if (top_auths.last_update + eosio::seconds(props().update_auth_period.period) > now)
-        return;
-
-    auto set_last_update = [&]() {
-        tbl.set({top_auths.witnesses, now}, _self);
-    };
-
-    auto top = top_witnesses();
-    std::sort(top.begin(), top.end(), [](const auto& it1, const auto& it2) {
-        return it1.value < it2.value;
-    });
-
-    const auto& old_top = top_auths.witnesses;
-    if (old_top.size() > 0 && old_top.size() == top.size()) {
-        bool result = std::equal(old_top.begin(), old_top.end(), top.begin(), [](const auto& prev, const auto& cur) {
-            return prev.value == cur.value;
-        });
-        if (result) {
-            set_last_update();
-            return;
-        }
-    }
-
-    if (top.size()) {
-        tbl.set({top, now}, _self);
-    } else {
-        set_last_update();
-    }
-
-    auto& max_witn = props().witnesses.max;
-    if (top.size() < max_witn) {           // TODO: ?restrict only just after creation and allow later
-        print("Not enough witnesses to change auth\n");
-        return;
-    }
-    cyber::authority auth;
-    for (const auto& i : top) {
-        auth.accounts.push_back({{i,config::active_name},1});
-    }
-
-    auto& thrs = props().msig_perms;
-    vector<std::pair<name,uint16_t>> auths = {
-        {config::minority_name, thrs.minority_threshold(max_witn)},
-        {config::majority_name, thrs.majority_threshold(max_witn)},
-        {config::super_majority_name, thrs.super_majority_threshold(max_witn)}
-    };
-
-    const auto& owner = props().multisig.name;
-    for (const auto& [perm, thrs]: auths) {
-        //permissions must be sorted
-        std::sort(auth.accounts.begin(), auth.accounts.end(),
-            [](const cyber::permission_level_weight& l, const cyber::permission_level_weight& r) {
-                return std::tie(l.permission.actor, l.permission.permission) <
-                    std::tie(r.permission.actor, r.permission.permission);
-            }
-        );
-
-        auth.threshold = thrs;
-        action(
-            permission_level{owner, config::active_name},
-            config::internal_name, "updateauth"_n,
-            std::make_tuple(owner, perm, config::active_name, auth)
-        ).send();
-    }
-}
+// Commun TODO: remove update_auths
+//void control::update_auths() {
+//    msig_auth_singleton tbl(_self, _self.value);
+//    const auto& top_auths = tbl.get_or_default();
+//
+//    auto now = eosio::current_time_point();
+//    if (top_auths.last_update + eosio::seconds(props().update_auth_period.period) > now)
+//        return;
+//
+//    auto set_last_update = [&]() {
+//        tbl.set({top_auths.witnesses, now}, _self);
+//    };
+//
+//    auto top = top_witnesses();
+//    std::sort(top.begin(), top.end(), [](const auto& it1, const auto& it2) {
+//        return it1.value < it2.value;
+//    });
+//
+//    const auto& old_top = top_auths.witnesses;
+//    if (old_top.size() > 0 && old_top.size() == top.size()) {
+//        bool result = std::equal(old_top.begin(), old_top.end(), top.begin(), [](const auto& prev, const auto& cur) {
+//            return prev.value == cur.value;
+//        });
+//        if (result) {
+//            set_last_update();
+//            return;
+//        }
+//    }
+//
+//    if (top.size()) {
+//        tbl.set({top, now}, _self);
+//    } else {
+//        set_last_update();
+//    }
+//
+//    auto& max_witn = props().witnesses.max;
+//    if (top.size() < max_witn) {           // TODO: ?restrict only just after creation and allow later
+//        print("Not enough witnesses to change auth\n");
+//        return;
+//    }
+//    cyber::authority auth;
+//    for (const auto& i : top) {
+//        auth.accounts.push_back({{i,config::active_name},1});
+//    }
+//
+//    auto& thrs = props().msig_perms;
+//    vector<std::pair<name,uint16_t>> auths = {
+//        {config::minority_name, thrs.minority_threshold(max_witn)},
+//        {config::majority_name, thrs.majority_threshold(max_witn)},
+//        {config::super_majority_name, thrs.super_majority_threshold(max_witn)}
+//    };
+//
+//    const auto& owner = props().multisig.name;
+//    for (const auto& [perm, thrs]: auths) {
+//        //permissions must be sorted
+//        std::sort(auth.accounts.begin(), auth.accounts.end(),
+//            [](const cyber::permission_level_weight& l, const cyber::permission_level_weight& r) {
+//                return std::tie(l.permission.actor, l.permission.permission) <
+//                    std::tie(r.permission.actor, r.permission.permission);
+//            }
+//        );
+//
+//        auth.threshold = thrs;
+//        action(
+//            permission_level{owner, config::active_name},
+//            config::internal_name, "updateauth"_n,
+//            std::make_tuple(owner, perm, config::active_name, auth)
+//        ).send();
+//    }
+//}
 
 void control::send_witness_event(const witness_info& wi) {
     eosio::event(_self, "witnessstate"_n, std::make_tuple(wi.name, wi.total_weight, wi.active)).send();
@@ -367,7 +370,7 @@ void control::active_witness(name witness, bool flag) {
     }, false);
     eosio::check(exists, "witness not found");
 
-    update_auths();
+    //update_auths();
 }
 
 vector<witness_info> control::top_witness_info() {
@@ -392,9 +395,9 @@ vector<name> control::top_witnesses() {
     return top;
 }
 
-} // golos
+} // commun
 
-DISPATCH_WITH_TRANSFER(golos::control, on_transfer,
+DISPATCH_WITH_TRANSFER(commun::control, commun::config::token_name, on_transfer,
     (validateprms)(setparams)
     (regwitness)(unregwitness)
     (startwitness)(stopwitness)

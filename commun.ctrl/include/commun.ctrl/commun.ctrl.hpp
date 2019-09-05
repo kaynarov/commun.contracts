@@ -1,16 +1,16 @@
 #pragma once
-#include "golos.ctrl/parameters.hpp"
-#include <common/upsert.hpp>
-#include <common/config.hpp>
+#include "commun.ctrl/parameters.hpp"
+#include <commun/upsert.hpp>
+#include <commun/config.hpp>
 #include <eosio/time.hpp>
-#include <eosio/eosio.hpp>
+//#include <eosiolib/eosio.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/singleton.hpp>
-#include <eosio/crypto.hpp>
+//#include <eosio/public_key.hpp>
 #include <vector>
 #include <string>
 
-namespace golos {
+namespace commun {
 
 using namespace eosio;
 using share_type = int64_t;
@@ -96,10 +96,10 @@ private:
     void change_voter_vests(name voter, share_type diff);
     void apply_vote_weight(name voter, name witness, bool add);
     void update_witnesses_weights(std::vector<name> witnesses, share_type diff);
-    void update_auths();
+    //void update_auths();
     void send_witness_event(const witness_info& wi);
-    void active_witness(golos::name witness, bool flag);
+    void active_witness(name witness, bool flag);
 };
 
 
-} // golos
+} // commun

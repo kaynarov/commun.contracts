@@ -1,9 +1,9 @@
 #pragma once
-#include <common/parameter.hpp>
-#include <common/config.hpp>
+#include <commun/parameter.hpp>
+#include <commun/config.hpp>
 #include <eosio/singleton.hpp>
 
-namespace golos { namespace param {
+namespace commun { namespace param {
 
 
 using namespace eosio;
@@ -91,4 +91,4 @@ struct [[eosio::table]] ctrl_state {
 using ctrl_params_singleton = eosio::singleton<"ctrlparams"_n, ctrl_state>;
 
 
-} // golos
+} // commun

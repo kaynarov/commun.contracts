@@ -1,3 +1,3 @@
-golos.ctrl
+commun.ctrl
 -----------
 
