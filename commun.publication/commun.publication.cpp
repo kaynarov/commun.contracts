@@ -305,13 +305,13 @@ int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint1
     return std::min(points_per_action ? std::min(available, points_per_action) : available, actual_limit);
 }
 
-gallery_base::opt_providers_t publication::get_providers(symbol_code commun_code, name account, uint16_t weight) {
+gallery_base::providers_t publication::get_providers(symbol_code commun_code, name account, uint16_t weight) {
     gallery_base::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, account);
     provs provs_table(_self, commun_code.raw());
-    std::vector<std::pair<name, int64_t> > ret;
+    gallery_base::providers_t ret;
     auto provs_index = provs_table.get_index<"bykey"_n>();
     for (size_t n = 0; n < acc_param->providers.size(); n++) {
         auto prov_name = acc_param->providers[n];
@@ -337,11 +337,13 @@ gallery_base::opt_providers_t publication::get_providers(symbol_code commun_code
             std::remove_if(a.providers.begin(), a.providers.end(), [](const name& p) { return p == name(); }),
             a.providers.end());
     });
-    return ret.size() ? gallery_base::opt_providers_t(ret) : gallery_base::opt_providers_t();
+    return ret;
 }
 
 void publication::setproviders(symbol_code commun_code, name recipient, std::vector<name> providers) {
     require_auth(recipient);
+    gallery_base::params params_table(_self, commun_code.raw());
+    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     
     provs provs_table(_self, commun_code.raw());
     auto provs_index = provs_table.get_index<"bykey"_n>();
@@ -362,6 +364,9 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
 
 void publication::setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day) {
     require_auth(account);
+    gallery_base::params params_table(_self, commun_code.raw());
+    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+    
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, account);
     accparams_table.modify(acc_param, name(), [&](auto& a) { a.actions_per_day = actions_per_day; });

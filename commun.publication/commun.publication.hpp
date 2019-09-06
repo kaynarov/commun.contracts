@@ -35,7 +35,7 @@ public:
     //TODO: void checkadvice (symbol_code commun_code, name leader);
     void slap(symbol_code commun_code, name leader, name mosaic_creator, uint64_t tracery);
 private:
-    gallery_base::opt_providers_t get_providers(symbol_code commun_code, name account, uint16_t weight = config::_100percent);
+    gallery_base::providers_t get_providers(symbol_code commun_code, name account, uint16_t weight = config::_100percent);
     accparams::const_iterator get_acc_param(accparams& accparams_table, symbol_code commun_code, name account);
     static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t actions_per_day, int64_t mosaic_active_period, 
                                         int64_t actual_limit = std::numeric_limits<int64_t>::max());
