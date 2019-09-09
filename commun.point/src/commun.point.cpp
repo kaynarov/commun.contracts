@@ -14,6 +14,7 @@ namespace commun {
 
 void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     require_auth(_self);
+    eosio::check(is_account(issuer), "issuer account does not exist");
 
     auto commun_symbol = maximum_supply.symbol;
     check(commun_symbol.is_valid(), "invalid symbol name");
