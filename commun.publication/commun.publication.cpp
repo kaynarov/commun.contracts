@@ -3,7 +3,6 @@
 #include "objects.hpp"
 #include <commun.social/commun.social.hpp>
 
-
 namespace commun {
 
 extern "C" {
@@ -124,7 +123,7 @@ void publication::create_message(
         item.childcount = 0;
     });
     
-    gallery_base::params params_table(_self, commun_code.raw());
+    gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, message_id.author);
@@ -153,40 +152,12 @@ void publication::update_message(symbol_code commun_code, mssgid_t message_id,
 }
 
 void publication::delete_message(symbol_code commun_code, mssgid_t message_id) {
-    require_auth(message_id.author);
-
-    vertices vertices_table(_self, commun_code.raw());
-    auto vertices_index = vertices_table.get_index<"bykey"_n>();
-    auto vertex = vertices_index.find(std::make_tuple(message_id.author, message_id.tracery()));
-    eosio::check(vertex != vertices_index.end(), "Permlink doesn't exist.");
-    
-    eosio::check(vertex->childcount == 0, "You can't delete comment with child comments.");
-
-    if (vertex->parent_creator) {
-        auto parent_vertex = vertices_index.find(std::make_tuple(vertex->parent_creator, vertex->parent_tracery));
-        vertices_index.modify(parent_vertex, eosio::same_payer, [&](auto& item) {
-            item.childcount--;
-        });
-    }
-    vertices_table.erase(*vertex);
     
     auto tracery = message_id.tracery();
-    
-    mosaics mosaics_table(_self, commun_code.raw());
+    claim_gems_by_creator(_self, message_id.author, tracery, commun_code, message_id.author, true);
+    gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
-    auto mosaic = mosaics_idx.find(std::make_tuple(message_id.author, tracery));
-    if (mosaic == mosaics_idx.end()) {
-        return; 
-    }
-    gems gems_table(_self, commun_code.raw());
-    auto gems_idx = gems_table.get_index<"bykey"_n>();
-
-    for (auto gem_itr = gems_idx.lower_bound(std::make_tuple(mosaic->id, name(), name())); 
-        (gem_itr != gems_idx.end()) && (gem_itr->mosaic_id == mosaic->id); ++gem_itr) {
-        eosio::check(gem_itr->creator == message_id.author, "Unable to delete comment with votes.");
-        eosio::check(gem_itr->owner == message_id.author, "Unable to delete comment created by providers.");
-        claim_gem(_self, message_id.author, tracery, commun_code, message_id.author, message_id.author, std::optional<name>(), true);
-    }
+    eosio::check(mosaics_idx.find(std::make_tuple(message_id.author, tracery)) == mosaics_idx.end(), "Unable to delete comment with votes.");
 }
 
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight) {
@@ -202,19 +173,19 @@ void publication::downvote(symbol_code commun_code, name voter, mssgid_t message
 }
 
 void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_id) {
-    //unvote does not support provider gems. use claim
-    claim_gem(_self, message_id.author, message_id.tracery(), commun_code, voter, voter, std::optional<name>(), true);
+    eosio::check(voter != message_id.author, "author can't unvote");
+    claim_gems_by_creator(_self, message_id.author, message_id.tracery(), commun_code, voter, true);
 }
 
 void publication::claim(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, 
-                        std::optional<name> gem_creator, std::optional<name> recipient, std::optional<bool> eager) {
+                        std::optional<name> gem_creator, std::optional<bool> eager) {
     
-    claim_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator, recipient, eager.value_or(false));
+    claim_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
 }
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, int16_t weight) {
     
-    gallery_base::params params_table(_self, commun_code.raw());
+    gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, voter);
@@ -234,7 +205,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
 void publication::set_params(symbol_code commun_code, std::vector<posting_params> params) {
     require_auth(_self);
     
-    gallery_base::params params_table(_self, commun_code.raw());
+    gallery_types::params params_table(_self, commun_code.raw());
     if (params_table.find(commun_code.raw()) == params_table.end()) {
         create_gallery(_self, point::get_supply(config::commun_point_name, commun_code).symbol);
     }
@@ -305,13 +276,13 @@ int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint1
     return std::min(points_per_action ? std::min(available, points_per_action) : available, actual_limit);
 }
 
-gallery_base::providers_t publication::get_providers(symbol_code commun_code, name account, uint16_t weight) {
-    gallery_base::params params_table(_self, commun_code.raw());
+gallery_types::providers_t publication::get_providers(symbol_code commun_code, name account, uint16_t weight) {
+    gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, account);
-    provs provs_table(_self, commun_code.raw());
-    gallery_base::providers_t ret;
+    gallery_types::provs provs_table(_self, commun_code.raw());
+    gallery_types::providers_t ret;
     auto provs_index = provs_table.get_index<"bykey"_n>();
     for (size_t n = 0; n < acc_param->providers.size(); n++) {
         auto prov_name = acc_param->providers[n];
@@ -342,10 +313,10 @@ gallery_base::providers_t publication::get_providers(symbol_code commun_code, na
 
 void publication::setproviders(symbol_code commun_code, name recipient, std::vector<name> providers) {
     require_auth(recipient);
-    gallery_base::params params_table(_self, commun_code.raw());
+    gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     
-    provs provs_table(_self, commun_code.raw());
+    gallery_types::provs provs_table(_self, commun_code.raw());
     auto provs_index = provs_table.get_index<"bykey"_n>();
     for (size_t n = 0; n < providers.size(); n++) {
         auto prov_name = providers[n];
@@ -364,7 +335,7 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
 
 void publication::setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day) {
     require_auth(account);
-    gallery_base::params params_table(_self, commun_code.raw());
+    gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     
     accparams accparams_table(_self, commun_code.raw());
@@ -376,7 +347,7 @@ void publication::provide(name grantor, name recipient, asset quantity, std::opt
     provide_points(_self, grantor, recipient, quantity, fee);
 }
 
-void publication::advise(symbol_code commun_code, name leader, std::vector<mosaic_key_t> favorites) {
+void publication::advise(symbol_code commun_code, name leader, std::vector<gallery_types::mosaic_key_t> favorites) {
     advise_mosaics(_self, commun_code, leader, favorites);
 }
 

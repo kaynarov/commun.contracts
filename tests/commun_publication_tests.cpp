@@ -87,8 +87,9 @@ public:
 
     struct errors: contract_error_messages {
         const string no_param              = amsg("param does not exists");
-        const string delete_children       = amsg("You can't delete comment with child comments.");
+        const string delete_children       = amsg("comment with child comments can't be deleted during the active period");
         const string no_permlink           = amsg("Permlink doesn't exist.");
+        const string no_mosaic             = amsg("mosaic doesn't exist");
         const string update_no_message     = amsg("You can't update this message, because this message doesn't exist.");
         const string max_comment_depth     = amsg("publication::create_message: level > MAX_COMMENT_DEPTH");
         const string max_cmmnt_dpth_less_0 = amsg("Max comment depth must be greater than 0.");
@@ -199,7 +200,7 @@ BOOST_FIXTURE_TEST_CASE(delete_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(jackiechan), "child"}, {N(brucelee), "permlink"}));
 
     BOOST_TEST_MESSAGE("--- fail then delete non-existing post and post with child");
-    BOOST_CHECK_EQUAL(err.no_permlink, post.delete_msg({N(jackiechan), "permlink1"}));
+    BOOST_CHECK_EQUAL(err.no_mosaic, post.delete_msg({N(jackiechan), "permlink1"}));
     BOOST_CHECK_EQUAL(err.delete_children, post.delete_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(success(), post.delete_msg({N(jackiechan), "child"}));

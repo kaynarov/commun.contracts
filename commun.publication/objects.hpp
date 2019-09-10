@@ -39,7 +39,7 @@ struct vertex_t {
 
     uint64_t primary_key() const { return id; }
 
-    using key_t = gallery_base::mosaic_key_t;
+    using key_t = gallery_types::mosaic_key_t;
     key_t by_key()const { return std::make_tuple(creator, tracery); }
 };
 

@@ -50,7 +50,6 @@ public:
       
     action_result claimgem(account_name mosaic_creator, uint64_t tracery, symbol_code commun_code, account_name gem_owner, 
                     std::optional<account_name> gem_creator = std::optional<account_name>(), 
-                    std::optional<account_name> recipient = std::optional<account_name>(), 
                     account_name signer = account_name()) {
         auto a = args()
             ("mosaic_creator", mosaic_creator)
@@ -59,9 +58,6 @@ public:
             ("gem_owner", gem_owner);
         if (gem_creator.has_value()) {
             a("gem_creator", *gem_creator);
-        }
-        if (recipient.has_value()) {
-            a("recipient", *recipient);
         }
         
         return push(N(claimgem), signer ? signer : gem_owner, a);

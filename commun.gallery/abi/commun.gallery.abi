@@ -137,8 +137,7 @@
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "gem_owner" },
-                { "type": "name?",                   "name": "gem_creator" },
-                { "type": "name?",                  "name": "recipient" }
+                { "type": "name?",                   "name": "gem_creator" }
             ]
         },{
             "name": "provide_args",
