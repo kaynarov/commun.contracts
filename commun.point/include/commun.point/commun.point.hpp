@@ -125,6 +125,7 @@ struct structures {
 
     using singparams = eosio::singleton<"singlparam"_n, structures::singleton_param>;
 
+    void notify_balance_change(name owner, asset diff);
     void sub_balance(name owner, asset value);
     void add_balance(name owner, asset value, name ram_payer);
 

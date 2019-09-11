@@ -238,13 +238,13 @@ void control::changepoints(name who, asset diff) {
     if (!config(point).exists()) return;       // allow silent exit if changing vests before community created
     require_auth(_self);
     eosio::check(diff.amount != 0, "diff is 0. something broken");          // in normal conditions sender must guarantee it
-    change_voter_vests(point, who, diff.amount);
+    change_voter_points(point, who, diff.amount);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void control::change_voter_vests(symbol_code point, name voter, share_type diff) {
+void control::change_voter_points(symbol_code point, name voter, share_type diff) {
     if (!diff) return;
     witness_vote_tbl tbl(_self, point.raw());
     auto itr = tbl.find(voter.value);

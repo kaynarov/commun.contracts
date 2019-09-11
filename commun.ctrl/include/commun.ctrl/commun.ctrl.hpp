@@ -86,7 +86,7 @@ private:
     std::vector<name> top_witnesses(symbol_code point);
     std::vector<witness_info> top_witness_info(symbol_code point);
 
-    void change_voter_vests(symbol_code point, name voter, share_type diff);
+    void change_voter_points(symbol_code point, name voter, share_type diff);
     void apply_vote_weight(symbol_code point, name voter, name witness, bool add);
     void update_witnesses_weights(symbol_code point, std::vector<name> witnesses, share_type diff);
     //void update_auths();

@@ -29,6 +29,7 @@ static const auto workers_name = "gls.worker"_n;
 static const auto commun_list_name = "cmmn.list"_n;
 static const auto commun_point_name = "cmmn.point"_n;
 static const auto commun_emit_name = "cmmn.emit"_n;
+static const auto commun_ctrl_name = "cmmn.ctrl"_n;
 static const auto commun_gallery_name = "cmmn.gallery"_n;
 static const auto token_name = "cyber.token"_n;
 static const auto internal_name = "cyber"_n;

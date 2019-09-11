@@ -14,7 +14,7 @@ namespace commun {
 
 void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     require_auth(_self);
-    eosio::check(is_account(issuer), "issuer account does not exist");
+    check(is_account(issuer), "issuer account does not exist");
 
     auto commun_symbol = maximum_supply.symbol;
     check(commun_symbol.is_valid(), "invalid symbol name");
@@ -144,6 +144,14 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
     });
 }
 
+void point::notify_balance_change(name owner, asset diff) {
+    action(
+        permission_level{config::commun_ctrl_name, "changepoints"_n},
+        config::commun_ctrl_name, "changepoints"_n,
+        std::make_tuple(owner, diff)
+    ).send();
+}
+
 void point::sub_balance(name owner, asset value) {
    accounts accounts_table(_self, owner.value);
 
@@ -160,6 +168,8 @@ void point::sub_balance(name owner, asset value) {
    accounts_table.modify(from, owner, [&](auto& a) {
          a.balance -= value;
       });
+
+   notify_balance_change(owner, -value);
 }
 
 void point::add_balance(name owner, asset value, name ram_payer) {
@@ -175,6 +185,7 @@ void point::add_balance(name owner, asset value, name ram_payer) {
             a.balance += value;
         });
     }
+    notify_balance_change(owner, value);
 }
 
 void point::open(name owner, const symbol& symbol, name ram_payer) {
