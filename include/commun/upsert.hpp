@@ -1,7 +1,7 @@
 #pragma once
 #include <eosio/eosio.hpp>
 
-namespace golos {
+namespace commun {
 
 
 // TODO: can be simplified to <class T>: F depends only on T's item type, which possible can be derived from T
@@ -21,4 +21,4 @@ bool upsert_tbl(eosio::name code, uint64_t scope, eosio::name payer, uint64_t ke
 }
 
 
-} // golos
+} // commun

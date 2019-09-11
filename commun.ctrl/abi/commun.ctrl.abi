@@ -4,12 +4,10 @@
     "variants": [{
         "name": "ctrl_param",
         "types": [
-            "ctrl_token",
             "multisig_acc",
             "max_witnesses",
             "multisig_perms",
-            "max_witness_votes",
-            "update_auth"
+            "max_witness_votes"
         ]
     }],
     "structs": [
@@ -17,6 +15,7 @@
             "name": "regwitness",
             "base": "",
             "fields": [
+                {"type": "symbol_code", "name": "point"},
                 {"type": "name", "name": "witness"},
                 {"type": "string", "name": "url"}
             ]
@@ -24,18 +23,21 @@
             "name": "unregwitness",
             "base": "",
             "fields": [
+                {"type": "symbol_code", "name": "point"},
                 {"type": "name",   "name": "witness"}
             ]
         }, {
             "name": "witness_name",
             "base": "",
             "fields": [
+                {"type": "symbol_code", "name": "point"},
                 {"type": "name",   "name": "witness"}
             ]
         }, {
             "name": "votewitness",
             "base": "",
             "fields": [
+                {"type": "symbol_code", "name": "point"},
                 {"type": "name", "name": "voter"},
                 {"type": "name", "name": "witness"}
             ]
@@ -43,11 +45,12 @@
             "name": "unvotewitn",
             "base": "",
             "fields": [
+                {"type": "symbol_code", "name": "point"},
                 {"type": "name", "name": "voter"},
                 {"type": "name", "name": "witness"}
             ]
         }, {
-            "name": "changevest",
+            "name": "changepoints",
             "base": "",
             "fields": [
                 {"type": "name", "name": "who"},
@@ -70,11 +73,6 @@
                 {"type": "name", "name": "voter"},
                 {"type": "name[]", "name": "witnesses"}
             ]
-        }, {
-            "name": "ctrl_token",
-            "base": "",
-            "fields": [
-                {"type": "symbol_code", "name": "code"}]
         }, {
             "name": "multisig_acc",
             "base": "",
@@ -99,37 +97,25 @@
             "fields": [
                 {"type": "uint16", "name": "max"}]
         }, {
-            "name": "update_auth",
-            "base": "",
-            "fields": [
-                {"type": "uint32", "name": "period"}]
-        }, {
             "name": "ctrl_state",
             "fields": [
                 {"type": "uint64",              "name": "id"},
-                {"type": "ctrl_token",          "name": "token"},
                 {"type": "multisig_acc",        "name": "multisig"},
                 {"type": "max_witnesses",       "name": "witnesses"},
                 {"type": "multisig_perms",      "name": "msig_perms"},
-                {"type": "max_witness_votes",   "name": "witness_votes"},
-                {"type": "update_auth",         "name": "update_auth_period"}]
+                {"type": "max_witness_votes",   "name": "witness_votes"}]
         }, {
             "name": "setparams",
             "fields": [
+                {"type": "symbol_code", "name": "point"},
                 {"type": "ctrl_param[]", "name": "params"}]
         }, {
             "name": "witnessstate",
             "fields": [
+                {"type": "symbol_code", "name": "point"},
                 {"type": "name", "name": "witness"},
                 {"type": "uint64", "name": "weight"},
                 {"type": "bool", "name": "active"}
-            ]
-        }, {
-            "name": "msig_auths",
-            "fields": [
-                {"type": "uint64", "name": "id"},
-                {"type": "name[]", "name": "witnesses"},
-                {"type": "time_point_sec", "name": "last_update"},
             ]
         }
     ],
@@ -162,14 +148,15 @@
             "name": "unvotewitn",
             "type": "unvotewitn"
         }, {
-            "name": "changevest",
-            "type": "changevest"
+            "name": "changepoints",
+            "type": "changepoints"
         }
     ],
     "tables": [
         {
             "name": "witness",
             "type": "witness_info",
+            "scope_type": "symbol_code",
             "indexes" : [{
                 "name": "primary",
                 "unique": true,
@@ -182,6 +169,7 @@
         }, {
             "name": "witnessvote",
             "type": "witness_voter",
+            "scope_type": "symbol_code",
             "indexes" : [{
                 "name": "primary",
                 "unique": true,
@@ -190,14 +178,7 @@
         }, {
             "name": "ctrlparams",
             "type": "ctrl_state",
-            "indexes" : [{
-                "name": "primary",
-                "unique": true,
-                "orders": [{"field": "id", "order": "asc"}]
-            }]
-        }, {
-            "name": "msigauths",
-            "type": "msig_auths",
+            "scope_type": "symbol_code",
             "indexes" : [{
                 "name": "primary",
                 "unique": true,

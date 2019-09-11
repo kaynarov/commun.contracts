@@ -45,60 +45,53 @@ struct [[eosio::table]] witness_voter {
 };
 using witness_vote_tbl = eosio::multi_index<"witnessvote"_n, witness_voter>;
 
-struct [[eosio::table]] msig_auths {
-    std::vector<name> witnesses;
-    time_point_sec last_update;
-};
-using msig_auth_singleton = eosio::singleton<"msigauths"_n, msig_auths>;
+//struct [[eosio::table]] msig_auths {
+//    std::vector<name> witnesses;
+//    time_point_sec last_update;
+//};
+//using msig_auth_singleton = eosio::singleton<"msigauths"_n, msig_auths>;
 
 
 class control: public contract {
 public:
     control(name self, name code, datastream<const char*> ds)
         : contract(self, code, ds)
-        , _cfg(_self, _self.value)
     {
     }
 
-    [[eosio::action]] void validateprms(std::vector<ctrl_param>);
-    [[eosio::action]] void setparams(std::vector<ctrl_param>);
+    [[eosio::action]] void validateprms(symbol_code point, std::vector<ctrl_param>);
+    [[eosio::action]] void setparams(symbol_code point, std::vector<ctrl_param>);
 
-    [[eosio::action]] void regwitness(name witness, std::string url);
-    [[eosio::action]] void unregwitness(name witness);
-    [[eosio::action]] void stopwitness(name witness);
-    [[eosio::action]] void startwitness(name witness);
-    [[eosio::action]] void votewitness(name voter, name witness);
-    [[eosio::action]] void unvotewitn(name voter, name witness);
+    [[eosio::action]] void regwitness(symbol_code point, name witness, std::string url);
+    [[eosio::action]] void unregwitness(symbol_code point, name witness);
+    [[eosio::action]] void stopwitness(symbol_code point, name witness);
+    [[eosio::action]] void startwitness(symbol_code point, name witness);
+    [[eosio::action]] void votewitness(symbol_code point, name voter, name witness);
+    [[eosio::action]] void unvotewitn(symbol_code point, name voter, name witness);
 
-    [[eosio::action]] void changevest(name who, asset diff);
+    [[eosio::action]] void changepoints(name who, asset diff);
     void on_transfer(name from, name to, asset quantity, std::string memo);
 
 private:
-    ctrl_params_singleton _cfg;
-    const ctrl_state& props() {
-        static const ctrl_state cfg = _cfg.get();
+    ctrl_params_singleton& config(symbol_code point) {
+        static ctrl_params_singleton cfg(_self, point.raw());
         return cfg;
     }
-    void assert_started();
-
-    std::vector<name> top_witnesses();
-    std::vector<witness_info> top_witness_info();
-
-    template<typename T, typename F>
-    bool upsert_tbl(uint64_t scope, name payer, uint64_t key, F&& get_update_fn, bool allow_insert = true) {
-        return golos::upsert_tbl<T>(_self, scope, payer, key, std::forward<F&&>(get_update_fn), allow_insert);
+    const ctrl_state& props(symbol_code point) {
+        static const ctrl_state cfg = config(point).get();
+        return cfg;
     }
-    template<typename T, typename F>
-    bool upsert_tbl(name payer, F&& get_update_fn, bool allow_insert = true) {
-        return upsert_tbl<T>(_self.value, payer, payer.value, std::forward<F&&>(get_update_fn), allow_insert);
-    }
+    void assert_started(symbol_code point);
 
-    void change_voter_vests(name voter, share_type diff);
-    void apply_vote_weight(name voter, name witness, bool add);
-    void update_witnesses_weights(std::vector<name> witnesses, share_type diff);
+    std::vector<name> top_witnesses(symbol_code point);
+    std::vector<witness_info> top_witness_info(symbol_code point);
+
+    void change_voter_vests(symbol_code point, name voter, share_type diff);
+    void apply_vote_weight(symbol_code point, name voter, name witness, bool add);
+    void update_witnesses_weights(symbol_code point, std::vector<name> witnesses, share_type diff);
     //void update_auths();
-    void send_witness_event(const witness_info& wi);
-    void active_witness(name witness, bool flag);
+    void send_witness_event(symbol_code point, const witness_info& wi);
+    void active_witness(symbol_code point, name witness, bool flag);
 };
 
 
