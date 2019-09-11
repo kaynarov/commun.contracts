@@ -1,0 +1,8 @@
+add_contract_with_abi(commun.ctrl abi/commun.ctrl.abi src/commun.ctrl.cpp)
+target_include_directories(commun.ctrl.wasm
+   PUBLIC
+   ${TOKEN_INCLUDE_PATH}
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   ${CMAKE_CURRENT_SOURCE_DIR}/..
+   ${CMAKE_CURRENT_SOURCE_DIR}/../include
+   ${CMAKE_CURRENT_SOURCE_DIR}/../commun.point/include)

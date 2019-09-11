@@ -1,0 +1,190 @@
+{
+    "version": "cyberway::abi/1.1",
+    "types": [],
+    "variants": [{
+        "name": "ctrl_param",
+        "types": [
+            "multisig_acc",
+            "max_witnesses",
+            "multisig_perms",
+            "max_witness_votes"
+        ]
+    }],
+    "structs": [
+        {
+            "name": "regwitness",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "point"},
+                {"type": "name", "name": "witness"},
+                {"type": "string", "name": "url"}
+            ]
+        }, {
+            "name": "unregwitness",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "point"},
+                {"type": "name",   "name": "witness"}
+            ]
+        }, {
+            "name": "witness_name",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "point"},
+                {"type": "name",   "name": "witness"}
+            ]
+        }, {
+            "name": "votewitness",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "point"},
+                {"type": "name", "name": "voter"},
+                {"type": "name", "name": "witness"}
+            ]
+        }, {
+            "name": "unvotewitn",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "point"},
+                {"type": "name", "name": "voter"},
+                {"type": "name", "name": "witness"}
+            ]
+        }, {
+            "name": "changepoints",
+            "base": "",
+            "fields": [
+                {"type": "name", "name": "who"},
+                {"type": "asset", "name": "diff"}
+            ]
+        }, {
+            "name": "witness_info",
+            "base": "",
+            "fields": [
+                {"type": "name", "name": "name"},
+                {"type": "string", "name": "url"},
+                {"type": "bool", "name": "active"},
+                {"type": "uint64", "name": "total_weight"},
+                {"type": "uint64", "name": "counter_votes"}
+            ]
+        }, {
+            "name": "witness_voter",
+            "base": "",
+            "fields": [
+                {"type": "name", "name": "voter"},
+                {"type": "name[]", "name": "witnesses"}
+            ]
+        }, {
+            "name": "multisig_acc",
+            "base": "",
+            "fields": [
+                {"type": "name", "name": "name"}]
+        }, {
+            "name": "max_witnesses",
+            "base": "",
+            "fields": [
+                {"type": "uint16", "name": "max"}]
+        }, {
+            "name": "multisig_perms",
+            "base": "",
+            "fields": [
+                {"type": "uint16", "name": "super_majority"},
+                {"type": "uint16", "name": "majority"},
+                {"type": "uint16", "name": "minority"}
+            ]
+        }, {
+            "name": "max_witness_votes",
+            "base": "",
+            "fields": [
+                {"type": "uint16", "name": "max"}]
+        }, {
+            "name": "ctrl_state",
+            "fields": [
+                {"type": "uint64",              "name": "id"},
+                {"type": "multisig_acc",        "name": "multisig"},
+                {"type": "max_witnesses",       "name": "witnesses"},
+                {"type": "multisig_perms",      "name": "msig_perms"},
+                {"type": "max_witness_votes",   "name": "witness_votes"}]
+        }, {
+            "name": "setparams",
+            "fields": [
+                {"type": "symbol_code", "name": "point"},
+                {"type": "ctrl_param[]", "name": "params"}]
+        }, {
+            "name": "witnessstate",
+            "fields": [
+                {"type": "symbol_code", "name": "point"},
+                {"type": "name", "name": "witness"},
+                {"type": "uint64", "name": "weight"},
+                {"type": "bool", "name": "active"}
+            ]
+        }
+    ],
+    "events": [
+        {"name": "witnessstate", "type": "witnessstate"}
+    ],
+    "actions": [
+        {
+            "name": "setparams",
+            "type": "setparams"
+        }, {
+            "name": "validateprms",
+            "type": "setparams"
+        }, {
+            "name": "regwitness",
+            "type": "regwitness"
+        }, {
+            "name": "unregwitness",
+            "type": "unregwitness"
+        }, {
+            "name": "startwitness",
+            "type": "witness_name"
+        }, {
+            "name": "stopwitness",
+            "type": "witness_name"
+        }, {
+            "name": "votewitness",
+            "type": "votewitness"
+        }, {
+            "name": "unvotewitn",
+            "type": "unvotewitn"
+        }, {
+            "name": "changepoints",
+            "type": "changepoints"
+        }
+    ],
+    "tables": [
+        {
+            "name": "witness",
+            "type": "witness_info",
+            "scope_type": "symbol_code",
+            "indexes" : [{
+                "name": "primary",
+                "unique": true,
+                "orders": [{"field": "name", "order": "asc"}]
+            },{
+                "name": "byweight",
+                "unique": false,
+                "orders": [{"field": "total_weight", "order": "desc"}]
+            }]
+        }, {
+            "name": "witnessvote",
+            "type": "witness_voter",
+            "scope_type": "symbol_code",
+            "indexes" : [{
+                "name": "primary",
+                "unique": true,
+                "orders": [{"field": "voter", "order": "asc"}]
+            }]
+        }, {
+            "name": "ctrlparams",
+            "type": "ctrl_state",
+            "scope_type": "symbol_code",
+            "indexes" : [{
+                "name": "primary",
+                "unique": true,
+                "orders": [{"field": "id", "order": "asc"}]
+            }]
+        }
+    ],
+    "abi_extensions": []
+}
