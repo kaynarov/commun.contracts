@@ -10,6 +10,10 @@ COPY --from=cyberway /opt/cyberway /opt/cyberway
 
 ARG branch=master
 
+# Can't use https api here, because ssh used for CI runners with private repo:
+# ADD https://api.github.com/repos/cyberway/commun.contracts/git/refs/heads/$branch /etc/version.json
+
+# Can't use even ssh here, because there are no ssh keys in docker image (located only on the runner itself). So, we must use COPY here:
 COPY . ./commun.contracts
 
 RUN cd commun.contracts/cyberway.contracts \
