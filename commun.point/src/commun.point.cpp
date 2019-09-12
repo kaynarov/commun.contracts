@@ -145,11 +145,13 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
 }
 
 void point::notify_balance_change(name owner, asset diff) {
-    action(
-        permission_level{config::commun_ctrl_name, "changepoints"_n},
-        config::commun_ctrl_name, "changepoints"_n,
-        std::make_tuple(owner, diff)
-    ).send();
+    if (is_account(config::commun_ctrl_name)) {
+        action(
+            permission_level{config::commun_ctrl_name, "changepoints"_n},
+            config::commun_ctrl_name, "changepoints"_n,
+            std::make_tuple(owner, diff)
+        ).send();
+    }
 }
 
 void point::sub_balance(name owner, asset value) {
