@@ -38,8 +38,8 @@ public:
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(cfg::publish_name, contracts::commun_publication_wasm(), contracts::commun_publication_abi());
 
-        set_authority(cfg::commun_emit_name, cfg::mscsreward_perm_name, create_code_authority({_code}), "active");
-        link_authority(cfg::commun_emit_name, cfg::commun_emit_name, cfg::mscsreward_perm_name, N(mscsreward));
+        set_authority(cfg::commun_emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
+        link_authority(cfg::commun_emit_name, cfg::commun_emit_name, cfg::reward_perm_name, N(issuereward));
 
         std::vector<account_name> transfer_perm_accs{_code, cfg::commun_emit_name};
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
@@ -87,8 +87,9 @@ public:
 
     struct errors: contract_error_messages {
         const string no_param              = amsg("param does not exists");
-        const string delete_children       = amsg("You can't delete comment with child comments.");
+        const string delete_children       = amsg("comment with child comments can't be deleted during the active period");
         const string no_permlink           = amsg("Permlink doesn't exist.");
+        const string no_mosaic             = amsg("mosaic doesn't exist");
         const string update_no_message     = amsg("You can't update this message, because this message doesn't exist.");
         const string max_comment_depth     = amsg("publication::create_message: level > MAX_COMMENT_DEPTH");
         const string max_cmmnt_dpth_less_0 = amsg("Max comment depth must be greater than 0.");
@@ -109,6 +110,9 @@ public:
         const string wrong_reblog_body_length = amsg("Body must be set if title is set.");
         const string own_reblog_erase         = amsg("You cannot erase reblog your own content.");
         const string no_reblog_mssg_erase     = amsg("You can't erase reblog, because this message doesn't exist.");
+        const string gem_type_mismatch        = amsg("gem type mismatch");
+        const string author_cannot_unvote     = amsg("author can't unvote");
+        
     } err;
 };
 
@@ -199,7 +203,7 @@ BOOST_FIXTURE_TEST_CASE(delete_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(jackiechan), "child"}, {N(brucelee), "permlink"}));
 
     BOOST_TEST_MESSAGE("--- fail then delete non-existing post and post with child");
-    BOOST_CHECK_EQUAL(err.no_permlink, post.delete_msg({N(jackiechan), "permlink1"}));
+    BOOST_CHECK_EQUAL(err.no_mosaic, post.delete_msg({N(jackiechan), "permlink1"}));
     BOOST_CHECK_EQUAL(err.delete_children, post.delete_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(success(), post.delete_msg({N(jackiechan), "child"}));
@@ -271,17 +275,18 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_0, vote_brucelee(0));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
-    BOOST_CHECK_EQUAL(success(), vote_brucelee(cfg::_100percent));
-    auto gem = get_gem(_code, _point, 0, N(brucelee));
+    BOOST_CHECK_EQUAL(err.gem_type_mismatch, vote_brucelee(cfg::_100percent)); //brucelee cannot downvote for his own post
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent));
+    auto gem = get_gem(_code, _point, 0, N(chucknorris));
     BOOST_CHECK(!gem.is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Unvote testing.");
     init();
-    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
-    // TODO: it removes post (mosaic) BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(err.author_cannot_unvote, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(brucelee), "permlink"}, 123));
     produce_block();
@@ -290,17 +295,17 @@ BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_CHECK(get_gem(_code, _point, 0, N(chucknorris)).is_null());
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(addproviders, commun_publication_tester) try {
-    BOOST_TEST_MESSAGE("addproviders testing.");
-    BOOST_CHECK_EQUAL(err.no_param, post.addproviders(N(brucelee), {N(chucknorris)}));
+BOOST_FIXTURE_TEST_CASE(setproviders, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("setproviders testing.");
+    BOOST_CHECK_EQUAL(err.no_param, post.setproviders(N(brucelee), {N(chucknorris)}));
     init();
-    BOOST_CHECK_EQUAL(success(), post.addproviders(N(brucelee), {N(chucknorris)}));
+    BOOST_CHECK_EQUAL(success(), post.setproviders(N(brucelee), {N(chucknorris)}));
     BOOST_CHECK(!post.get_accparam(N(brucelee)).is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setfrequency, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("setfrequency testing.");
-    // TODO: should work: BOOST_CHECK_EQUAL(err.no_param, post.setfrequency(N(brucelee), 10));
+    BOOST_CHECK_EQUAL(err.no_param, post.setfrequency(N(brucelee), 10));
     init();
     BOOST_CHECK_EQUAL(success(), post.setfrequency(N(brucelee), 10));
     BOOST_CHECK(!post.get_accparam(N(brucelee)).is_null());

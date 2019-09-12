@@ -28,16 +28,13 @@ static constexpr uint8_t default_ban_threshold = 2;
 
 static constexpr uint16_t max_providers_num = 7;
 
-static constexpr int64_t dust_holding_period = 40 * 24 * 60 * 60;
-static constexpr int64_t dust_cost_limit = 10000; 
+static constexpr int64_t forced_chopping_delay = 30 * 24 * 60 * 60;
 
 static constexpr std::array<int64_t, 10>  advice_weight = 
     {{10000, 7071, 5774, 5000, 4472, 4082, 3780, 3536, 3333, 3162}}; //sqrt(100000000/k)
 
-static constexpr uint8_t auto_claim_num = 2;
+static constexpr uint8_t auto_claim_num = 3;
     
 static constexpr int64_t min_gem_cost = 10;
-static constexpr int64_t reward_mosaics_period = 60 * 60;
-static constexpr int64_t vote_period = 24 * 60 * 60;
 
 }} // commun::config

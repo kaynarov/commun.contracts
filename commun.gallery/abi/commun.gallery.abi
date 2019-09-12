@@ -37,8 +37,7 @@
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
                 { "type": "name",          "name": "owner" },
-                { "type": "name",          "name": "creator" },
-                { "type": "uint16",        "name": "fee" }
+                { "type": "name",          "name": "creator" }
             ]
         },{
             "name": "inclusion_struct",
@@ -67,7 +66,7 @@
             "base": "",
             "fields": [
                 { "type": "uint64",         "name": "id" },
-                { "type": "time_point",     "name": "latest_reward" }
+                { "type": "int64",          "name": "unclaimed" }
             ]
         },{
             "name": "provision_struct",
@@ -116,7 +115,7 @@
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "asset",                  "name": "quantity" },
                 { "type": "uint16",                 "name": "royalty" },
-                { "type": "providers_t?",           "name": "providers" }
+                { "type": "providers_t",           "name": "providers" }
             ]
         },{
             "name": "addtomosaic_args",
@@ -127,7 +126,7 @@
                 { "type": "asset",                  "name": "quantity" },
                 { "type": "bool",                   "name": "damn" },
                 { "type": "name",                   "name": "gem_creator" },
-                { "type": "providers_t?",           "name": "providers" }
+                { "type": "providers_t",           "name": "providers" }
             ]
         },{
             "name": "claimgem_args",
@@ -137,8 +136,7 @@
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "gem_owner" },
-                { "type": "name?",                   "name": "gem_creator" },
-                { "type": "name?",                  "name": "recipient" }
+                { "type": "name?",                   "name": "gem_creator" }
             ]
         },{
             "name": "provide_args",
@@ -251,9 +249,9 @@
                 { "name": "bykey", "unique": "true", "orders": [
                     {"field": "creator", "order": "asc"}, {"field": "tracery", "order": "asc"} ] },
                 { "name": "bycommrating", "unique": "false", "orders": [
-                    {"field": "status", "order": "asc"}, {"field": "comm_rating", "order": "desc"} ] },
+                    {"field": "status", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
-                    {"field": "status", "order": "asc"}, {"field": "lead_rating", "order": "desc"} ] }
+                    {"field": "status", "order": "asc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] }
             ]
         },{
             "name": "gem",
@@ -265,7 +263,9 @@
                 { "name": "bycreator", "unique": "true", "orders": [
                     {"field": "mosaic_id", "order": "asc"}, {"field": "creator", "order": "asc"}, {"field": "owner", "order": "asc"} ] },
                 { "name": "byclaim", "unique": "false", "orders": [
-                    {"field": "mosaic_id", "order": "asc"}, {"field": "owner", "order": "asc"}, {"field": "claim_date", "order": "asc"} ] }
+                    {"field": "owner", "order": "asc"}, {"field": "claim_date", "order": "asc"} ] },
+                { "name": "byclaimjoint", "unique": "false", "orders": [
+                    {"field": "claim_date", "order": "asc"} ] }
             ]
         },{
             "name": "provision",

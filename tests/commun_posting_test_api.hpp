@@ -127,8 +127,8 @@ struct commun_posting_api: base_contract_api {
     }
     // TODO: claim(), but this is mostly same as unvote
 
-    action_result addproviders(account_name recipient, std::vector<account_name> providers) {
-        return push(N(addproviders), recipient, args()
+    action_result setproviders(account_name recipient, std::vector<account_name> providers) {
+        return push(N(setproviders), recipient, args()
             ("commun_code", commun_code)
             ("recipient", recipient)
             ("providers", providers)

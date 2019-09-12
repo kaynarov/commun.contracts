@@ -1,5 +1,4 @@
 #include <commun.emit.hpp>
-#include <commun/config.hpp>
 #include <commun.point/commun.point.hpp>
 #include <commun.point/config.hpp>
 #include <commun/util.hpp>
@@ -21,6 +20,16 @@ void emit::create(symbol commun_symbol, uint16_t annual_emission_rate, uint16_t 
         .annual_emission_rate = annual_emission_rate,
         .leaders_reward_prop = leaders_reward_prop
     };});
+    
+    stats stats_table(_self, commun_code.raw());
+    eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "SYSTEM: stat already exists");
+    
+    auto now = eosio::current_time_point();
+    stats_table.emplace(_self, [&](auto& s) { s = {
+        .id = commun_code.raw(),
+        .latest_mosaics_reward = now,
+        .latest_leaders_reward = now
+    };});
 }
 
 int64_t emit::get_continuous_rate(int64_t annual_rate) {
@@ -29,12 +38,20 @@ int64_t emit::get_continuous_rate(int64_t annual_rate) {
     return static_cast<int64_t>(std::log(1.0 + (real_rate / real_100percent)) * real_100percent); 
 }
     
-void emit::issue_reward(symbol commun_symbol, int64_t passed_seconds, name recipient_contract, bool for_leaders) {
+void emit::issuereward(symbol commun_symbol, bool for_leaders) {
     require_auth(_self);
     auto commun_code = commun_symbol.code();
     
     params params_table(_self, commun_code.raw()); 
     const auto& param = params_table.get(commun_code.raw(), "emitter does not exists, create it before issue");
+    
+    stats stats_table(_self, commun_code.raw());
+    const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: stat does not exists");
+    
+    auto now = eosio::current_time_point();
+    int64_t passed_seconds = (now - stat.latest_reward(for_leaders)).to_seconds();
+    eosio::check(passed_seconds >= 0, "SYSTEM: incorrect passed_seconds");
+    eosio::check(passed_seconds >= config::reward_period(for_leaders), "SYSTEM: untimely claim reward");
 
     auto cont_emission = safe_pct(point::get_supply(config::commun_point_name, commun_code).amount, get_continuous_rate(param.annual_emission_rate));
     
@@ -57,18 +74,12 @@ void emit::issue_reward(symbol commun_symbol, int64_t passed_seconds, name recip
             permission_level{config::commun_point_name, config::transfer_permission},
             config::commun_point_name,
             "transfer"_n,
-            std::make_tuple(issuer, recipient_contract, quantity, string())
+            std::make_tuple(issuer, for_leaders ? config::commun_ctrl_name : config::commun_gallery_name, quantity, string())
         ).send();
     }
-}
     
-void emit::mscsreward(symbol commun_symbol, int64_t passed_seconds, name recipient_contract) {
-    issue_reward(commun_symbol, passed_seconds, recipient_contract, false);
-}
-
-void emit::ldrsreward(symbol commun_symbol, int64_t passed_seconds, name recipient_contract) {
-    issue_reward(commun_symbol, passed_seconds, recipient_contract, true);
+    stats_table.modify(stat, name(), [&]( auto& s) { (for_leaders ? s.latest_leaders_reward : s.latest_mosaics_reward) = now; });
 }
 }
 
-EOSIO_DISPATCH(commun::emit, (create)(mscsreward)(ldrsreward))
+EOSIO_DISPATCH(commun::emit, (create)(issuereward))
