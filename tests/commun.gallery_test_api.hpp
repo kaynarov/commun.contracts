@@ -2,7 +2,7 @@
 #include "test_api_helper.hpp"
 #include <commun.gallery/include/commun.gallery/config.hpp>
 
-using mosaic_key_t = std::tuple<cyberway::chain::account_name, uint64_t>;
+using mosaic_key_t = std::pair<cyberway::chain::account_name, uint64_t>;
 
 namespace eosio { namespace testing {
 

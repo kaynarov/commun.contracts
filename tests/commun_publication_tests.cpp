@@ -110,6 +110,9 @@ public:
         const string wrong_reblog_body_length = amsg("Body must be set if title is set.");
         const string own_reblog_erase         = amsg("You cannot erase reblog your own content.");
         const string no_reblog_mssg_erase     = amsg("You can't erase reblog, because this message doesn't exist.");
+        const string gem_type_mismatch        = amsg("gem type mismatch");
+        const string author_cannot_unvote     = amsg("author can't unvote");
+        
     } err;
 };
 
@@ -272,17 +275,18 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_0, vote_brucelee(0));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
-    BOOST_CHECK_EQUAL(success(), vote_brucelee(cfg::_100percent));
-    auto gem = get_gem(_code, _point, 0, N(brucelee));
+    BOOST_CHECK_EQUAL(err.gem_type_mismatch, vote_brucelee(cfg::_100percent)); //brucelee cannot downvote for his own post
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent));
+    auto gem = get_gem(_code, _point, 0, N(chucknorris));
     BOOST_CHECK(!gem.is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Unvote testing.");
     init();
-    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
-    // TODO: it removes post (mosaic) BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(err.author_cannot_unvote, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(brucelee), "permlink"}, 123));
     produce_block();

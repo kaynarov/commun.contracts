@@ -58,9 +58,9 @@ namespace gallery_types {
         uint64_t primary_key() const { return id; }
         using key_t = gallery_types::mosaic_key_t;
         key_t by_key()const { return std::make_tuple(creator, tracery); }
-        using by_rating_t = std::tuple<uint8_t, int64_t>;
-        by_rating_t by_comm_rating()const { return std::make_tuple(status, comm_rating); }
-        by_rating_t by_lead_rating()const { return std::make_tuple(status, lead_rating); }
+        using by_rating_t = std::tuple<uint8_t, int64_t, int64_t>;
+        by_rating_t by_comm_rating()const { return std::make_tuple(status, comm_rating, lead_rating); }
+        by_rating_t by_lead_rating()const { return std::make_tuple(status, lead_rating, comm_rating); }
     };
     
     struct gem {
@@ -280,10 +280,12 @@ private:
                 if (!damn) {
                     item.points -= gem.points;
                     item.shares -= gem.shares;
+                    item.comm_rating -= gem.points;
                 }
                 else {
-                    item.damn_shares -= gem.points;
+                    item.damn_points -= gem.points;
                     item.damn_shares += gem.shares;
+                    item.comm_rating += gem.points;
                 }
                 item.reward -= reward;
                 item.gem_count--;
@@ -374,11 +376,12 @@ private:
             if (shares < 0) {
                 item.damn_points += points;
                 item.damn_shares -= shares;
+                item.comm_rating -= points;
             }
             else {
                 item.points += points;
                 item.shares += shares;
-
+                item.comm_rating += points;
             }
             if (!refilled) {
                 eosio::check(item.gem_count < std::numeric_limits<decltype(item.gem_count)>::max(), "gem_count overflow");
@@ -548,7 +551,8 @@ protected:
         for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, std::numeric_limits<int64_t>::max())); 
                                                    (mosaic_num < by_lead_max) &&
                                                    (by_lead_itr != by_lead_idx.end()) && 
-                                                   (by_lead_itr->status != gallery_types::mosaic::BANNED); by_lead_itr++, mosaic_num++) {
+                                                   (by_lead_itr->status != gallery_types::mosaic::BANNED) &&
+                                                   (by_lead_itr->lead_rating > 0); by_lead_itr++, mosaic_num++) {
 
             ranked_mosaics[by_lead_itr->id] += param.lead_grades[mosaic_num];
         }
@@ -568,7 +572,7 @@ protected:
         }
         auto left_reward  = total_reward;
         for (auto itr = top_mosaics.begin(); itr != middle; itr++) {
-            auto cur_reward = safe_prop(total_reward, itr->second, total_reward);
+            auto cur_reward = safe_prop(total_reward, itr->second, grades_sum);
             
             auto mosaic = mosaics_table.find(itr->first);
             mosaics_table.modify(mosaic, name(), [&](auto& item) { item.reward += cur_reward; });
@@ -665,8 +669,8 @@ protected:
         eosio::check(get_reserve_amount(asset(points_sum, commun_symbol)) >= get_min_cost(providers), "insufficient quantity");
         
         auto shares_abs = damn ?
-            calc_bancor_amount(mosaic->damn_points, mosaic->damn_shares, config::shares_cw, points_sum) :
-            calc_bancor_amount(mosaic->points,      mosaic->shares,      config::shares_cw, points_sum);
+            calc_bancor_amount(mosaic->damn_points, mosaic->damn_shares, config::shares_cw, points_sum, false) :
+            calc_bancor_amount(mosaic->points,      mosaic->shares,      config::shares_cw, points_sum, false);
         
         if (!damn) {
             shares_abs -= pay_royalties(_self, commun_code, mosaic->id, mosaic_creator, safe_pct(mosaic->royalty, shares_abs));
