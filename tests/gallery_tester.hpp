@@ -13,7 +13,7 @@ public:
         const string no_reserve = amsg("no reserve");
         const string overdrawn_balance = amsg("overdrawn balance");
         const string eval_period = amsg("evaluation period isn't over yet");
-        const string insufficient_quantity(account_name account) { return amsg("insufficient quantity for " + string(account)); };
+        const string insufficient_quantity = amsg("insufficient quantity");
         const string no_mosaic = amsg("mosaic doesn't exist");
         const string collect_period = amsg("collection period is over");
         const string no_points_provided = amsg("no points provided");

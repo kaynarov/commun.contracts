@@ -290,17 +290,17 @@ BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_CHECK(get_gem(_code, _point, 0, N(chucknorris)).is_null());
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(addproviders, commun_publication_tester) try {
-    BOOST_TEST_MESSAGE("addproviders testing.");
-    BOOST_CHECK_EQUAL(err.no_param, post.addproviders(N(brucelee), {N(chucknorris)}));
+BOOST_FIXTURE_TEST_CASE(setproviders, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("setproviders testing.");
+    BOOST_CHECK_EQUAL(err.no_param, post.setproviders(N(brucelee), {N(chucknorris)}));
     init();
-    BOOST_CHECK_EQUAL(success(), post.addproviders(N(brucelee), {N(chucknorris)}));
+    BOOST_CHECK_EQUAL(success(), post.setproviders(N(brucelee), {N(chucknorris)}));
     BOOST_CHECK(!post.get_accparam(N(brucelee)).is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setfrequency, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("setfrequency testing.");
-    // TODO: should work: BOOST_CHECK_EQUAL(err.no_param, post.setfrequency(N(brucelee), 10));
+    BOOST_CHECK_EQUAL(err.no_param, post.setfrequency(N(brucelee), 10));
     init();
     BOOST_CHECK_EQUAL(success(), post.setfrequency(N(brucelee), 10));
     BOOST_CHECK(!post.get_accparam(N(brucelee)).is_null());

@@ -22,32 +22,28 @@ public:
     }
     
     action_result createmosaic(account_name creator, uint64_t tracery, asset quantity, uint16_t royalty,
-                                        std::optional<std::vector<std::pair<account_name, int64_t> > > providers = 
-                                        std::optional<std::vector<std::pair<account_name, int64_t> > >()) {
+                                        std::vector<std::pair<account_name, int64_t> > providers = 
+                                        std::vector<std::pair<account_name, int64_t> >()) {
         auto a = args()
             ("creator", creator)
             ("tracery", tracery)
             ("quantity", quantity)
-            ("royalty", royalty);
-        if (providers.has_value()) {
-            a("providers", *providers);
-        }
+            ("royalty", royalty)
+            ("providers", providers);
         
         return push(N(createmosaic), creator, a);
     }
     
     action_result addtomosaic(account_name mosaic_creator, uint64_t tracery, asset quantity, bool damn, account_name gem_creator, 
-                                       std::optional<std::vector<std::pair<account_name, int64_t> > > providers = 
-                                       std::optional<std::vector<std::pair<account_name, int64_t> > >()) {
+                                       std::vector<std::pair<account_name, int64_t> > providers = 
+                                       std::vector<std::pair<account_name, int64_t> >()) {
         auto a = args()
             ("mosaic_creator", mosaic_creator)
             ("tracery", tracery)
             ("quantity", quantity)
             ("damn", damn)
-            ("gem_creator", gem_creator);
-        if (providers.has_value()) {
-            a("providers", *providers);
-        }
+            ("gem_creator", gem_creator)
+            ("providers", providers);
         
         return push(N(addtomosaic), gem_creator, a);
     }
@@ -96,6 +92,15 @@ public:
             ("leader", leader)
             ("mosaic_creator", mosaic_creator)
             ("tracery", tracery));
+    }
+    
+    int64_t get_frozen(account_name acc) {
+        auto v = get_struct(acc, N(inclusion), _symbol.to_symbol_code().value, "inclusion");
+        if (v.is_object()) {
+            auto o = mvo(v);
+            return o["quantity"].as<asset>().get_amount();
+        }
+        return 0;
     }
 };
 
