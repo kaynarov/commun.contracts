@@ -211,9 +211,9 @@ BOOST_FIXTURE_TEST_CASE(claimgem_tests, commun_gallery_tester) try {
 BOOST_FIXTURE_TEST_CASE(provide_tests, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("provide tests");
 
-    BOOST_CHECK_EQUAL(errgallery.no_points_provided, gallery.provide(_alice, _carol, asset(1000, point._symbol)));
+    BOOST_CHECK_EQUAL(errgallery.no_points_provided, gallery.provide(_alice, _carol, asset(0, point._symbol)));
+    BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _carol, asset(1000, point._symbol)));
     BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _carol, asset(0, point._symbol)));
-
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()
