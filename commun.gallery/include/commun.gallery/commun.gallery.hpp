@@ -117,8 +117,6 @@ namespace gallery_types {
     
     struct [[eosio::table]] stat {
         uint64_t id;
-        
-        time_point latest_reward;
         int64_t unclaimed = 0;
 
         uint64_t primary_key()const { return id; }
@@ -432,23 +430,13 @@ private:
     }
     
     void maybe_issue_reward(name _self, const gallery_types::param& param) {
-        auto commun_code = param.commun_symbol.code();
-        auto now = eosio::current_time_point();
-        
-        gallery_types::stats stats_table(_self, commun_code.raw());
-        const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: stat does not exists");
-        
-        eosio::check(now >= stat.latest_reward, "SYSTEM: incorrect latest_reward");
-        
-        int64_t passed_seconds = (now - stat.latest_reward).to_seconds();
-        if (passed_seconds >= config::reward_mosaics_period) {
+        if (emit::it_is_time_to_reward(config::commun_emit_name, param.commun_symbol.code(), false)) {
             action(
-                permission_level{config::commun_emit_name, config::mscsreward_perm_name},
+                permission_level{config::commun_emit_name, config::reward_perm_name},
                 config::commun_emit_name,
-                "mscsreward"_n,
-                std::make_tuple(param.commun_symbol, passed_seconds, _self)
+                "issuereward"_n,
+                std::make_tuple(param.commun_symbol, false)
             ).send();
-            stats_table.modify(stat, name(), [&]( auto& s) { s.latest_reward  = now; });
         }
     }
 
@@ -618,7 +606,6 @@ protected:
         
         stats_table.emplace(_self, [&](auto& s) { s = {
             .id = commun_code.raw(),
-            .latest_reward = eosio::current_time_point()
         };});
     }
 
@@ -815,6 +802,7 @@ protected:
             }
         });
     }
+    
 };
 
 class [[eosio::contract("cmmn.gallery")]] gallery : public gallery_base<gallery>, public contract {

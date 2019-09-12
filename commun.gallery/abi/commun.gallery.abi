@@ -66,7 +66,6 @@
             "base": "",
             "fields": [
                 { "type": "uint64",         "name": "id" },
-                { "type": "time_point",     "name": "latest_reward" },
                 { "type": "int64",          "name": "unclaimed" }
             ]
         },{

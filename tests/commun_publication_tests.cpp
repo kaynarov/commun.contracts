@@ -38,8 +38,8 @@ public:
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(cfg::publish_name, contracts::commun_publication_wasm(), contracts::commun_publication_abi());
 
-        set_authority(cfg::commun_emit_name, cfg::mscsreward_perm_name, create_code_authority({_code}), "active");
-        link_authority(cfg::commun_emit_name, cfg::commun_emit_name, cfg::mscsreward_perm_name, N(mscsreward));
+        set_authority(cfg::commun_emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
+        link_authority(cfg::commun_emit_name, cfg::commun_emit_name, cfg::reward_perm_name, N(issuereward));
 
         std::vector<account_name> transfer_perm_accs{_code, cfg::commun_emit_name};
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());

@@ -42,10 +42,10 @@ public:
         install_contract(commun_emit_name, contracts::emit_wasm(), contracts::emit_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(_code, contracts::gallery_wasm(), contracts::gallery_abi());
-
-        set_authority(commun_emit_name, cfg::mscsreward_perm_name, create_code_authority({_code}), "active");
-        link_authority(commun_emit_name, commun_emit_name, cfg::mscsreward_perm_name, N(mscsreward));
-
+        
+        set_authority(commun_emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
+        link_authority(commun_emit_name, commun_emit_name, cfg::reward_perm_name, N(issuereward));
+        
         std::vector<account_name> transfer_perm_accs{_code, commun_emit_name};
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
         set_authority(commun_point_name, cfg::issue_permission, create_code_authority({commun_emit_name}), "active");

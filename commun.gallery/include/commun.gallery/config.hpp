@@ -36,7 +36,5 @@ static constexpr std::array<int64_t, 10>  advice_weight =
 static constexpr uint8_t auto_claim_num = 3;
     
 static constexpr int64_t min_gem_cost = 10;
-static constexpr int64_t reward_mosaics_period = 60 * 60;
-static constexpr int64_t vote_period = 24 * 60 * 60;
 
 }} // commun::config
