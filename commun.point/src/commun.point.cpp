@@ -134,6 +134,7 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
     asset add_tokens(0, stat.supply.symbol);
     if (!restock) {
         add_tokens = calc_token_quantity(param, stat, quantity);
+        check(add_tokens.amount > 0, "these tokens cost zero points");
         check(add_tokens.amount <= param.max_supply.amount - stat.supply.amount, "quantity exceeds available supply");
         add_balance(from, add_tokens, from);
     }
