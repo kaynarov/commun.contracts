@@ -1,0 +1,203 @@
+{
+    "state_file": "",
+    "genesis_json": "genesis.json",
+    "params":{
+# NOTE: set initial_prod_count to 7 for mainnet
+        "initial_prod_count": 0,
+        "stake":{
+            "enabled": true,
+            "max_proxies":[30, 10, 3, 1],
+            "depriving_window":2592000,
+            "min_own_staked_for_election":0
+        },
+        "funds": [],
+        "posting_rules": {
+            "mainfunc":{
+                "code":{
+                    "varssize":1,
+                    "operators":[0],
+                    "values":[{"kind":1,"idx":0}],
+                    "nums":[],
+                    "consts":[]
+                },
+                "maxarg":"9223372036854771712"
+            },
+            "curationfunc":{
+                "code":{
+                    "varssize":1,
+                    "operators":[0],
+                    "values":[{"kind":1,"idx":0}],
+                    "nums":[],
+                    "consts":[]
+                },
+                "maxarg":"9223372036854771712"
+            },
+            "timepenalty":{
+                "code":{
+                    "varssize":0,
+                    "operators":[0],
+                    "values":[{"kind":0,"idx":0}],
+                    "nums":[4096],
+                    "consts":[]
+                },
+                "maxarg":4096
+            },
+            "maxtokenprop":5000
+        }
+    },
+    "accounts": [
+# System accounts
+        {"name": "cyber",
+            "privileged": true,
+            "permissions": [
+                {"name": "owner",  "keys": []},
+                {"name": "active", "keys": ["INITIAL"]},
+# Wait 2 week for prods authority (14*24*60*60 = 1209600)
+                {"name": "prods",  "keys": [], "threshold": 2, "accounts": ["cyber.prods@active"], "waits": ["1209600"]}
+            ],
+            "abi":  {"path": "$CYBERWAY_CONTRACTS/cyber.bios/cyber.bios.abi", "hash":""},
+            "code": {"path": "$CYBERWAY_CONTRACTS/cyber.bios/cyber.bios.wasm", "hash":""}
+        },
+        {"name": "cyber.msig",
+            "privileged": true,
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@owner"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@active"]},
+                {"name": "prods",  "keys": [], "accounts": ["cyber@prods"]}
+            ],
+            "abi":  {"path": "$CYBERWAY_CONTRACTS/cyber.msig/cyber.msig.abi", "hash":""},
+            "code": {"path": "$CYBERWAY_CONTRACTS/cyber.msig/cyber.msig.wasm", "hash":""}
+        },
+        {"name": "cyber.domain",
+            "privileged": true,
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@owner"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@active"]},
+                {"name": "prods",  "keys": [], "accounts": ["cyber@prods"]}
+            ],
+            "abi":  {"path": "$CYBERWAY_CONTRACTS/cyber.domain/cyber.domain.abi", "hash":""},
+            "code": {"path": "$CYBERWAY_CONTRACTS/cyber.domain/cyber.domain.wasm", "hash":""}
+        },
+        {"name": "cyber.govern",
+            "privileged": true,
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@owner"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@active"]},
+                {"name": "prods",  "keys": [], "accounts": ["cyber@prods"]}
+            ],
+            "abi":  {"path": "$CYBERWAY_CONTRACTS/cyber.govern/cyber.govern.abi", "hash":""},
+            "code": {"path": "$CYBERWAY_CONTRACTS/cyber.govern/cyber.govern.wasm", "hash":""}
+        },
+        {"name": "cyber.stake",
+            "privileged": true,
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@owner"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@active"]},
+                {"name": "prods",  "keys": [], "accounts": ["cyber@prods"]}
+            ],
+            "abi":  {"path": "$CYBERWAY_CONTRACTS/cyber.stake/cyber.stake.abi", "hash":""},
+            "code": {"path": "$CYBERWAY_CONTRACTS/cyber.stake/cyber.stake.wasm", "hash":""}
+        },
+        {"name": "cyber.null",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": []},
+                {"name": "active", "keys": [], "accounts": []}
+            ]
+        },
+        {"name": "cyber.prods",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": []},
+                {"name": "active", "keys": [], "accounts": ["cyber@active"]},
+                {"name": "prod.major", "keys": [], "accounts": ["cyber@active"]},
+                {"name": "prod.minor", "keys": [], "accounts": ["cyber@active"]}
+            ]
+        },
+        {"name": "cyber.token",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@owner"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@active"]},
+                {"name": "prods",  "keys": [], "accounts": ["cyber@prods"]}
+            ],
+            "abi":  {"path": "$CYBERWAY_CONTRACTS/cyber.token/cyber.token.abi", "hash":""},
+            "code": {"path": "$CYBERWAY_CONTRACTS/cyber.token/cyber.token.wasm", "hash":""}
+        },
+        {"name": "cyber.names",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@owner"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@active"]},
+            ],
+        },
+        {"name": "cyber.worker",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@prods"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@prods"]},
+            ],
+        },
+        {"name": "cyber.appfund",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["cyber@prods"]},
+                {"name": "active", "keys": [], "accounts": ["cyber@prods"]},
+            ],
+        },
+        {"name": "cyber.core",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["~goloscore@owner"]},
+                {"name": "active", "keys": [], "accounts": ["~goloscore@active"]}
+            ]
+        },
+        {"name": "cyber.io",
+            "permissions": [
+                {"name": "owner",  "keys": [], "accounts": ["~golosio@owner"]},
+                {"name": "active", "keys": [], "accounts": ["~golosio@active"]}
+            ]
+        },
+
+# NOTE: Technical account to start testnet and tests (remove from mainnet)
+        {
+            "name": "tech",
+            "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
+            "sys_balance": "100000.0000 CYBER",
+            "sys_staked": "100000.0000 CYBER",
+        },
+
+        {
+            "name": "cmmn",
+            "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
+            "sys_balance": "100000.0000 CYBER",
+            "sys_staked": "100000.0000 CYBER",
+        },
+
+# Add additional accounts here
+
+    ],
+    "transit_account_authorities": [],
+    "delegateuse": [],
+    "auth_links": [
+# Block producers permissions
+        {"permission": "cyber@prods",             "links": ["cyber:setcode", "cyber:setabi", "cyber:setparams"]},
+        {"permission": "cyber.msig@prods",        "links": ["cyber:setcode", "cyber:setabi"]},
+        {"permission": "cyber.domain@prods",      "links": ["cyber:setcode", "cyber:setabi"]},
+        {"permission": "cyber.govern@prods",      "links": ["cyber:setcode", "cyber:setabi"]},
+        {"permission": "cyber.stake@prods",       "links": ["cyber:setcode", "cyber:setabi"]},
+        {"permission": "cyber.token@prods",       "links": ["cyber:setcode", "cyber:setabi", "cyber.token:create"]},
+    ],
+    "tables": [],
+    "golos": {
+        "domain": "golos",
+        "names": {
+            "issuer": "gls",
+            "control": "gls.ctrl",
+            "emission": "gls.emit",
+            "vesting": "gls.vesting",
+            "posting": "gls.publish",
+            "social": "gls.social",
+            "charge": "gls.charge",
+            "memo": "gls.memo"
+        },
+        "recovery": {
+            "wait_days": 30
+        },
+        "max_supply": 10000000000,
+        "sys_max_supply": 10000000000
+    }
+}
