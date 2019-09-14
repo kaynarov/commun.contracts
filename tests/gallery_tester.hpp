@@ -26,6 +26,9 @@ public:
         const string points_negative = amsg("points must be positive");
         const string wrong_gem_type = amsg("gem type mismatch");
         const string nothing_to_claim = amsg("nothing to claim");
+        
+        const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
+        
     } errgallery;
 
     variant get_mosaic(name code, symbol point, name creator, uint64_t tracery) {

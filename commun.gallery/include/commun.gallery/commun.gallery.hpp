@@ -12,6 +12,7 @@
 #include <cmath>
 #include <eosio/system.hpp>
 #include <commun/util.hpp>
+#include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
 #include <commun.emit/commun.emit.hpp>
 #include <commun.emit/config.hpp>
@@ -19,7 +20,6 @@
 namespace commun {
 
 using std::string;
-using namespace eosio;
 
 namespace gallery_types {
     using mosaic_key_t = std::tuple<name, uint64_t>;
@@ -172,8 +172,6 @@ namespace gallery_types {
 template<typename T>
 class gallery_base { 
 private:
-    bool check_leader(symbol_code commun_code, name arg) { return true; }; //TODO
-    
     bool transfer(name from, name to, const asset &quantity) {
         if (to && !point::balance_exists(config::commun_point_name, to, quantity.symbol.code())) {
             return false;
@@ -749,7 +747,7 @@ protected:
         require_auth(leader);
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-        eosio::check(check_leader(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        eosio::check(control::in_the_top(config::commun_ctrl_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         eosio::check(favorites.size() <= config::advice_weight.size(), "a surfeit of advice");
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -786,7 +784,7 @@ protected:
         require_auth(leader);
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-        eosio::check(check_leader(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        eosio::check(control::in_the_top(config::commun_ctrl_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
@@ -796,7 +794,7 @@ protected:
         mosaics_idx.modify(mosaic, name(), [&](auto& item) {
             for (auto& n : item.slaps) {
                 eosio::check(n != leader, "already done");
-                if (!check_leader(commun_code, n)) {
+                if (!control::in_the_top(config::commun_ctrl_name, commun_code, n)) {
                     n = name();
                 }
             }

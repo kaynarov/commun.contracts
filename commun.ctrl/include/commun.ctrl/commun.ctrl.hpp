@@ -92,6 +92,25 @@ private:
     //void update_auths();
     void send_witness_event(symbol_code point, const witness_info& wi);
     void active_witness(symbol_code point, name witness, bool flag);
+
+public:
+    static inline bool in_the_top(name ctrl_contract_account, symbol_code point, name account) {
+        ctrl_params_singleton cfg(ctrl_contract_account, point.raw());
+        eosio::check(cfg.exists(), "control is not initialized");
+        const auto l = cfg.get().witnesses.max;
+        witness_tbl witness(ctrl_contract_account, point.raw());
+        auto idx = witness.get_index<"byweight"_n>();    // this index ordered descending
+        size_t i = 0;
+        for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
+            if (itr->active && itr->total_weight > 0) {
+                if (itr->name == account) {
+                    return true;
+                }
+                ++i;
+            }
+        }
+        return false;
+    }
 };
 
 
