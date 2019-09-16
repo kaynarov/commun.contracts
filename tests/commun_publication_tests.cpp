@@ -14,6 +14,7 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
+using commun::config::default_mosaic_active_period;
 
 class commun_publication_tester : public gallery_tester {
 protected:
@@ -91,7 +92,7 @@ public:
         const string no_permlink           = amsg("Permlink doesn't exist.");
         const string no_mosaic             = amsg("mosaic doesn't exist");
         const string update_no_message     = amsg("You can't update this message, because this message doesn't exist.");
-        const string max_comment_depth     = amsg("publication::create_message: level > MAX_COMMENT_DEPTH");
+        const string max_comment_depth     = amsg("publication::createmssg: level > MAX_COMMENT_DEPTH");
         const string max_cmmnt_dpth_less_0 = amsg("Max comment depth must be greater than 0.");
         const string msg_exists            = amsg("This message already exists.");
         const string parent_no_message     = amsg("Parent message doesn't exist");
@@ -310,6 +311,36 @@ BOOST_FIXTURE_TEST_CASE(setfrequency, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.setfrequency(N(brucelee), 10));
     BOOST_CHECK(!post.get_accparam(N(brucelee)).is_null());
     BOOST_CHECK_EQUAL(post.get_accparam(N(brucelee))["actions_per_day"].as<uint16_t>(), 10);
+} FC_LOG_AND_RETHROW()
+
+
+BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Set gem holders testing.");
+    init();
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "dirt"}));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}));
+    
+    //_golos has no tokens to freeze
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.transfer({N(alice), "dirt"}, N(alice), N(alice), _golos));
+    
+    BOOST_CHECK_EQUAL(success(), post.transfer({N(alice), "dirt"}, N(alice), N(alice), N(jackiechan)));
+    BOOST_CHECK_EQUAL(success(), post.hold({N(alice), "alice-in-blockchains"}, N(alice)));
+    
+    produce_block();
+    produce_block(fc::seconds(default_mosaic_active_period - cfg::block_interval_ms / 1000));
+    
+    //a third party can claim it because the active period has expired
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(chucknorris)));
+    
+    BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.claim({N(alice), "dirt"}, N(alice), N(alice), false, N(chucknorris)));
+    BOOST_CHECK_EQUAL(errgallery.no_authority, post.claim({N(alice), "dirt"}, N(jackiechan), N(alice), false, N(alice)));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "dirt"}, N(jackiechan), N(alice), false, N(jackiechan)));
+    
+    
+    BOOST_CHECK_EQUAL(errgallery.no_authority, post.claim({N(alice), "alice-in-blockchains"}, N(alice), N(alice), false, N(chucknorris)));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "alice-in-blockchains"}, N(alice), N(alice), false, N(alice)));
+
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

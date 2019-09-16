@@ -34,21 +34,23 @@ public:
         vertices_table.erase(*vertex);
     }
 
-    void create_message(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
+    void createmssg(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
         std::string headermssg, std::string bodymssg, std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata,
         uint16_t curators_prcnt);
-    void update_message(symbol_code commun_code, mssgid_t message_id, std::string headermssg, std::string bodymssg,
+    void updatemssg(symbol_code commun_code, mssgid_t message_id, std::string headermssg, std::string bodymssg,
                         std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata);
-    void delete_message(symbol_code commun_code, mssgid_t message_id);
+    void deletemssg(symbol_code commun_code, mssgid_t message_id);
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);
-    void claim(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, 
+    void claim(mssgid_t message_id, symbol_code commun_code, name gem_owner, 
                     std::optional<name> gem_creator, std::optional<bool> eager);
+    void hold(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator);
+    void transfer(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient);
 
-    void set_params(symbol_code commun_code, std::vector<posting_params> params);
+    void setparams(symbol_code commun_code, std::vector<posting_params> params);
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string headermssg, std::string bodymssg);
-    void erase_reblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
+    void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
     void setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day);
     
@@ -56,6 +58,11 @@ public:
     void advise(symbol_code commun_code, name leader, std::vector<gallery_types::mosaic_key_t> favorites);
     //TODO: void checkadvice (symbol_code commun_code, name leader);
     void slap(symbol_code commun_code, name leader, name mosaic_creator, uint64_t tracery);
+    
+    void ontransfer(name from, name to, asset quantity, std::string memo) {
+        on_points_transfer(_self, from, to, quantity, memo);
+    } 
+    
 private:
     gallery_types::providers_t get_providers(symbol_code commun_code, name account, uint16_t weight = config::_100percent);
     accparams::const_iterator get_acc_param(accparams& accparams_table, symbol_code commun_code, name account);

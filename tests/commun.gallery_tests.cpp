@@ -138,15 +138,15 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     produce_block();
 
     produce_block(fc::seconds(default_evaluation_period - (cfg::block_interval_ms / 1000)));
-    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claim(_alice, 1, _alice));
     
     produce_blocks(1);
 
     BOOST_CHECK_EQUAL(point.get_supply(), supply);
-    BOOST_CHECK_EQUAL(success(), gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _carol)); //carol got nothing
+    BOOST_CHECK_EQUAL(success(), gallery.claim(_alice, 1, _carol)); //carol got nothing
     auto reward = point.get_supply() - supply;
     BOOST_TEST_MESSAGE("--- reward = " << reward);
-    BOOST_CHECK_EQUAL(success(), gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(success(), gallery.claim(_alice, 1, _alice));
     BOOST_CHECK_EQUAL(point.get_amount(_alice), init_amount + reward);
 
 } FC_LOG_AND_RETHROW()
@@ -210,13 +210,13 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     }
     std::map<uint64_t, int64_t> ranked_mosaics;
     
-    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_bob), gallery.advise(point._symbol.to_symbol_code(), _bob, {{_bob, 9},{_bob, 10}}));
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_bob), gallery.advise(_bob, {{_bob, 9},{_bob, 10}}));
     
     //these advices should be replaced after the next action
-    BOOST_CHECK_EQUAL(success(), gallery.advise(point._symbol.to_symbol_code(), _alice, {{_bob, 9},{_bob, 10}}));
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {{_bob, 9},{_bob, 10}}));
     
-    BOOST_CHECK_EQUAL(success(), gallery.advise(point._symbol.to_symbol_code(), _alice, {{_bob, 1},{_bob, 3},{_bob, 50}}));
-    BOOST_CHECK_EQUAL(success(), gallery.advise(point._symbol.to_symbol_code(), _carol, {{_bob, 1},{_bob, 2}}));
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {{_bob, 1},{_bob, 3},{_bob, 50}}));
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_carol, {{_bob, 1},{_bob, 2}}));
     ranked_mosaics[ 1] = cfg::default_lead_grades[0];
     ranked_mosaics[ 2] = cfg::default_lead_grades[1];
     ranked_mosaics[50] = cfg::default_lead_grades[2];
@@ -301,8 +301,8 @@ BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(claimgem_tests, commun_gallery_tester) try {
-    BOOST_TEST_MESSAGE("claimgem tests");
+BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
+    BOOST_TEST_MESSAGE("claim tests");
     int64_t supply  = 5000000000000;
     init();
     int64_t init_amount = supply / 2;
@@ -312,12 +312,12 @@ BOOST_FIXTURE_TEST_CASE(claimgem_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     produce_block();
     produce_block(fc::seconds(commun::config::default_evaluation_period - (cfg::block_interval_ms / 1000)));
-    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claim(_alice, 1, _alice));
 
     produce_blocks(1);
 
     BOOST_CHECK_EQUAL(point.get_supply(), supply);
-    BOOST_CHECK_EQUAL(success(), gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _carol)); //carol got nothing
+    BOOST_CHECK_EQUAL(success(), gallery.claim(_alice, 1, _carol)); //carol got nothing
 
 } FC_LOG_AND_RETHROW()
 

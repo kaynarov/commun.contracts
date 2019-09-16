@@ -129,14 +129,26 @@
                 { "type": "providers_t",           "name": "providers" }
             ]
         },{
-            "name": "claimgem_args",
+            "name": "modifygem_args",
             "base": "",
             "fields": [
                 { "type": "name",                   "name": "mosaic_creator" },
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "gem_owner" },
-                { "type": "name?",                   "name": "gem_creator" }
+                { "type": "name?",                  "name": "gem_creator" }
+            ]
+        },{
+            "name": "claim_args",
+            "base": "modifygem_args",
+            "fields": [
+                { "type": "bool?",                  "name": "eager" }
+            ]
+        },{
+            "name": "transfer_args",
+            "base": "modifygem_args",
+            "fields": [
+                { "type": "name",                   "name": "recipient"  }
             ]
         },{
             "name": "provide_args",
@@ -184,8 +196,18 @@
             "ricardian_contract": ""
         },
         {
-            "name": "claimgem",
-            "type": "claimgem_args",
+            "name": "claim",
+            "type": "claim_args",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "hold",
+            "type": "modifygem_args",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "transfer",
+            "type": "transfer_args",
             "ricardian_contract": ""
         },
         {

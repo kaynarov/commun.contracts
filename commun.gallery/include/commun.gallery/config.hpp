@@ -37,4 +37,8 @@ static constexpr uint8_t auto_claim_num = 3;
     
 static constexpr int64_t min_gem_cost = 10;
 
+#ifndef UNIT_TEST_ENV
+    static const eosio::time_point eternity(eosio::days(365 * 8000));
+#endif
+
 }} // commun::config
