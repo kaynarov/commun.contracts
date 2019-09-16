@@ -1,6 +1,7 @@
 #include "gallery_tester.hpp"
 #include "commun_posting_test_api.hpp"
 #include "commun.point_test_api.hpp"
+#include "commun.emit_test_api.hpp"
 #include "cyber.token_test_api.hpp"
 #include "../commun.point/include/commun.point/config.hpp"
 #include "../commun.emit/include/commun.emit/config.hpp"
@@ -19,6 +20,7 @@ class commun_publication_tester : public gallery_tester {
 protected:
     cyber_token_api token;
     commun_point_api point;
+    commun_emit_api emit;
     commun_posting_api post;
 
     std::vector<account_name> _users;
@@ -28,6 +30,7 @@ public:
         : gallery_tester(cfg::publish_name)
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, cfg::commun_point_name, _point})
+        , emit({this, cfg::commun_emit_name})
         , post({this, cfg::publish_name, symbol(0, point_code_str).to_symbol_code()})
         , _users{N(jackiechan), N(brucelee), N(chucknorris), N(alice)} {
         create_accounts(_users);
@@ -64,8 +67,7 @@ public:
         BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
         BOOST_CHECK_EQUAL(success(), point.setfreezer(commun::config::commun_gallery_name));
 
-        BOOST_CHECK_EQUAL(success(), push_action(cfg::commun_emit_name, N(create), cfg::commun_emit_name, mvo()
-            ("commun_symbol", point._symbol)("annual_emission_rate", annual_emission_rate)("leaders_reward_prop", leaders_reward_prop)));
+        BOOST_CHECK_EQUAL(success(), emit.create(point._symbol, annual_emission_rate, leaders_reward_prop));
 
         BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::commun_point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
