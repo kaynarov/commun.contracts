@@ -251,6 +251,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
     }
     else {
         auto sub_reserve = calc_reserve_quantity(param, stat, quantity);
+        check(sub_reserve.amount > 0, "these points cost zero tokens");
         stats_table.modify(stat, same_payer, [&](auto& s) {
             s.reserve -= sub_reserve;
             s.supply -= quantity;
