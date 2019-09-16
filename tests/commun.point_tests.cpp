@@ -39,6 +39,7 @@ public:
 
     struct errors: contract_error_messages {
         const string no_reserve = amsg("no reserve");
+        const string tokens_cost_zero_points = amsg("these tokens cost zero points");
     } err;
 };
 
@@ -138,6 +139,22 @@ BOOST_FIXTURE_TEST_CASE(cw05_test, commun_point_tester) try {
     }
     BOOST_CHECK_EQUAL(reserve, 0);
     
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(transfer_buy_tokens_no_supply, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("Buy points if no supply");
+
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(1000000, point._symbol), cfg::_100percent, 0));
+    BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1+1000, token._symbol)));
+
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(1+1000, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1, token._symbol), cfg::restock_prefix + point_code_str));
+    BOOST_CHECK_EQUAL(success(), point.open(_carol, point._symbol, _carol));
+    BOOST_CHECK_EQUAL(err.tokens_cost_zero_points, token.transfer(_carol, _code, asset(1000, token._symbol), point_code_str));
+
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(1, point._symbol), std::string(point_code_str) + " issue"));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1000, token._symbol), point_code_str));
+    BOOST_CHECK_EQUAL(point.get_amount(_carol), 1000);
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()
