@@ -48,12 +48,7 @@ namespace gallery_types {
         
         enum status_t: uint8_t {ACTIVE, ARCHIVED, BANNED};
         uint8_t status = ACTIVE;
-
         std::vector<name> slaps;
-        
-        void ban() { status = BANNED; }
-        void archive() { status = ARCHIVED; }
-        bool banned()const { return status == BANNED; }
        
         uint64_t primary_key() const { return id; }
         using key_t = gallery_types::mosaic_key_t;
@@ -61,6 +56,8 @@ namespace gallery_types {
         using by_rating_t = std::tuple<uint8_t, int64_t, int64_t>;
         by_rating_t by_comm_rating()const { return std::make_tuple(status, comm_rating, lead_rating); }
         by_rating_t by_lead_rating()const { return std::make_tuple(status, lead_rating, comm_rating); }
+        using by_created_t = std::tuple<uint8_t, time_point>;
+        by_created_t by_created()const { return std::make_tuple(status, created); }
     };
     
     struct gem {
@@ -147,7 +144,8 @@ namespace gallery_types {
     using mosaic_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::key_t, &gallery_types::mosaic::by_key> >;
     using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_comm_rating> >;
     using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_lead_rating> >;
-    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_key_index, mosaic_comm_index, mosaic_lead_index>;
+    using mosaic_created_index = eosio::indexed_by<"bycreated"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_created_t, &gallery_types::mosaic::by_created> >;
+    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_key_index, mosaic_comm_index, mosaic_lead_index, mosaic_created_index>;
     
     using gem_id_index = eosio::indexed_by<"gemid"_n, eosio::const_mem_fun<gallery_types::gem, uint64_t, &gallery_types::gem::primary_key> >;
     using gem_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::key_t, &gallery_types::gem::by_key> >;
@@ -247,7 +245,7 @@ private:
         
         int64_t reward = 0;
         bool damn = gem.shares < 0;
-        if (!no_rewards && damn == (mosaic->banned())) {
+        if (!no_rewards && damn == (mosaic->status == gallery_types::mosaic::BANNED)) {
             reward = damn ? 
                 safe_prop(mosaic->reward, -gem.shares, mosaic->damn_shares) :
                 safe_prop(mosaic->reward,  gem.shares, mosaic->shares);
@@ -293,8 +291,9 @@ private:
             gallery_types::stats stats_table(_self, commun_code.raw());
             const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: stat does not exists");
             stats_table.modify(stat, name(), [&]( auto& s) { s.unclaimed += mosaic->reward - reward; });
-            
-            T::prepare_erase(_self, commun_code, *mosaic);
+            if (mosaic->status == gallery_types::mosaic::ACTIVE) {
+                T::deactivate(_self, commun_code, *mosaic);
+            }
             mosaics_table.erase(mosaic);
         }
     }
@@ -472,6 +471,8 @@ private:
             auto cur_shares_abs = safe_prop(shares_abs, quantity.amount + total_fee, points_sum);
             freeze_points_in_gem(_self, can_refill, commun_symbol, mosaic_id, claim_date, quantity.amount, damn ? -cur_shares_abs : cur_shares_abs, creator, creator);
         }
+        
+        archive_old_mosaics(_self, commun_code);
     }
     
     struct claim_info_t {
@@ -526,6 +527,25 @@ private:
         });
     }
     
+    void archive_old_mosaics(name _self, symbol_code commun_code) {
+        gallery_types::params params_table(_self, commun_code.raw());
+        const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+        
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaics_idx = mosaics_table.get_index<"bycreated"_n>();
+        
+        auto max_archive_date = eosio::current_time_point() - eosio::seconds(param.mosaic_active_period);
+        
+        for (size_t i = 0; i < config::auto_archives_num; i++) {
+            auto mosaic = mosaics_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, time_point()));
+            if ((mosaic == mosaics_idx.end()) || (mosaic->status != gallery_types::mosaic::ACTIVE) || (mosaic->created > max_archive_date)) {
+                break;
+            }
+            mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.status = gallery_types::mosaic::ARCHIVED; });
+            T::deactivate(_self, commun_code, *mosaic);
+        }
+    }
+    
 public:
     static inline int64_t get_frozen_amount(name gallery_contract_account, name owner, symbol_code sym_code) {
         gallery_types::inclusions inclusions_table(gallery_contract_account, owner.value);
@@ -545,7 +565,7 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto by_comm_idx = mosaics_table.get_index<"bycommrating"_n>();
         
-        auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, std::numeric_limits<int64_t>::max()));
+        auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, MAXINT64, MAXINT64));
         auto by_comm_max = param.comm_grades.size();
         auto mosaic_num = 0;
         auto points_sum = 0;
@@ -572,7 +592,7 @@ protected:
         
         auto by_lead_max = param.lead_grades.size();
         mosaic_num = 0;
-        for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, std::numeric_limits<int64_t>::max())); 
+        for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, MAXINT64, MAXINT64)); 
                                                    (mosaic_num < by_lead_max) &&
                                                    (by_lead_itr != by_lead_idx.end()) && 
                                                    (by_lead_itr->status != gallery_types::mosaic::BANNED) &&
@@ -825,6 +845,7 @@ protected:
         auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
         auto mosaic = mosaics_idx.find(std::make_tuple(mosaic_creator, tracery));
         eosio::check(mosaic != mosaics_idx.end(), "mosaic doesn't exist");
+        eosio::check(mosaic->status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
         
         mosaics_idx.modify(mosaic, name(), [&](auto& item) {
             for (auto& n : item.slaps) {
@@ -835,9 +856,13 @@ protected:
             }
             item.slaps.erase(std::remove_if(item.slaps.begin(), item.slaps.end(), [](const name& n) { return n == name(); }), item.slaps.end());
             if (item.slaps.size() >= param.ban_threshold) {
-                item.ban();
+                item.status = gallery_types::mosaic::BANNED;
             }
         });
+        
+        if (mosaic->status == gallery_types::mosaic::BANNED) {
+            T::deactivate(_self, commun_code, *mosaic);
+        }
     }
     
 };
@@ -845,7 +870,7 @@ protected:
 class [[eosio::contract("cmmn.gallery")]] gallery : public gallery_base<gallery>, public contract {
 public:
     using contract::contract;
-    static void prepare_erase(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
+    static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
     
     [[eosio::action]] void create(symbol commun_symbol) {
         create_gallery(_self, commun_symbol);

@@ -273,7 +273,9 @@
                 { "name": "bycommrating", "unique": "false", "orders": [
                     {"field": "status", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
-                    {"field": "status", "order": "asc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] }
+                    {"field": "status", "order": "asc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
+                { "name": "bycreated", "unique": "false", "orders": [
+                    {"field": "status", "order": "asc"}, {"field": "created", "order": "asc"} ] }
             ]
         },{
             "name": "gem",

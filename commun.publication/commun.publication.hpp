@@ -12,7 +12,7 @@ class publication : public gallery_base<publication>, public contract {
 public:
     using contract::contract;
     
-    static void prepare_erase(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {
+    static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {
         vertices vertices_table(self, commun_code.raw());
         auto vertices_index = vertices_table.get_index<"bykey"_n>();
         auto vertex = vertices_index.find(std::make_tuple(mosaic.creator, mosaic.tracery));

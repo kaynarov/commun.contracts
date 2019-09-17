@@ -34,6 +34,7 @@ static constexpr std::array<int64_t, 10>  advice_weight =
     {{10000, 7071, 5774, 5000, 4472, 4082, 3780, 3536, 3333, 3162}}; //sqrt(100000000/k)
 
 static constexpr uint8_t auto_claim_num = 3;
+static constexpr uint8_t auto_archives_num = 3;
     
 static constexpr int64_t min_gem_cost = 10;
 
