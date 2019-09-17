@@ -23,20 +23,26 @@ logFile = None
 unlockTimeout = 999999999
 
 _communAccounts = [
-    # name           contract
+    # name           contract                permissions (name, keys, accounts, links)
     #('cmmn',        None),    # cmmn - owner for COMMUN. Must be created outside of this script!
-    ('cmmn.point',   'commun.point'),
-    ('cmmn.ctrl',    'commun.ctrl'),
-    ('cmmn.emit',    'commun.emit'),
-    ('cmmn.list',    'commun.list'),
-    ('cmmn.gallery', 'commun.publication'),
-    ('cmmn.social',  'commun.social'),
+    ('cmmn.point',   'commun.point',         []),
+    ('cmmn.ctrl',    'commun.ctrl',          [("changepoints", [], ["cmmn.point@cyber.code"], ["cmmn.ctrl:changepoints"])]),
+    ('cmmn.emit',    'commun.emit',          []),
+    ('cmmn.list',    'commun.list',          []),
+    ('cmmn.gallery', 'commun.publication',   []),
+    ('cmmn.social',  'commun.social',        []),
 ]
 
 communAccounts = []
-for (name, contract) in _communAccounts:
+for (name, contract, permissions) in _communAccounts:
     acc = Struct()
-    (acc.name, acc.contract) = (name, contract)
+    perms = []
+    for (pname, keys, accounts, links) in permissions:
+        perm = Struct()
+        parent = "owner" if pname == "active" else "active"
+        (perm.name, perm.parent, perm.keys, perm.accounts, perm.links) = (pname, parent, keys, accounts, links)
+        perms.append(perm)
+    (acc.name, acc.contract, acc.permissions) = (name, contract, perms)
     communAccounts.append(acc)
 
 def jsonArg(a):
@@ -57,13 +63,17 @@ def run(args):
         print('commun-boot-sequence.py: exiting because of error')
         sys.exit(1)
 
-def retry(args):
+def retry(args, *, bwprovider=None):
+    extra_args = ''
+    if bwprovider != None:
+        extra_args += ' --bandwidth-provider {provider}'.format(provider=bwprovider)
+
     count = 5
     while count:
         count = count-1
-        print('commun-boot-sequence.py:', args)
+        print('commun-boot-sequence.py:', args + extra_args)
         logFile.write(args + '\n')
-        if subprocess.call(args, shell=True):
+        if subprocess.call(args + extra_args, shell=True):
             print('*** Retry: ', count)
             sleep(0.5)
         else:
@@ -74,11 +84,7 @@ def retry(args):
 # In case of large amount of tables transaction `set contract` failed due
 # timeout (`Transaction took too long`). In this case we split ABI-file
 # tables section in small portions and iteratively load ABI.
-def loadContract(account, contract_dir, provider=None):
-    extra_args = ''
-    if provider != None:
-        extra_args += ' --bandwidth-provider {account}/{provider}'.format(account=account, provider=provider)
-
+def loadContract(account, contract_dir, *, bwprovider=None):
     while os.path.basename(contract_dir) == '':
         contract_dir = os.path.dirname(contract_dir)
     abi_file = os.path.join(contract_dir, os.path.basename(contract_dir) + '.abi')
@@ -92,10 +98,10 @@ def loadContract(account, contract_dir, provider=None):
                 with tempfile.NamedTemporaryFile(mode='w') as f:
                     json.dump(abi, f)
                     f.flush()
-                    retry(args.cleos + 'set abi {account} {abi} {extra_args}'
-                        .format(account=account, abi=f.name, extra_args=extra_args))
-        return retry(args.cleos + 'set contract {account} {contract_dir} {extra_args}'
-            .format(account=account, contract_dir=contract_dir, extra_args=extra_args))
+                    retry(args.cleos + 'set abi {account} {abi}'
+                        .format(account=account, abi=f.name), bwprovider=bwprovider)
+        return retry(args.cleos + 'set contract {account} {contract_dir}'
+            .format(account=account, contract_dir=contract_dir), bwprovider=bwprovider)
 
 
 def background(args):
@@ -132,19 +138,19 @@ def intToTokenCommun(value):
 def setCommunParams():
     pass
 
-def createAccount(creator, account, key):
-    retry(args.cleos + 'create account %s %s %s' % (creator, account, key))
+def createAccount(creator, account, key, *, bwprovider=None):
+    retry(args.cleos + 'create account %s %s %s' % (creator, account, key), bwprovider=bwprovider)
 
-def updateAuth(account, permission, parent, keys, accounts):
+def updateAuth(account, permission, parent, keys, accounts, *, bwprovider=None):
     retry(args.cleos + 'push action cyber updateauth' + jsonArg({
         'account': account,
         'permission': permission,
         'parent': parent,
         'auth': createAuthority(keys, accounts)
-    }) + '-p ' + account)
+    }) + '-p ' + account, bwprovider=bwprovider)
 
-def linkAuth(account, code, action, permission):
-    retry(args.cleos + 'set action permission %s %s %s %s -p %s'%(account, code, action, permission, account))
+def linkAuth(account, code, action, permission, *, bwprovider=None):
+    retry(args.cleos + 'set action permission %s %s %s %s -p %s'%(account, code, action, permission, account), bwprovider=bwprovider)
 
 def createAuthority(keys, accounts):
     keys.sort()
@@ -190,11 +196,16 @@ def createCommunAccounts():
     for acc in communAccounts:
         if not (args.golos_genesis and acc.inGenesis):
             createAccount('cmmn', acc.name, args.public_key)
+            for perm in acc.permissions:
+                updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, bwprovider=acc.name+'/cmmn')
+                for link in perm.links:
+                    (code, action) = link.split(':',2)
+                    linkAuth(acc.name, code, action, perm.name, bwprovider=acc.name+'/cmmn')
 
 def stepInstallContracts():
     for acc in communAccounts:
         if (acc.contract != None):
-            loadContract(acc.name, args.contracts_dir + acc.contract, 'cmmn')
+            loadContract(acc.name, args.contracts_dir + acc.contract, bwprovider=acc.name+'/cmmn')
 
 def stepCreateTokens():
     retry(args.cleos + 'push action cyber.token create ' + jsonArg(["cmmn.owner", intToTokenCommun(10000000000*10000)]) + ' -p cyber.token')
