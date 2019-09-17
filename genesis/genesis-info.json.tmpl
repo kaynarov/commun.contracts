@@ -139,32 +139,20 @@
                 {"name": "active", "keys": [], "accounts": ["cyber@prods"]},
             ],
         },
-        {"name": "cyber.core",
-            "permissions": [
-                {"name": "owner",  "keys": [], "accounts": ["~goloscore@owner"]},
-                {"name": "active", "keys": [], "accounts": ["~goloscore@active"]}
-            ]
-        },
-        {"name": "cyber.io",
-            "permissions": [
-                {"name": "owner",  "keys": [], "accounts": ["~golosio@owner"]},
-                {"name": "active", "keys": [], "accounts": ["~golosio@active"]}
-            ]
-        },
 
 # NOTE: Technical account to start testnet and tests (remove from mainnet)
         {
             "name": "tech",
             "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
-            "sys_balance": "100000.0000 CYBER",
-            "sys_staked": "100000.0000 CYBER",
+#            "sys_balance": "100000.0000 CYBER",
+#            "sys_staked": "100000.0000 CYBER",
         },
 
         {
             "name": "cmmn",
             "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
-            "sys_balance": "100000.0000 CYBER",
-            "sys_staked": "100000.0000 CYBER",
+#            "sys_balance": "100000.0000 CYBER",
+#            "sys_staked": "100000.0000 CYBER",
         },
 
 # Add additional accounts here
@@ -181,7 +169,177 @@
         {"permission": "cyber.stake@prods",       "links": ["cyber:setcode", "cyber:setabi"]},
         {"permission": "cyber.token@prods",       "links": ["cyber:setcode", "cyber:setabi", "cyber.token:create"]},
     ],
-    "tables": [],
+    "tables": [
+        {
+            "code": "cyber.token",
+            "table": "stat",
+            "abi_type": "currency_stats",
+            "rows": [
+                {
+                    "scope": "CYBER", "payer": "cyber.token", "pk": 353349294403,
+                    "data": {
+                        "supply" : {
+                            "_amount" : 40000000006,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "max_supply" : {
+                            "_amount" : 100000000000000,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "issuer" : "cyber"
+                    }
+                }, {
+                    "scope": "COMMUN", "payer": "cmmn", "pk": 86128276098883,
+                    "data": {
+                        "supply" : {
+                            "_amount" : 0,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "max_supply" : {
+                            "_amount" : 100000000000000,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "issuer" : "cmmn"
+                    }
+                }
+            ]
+        }, {
+            "code": "cyber.token",
+            "table": "accounts",
+            "abi_type": "account",
+            "rows": [
+                {
+                    "scope": "tech", "payer": "tech", "pk": 353349294403,
+                    "data": {
+                        "balance" : {
+                            "_amount" : 10000000000,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "payments" : {
+                            "_amount" : 0,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        }
+                    }
+                }, {
+                    "scope": "cmmn", "payer": "cmmn", "pk": 353349294403,
+                    "data": {
+                        "balance" : {
+                            "_amount" : 10000000001,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "payments" : {
+                            "_amount" : 0,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        }
+                    }
+                }, {
+                    "scope": "cyber.stake", "payer": "cyber", "pk": 353349294403,
+                    "data": {
+                        "balance" : {
+                            "_amount" : 20000000005,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "payments" : {
+                            "_amount" : 0,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        }
+                    }
+                }
+            ]
+        }, {
+            "code": "",
+            "table": "stake.param",
+            "abi_type": "stake_param_object",
+            "rows": [
+                {
+                    "scope": "", "payer": "cyber", "pk": 353349294403,
+                    "data": {
+                        "id" : 353349294403,
+                        "token_symbol" : {
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "max_proxies" : [
+                            30,
+                            10,
+                            3,
+                            1
+                        ],
+                        "depriving_window" : 2592000,
+                        "min_own_staked_for_election" : 0
+                    }
+                }
+            ]
+        }, {
+            "code": "",
+            "table": "stake.stat",
+            "abi_type": "stake_stat_object",
+            "rows": [
+                {
+                    "scope": "", "payer": "cyber", "pk": 353349294403,
+                    "data": {
+                        "id" : 353349294403,
+                        "token_code" : "CYBER",
+                        "total_staked" : 20000000005,
+                        "total_votes" : 0,
+                        "last_reward" : "2019-09-05T14:02:36.000",
+                        "enabled" : true,
+                    }
+                }
+            ]
+        }, {
+            "code": "",
+            "table": "stake.agent",
+            "abi_type": "stake_agent_object",
+            "rows": [
+                {
+                    "scope": "", "payer": "tech", "pk": 1,
+                    "data": {
+                        "id" : 1,
+                        "token_code" : "CYBER",
+                        "account" : "tech",
+                        "proxy_level" : 4,
+                        "last_proxied_update" : "2019-09-05T16:46:33.000",
+                        "balance" : 10000000002,
+                        "proxied" : 0,
+                        "shares_sum" : 10000000002,
+                        "own_share" : 10000000002,
+                        "fee" : 0,
+                        "min_own_staked" : 0,
+                        "provided" : 0,
+                        "received" : 0,
+                    }
+                }, {
+                    "scope": "", "payer": "cmmn", "pk": 2,
+                    "data": {
+                        "id" : 2,
+                        "token_code" : "CYBER",
+                        "account" : "cmmn",
+                        "proxy_level" : 4,
+                        "last_proxied_update" : "2019-09-05T16:46:33.000",
+                        "balance" : 10000000003,
+                        "proxied" : 0,
+                        "shares_sum" : 10000000003,
+                        "own_share" : 10000000003,
+                        "fee" : 0,
+                        "min_own_staked" : 0,
+                        "provided" : 0,
+                        "received" : 0,
+                    }
+                }
+            ]
+        }
+    ],
     "golos": {
         "domain": "golos",
         "names": {

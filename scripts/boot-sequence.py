@@ -25,6 +25,9 @@ if subprocess.call(commun_boot_sequence, shell=True):
     print('commun-boot-sequence.py exited with error')
     sys.exit(1)
 
+print('no community yet')
+sys.exit(0)
+
 community_boot_sequence=('{basedir}/scripts/community-boot-sequence/community-boot-sequence.py '
                      '--cleos "{cleos}" --contracts-dir "{commun_contracts_dir}" ' 
                      '--public-key {public_key} --private-key {private_key} '

@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import time
+import tempfile
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from config import golos_curation_func_str
@@ -23,11 +24,13 @@ unlockTimeout = 999999999
 
 _communAccounts = [
     # name           contract
-    ('cmmn.owner',   None),
-    ('cmmn.token',   'bancor.token'),
+    #('cmmn',        None),    # cmmn - owner for COMMUN. Must be created outside of this script!
+    ('cmmn.point',   'commun.point'),
+    ('cmmn.ctrl',    'commun.ctrl'),
+    ('cmmn.emit',    'commun.emit'),
     ('cmmn.list',    'commun.list'),
-    ('resrv.emit',   'reserve.emit'),
-    ('registrar',    'registrar'),
+    ('cmmn.gallery', 'commun.publication'),
+    ('cmmn.social',  'commun.social'),
 ]
 
 communAccounts = []
@@ -68,6 +71,33 @@ def retry(args):
     print('commun-boot-sequence.py: exiting because of error')
     sys.exit(1)
 
+# In case of large amount of tables transaction `set contract` failed due
+# timeout (`Transaction took too long`). In this case we split ABI-file
+# tables section in small portions and iteratively load ABI.
+def loadContract(account, contract_dir, provider=None):
+    extra_args = ''
+    if provider != None:
+        extra_args += ' --bandwidth-provider {account}/{provider}'.format(account=account, provider=provider)
+
+    while os.path.basename(contract_dir) == '':
+        contract_dir = os.path.dirname(contract_dir)
+    abi_file = os.path.join(contract_dir, os.path.basename(contract_dir) + '.abi')
+
+    with open(abi_file) as json_file:
+        abi = json.load(json_file)
+        if len(abi['tables']) > 5:
+            tables = abi['tables'].copy()
+            for x in range(3, len(tables), 3):
+                abi['tables'] = tables[:x]
+                with tempfile.NamedTemporaryFile(mode='w') as f:
+                    json.dump(abi, f)
+                    f.flush()
+                    retry(args.cleos + 'set abi {account} {abi} {extra_args}'
+                        .format(account=account, abi=f.name, extra_args=extra_args))
+        return retry(args.cleos + 'set contract {account} {contract_dir} {extra_args}'
+            .format(account=account, contract_dir=contract_dir, extra_args=extra_args))
+
+
 def background(args):
     print('commun-boot-sequence.py:', args)
     logFile.write(args + '\n')
@@ -100,37 +130,7 @@ def intToTokenCommun(value):
 # --------------------- EOSIO functions ---------------------------------------
 
 def setCommunParams():
-    retry(args.cleos + 'push action registrar setparams ' + jsonArg(
-        {
-            "params": [
-                [
-                    "token_param",
-                    {
-                        "sym": args.token
-                    }
-                ],
-                [
-                    "market_param",
-                    {
-                        "bid_increment_denom": 10,
-                        "bancor_creation_fee": 3000,
-                        "sale_fee": 0
-                    }
-                ],
-                [
-                    "checkwin_param",
-                    {
-                        "interval": 1440000,
-                        "min_time_from_last_win": 216,
-                        "min_time_from_last_bid_start": 216,
-                        "min_time_from_last_bid_step": 27,
-                        "max_bid_checks": 64
-                        
-                    }
-                ]
-            ]
-        }
-    ) + '-p registrar')
+    pass
 
 def createAccount(creator, account, key):
     retry(args.cleos + 'create account %s %s %s' % (creator, account, key))
@@ -189,12 +189,12 @@ def importKeys():
 def createCommunAccounts():
     for acc in communAccounts:
         if not (args.golos_genesis and acc.inGenesis):
-            createAccount('cyber', acc.name, args.public_key)
+            createAccount('cmmn', acc.name, args.public_key)
 
 def stepInstallContracts():
     for acc in communAccounts:
         if (acc.contract != None):
-            retry(args.cleos + 'set contract %s %s' % (acc.name, args.contracts_dir + acc.contract))
+            loadContract(acc.name, args.contracts_dir + acc.contract, 'cmmn')
 
 def stepCreateTokens():
     retry(args.cleos + 'push action cyber.token create ' + jsonArg(["cmmn.owner", intToTokenCommun(10000000000*10000)]) + ' -p cyber.token')
@@ -211,7 +211,8 @@ commands = [
     ('K', 'keys',           importKeys,                 True,  True,    "Create and fill wallet with keys"),
     ('A', 'accounts',       createCommunAccounts,       True,  True,    "Create golos accounts (cmmn.*)"),
     ('c', 'contracts',      stepInstallContracts,       True,  True,    "Install contracts (ctrl, emit, vesting, publish)"),
-    ('t', 'tokens',         stepCreateTokens,           True,  True,    "Create tokens"),
+# COMMUN token created outside of this script
+#   ('t', 'tokens',         stepCreateTokens,           True,  True,    "Create tokens"),
     ('p', 'params',         setCommunParams,            True,  True,    "Create params"),
 ]
 
