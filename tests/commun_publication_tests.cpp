@@ -62,7 +62,7 @@ public:
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _golos, asset(reserve, token._symbol), ""));
 
         BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
-        BOOST_CHECK_EQUAL(success(), point.set_freezer(commun::config::commun_gallery_name));
+        BOOST_CHECK_EQUAL(success(), point.setfreezer(commun::config::commun_gallery_name));
 
         BOOST_CHECK_EQUAL(success(), push_action(cfg::commun_emit_name, N(create), cfg::commun_emit_name, mvo()
             ("commun_symbol", point._symbol)("annual_emission_rate", annual_emission_rate)("leaders_reward_prop", leaders_reward_prop)));

@@ -12,6 +12,7 @@ using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 using commun::config::commun_point_name;
+using commun::config::commun_gallery_name;
 
 class commun_point_tester : public golos_tester {
 protected:
@@ -27,8 +28,19 @@ public:
         create_accounts({_commun, _golos, _alice, _bob, _carol,
             cfg::token_name, commun_point_name});
         produce_block();
-        install_contract(_code, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
+        install_contract(_code, contracts::point_wasm(), contracts::point_abi());
+    }
+
+    void init() {
+        int64_t supply = 25000;
+        int64_t reserve = 100000;
+        double fee = 0.01;
+        BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
+        BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
+        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(999999, point._symbol), 10000, fee * cfg::_100percent));
+        BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
+        BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), "issue"));
     }
 
     const account_name _commun = N(commun);
@@ -38,8 +50,27 @@ public:
     const account_name _carol = N(carol);
 
     struct errors: contract_error_messages {
+        const string invalid_symbol = amsg("invalid symbol name");
+        const string invalid_supply = amsg("invalid supply");
+        const string wrong_issuer = amsg("issuer account does not exist");
+        const string wrong_owner = amsg("owner account does not exist");
+        const string max_supply_not_positive = amsg("max-supply must be positive");
+        const string invalid_cw = amsg("connector weight must be between 0.01% and 100% (1-10000)");
+        const string invalid_fee = amsg("fee must be between 0% and 100% (0-10000)");
+        const string already_exists = amsg("already exists");
+        const string memo_too_long = amsg("memo has more than 256 bytes");
+        const string no_point_symbol = amsg("point with symbol does not exist, create it before issue");
+        const string no_symbol = amsg("symbol does not exist");
+        const string no_auth = amsg("missing required signature");
         const string no_reserve = amsg("no reserve");
         const string tokens_cost_zero_points = amsg("these tokens cost zero points");
+        const string invalid_quantity = amsg("invalid quantity");
+        const string quantity_not_positive = amsg("must issue positive quantity");
+        const string symbol_precision = amsg("symbol precision mismatch");
+        const string quantity_exceeds_supply = amsg("quantity exceeds available supply");
+        const string issuer_cant_close = amsg("issuer can't close");
+        const string balance_not_exists = amsg("Balance row already deleted or never existed. Action won't have any effect.");
+        const string to_not_exists = amsg("to account does not exist");
     } err;
 };
 
@@ -139,6 +170,100 @@ BOOST_FIXTURE_TEST_CASE(cw05_test, commun_point_tester) try {
     }
     BOOST_CHECK_EQUAL(reserve, 0);
     
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(create_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("create tests");
+    auto max_supply = asset(999999, point._symbol);
+    auto another = symbol(3, "ANOTHER");
+
+    BOOST_CHECK_EQUAL(err.max_supply_not_positive, point.create(_golos, asset(-999999, point._symbol), 5000, 0));
+    BOOST_CHECK_EQUAL(err.invalid_cw, point.create(_golos, max_supply, 0, 0));
+    BOOST_CHECK_EQUAL(err.invalid_cw, point.create(_golos, max_supply, 10001, 0));
+    BOOST_CHECK_EQUAL(err.invalid_fee, point.create(_golos, max_supply, 5000, 10001));
+    // TODO: invalid symbol and asset
+    BOOST_CHECK_EQUAL(err.wrong_issuer, point.create(N(notexist), max_supply, 5000, 0));
+
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, max_supply, 5000, 0));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.already_exists, point.create(_golos, max_supply, 5000, 0));
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(1000, another), 5000, 0));
+    produce_block();
+
+    CHECK_MATCHING_OBJECT(point.get_params(), mvo()
+       ("cw", 5000)
+       ("fee", 0)
+       ("max_supply", "999.999 GLS")
+       ("issuer", _golos.to_string())
+    );
+    CHECK_MATCHING_OBJECT(point.get_params(another), mvo()
+       ("cw", 5000)
+       ("fee", 0)
+       ("max_supply", "1.000 ANOTHER")
+       ("issuer", _golos.to_string())
+    );
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(issue_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("issue tests");
+    auto max_supply = asset(999999, point._symbol);
+    auto supply =  asset(25000, point._symbol);
+    auto reserve = asset(100000, token._symbol);
+    BOOST_CHECK_EQUAL(err.no_point_symbol, point.issue(_golos, _golos, supply, "issue"));
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, max_supply, 10000, 0));
+    BOOST_CHECK_EQUAL(err.no_reserve, point.issue(_golos, _golos, supply, "issue"));
+
+    BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _code, reserve, cfg::restock_prefix + point_code_str));
+
+    BOOST_CHECK_EQUAL(err.quantity_not_positive, point.issue(_golos, _golos, asset(-25000, point._symbol), "issue"));
+    BOOST_CHECK_EQUAL(err.quantity_exceeds_supply, point.issue(_golos, _golos, asset(9999990, point._symbol), "issue"));
+    BOOST_CHECK_EQUAL(err.symbol_precision, point.issue(_golos, _golos, asset(supply.get_amount(), symbol(0, "GLS")), "issue"));
+
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, supply, "issue"));
+    CHECK_MATCHING_OBJECT(point.get_stats(), mvo()
+       ("supply", "25.000 GLS")
+       ("reserve", "10.0000 COMMUN")
+    );
+    BOOST_CHECK_EQUAL(point.get_amount(_golos), supply.get_amount());
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(open_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("open tests");
+
+    BOOST_CHECK_EQUAL(err.no_symbol, point.open(_alice, point._symbol, _alice));
+    init();
+    BOOST_CHECK_EQUAL(err.wrong_owner, point.open(N(notexist), point._symbol, _alice));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point._symbol, _alice));
+
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(close_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("close tests");
+
+    init();
+    BOOST_CHECK_EQUAL(err.issuer_cant_close, point.close(_golos, point._symbol));
+    BOOST_CHECK_EQUAL(err.balance_not_exists, point.close(_alice, point._symbol));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point._symbol, _alice));
+    BOOST_CHECK_EQUAL(success(), point.close(_alice, point._symbol));
+
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("transfer tests");
+
+    init();
+    BOOST_CHECK_EQUAL(err.to_not_exists, point.transfer(_golos, N(notexist), asset(1000, point._symbol)));
+
+    BOOST_CHECK_EQUAL(0, point.get_amount(_alice));
+    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(1000, point._symbol)));
+    BOOST_CHECK_EQUAL(1000, point.get_amount(_alice));
+    BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _bob, asset(700, point._symbol)));
+    BOOST_CHECK_EQUAL(300, point.get_amount(_alice));
+    BOOST_CHECK_EQUAL(700, point.get_amount(_bob));
+
+    BOOST_CHECK_EQUAL(success(), point.setfreezer(commun_gallery_name));
+    BOOST_CHECK_EQUAL(point.get_singparams()["point_freezer"], commun_gallery_name.to_string());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(transfer_buy_tokens_no_supply, commun_point_tester) try {
