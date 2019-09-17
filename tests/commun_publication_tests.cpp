@@ -15,11 +15,18 @@ using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 using commun::config::default_mosaic_active_period;
+using commun::config::commun_ctrl_name;
+using commun::config::default_evaluation_period;
+using commun::config::reward_mosaics_period;
+
+const account_name _commun = N(commun);
+const account_name _golos = N(golos);
 
 class commun_publication_tester : public gallery_tester {
 protected:
     cyber_token_api token;
     commun_point_api point;
+    commun_ctrl_api ctrl;
     commun_posting_api post;
 
     std::vector<account_name> _users;
@@ -29,11 +36,13 @@ public:
         : gallery_tester(cfg::publish_name)
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, cfg::commun_point_name, _point})
+        , ctrl({this, commun_ctrl_name, _point.to_symbol_code(), _golos})
         , post({this, cfg::publish_name, symbol(0, point_code_str).to_symbol_code()})
         , _users{N(jackiechan), N(brucelee), N(chucknorris), N(alice)} {
         create_accounts(_users);
-        create_accounts({_code, _commun, _golos, cfg::token_name, cfg::commun_point_name, cfg::commun_emit_name});
+        create_accounts({_code, _commun, _golos, cfg::token_name, cfg::commun_point_name, cfg::commun_emit_name, commun_ctrl_name});
         produce_block();
+        install_contract(commun_ctrl_name, contracts::ctrl_wasm(), contracts::ctrl_abi());
         install_contract(cfg::commun_point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::commun_emit_name, contracts::emit_wasm(), contracts::emit_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
@@ -46,9 +55,11 @@ public:
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
         set_authority(cfg::commun_point_name, cfg::issue_permission, create_code_authority({cfg::commun_emit_name}), "active");
         set_authority(cfg::commun_point_name, cfg::transfer_permission, create_code_authority(transfer_perm_accs), "active");
+        set_authority(commun_ctrl_name, N(changepoints), create_code_authority({cfg::commun_point_name}), "active");
 
         link_authority(cfg::commun_point_name, cfg::commun_point_name, cfg::issue_permission, N(issue));
         link_authority(cfg::commun_point_name, cfg::commun_point_name, cfg::transfer_permission, N(transfer));
+        link_authority(commun_ctrl_name, commun_ctrl_name, N(changepoints), N(changepoints));
     }
 
     void init() {
@@ -80,9 +91,6 @@ public:
             BOOST_CHECK_EQUAL(success(), point.transfer(_golos, u, asset(supply / _users.size(), point._symbol)));
         }
     }
-
-    const account_name _commun = N(commun);
-    const account_name _golos = N(golos);
     int64_t supply;
     int64_t reserve;
 
@@ -341,6 +349,113 @@ BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(errgallery.no_authority, post.claim({N(alice), "alice-in-blockchains"}, N(alice), N(alice), false, N(chucknorris)));
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "alice-in-blockchains"}, N(alice), N(alice), false, N(alice)));
 
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Reward for downvote testing.");
+    init();
+    prepare_ctrl(ctrl, _golos, {N(jackiechan), N(brucelee)}, N(chucknorris), 2, 4);
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "dirt"}));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}));
+    
+    BOOST_CHECK_EQUAL(success(), post.slap(N(brucelee), {N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(success(), post.slap(N(brucelee), {N(alice), "dirt"}));
+    BOOST_CHECK_EQUAL(success(), post.slap(N(brucelee), {N(alice), "alice-in-blockchains"}));
+    
+    //chucknorris will receive a reward as "facelift" will be in the top and will be banned (*1)
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(alice), "facelift"}, cfg::_100percent - 1));
+    
+    //jackiechan will not receive a reward because "dirt" will not be in the top, although it will be banned (*2)
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(jackiechan), {N(alice), "dirt"}, cfg::_100percent));
+    
+    //brucelee will not receive a reward because "alice-in-blockchains" will not be banned (*3)
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(brucelee), {N(alice), "alice-in-blockchains"}, cfg::_100percent - 1));
+    
+    produce_block();
+    produce_block(fc::seconds(reward_mosaics_period - (cfg::block_interval_ms / 1000)));
+    
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "what-are-you-waiting-for-jackie"}));
+    BOOST_CHECK_EQUAL(success(), post.hold({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
+    
+    BOOST_CHECK_EQUAL(errgallery.already_done, post.slap(N(brucelee), {N(alice), "facelift"}));
+    
+    BOOST_CHECK_EQUAL(success(), post.slap(N(jackiechan), {N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(success(), post.slap(N(jackiechan), {N(alice), "dirt"}));
+    
+    BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, post.slap(N(brucelee), {N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(errgallery.mosaic_banned, post.downvote(N(chucknorris), {N(alice), "dirt"}, cfg::_100percent));
+    
+    produce_block();
+    produce_block(fc::seconds(default_evaluation_period - reward_mosaics_period));
+    
+    auto amount_alice0 = point.get_amount(N(alice));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(alice)));
+    auto amount_alice1 = point.get_amount(N(alice));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "dirt"}, N(alice), N(alice), false, N(alice)));
+    auto amount_alice2 = point.get_amount(N(alice));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "alice-in-blockchains"}, N(alice), N(alice), false, N(alice)));
+    auto amount_alice3 = point.get_amount(N(alice));
+    
+    BOOST_CHECK(amount_alice0 == amount_alice1 && amount_alice1 == amount_alice2 && amount_alice2 < amount_alice3);
+    
+    auto amount_chuck0 = point.get_amount(N(chucknorris));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(chucknorris), N(chucknorris), false, N(chucknorris)));
+    auto amount_chuck1 = point.get_amount(N(chucknorris));
+    BOOST_CHECK(amount_chuck0 < amount_chuck1); // (1)
+    
+    auto amount_jackie0 = point.get_amount(N(jackiechan));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "dirt"}, N(jackiechan), N(jackiechan), false, N(jackiechan)));
+    auto amount_jackie1 = point.get_amount(N(jackiechan));
+    BOOST_CHECK(amount_jackie0 == amount_jackie1); // (2)
+    
+    auto amount_bruce0 = point.get_amount(N(brucelee));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "alice-in-blockchains"}, N(brucelee), N(brucelee), false, N(brucelee)));
+    auto amount_bruce1 = point.get_amount(N(brucelee));
+    BOOST_CHECK(amount_bruce0 == amount_bruce1); // (3)
+    
+    //at the end of this story, let's verify that jackiechan cannot slap the archive mosaic
+    produce_block();
+    produce_block(fc::seconds(default_mosaic_active_period - 
+                             (default_evaluation_period - reward_mosaics_period + (cfg::block_interval_ms / 1000))));
+    //curious case: first, the existence of the parent permlink is checked, 
+    //then the parent mosaic is archived and the parent permlink is destroyed
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(jackiechan), "what"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));
+    //therefore, jackie will not be able to create a second comment
+    BOOST_CHECK_EQUAL(err.parent_no_message, post.create_msg({N(jackiechan), "hm"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));
+    
+    BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, post.slap(N(jackiechan), {N(brucelee), "what-are-you-waiting-for-jackie"}));
+    
+    BOOST_CHECK_EQUAL(success(), post.claim({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
+
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(changing_leaders_and_slaps, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Changing leaders and slaps testing.");
+    init();
+    prepare_ctrl(ctrl, _golos, {N(jackiechan), N(brucelee)}, N(chucknorris), 2, 4);
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}));
+    
+    BOOST_CHECK_EQUAL(success(), post.slap(N(jackiechan), {N(alice), "alice-in-blockchains"}));
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(chucknorris)), post.slap(N(chucknorris), {N(alice), "alice-in-blockchains"}));
+    
+    BOOST_CHECK_EQUAL(success(), ctrl.unvote_witness(N(chucknorris), N(jackiechan)));
+    BOOST_CHECK_EQUAL(success(), ctrl.reg_witness(N(chucknorris), "chucknorris"));
+    BOOST_CHECK_EQUAL(success(), ctrl.vote_witness(N(chucknorris), N(chucknorris)));
+
+    BOOST_CHECK_EQUAL(1,
+        get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["slaps"].as<std::vector<account_name> >().size());
+        
+    BOOST_CHECK_EQUAL(success(), post.slap(N(chucknorris), {N(alice), "alice-in-blockchains"}));
+    
+    BOOST_CHECK_EQUAL(1,
+        get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["slaps"].as<std::vector<account_name> >().size());
+        
+    BOOST_CHECK_EQUAL(success(), post.slap(N(brucelee), {N(alice), "alice-in-blockchains"}));
+    
+    BOOST_CHECK_EQUAL(2,
+        get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["slaps"].as<std::vector<account_name> >().size());
+    
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

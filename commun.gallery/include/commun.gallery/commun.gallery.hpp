@@ -571,22 +571,19 @@ protected:
         auto points_sum = 0;
         for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
                                                    (by_comm_itr != by_comm_idx.end()) && 
-                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE); by_comm_itr++, mosaic_num++) {
-            if (by_comm_itr->points > by_comm_itr->damn_points) {
-                points_sum += by_comm_itr->points - by_comm_itr->damn_points;
-            }
+                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
+                                                   (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
+            points_sum += by_comm_itr->comm_rating;
         }
         std::map<uint64_t, int64_t> ranked_mosaics;
         mosaic_num = 0;
         for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
                                                    (by_comm_itr != by_comm_idx.end()) && 
-                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE); by_comm_itr++, mosaic_num++) {
-            
-            auto cur_grades = param.comm_grades[mosaic_num];
-            if (by_comm_itr->points > by_comm_itr->damn_points) {
-                cur_grades += safe_prop(param.comm_points_grade_sum, by_comm_itr->points - by_comm_itr->damn_points, points_sum);
-            }
-            ranked_mosaics[by_comm_itr->id] = cur_grades;
+                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
+                                                   (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
+
+            ranked_mosaics[by_comm_itr->id] = param.comm_grades[mosaic_num] + 
+                                    safe_prop(param.comm_points_grade_sum, by_comm_itr->comm_rating, points_sum);
         }
         auto by_lead_idx = mosaics_table.get_index<"byleadrating"_n>();
         
@@ -706,6 +703,8 @@ protected:
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
         check(eosio::current_time_point() <= mosaic->created + eosio::seconds(param.collection_period), "collection period is over");
+        check(mosaic->status != gallery_types::mosaic::BANNED, "mosaic banned");
+        check(mosaic->status != gallery_types::mosaic::ARCHIVED, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
         
         maybe_issue_reward(_self, param);
         
@@ -847,7 +846,7 @@ protected:
         eosio::check(mosaic != mosaics_idx.end(), "mosaic doesn't exist");
         eosio::check(mosaic->status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
         
-        mosaics_idx.modify(mosaic, name(), [&](auto& item) {
+        mosaics_idx.modify(mosaic, leader, [&](auto& item) {
             for (auto& n : item.slaps) {
                 eosio::check(n != leader, "already done");
                 if (!control::in_the_top(config::commun_ctrl_name, commun_code, n)) {
@@ -855,6 +854,7 @@ protected:
                 }
             }
             item.slaps.erase(std::remove_if(item.slaps.begin(), item.slaps.end(), [](const name& n) { return n == name(); }), item.slaps.end());
+            item.slaps.push_back(leader);
             if (item.slaps.size() >= param.ban_threshold) {
                 item.status = gallery_types::mosaic::BANNED;
             }

@@ -478,7 +478,7 @@
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "leader" },
-                { "type": "mosaic_key[]",           "name": "favorites" }
+                { "type": "mssgid[]",               "name": "favorites" }
             ]
         },{
             "name": "slap_args",
@@ -486,8 +486,7 @@
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "leader" },
-                { "type": "name",                   "name": "mosaic_creator" },
-                { "type": "uint64",                 "name": "tracery" }
+                { "type": "mssgid",                 "name": "message_id" }
             ]
         }
   ],

@@ -1,5 +1,4 @@
 #include "gallery_tester.hpp"
-#include "commun.ctrl_test_api.hpp"
 #include "commun.point_test_api.hpp"
 #include "commun.gallery_test_api.hpp"
 #include "cyber.token_test_api.hpp"
@@ -30,9 +29,6 @@ const account_name _golos = N(golos);
 const account_name _alice = N(alice);
 const account_name _bob = N(bob);
 const account_name _carol = N(carol);
-
-const uint16_t _max_witnesses = 2;
-const uint16_t _max_witness_votes = 4;
 
 class commun_gallery_tester : public gallery_tester {
 protected:
@@ -95,19 +91,6 @@ public:
         BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
         BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
 
-    }
-    
-    void prepare_ctrl(const std::vector<account_name>& leaders, account_name voter) {
-    
-        BOOST_CHECK_EQUAL(success(), ctrl.set_params(ctrl.default_params(_golos, _max_witnesses, _max_witness_votes)));
-        produce_block();
-        ctrl.prepare_multisig(_golos);
-        produce_block();
-        for (int i = 0; i < leaders.size(); i++) {
-            BOOST_CHECK_EQUAL(success(), ctrl.reg_witness(leaders[i], "localhost"));
-            ctrl.vote_witness(voter, leaders[i]);
-        }
-        produce_block();
     }
     
     int64_t supply;
@@ -198,7 +181,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     int mosaics_num = 50;
     int64_t min_gem_points = commun::safe_prop(commun::config::min_gem_cost, supply, reserve);
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(supply, point._symbol)));
-    prepare_ctrl({_alice, _carol}, _bob);
+    prepare_ctrl(ctrl, _golos, {_alice, _carol}, _bob, 2, 4);
     int64_t points_sum = 0;
     auto first_comm_mosaic = mosaics_num - cfg::default_comm_grades.size() + 1;
     for (int i = 1; i <= mosaics_num; i++) {
