@@ -157,6 +157,13 @@ BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("--- creating post.");
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
     produce_block();
+    BOOST_TEST_MESSAGE("--- checking its vertex.");
+    CHECK_MATCHING_OBJECT(post.get_vertex({N(brucelee), "permlink"}), mvo()
+       ("parent_creator", "")
+       ("parent_tracery", 0)
+       ("level", 0)
+       ("childcount", 0)
+    );
     BOOST_TEST_MESSAGE("--- checking its mosaic.");
     auto mos = get_mosaic(_code, _point, N(brucelee), post.tracery("permlink"));
     BOOST_CHECK(!mos.is_null());
@@ -167,7 +174,18 @@ BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.parent_no_message, post.create_msg({N(jackiechan), "child"}, {N(notexist), "parent"}));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(jackiechan), "child"}, {N(brucelee), "permlink"}));
     BOOST_CHECK(!get_mosaic(_code, _point, N(jackiechan), post.tracery("child")).is_null());
-
+    CHECK_MATCHING_OBJECT(post.get_vertex({N(jackiechan), "child"}), mvo()
+       ("parent_creator", "brucelee")
+       ("parent_tracery", post.tracery("permlink"))
+       ("level", 1)
+       ("childcount", 0)
+    );
+    CHECK_MATCHING_OBJECT(post.get_vertex({N(brucelee), "permlink"}), mvo()
+       ("parent_creator", "")
+       ("parent_tracery", 0)
+       ("level", 0)
+       ("childcount", 1)
+    );
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(nesting_level_test, commun_publication_tester) try {
@@ -208,8 +226,14 @@ BOOST_FIXTURE_TEST_CASE(delete_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(success(), post.delete_msg({N(jackiechan), "child"}));
     BOOST_CHECK(get_mosaic(_code, _point, N(jackiechan), post.tracery("child")).is_null());
+    BOOST_CHECK(post.get_vertex({N(jackiechan), "child"}).is_null());
+    CHECK_MATCHING_OBJECT(post.get_vertex({N(brucelee), "permlink"}), mvo()
+       ("childcount", 0)
+    );
+
     BOOST_CHECK_EQUAL(success(), post.delete_msg({N(brucelee), "permlink"}));
     BOOST_CHECK(get_mosaic(_code, _point, N(brucelee), post.tracery("permlink")).is_null());
+    BOOST_CHECK(post.get_vertex({N(brucelee), "permlink"}).is_null());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
