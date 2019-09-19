@@ -10,7 +10,6 @@ class emit: public contract {
 struct structures {
     struct [[eosio::table]] param {
         uint64_t id;
-        symbol commun_symbol;
         uint16_t annual_emission_rate;
         uint16_t leaders_reward_prop;
         uint64_t primary_key()const { return id; }

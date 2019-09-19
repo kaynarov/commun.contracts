@@ -18,7 +18,6 @@ void emit::create(symbol commun_symbol, uint16_t annual_emission_rate, uint16_t 
     
     params_table.emplace(_self, [&](auto& p) { p = {
         .id = commun_code.raw(),
-        .commun_symbol = commun_symbol,
         .annual_emission_rate = annual_emission_rate,
         .leaders_reward_prop = leaders_reward_prop
     };});
