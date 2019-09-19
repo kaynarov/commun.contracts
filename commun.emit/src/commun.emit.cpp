@@ -54,6 +54,9 @@ void emit::issuereward(symbol commun_symbol, bool for_leaders) {
     eosio::check(passed_seconds >= 0, "SYSTEM: incorrect passed_seconds");
     eosio::check(passed_seconds >= config::reward_period(for_leaders), "SYSTEM: untimely claim reward");
 
+    auto to_contract = for_leaders ? config::commun_ctrl_name : config::commun_gallery_name;
+    eosio::check(is_account(to_contract), to_contract.to_string() + " contract does not exists");
+
     auto cont_emission = safe_pct(point::get_supply(config::commun_point_name, commun_code).amount, get_continuous_rate(param.annual_emission_rate));
     
     static constexpr int64_t seconds_per_year = int64_t(365)*24*60*60;
@@ -75,7 +78,7 @@ void emit::issuereward(symbol commun_symbol, bool for_leaders) {
             permission_level{config::commun_point_name, config::transfer_permission},
             config::commun_point_name,
             "transfer"_n,
-            std::make_tuple(issuer, for_leaders ? config::commun_ctrl_name : config::commun_gallery_name, quantity, string())
+            std::make_tuple(issuer, to_contract, quantity, string())
         ).send();
     }
     
