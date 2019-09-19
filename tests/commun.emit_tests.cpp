@@ -102,4 +102,24 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
     // TODO: test if no gallery or ctrl account
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
+    BOOST_TEST_MESSAGE("basic tests");
+    BOOST_CHECK_EQUAL(err.no_emitter, emit.issuereward(point._symbol, false));
+    init();
+    int64_t supply = 100000000;
+    double annual_rate = 0.5;
+    double leaders_rate = 0.25;
+    BOOST_CHECK_EQUAL(success(), emit.create(point._symbol, annual_rate*cfg::_100percent, leaders_rate*cfg::_100percent));
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), "issue"));
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::commun_gallery_name, point._symbol, cfg::commun_gallery_name));
+
+    int64_t cont_emission = supply * int64_t(std::log(1.0 + annual_rate) * cfg::_100percent) / cfg::_100percent;
+    int64_t period_amount = cont_emission * cfg::reward_mosaics_period / seconds_per_year;
+    int64_t mosaic_amount = period_amount * (1.0 - leaders_rate);
+    BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
+    produce_blocks(commun::seconds_to_blocks(cfg::reward_mosaics_period));
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point._symbol, false));
+    BOOST_CHECK_EQUAL(mosaic_amount, point.get_amount(cfg::commun_gallery_name));
+} FC_LOG_AND_RETHROW()
+
 BOOST_AUTO_TEST_SUITE_END()
