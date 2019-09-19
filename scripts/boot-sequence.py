@@ -6,6 +6,9 @@ import subprocess
 default_contracts_dir = '/opt/cyberway/bin/data-dir/contracts/'
 nodeos_url = os.environ.get('CYBERWAY_URL', 'http://nodeosd:8888')
 
+os.environ['CYBERWAY_URL'] = nodeos_url
+os.environ['CLEOS'] = '/opt/cyberway/bin/cleos'
+
 args = {
     'basedir': os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
     'cleos':'/opt/cyberway/bin/cleos --url=%s ' % nodeos_url,
@@ -25,14 +28,28 @@ if subprocess.call(commun_boot_sequence, shell=True):
     print('commun-boot-sequence.py exited with error')
     sys.exit(1)
 
-print('no community yet')
-sys.exit(0)
+community_params = {
+    'owner_account': 'tech.cats',
+    'community_name': 'cats',
+    'maximum_supply': '1000000000.000 CATS',
+    'reserve_amount': '1000000.0000 COMMUN',
+    'cw': 10000,
+    'fee': 100,
+    'annual_emission_rate': 1000,
+    'leader_reward_prop': 2000,
+}
+community_args = ''
+for (key, value) in community_params.items():
+    community_args += ' --{arg} "{value}"'.format(arg=key.replace('_', '-'), value=value)
 
 community_boot_sequence=('{basedir}/scripts/community-boot-sequence/community-boot-sequence.py '
-                     '--cleos "{cleos}" --contracts-dir "{commun_contracts_dir}" ' 
-                     '--public-key {public_key} --private-key {private_key} '
-                     '--cyber-private-key {cyber_private_key} '
-                     '--docker --all').format(**args)
+                     '--creator-account tech '
+                     '--commun-private-key {private_key} '
+                     '--creator-private-key {private_key} '
+                     '--owner-private-key {private_key} '
+                     '--owner-public-key {public_key} '
+                     + community_args).format(**args)
+print(community_boot_sequence)
 if subprocess.call(community_boot_sequence, shell=True):
     print('community-boot-sequence.py exited with error')
     sys.exit(1)
