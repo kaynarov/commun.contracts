@@ -10,6 +10,8 @@ void emit::create(symbol commun_symbol, uint16_t annual_emission_rate, uint16_t 
     require_auth(_self);
     auto commun_code = commun_symbol.code();
     check(commun_symbol == point::get_supply(config::commun_point_name, commun_code).symbol, "symbol precision mismatch");
+    check(0 <  annual_emission_rate && annual_emission_rate <= 10000, "annual_emission_rate must be between 0.01% and 100% (1-10000)");
+    check(0 <= leaders_reward_prop && leaders_reward_prop <= 10000, "leaders_reward_prop must be between 0% and 100% (0-10000)");
      
     params params_table(_self, commun_code.raw());
     eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "already exists");
