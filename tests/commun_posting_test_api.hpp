@@ -222,7 +222,7 @@ struct commun_posting_api: base_contract_api {
 
     variant get_vertex(mssgid message_id) {
         variant obj = _tester->get_chaindb_lower_bound_struct(_code, commun_code.value, N(vertex), N(bykey),
-            message_id.tracery(), "message");
+            std::make_pair(message_id.author, message_id.tracery()), "message");
         if (!obj.is_null() && obj.get_object().size()) {
             if (obj["creator"] == message_id.author.to_string() && obj["tracery"].as<uint64_t>() == message_id.tracery()) {
                 return obj;
