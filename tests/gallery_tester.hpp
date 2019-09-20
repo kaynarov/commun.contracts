@@ -1,4 +1,5 @@
 #include "golos_tester.hpp"
+#include "commun.ctrl_test_api.hpp"
 
 namespace eosio { namespace testing {
 
@@ -26,10 +27,28 @@ public:
         const string points_negative = amsg("points must be positive");
         const string wrong_gem_type = amsg("gem type mismatch");
         const string nothing_to_claim = amsg("nothing to claim");
+        const string no_authority = amsg("lack of necessary authority");
+        const string already_done = amsg("already done");
+        const string mosaic_is_inactive = amsg("mosaic is inactive");
+        const string mosaic_banned = amsg("mosaic banned");
         
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
         
     } errgallery;
+    
+    void prepare_ctrl(commun_ctrl_api& ctrl, account_name community, const std::vector<account_name>& leaders, account_name voter, 
+                uint16_t max_witnesses, uint16_t max_witness_votes) {
+
+        BOOST_CHECK_EQUAL(success(), ctrl.set_params(ctrl.default_params(community, max_witnesses, max_witness_votes)));
+        produce_block();
+        ctrl.prepare_multisig(community);
+        produce_block();
+        for (int i = 0; i < leaders.size(); i++) {
+            BOOST_CHECK_EQUAL(success(), ctrl.reg_witness(leaders[i], "localhost"));
+            BOOST_CHECK_EQUAL(success(), ctrl.vote_witness(voter, leaders[i]));
+        }
+        produce_block();
+    }
 
     variant get_mosaic(name code, symbol point, name creator, uint64_t tracery) {
         variant obj = get_chaindb_lower_bound_struct(code, point.to_symbol_code(), N(mosaic), N(bykey),

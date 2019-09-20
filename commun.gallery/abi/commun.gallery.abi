@@ -24,7 +24,9 @@
                 { "type": "int64",         "name": "reward" },
                 { "type": "int64",         "name": "comm_rating" },
                 { "type": "int64",         "name": "lead_rating" },
-                { "type": "uint8",         "name": "status" },
+                { "type": "bool",          "name": "meritorious" },
+                { "type": "bool",          "name": "active" },
+                { "type": "bool",          "name": "banned" },
                 { "type": "name[]",        "name": "slaps" }
             ]
         },{
@@ -129,14 +131,26 @@
                 { "type": "providers_t",           "name": "providers" }
             ]
         },{
-            "name": "claimgem_args",
+            "name": "modifygem_args",
             "base": "",
             "fields": [
                 { "type": "name",                   "name": "mosaic_creator" },
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "gem_owner" },
-                { "type": "name?",                   "name": "gem_creator" }
+                { "type": "name?",                  "name": "gem_creator" }
+            ]
+        },{
+            "name": "claim_args",
+            "base": "modifygem_args",
+            "fields": [
+                { "type": "bool?",                  "name": "eager" }
+            ]
+        },{
+            "name": "transfer_args",
+            "base": "modifygem_args",
+            "fields": [
+                { "type": "name",                   "name": "recipient"  }
             ]
         },{
             "name": "provide_args",
@@ -184,8 +198,18 @@
             "ricardian_contract": ""
         },
         {
-            "name": "claimgem",
-            "type": "claimgem_args",
+            "name": "claim",
+            "type": "claim_args",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "hold",
+            "type": "modifygem_args",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "transfer",
+            "type": "transfer_args",
             "ricardian_contract": ""
         },
         {
@@ -249,9 +273,11 @@
                 { "name": "bykey", "unique": "true", "orders": [
                     {"field": "creator", "order": "asc"}, {"field": "tracery", "order": "asc"} ] },
                 { "name": "bycommrating", "unique": "false", "orders": [
-                    {"field": "status", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
+                    {"field": "active", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
-                    {"field": "status", "order": "asc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] }
+                    {"field": "banned", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
+                { "name": "bycreated", "unique": "false", "orders": [
+                    {"field": "active", "order": "asc"}, {"field": "created", "order": "asc"} ] }
             ]
         },{
             "name": "gem",

@@ -125,7 +125,48 @@ struct commun_posting_api: base_contract_api {
             ("message_id", message_id)
         );
     }
-    // TODO: claim(), but this is mostly same as unvote
+    
+    action_result claim(mssgid message_id, account_name gem_owner, 
+                    account_name gem_creator = account_name(), bool eager = false, account_name signer = account_name()) {
+        auto a = args()
+            ("message_id", message_id)
+            ("commun_code", commun_code)
+            ("gem_owner", gem_owner);
+        if (gem_creator) {
+            a("gem_creator", gem_creator);
+        }
+        if (eager) {
+            a("eager", true);
+        }
+        
+        return push(N(claim), signer ? signer : gem_owner, a);
+    }
+    
+    action_result hold(mssgid message_id, account_name gem_owner, account_name gem_creator = account_name()) {
+        auto a = args()
+            ("message_id", message_id)
+            ("commun_code", commun_code)
+            ("gem_owner", gem_owner);
+        if (gem_creator) {
+            a("gem_creator", gem_creator);
+        }
+        return push(N(hold), gem_owner, a);
+    }
+    
+    action_result transfer(mssgid message_id, account_name gem_owner, account_name gem_creator, account_name recipient, bool recipient_sign = true) {
+        auto a = args()
+            ("message_id", message_id)
+            ("commun_code", commun_code)
+            ("gem_owner", gem_owner);
+        if (gem_creator) {
+            a("gem_creator", gem_creator);
+        }
+        a("recipient", recipient);
+        
+        return recipient_sign ? 
+            push_msig(N(transfer), {{gem_owner, config::active_name}, {recipient, config::active_name}}, {gem_owner, recipient}, a) :
+            push(N(transfer), gem_owner, a);
+    }
 
     action_result setproviders(account_name recipient, std::vector<account_name> providers) {
         return push(N(setproviders), recipient, args()
@@ -141,6 +182,20 @@ struct commun_posting_api: base_contract_api {
             ("account", account)
             ("actions_per_day", actions_per_day)
         );
+    }
+    
+    action_result advise(account_name leader, std::vector<mssgid> favorites) {
+        return push(N(advise), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader)
+            ("favorites", favorites));
+    }
+    
+    action_result slap(account_name leader, mssgid message_id) {
+        return push(N(slap), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader)
+            ("message_id", message_id));
     }
 
     action_result set_params(std::string json_params) {

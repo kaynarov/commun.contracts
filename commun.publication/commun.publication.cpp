@@ -2,54 +2,9 @@
 #include <eosio/event.hpp>
 #include "objects.hpp"
 #include <commun.social/commun.social.hpp>
+#include <commun/dispatchers.hpp>
 
 namespace commun {
-
-extern "C" {
-    void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-        //publication(receiver).apply(code, action);
-        auto execute_action = [&](const auto fn) {
-            return eosio::execute_action(eosio::name(receiver), eosio::name(code), fn);
-        };
-
-#define NN(x) N(x).value
-
-        if (receiver != code)
-            return;
-
-        if (NN(createmssg) == action)
-            execute_action(&publication::create_message);
-        if (NN(updatemssg) == action)
-            execute_action(&publication::update_message);
-        if (NN(deletemssg) == action)
-            execute_action(&publication::delete_message);
-        if (NN(upvote) == action)
-            execute_action(&publication::upvote);
-        if (NN(downvote) == action)
-            execute_action(&publication::downvote);
-        if (NN(unvote) == action)
-            execute_action(&publication::unvote);
-        if (NN(claim) == action)
-            execute_action(&publication::claim);
-        if (NN(setparams) == action)
-            execute_action(&publication::set_params);
-        if (NN(reblog) == action)
-            execute_action(&publication::reblog);
-        if (NN(erasereblog) == action)
-            execute_action(&publication::erase_reblog);
-        if (NN(setproviders) == action)
-            execute_action(&publication::setproviders);
-        if (NN(setfrequency) == action)
-            execute_action(&publication::setfrequency);
-        if (NN(provide) == action)
-            execute_action(&publication::provide);
-        if (NN(advise) == action)
-            execute_action(&publication::advise);
-        if (NN(slap) == action)
-            execute_action(&publication::slap);
-    }
-#undef NN
-}
 
 struct posting_params_setter: set_params_visitor<posting_state> {
     using set_params_visitor::set_params_visitor;
@@ -69,7 +24,7 @@ const posting_state& publication::params(symbol_code commun_code) {
     return cfg;
 }
 
-void publication::create_message(
+void publication::createmssg(
     symbol_code commun_code,
     mssgid_t message_id,
     mssgid_t parent_id,
@@ -111,7 +66,7 @@ void publication::create_message(
         
         level = 1 + parent_vertex->level;
     }
-    eosio::check(level <= max_comment_depth_param.max_comment_depth, "publication::create_message: level > MAX_COMMENT_DEPTH");
+    eosio::check(level <= max_comment_depth_param.max_comment_depth, "publication::createmssg: level > MAX_COMMENT_DEPTH");
     
     vertices_table.emplace(message_id.author, [&]( auto &item) {
         item.id = vertices_table.available_primary_key();
@@ -139,7 +94,7 @@ void publication::create_message(
     create_mosaic(_self, message_id.author, tracery, quantity, config::_100percent - curators_prcnt, get_providers(commun_code, message_id.author));    
 }
 
-void publication::update_message(symbol_code commun_code, mssgid_t message_id,
+void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
                               std::string headermssg, std::string bodymssg,
                               std::string languagemssg, std::vector<std::string> tags,
                               std::string jsonmetadata) {
@@ -151,7 +106,7 @@ void publication::update_message(symbol_code commun_code, mssgid_t message_id,
         "You can't update this message, because this message doesn't exist.");
 }
 
-void publication::delete_message(symbol_code commun_code, mssgid_t message_id) {
+void publication::deletemssg(symbol_code commun_code, mssgid_t message_id) {
     
     auto tracery = message_id.tracery();
     claim_gems_by_creator(_self, message_id.author, tracery, commun_code, message_id.author, true);
@@ -177,10 +132,18 @@ void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_i
     claim_gems_by_creator(_self, message_id.author, message_id.tracery(), commun_code, voter, true);
 }
 
-void publication::claim(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, 
+void publication::hold(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
+    hold_gem(_self, message_id.author, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner));
+}
+
+void publication::transfer(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient) {
+    transfer_gem(_self, message_id.author, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), recipient);
+}
+
+void publication::claim(mssgid_t message_id, symbol_code commun_code, name gem_owner, 
                         std::optional<name> gem_creator, std::optional<bool> eager) {
     
-    claim_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
+    claim_gem(_self, message_id.author, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
 }
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, int16_t weight) {
@@ -202,7 +165,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     add_to_mosaic(_self, message_id.author, message_id.tracery(), quantity, weight < 0, voter, get_providers(commun_code, message_id.author, abs_weight));
 }
 
-void publication::set_params(symbol_code commun_code, std::vector<posting_params> params) {
+void publication::setparams(symbol_code commun_code, std::vector<posting_params> params) {
     require_auth(_self);
     
     gallery_types::params params_table(_self, commun_code.raw());
@@ -231,7 +194,7 @@ void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t messag
         "You can't reblog, because this message doesn't exist.");
 }
 
-void publication::erase_reblog(symbol_code commun_code, name rebloger, mssgid_t message_id) {
+void publication::erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id) {
     require_auth(rebloger);
     eosio::check(rebloger != message_id.author, "You cannot erase reblog your own content.");
     
@@ -347,12 +310,22 @@ void publication::provide(name grantor, name recipient, asset quantity, std::opt
     provide_points(_self, grantor, recipient, quantity, fee);
 }
 
-void publication::advise(symbol_code commun_code, name leader, std::vector<gallery_types::mosaic_key_t> favorites) {
-    advise_mosaics(_self, commun_code, leader, favorites);
+void publication::advise(symbol_code commun_code, name leader, std::vector<mssgid_t> favorites) {
+    std::vector<gallery_types::mosaic_key_t> favorite_mosaics;
+    favorite_mosaics.reserve(favorites.size());
+    for (const auto& m : favorites) {
+        favorite_mosaics.push_back({m.author, m.tracery()});
+    }
+    advise_mosaics(_self, commun_code, leader, favorite_mosaics);
 }
 
-void publication::slap(symbol_code commun_code, name leader, name mosaic_creator, uint64_t tracery) {
-    slap_mosaic(_self, commun_code, leader, mosaic_creator, tracery);
+void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id) {
+    slap_mosaic(_self, commun_code, leader, message_id.author, message_id.tracery());
 }
 
 } // commun
+
+DISPATCH_WITH_TRANSFER(commun::publication, commun::config::commun_point_name, ontransfer,
+    (createmssg)(updatemssg)(deletemssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)(setparams)
+    (reblog)(erasereblog)(setproviders)(setfrequency)(provide)(advise)(slap))
+
