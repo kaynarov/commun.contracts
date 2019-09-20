@@ -21,7 +21,6 @@
             "base": "",
             "fields": [
                 { "type": "uint64",         "name": "id" },
-                { "type": "symbol",         "name": "commun_symbol" },
                 { "type": "uint16",         "name": "annual_emission_rate" },
                 { "type": "uint16",         "name": "leaders_reward_prop" }
             ]

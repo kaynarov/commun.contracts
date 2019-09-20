@@ -10,13 +10,14 @@ void emit::create(symbol commun_symbol, uint16_t annual_emission_rate, uint16_t 
     require_auth(_self);
     auto commun_code = commun_symbol.code();
     check(commun_symbol == point::get_supply(config::commun_point_name, commun_code).symbol, "symbol precision mismatch");
+    check(0 <  annual_emission_rate && annual_emission_rate <= 10000, "annual_emission_rate must be between 0.01% and 100% (1-10000)");
+    check(0 <= leaders_reward_prop && leaders_reward_prop <= 10000, "leaders_reward_prop must be between 0% and 100% (0-10000)");
      
     params params_table(_self, commun_code.raw());
     eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "already exists");
     
     params_table.emplace(_self, [&](auto& p) { p = {
         .id = commun_code.raw(),
-        .commun_symbol = commun_symbol,
         .annual_emission_rate = annual_emission_rate,
         .leaders_reward_prop = leaders_reward_prop
     };});
@@ -53,6 +54,9 @@ void emit::issuereward(symbol commun_symbol, bool for_leaders) {
     eosio::check(passed_seconds >= 0, "SYSTEM: incorrect passed_seconds");
     eosio::check(passed_seconds >= config::reward_period(for_leaders), "SYSTEM: untimely claim reward");
 
+    auto to_contract = for_leaders ? config::commun_ctrl_name : config::commun_gallery_name;
+    eosio::check(is_account(to_contract), to_contract.to_string() + " contract does not exists");
+
     auto cont_emission = safe_pct(point::get_supply(config::commun_point_name, commun_code).amount, get_continuous_rate(param.annual_emission_rate));
     
     static constexpr int64_t seconds_per_year = int64_t(365)*24*60*60;
@@ -74,7 +78,7 @@ void emit::issuereward(symbol commun_symbol, bool for_leaders) {
             permission_level{config::commun_point_name, config::transfer_permission},
             config::commun_point_name,
             "transfer"_n,
-            std::make_tuple(issuer, for_leaders ? config::commun_ctrl_name : config::commun_gallery_name, quantity, string())
+            std::make_tuple(issuer, to_contract, quantity, string())
         ).send();
     }
     

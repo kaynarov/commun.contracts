@@ -28,7 +28,7 @@ public:
         , emit({this, _code})
     {
         create_accounts({_code, _commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::commun_point_name, cfg::commun_gallery_name});
+            cfg::token_name, cfg::commun_point_name});
         produce_block();
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(cfg::commun_point_name, contracts::point_wasm(), contracts::point_abi());
@@ -65,6 +65,9 @@ public:
         const string already_exists = amsg("already exists");
         const string no_emitter = amsg("emitter does not exists, create it before issue");
         const string too_early_emit = amsg("SYSTEM: untimely claim reward");
+        const string wrong_annual_rate = amsg("annual_emission_rate must be between 0.01% and 100% (1-10000)");
+        const string wrong_leaders_prop = amsg("leaders_reward_prop must be between 0% and 100% (0-10000)");
+        const string no_account(name acc) { return amsg(acc.to_string() +  " contract does not exists"); }
     } err;
 };
 
@@ -77,8 +80,10 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_emit_tester) try {
     BOOST_CHECK_EQUAL(err.no_point, emit.create(point._symbol, cfg::_100percent, cfg::_100percent));
     init();
     BOOST_CHECK_EQUAL(err.symbol_precision, emit.create(fake_sym, cfg::_100percent, cfg::_100percent));
-    // TODO: should fail also on wrong percents
-    BOOST_CHECK_EQUAL(success(), emit.create(point._symbol, cfg::_100percent, cfg::_100percent));
+    BOOST_CHECK_EQUAL(err.wrong_annual_rate, emit.create(point._symbol, 0, cfg::_100percent));
+    BOOST_CHECK_EQUAL(err.wrong_annual_rate, emit.create(point._symbol, cfg::_100percent+1, cfg::_100percent));
+    BOOST_CHECK_EQUAL(err.wrong_leaders_prop, emit.create(point._symbol, cfg::_100percent, cfg::_100percent+1));
+    BOOST_CHECK_EQUAL(success(), emit.create(point._symbol, cfg::_100percent, 0));
     produce_block();
     BOOST_CHECK_EQUAL(err.already_exists, emit.create(point._symbol, cfg::_100percent, cfg::_100percent));
 } FC_LOG_AND_RETHROW()
@@ -91,20 +96,22 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
 
     BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point._symbol, false));
     BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point._symbol, true));
+
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
     produce_blocks(commun::seconds_to_blocks(cfg::reward_mosaics_period));
+    BOOST_CHECK_EQUAL(err.no_account(cfg::commun_gallery_name), emit.issuereward(point._symbol, false));
+    create_accounts({cfg::commun_gallery_name});
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point._symbol, false));
     BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point._symbol, true));
+
     BOOST_TEST_MESSAGE("-- waiting for leaders reward");
     produce_blocks(commun::seconds_to_blocks(cfg::reward_leaders_period - cfg::reward_mosaics_period));
-    BOOST_CHECK_EQUAL(success(), emit.issuereward(point._symbol, true));
-    produce_block();
-    // TODO: test if no gallery or ctrl account
+    BOOST_CHECK_EQUAL(err.no_account(cfg::commun_ctrl_name), emit.issuereward(point._symbol, true));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("basic tests");
-    BOOST_CHECK_EQUAL(err.no_emitter, emit.issuereward(point._symbol, false));
+    create_accounts({cfg::commun_gallery_name});
     init();
     int64_t supply = 100000000;
     double annual_rate = 0.5;
