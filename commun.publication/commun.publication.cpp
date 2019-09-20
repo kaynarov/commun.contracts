@@ -310,12 +310,17 @@ void publication::provide(name grantor, name recipient, asset quantity, std::opt
     provide_points(_self, grantor, recipient, quantity, fee);
 }
 
-void publication::advise(symbol_code commun_code, name leader, std::vector<gallery_types::mosaic_key_t> favorites) {
-    advise_mosaics(_self, commun_code, leader, favorites);
+void publication::advise(symbol_code commun_code, name leader, std::vector<mssgid_t> favorites) {
+    std::vector<gallery_types::mosaic_key_t> favorite_mosaics;
+    favorite_mosaics.reserve(favorites.size());
+    for (const auto& m : favorites) {
+        favorite_mosaics.push_back({m.author, m.tracery()});
+    }
+    advise_mosaics(_self, commun_code, leader, favorite_mosaics);
 }
 
-void publication::slap(symbol_code commun_code, name leader, name mosaic_creator, uint64_t tracery) {
-    slap_mosaic(_self, commun_code, leader, mosaic_creator, tracery);
+void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id) {
+    slap_mosaic(_self, commun_code, leader, message_id.author, message_id.tracery());
 }
 
 } // commun

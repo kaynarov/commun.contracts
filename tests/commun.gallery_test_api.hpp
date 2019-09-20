@@ -114,7 +114,7 @@ public:
     }
     
     action_result slap(account_name leader, account_name mosaic_creator, uint64_t tracery) {
-        return push(N(advise), leader, args()
+        return push(N(slap), leader, args()
             ("commun_code", _symbol.to_symbol_code())
             ("leader", leader)
             ("mosaic_creator", mosaic_creator)

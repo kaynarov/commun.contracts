@@ -183,6 +183,20 @@ struct commun_posting_api: base_contract_api {
             ("actions_per_day", actions_per_day)
         );
     }
+    
+    action_result advise(account_name leader, std::vector<mssgid> favorites) {
+        return push(N(advise), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader)
+            ("favorites", favorites));
+    }
+    
+    action_result slap(account_name leader, mssgid message_id) {
+        return push(N(slap), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader)
+            ("message_id", message_id));
+    }
 
     action_result set_params(std::string json_params) {
         return push(N(setparams), _code, args()

@@ -55,9 +55,9 @@ public:
     void setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day);
     
     void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee);
-    void advise(symbol_code commun_code, name leader, std::vector<gallery_types::mosaic_key_t> favorites);
+    void advise(symbol_code commun_code, name leader, std::vector<mssgid_t> favorites);
     //TODO: void checkadvice (symbol_code commun_code, name leader);
-    void slap(symbol_code commun_code, name leader, name mosaic_creator, uint64_t tracery);
+    void slap(symbol_code commun_code, name leader, mssgid_t message_id);
     
     void ontransfer(name from, name to, asset quantity, std::string memo) {
         on_points_transfer(_self, from, to, quantity, memo);
