@@ -20,30 +20,22 @@ inline eosio::chain::name operator ""_n() {
 namespace commun { namespace config {
 
 // contracts
-static const auto control_name = "gls.ctrl"_n;
-static const auto social_name = "gls.social"_n;
-static const auto charge_name = "cmmn.charge"_n;
-static const auto emission_name = "gls.emit"_n;
-static const auto workers_name = "gls.worker"_n;
+static const auto list_name = "cmmn.list"_n;
+static const auto emit_name = "cmmn.emit"_n;
+static const auto control_name = "cmmn.ctrl"_n;
+static const auto gallery_name = "cmmn.gallery"_n;
+static const auto social_name = "cmmn.social"_n;
+static const auto publish_name = gallery_name;
 
-static const auto commun_list_name = "cmmn.list"_n;
-static const auto commun_point_name = "cmmn.point"_n;
-static const auto commun_emit_name = "cmmn.emit"_n;
-static const auto commun_ctrl_name = "cmmn.ctrl"_n;
-static const auto commun_gallery_name = "cmmn.gallery"_n;
-static const auto token_name = "cyber.token"_n;
 static const auto internal_name = "cyber"_n;
-static const auto commun_social_name = "cmmn.social"_n;
-static const auto publish_name = commun_gallery_name;
+static const auto token_name = "cyber.token"_n;
+static const auto point_name = "cmmn.point"_n;
 
 // permissions
 static const auto code_name = "cyber.code"_n;
 static const auto owner_name = "owner"_n;
 static const auto active_name = "active"_n;
-static const auto invoice_name = "invoice"_n;          // for vesting.retire
-static const auto super_majority_name = "witn.smajor"_n;
-static const auto majority_name = "witn.major"_n;
-static const auto minority_name = "witn.minor"_n;
+static const auto invoice_name = "invoice"_n;
 
 // numbers and time
 static constexpr auto _1percent = 100;
@@ -56,8 +48,6 @@ static constexpr int64_t blocks_per_year = int64_t(365)*24*60*60*1000/block_inte
 #else
     static const auto reserve_token = eosio::chain::symbol(4, "COMMUN");
 #endif
-
-static const std::string retire_memo = "retire";
 
 } // config
 

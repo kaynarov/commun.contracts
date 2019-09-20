@@ -82,7 +82,7 @@ void control::validateprms(symbol_code point, vector<ctrl_param> params) {
 }
 
 void control::setparams(symbol_code point, vector<ctrl_param> params) {
-    auto issuer = point::get_issuer(config::commun_point_name, point);
+    auto issuer = point::get_issuer(config::point_name, point);
     require_auth(issuer);
     auto& cfg = config(point);
     auto setter = param_helper::set_parameters<ctrl_params_setter>(params, cfg, issuer);
@@ -255,7 +255,7 @@ void control::change_voter_points(symbol_code point, name voter, share_type diff
 }
 
 void control::apply_vote_weight(symbol_code point, name voter, name witness, bool add) {
-    const auto power = point::get_balance(config::commun_point_name, voter, point).amount;
+    const auto power = point::get_balance(config::point_name, voter, point).amount;
     if (power > 0) {
         update_witnesses_weights(point, {witness}, add ? power : -power);
     }
