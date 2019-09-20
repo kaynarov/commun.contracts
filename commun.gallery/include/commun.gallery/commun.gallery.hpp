@@ -12,6 +12,7 @@
 #include <cmath>
 #include <eosio/system.hpp>
 #include <commun/util.hpp>
+#include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
 #include <commun.emit/commun.emit.hpp>
 #include <commun.emit/config.hpp>
@@ -19,7 +20,6 @@
 namespace commun {
 
 using std::string;
-using namespace eosio;
 
 namespace gallery_types {
     using mosaic_key_t = std::tuple<name, uint64_t>;
@@ -46,21 +46,26 @@ namespace gallery_types {
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
         
-        enum status_t: uint8_t {ACTIVE, ARCHIVED, BANNED};
-        uint8_t status = ACTIVE;
-
-        std::vector<name> slaps;
+        bool meritorious = false; //TODO: use it
+        bool active = true;
+        bool banned = false;
         
-        void ban() { status = BANNED; }
-        void archive() { status = ARCHIVED; }
-        bool banned()const { return status == BANNED; }
+        void ban() {
+            banned = true;
+            active = false;
+            meritorious = false;
+        };
+        
+        std::vector<name> slaps;
        
         uint64_t primary_key() const { return id; }
         using key_t = gallery_types::mosaic_key_t;
         key_t by_key()const { return std::make_tuple(creator, tracery); }
-        using by_rating_t = std::tuple<uint8_t, int64_t, int64_t>;
-        by_rating_t by_comm_rating()const { return std::make_tuple(status, comm_rating, lead_rating); }
-        by_rating_t by_lead_rating()const { return std::make_tuple(status, lead_rating, comm_rating); }
+        using by_rating_t = std::tuple<bool, int64_t, int64_t>;
+        by_rating_t by_comm_rating()const { return std::make_tuple(active, comm_rating, lead_rating); }
+        by_rating_t by_lead_rating()const { return std::make_tuple(banned, lead_rating, comm_rating); }
+        using by_created_t = std::tuple<uint8_t, time_point>;
+        by_created_t by_created()const { return std::make_tuple(active, created); }
     };
     
     struct gem {
@@ -83,7 +88,8 @@ namespace gallery_types {
         time_point by_claim_joint()const { return claim_date; }
         
         void check_claim(time_point now, bool has_reward) const {
-            eosio::check(now >= claim_date || has_auth(owner) || (has_auth(creator) && !has_reward), "lack of necessary authority");
+            eosio::check(now >= claim_date || has_auth(owner) 
+                || (has_auth(creator) && !has_reward && claim_date != config::eternity), "lack of necessary authority");
         }
     };
     
@@ -147,7 +153,8 @@ namespace gallery_types {
     using mosaic_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::key_t, &gallery_types::mosaic::by_key> >;
     using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_comm_rating> >;
     using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_lead_rating> >;
-    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_key_index, mosaic_comm_index, mosaic_lead_index>;
+    using mosaic_created_index = eosio::indexed_by<"bycreated"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_created_t, &gallery_types::mosaic::by_created> >;
+    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_key_index, mosaic_comm_index, mosaic_lead_index, mosaic_created_index>;
     
     using gem_id_index = eosio::indexed_by<"gemid"_n, eosio::const_mem_fun<gallery_types::gem, uint64_t, &gallery_types::gem::primary_key> >;
     using gem_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::key_t, &gallery_types::gem::by_key> >;
@@ -172,9 +179,7 @@ namespace gallery_types {
 template<typename T>
 class gallery_base { 
 private:
-    bool check_leader(symbol_code commun_code, name arg) { return true; }; //TODO
-    
-    bool transfer(name from, name to, const asset &quantity) {
+    bool send_points(name from, name to, const asset &quantity) {
         if (to && !point::balance_exists(config::commun_point_name, to, quantity.symbol.code())) {
             return false;
         }
@@ -249,7 +254,7 @@ private:
         
         int64_t reward = 0;
         bool damn = gem.shares < 0;
-        if (!no_rewards && damn == (mosaic->banned())) {
+        if (!no_rewards && damn == mosaic->banned) {
             reward = damn ? 
                 safe_prop(mosaic->reward, -gem.shares, mosaic->damn_shares) :
                 safe_prop(mosaic->reward,  gem.shares, mosaic->shares);
@@ -271,8 +276,8 @@ private:
                 });
             }
         }
-        if (!transfer(_self, gem.owner, reward_points)) {
-            eosio::check(transfer(_self, point::get_issuer(config::commun_point_name, commun_code), reward_points), "the issuer's balance doesn't exist");
+        if (!send_points(_self, gem.owner, reward_points)) {
+            eosio::check(send_points(_self, point::get_issuer(config::commun_point_name, commun_code), reward_points), "the issuer's balance doesn't exist");
         }
         
         if (mosaic->gem_count > 1 || mosaic->lead_rating) {
@@ -295,8 +300,9 @@ private:
             gallery_types::stats stats_table(_self, commun_code.raw());
             const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: stat does not exists");
             stats_table.modify(stat, name(), [&]( auto& s) { s.unclaimed += mosaic->reward - reward; });
-            
-            T::prepare_erase(_self, commun_code, *mosaic);
+            if (mosaic->active) {
+                T::deactivate(_self, commun_code, *mosaic);
+            }
             mosaics_table.erase(mosaic);
         }
     }
@@ -474,6 +480,8 @@ private:
             auto cur_shares_abs = safe_prop(shares_abs, quantity.amount + total_fee, points_sum);
             freeze_points_in_gem(_self, can_refill, commun_symbol, mosaic_id, claim_date, quantity.amount, damn ? -cur_shares_abs : cur_shares_abs, creator, creator);
         }
+        
+        archive_old_mosaics(_self, commun_code);
     }
     
     struct claim_info_t {
@@ -486,20 +494,65 @@ private:
     claim_info_t get_claim_info(name _self, name mosaic_creator, uint64_t tracery, symbol_code commun_code, bool eager) {
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
-        auto mosaic = mosaics_idx.find(std::make_tuple(mosaic_creator, tracery));
-        eosio::check(mosaic != mosaics_idx.end(), "mosaic doesn't exist");
+        const auto& mosaic = mosaics_idx.get(std::make_tuple(mosaic_creator, tracery), "mosaic doesn't exist");
         
         auto now = eosio::current_time_point();
         
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
         
-        claim_info_t ret{mosaic->id, mosaic->reward != 0, now <= mosaic->created + eosio::seconds(param.evaluation_period), param.commun_symbol};
+        claim_info_t ret{mosaic.id, mosaic.reward != 0, now <= mosaic.created + eosio::seconds(param.evaluation_period), param.commun_symbol};
         check(!ret.premature || eager, "evaluation period isn't over yet");
         
         maybe_issue_reward(_self, param);
         
         return ret;
+    }
+    
+    void set_gem_holder(name _self, name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator, name holder) {
+        require_auth(gem_owner);
+        gallery_types::params params_table(_self, commun_code.raw());
+        const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+        
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
+        const auto& mosaic = mosaics_idx.get(std::make_tuple(mosaic_creator, tracery), "mosaic doesn't exist");
+        gallery_types::gems gems_table(_self, commun_code.raw());
+        auto gems_idx = gems_table.get_index<"bykey"_n>();
+        auto gem = gems_idx.find(std::make_tuple(mosaic.id, gem_owner, gem_creator));
+        eosio::check(gem != gems_idx.end(), "gem doesn't exist");
+        eosio::check(gem->claim_date != config::eternity || gem_owner != holder, "gem is already held");
+        
+        if (gem_owner != holder && gem->points) {
+            require_auth(holder);
+            asset frozen_points(gem->points, param.commun_symbol);
+            freeze(_self, gem_owner, -frozen_points);
+            freeze(_self, holder, frozen_points);
+        }
+        
+        gems_idx.modify(gem, holder, [&](auto& item) {
+            item.owner = holder;
+            item.claim_date = config::eternity;
+        });
+    }
+    
+    void archive_old_mosaics(name _self, symbol_code commun_code) {
+        gallery_types::params params_table(_self, commun_code.raw());
+        const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+        
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaics_idx = mosaics_table.get_index<"bycreated"_n>();
+        
+        auto max_archive_date = eosio::current_time_point() - eosio::seconds(param.mosaic_active_period);
+        
+        for (size_t i = 0; i < config::auto_archives_num; i++) {
+            auto mosaic = mosaics_idx.lower_bound(std::make_tuple(true, time_point()));
+            if ((mosaic == mosaics_idx.end()) || (mosaic->created > max_archive_date)) {
+                break;
+            }
+            mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.active = false; });
+            T::deactivate(_self, commun_code, *mosaic);
+        }
     }
     
 public:
@@ -509,7 +562,7 @@ public:
         return incl != inclusions_table.end() ? incl->quantity.amount : 0;
     }
 protected:
-    void on_transfer(name _self, name from, name to, asset quantity, std::string memo) {
+    void on_points_transfer(name _self, name from, name to, asset quantity, std::string memo) {
         (void) memo;
         if (_self != to) { return; }
 
@@ -521,37 +574,31 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto by_comm_idx = mosaics_table.get_index<"bycommrating"_n>();
         
-        auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, std::numeric_limits<int64_t>::max()));
+        auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(true, MAXINT64, MAXINT64));
         auto by_comm_max = param.comm_grades.size();
         auto mosaic_num = 0;
         auto points_sum = 0;
         for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
                                                    (by_comm_itr != by_comm_idx.end()) && 
-                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE); by_comm_itr++, mosaic_num++) {
-            if (by_comm_itr->points > by_comm_itr->damn_points) {
-                points_sum += by_comm_itr->points - by_comm_itr->damn_points;
-            }
+                                                   (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
+            points_sum += by_comm_itr->comm_rating;
         }
         std::map<uint64_t, int64_t> ranked_mosaics;
         mosaic_num = 0;
         for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
                                                    (by_comm_itr != by_comm_idx.end()) && 
-                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE); by_comm_itr++, mosaic_num++) {
-            
-            auto cur_grades = param.comm_grades[mosaic_num];
-            if (by_comm_itr->points > by_comm_itr->damn_points) {
-                cur_grades += safe_prop(param.comm_points_grade_sum, by_comm_itr->points - by_comm_itr->damn_points, points_sum);
-            }
-            ranked_mosaics[by_comm_itr->id] = cur_grades;
+                                                   (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
+
+            ranked_mosaics[by_comm_itr->id] = param.comm_grades[mosaic_num] + 
+                                    safe_prop(param.comm_points_grade_sum, by_comm_itr->comm_rating, points_sum);
         }
         auto by_lead_idx = mosaics_table.get_index<"byleadrating"_n>();
         
         auto by_lead_max = param.lead_grades.size();
         mosaic_num = 0;
-        for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, std::numeric_limits<int64_t>::max())); 
+        for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(false, MAXINT64, MAXINT64)); 
                                                    (mosaic_num < by_lead_max) &&
                                                    (by_lead_itr != by_lead_idx.end()) && 
-                                                   (by_lead_itr->status != gallery_types::mosaic::BANNED) &&
                                                    (by_lead_itr->lead_rating > 0); by_lead_itr++, mosaic_num++) {
 
             ranked_mosaics[by_lead_itr->id] += param.lead_grades[mosaic_num];
@@ -662,6 +709,8 @@ protected:
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
         check(eosio::current_time_point() <= mosaic->created + eosio::seconds(param.collection_period), "collection period is over");
+        check(!mosaic->banned, "mosaic banned");
+        check(mosaic->active, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
         
         maybe_issue_reward(_self, param);
         
@@ -678,6 +727,15 @@ protected:
 
         auto claim_date = mosaic->created + eosio::seconds(param.mosaic_active_period);
         freeze_in_gems(_self, true, mosaic->id, claim_date, gem_creator, quantity, providers, damn, shares_abs);
+    }
+    
+    void hold_gem(name _self, name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator) {
+        set_gem_holder(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator, gem_owner);
+    }
+    
+    void transfer_gem(name _self, name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator, name recipient) {
+        eosio::check(gem_owner != recipient, "cannot transfer to self");
+        set_gem_holder(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator, recipient);
     }
     
     void claim_gem(name _self, name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator, bool eager) {
@@ -749,7 +807,7 @@ protected:
         require_auth(leader);
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-        eosio::check(check_leader(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        eosio::check(control::in_the_top(config::commun_ctrl_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         eosio::check(favorites.size() <= config::advice_weight.size(), "a surfeit of advice");
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -786,25 +844,31 @@ protected:
         require_auth(leader);
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-        eosio::check(check_leader(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        eosio::check(control::in_the_top(config::commun_ctrl_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
         auto mosaic = mosaics_idx.find(std::make_tuple(mosaic_creator, tracery));
         eosio::check(mosaic != mosaics_idx.end(), "mosaic doesn't exist");
+        eosio::check(mosaic->active, "mosaic is inactive");
         
-        mosaics_idx.modify(mosaic, name(), [&](auto& item) {
+        mosaics_idx.modify(mosaic, leader, [&](auto& item) {
             for (auto& n : item.slaps) {
                 eosio::check(n != leader, "already done");
-                if (!check_leader(commun_code, n)) {
+                if (!control::in_the_top(config::commun_ctrl_name, commun_code, n)) {
                     n = name();
                 }
             }
             item.slaps.erase(std::remove_if(item.slaps.begin(), item.slaps.end(), [](const name& n) { return n == name(); }), item.slaps.end());
+            item.slaps.push_back(leader);
             if (item.slaps.size() >= param.ban_threshold) {
                 item.ban();
             }
         });
+        
+        if (mosaic->banned) {
+            T::deactivate(_self, commun_code, *mosaic);
+        }
     }
     
 };
@@ -812,7 +876,7 @@ protected:
 class [[eosio::contract("cmmn.gallery")]] gallery : public gallery_base<gallery>, public contract {
 public:
     using contract::contract;
-    static void prepare_erase(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
+    static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
     
     [[eosio::action]] void create(symbol commun_symbol) {
         create_gallery(_self, commun_symbol);
@@ -826,8 +890,17 @@ public:
         add_to_mosaic(_self, mosaic_creator, tracery, quantity, damn, gem_creator, providers);
     }
     
-    [[eosio::action]] void claimgem(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
-        claim_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), false);
+    [[eosio::action]] void hold(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
+        hold_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner));
+    }
+    
+    [[eosio::action]] void transfer(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient) {
+        transfer_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), recipient);
+    }
+    
+    [[eosio::action]] void claim(name mosaic_creator, uint64_t tracery, symbol_code commun_code, name gem_owner, 
+                                   std::optional<name> gem_creator, std::optional<bool> eager) {
+        claim_gem(_self, mosaic_creator, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
     }
     
     [[eosio::action]] void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
@@ -845,10 +918,10 @@ public:
     }
     
     void ontransfer(name from, name to, asset quantity, std::string memo) {
-        on_transfer(_self, from, to, quantity, memo);
+        on_points_transfer(_self, from, to, quantity, memo);
     }      
 };
     
 } /// namespace commun
 
-#define GALLERY_ACTIONS (create)(createmosaic)(addtomosaic)(claimgem)(provide)(advise)(slap)
+#define GALLERY_ACTIONS (create)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(slap)

@@ -19,28 +19,38 @@ static const auto _point = symbol(3, point_code_str);
 using commun::config::commun_point_name;
 using commun::config::commun_gallery_name;
 using commun::config::commun_emit_name;
+using commun::config::commun_ctrl_name;
 using commun::config::default_mosaic_active_period;
 using commun::config::default_evaluation_period;
 using commun::config::reward_mosaics_period;
 using commun::config::forced_chopping_delay;
+
+const account_name _commun = N(commun);
+const account_name _golos = N(golos);
+const account_name _alice = N(alice);
+const account_name _bob = N(bob);
+const account_name _carol = N(carol);
+
 class commun_gallery_tester : public gallery_tester {
 protected:
     cyber_token_api token;
     commun_point_api point;
+    commun_ctrl_api ctrl;
     commun_emit_api emit;
     commun_gallery_api gallery;
-    
 public:
     commun_gallery_tester()
         : gallery_tester(commun_gallery_name)
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, commun_point_name, _point})
+        , ctrl({this, commun_ctrl_name, _point.to_symbol_code(), _golos})
         , emit({this, cfg::commun_emit_name})
         , gallery({this, _code, _point})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, commun_point_name, commun_gallery_name, commun_emit_name});
+            cfg::token_name, commun_ctrl_name, commun_point_name, commun_gallery_name, commun_emit_name});
         produce_block();
+        install_contract(commun_ctrl_name, contracts::ctrl_wasm(), contracts::ctrl_abi());
         install_contract(commun_point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(commun_emit_name, contracts::emit_wasm(), contracts::emit_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
@@ -53,9 +63,11 @@ public:
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
         set_authority(commun_point_name, cfg::issue_permission, create_code_authority({commun_emit_name}), "active");
         set_authority(commun_point_name, cfg::transfer_permission, create_code_authority(transfer_perm_accs), "active");
+        set_authority(commun_ctrl_name, N(changepoints), create_code_authority({commun_point_name}), "active");
 
         link_authority(commun_point_name, commun_point_name, cfg::issue_permission, N(issue));
         link_authority(commun_point_name, commun_point_name, cfg::transfer_permission, N(transfer));
+        link_authority(commun_ctrl_name, commun_ctrl_name, N(changepoints), N(changepoints));
     }
     
     void init() {
@@ -82,12 +94,6 @@ public:
         BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
 
     }
-
-    const account_name _commun = N(commun);
-    const account_name _golos = N(golos);
-    const account_name _alice = N(alice);
-    const account_name _bob = N(bob);
-    const account_name _carol = N(carol);
     
     int64_t supply;
     int64_t reserve;
@@ -117,15 +123,15 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     produce_block();
 
     produce_block(fc::seconds(default_evaluation_period - (cfg::block_interval_ms / 1000)));
-    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claim(_alice, 1, _alice));
     
     produce_blocks(1);
 
     BOOST_CHECK_EQUAL(point.get_supply(), supply);
-    BOOST_CHECK_EQUAL(success(), gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _carol)); //carol got nothing
+    BOOST_CHECK_EQUAL(success(), gallery.claim(_alice, 1, _carol)); //carol got nothing
     auto reward = point.get_supply() - supply;
     BOOST_TEST_MESSAGE("--- reward = " << reward);
-    BOOST_CHECK_EQUAL(success(), gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(success(), gallery.claim(_alice, 1, _alice));
     BOOST_CHECK_EQUAL(point.get_amount(_alice), init_amount + reward);
 
 } FC_LOG_AND_RETHROW()
@@ -177,6 +183,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     int mosaics_num = 50;
     int64_t min_gem_points = commun::safe_prop(commun::config::min_gem_cost, supply, reserve);
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(supply, point._symbol)));
+    prepare_ctrl(ctrl, _golos, {_alice, _carol}, _bob, 2, 4);
     int64_t points_sum = 0;
     auto first_comm_mosaic = mosaics_num - cfg::default_comm_grades.size() + 1;
     for (int i = 1; i <= mosaics_num; i++) {
@@ -188,11 +195,13 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     }
     std::map<uint64_t, int64_t> ranked_mosaics;
     
-    //these advices should be replaced after the next action
-    gallery.advise(point._symbol.to_symbol_code(), _alice, {{_bob, 9},{_bob, 10}});
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_bob), gallery.advise(_bob, {{_bob, 9},{_bob, 10}}));
     
-    gallery.advise(point._symbol.to_symbol_code(), _alice, {{_bob, 1},{_bob, 3},{_bob, 50}});
-    gallery.advise(point._symbol.to_symbol_code(), _carol, {{_bob, 1},{_bob, 2}});
+    //these advices should be replaced after the next action
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {{_bob, 9},{_bob, 10}}));
+    
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {{_bob, 1},{_bob, 3},{_bob, 50}}));
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_carol, {{_bob, 1},{_bob, 2}}));
     ranked_mosaics[ 1] = cfg::default_lead_grades[0];
     ranked_mosaics[ 2] = cfg::default_lead_grades[1];
     ranked_mosaics[50] = cfg::default_lead_grades[2];
@@ -277,8 +286,8 @@ BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(claimgem_tests, commun_gallery_tester) try {
-    BOOST_TEST_MESSAGE("claimgem tests");
+BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
+    BOOST_TEST_MESSAGE("claim tests");
     int64_t supply  = 5000000000000;
     init();
     int64_t init_amount = supply / 2;
@@ -288,12 +297,12 @@ BOOST_FIXTURE_TEST_CASE(claimgem_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     produce_block();
     produce_block(fc::seconds(commun::config::default_evaluation_period - (cfg::block_interval_ms / 1000)));
-    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claim(_alice, 1, _alice));
 
     produce_blocks(1);
 
     BOOST_CHECK_EQUAL(point.get_supply(), supply);
-    BOOST_CHECK_EQUAL(success(), gallery.claimgem(_alice, 1, point._symbol.to_symbol_code(), _carol)); //carol got nothing
+    BOOST_CHECK_EQUAL(success(), gallery.claim(_alice, 1, _carol)); //carol got nothing
 
 } FC_LOG_AND_RETHROW()
 

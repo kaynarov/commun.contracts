@@ -27,4 +27,6 @@ int64_t mul_cut(int64_t a, int64_t b) {
     return static_cast<int64_t>(std::min(max_ret128, ret128));
 }
 
+static constexpr int64_t MAXINT64 = std::numeric_limits<int64_t>::max();
+
 } // commun

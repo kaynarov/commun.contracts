@@ -1,5 +1,5 @@
 #pragma once
-#include <commun/parameter.hpp>
+#include <commun/parameter_ops.hpp>
 #include <commun/config.hpp>
 #include <eosio/singleton.hpp>
 
