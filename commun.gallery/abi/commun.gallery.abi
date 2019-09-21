@@ -68,7 +68,8 @@
             "base": "",
             "fields": [
                 { "type": "uint64",         "name": "id" },
-                { "type": "int64",          "name": "unclaimed" }
+                { "type": "int64",          "name": "unclaimed" },
+                { "type": "int64",          "name": "retained" }
             ]
         },{
             "name": "provision_struct",
