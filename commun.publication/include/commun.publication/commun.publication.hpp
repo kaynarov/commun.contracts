@@ -1,6 +1,6 @@
 #pragma once
-#include "objects.hpp"
-#include "parameters.hpp"
+#include <commun.publication/objects.hpp>
+#include <commun.publication/parameters.hpp>
 #include <eosio/transaction.hpp>
 
 namespace commun {

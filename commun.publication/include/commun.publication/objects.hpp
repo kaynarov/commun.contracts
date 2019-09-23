@@ -1,7 +1,7 @@
 #pragma once
 #include <eosio/eosio.hpp>
-#include "types.h"
-#include "config.hpp"
+#include <commun.publication/types.h>
+#include <commun.publication/config.hpp>
 #include <eosio/time.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/singleton.hpp>

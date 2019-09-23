@@ -1,6 +1,6 @@
-#include "commun.publication.hpp"
+#include <commun.publication/commun.publication.hpp>
 #include <eosio/event.hpp>
-#include "objects.hpp"
+#include <commun.publication/objects.hpp>
 #include <commun.social/commun.social.hpp>
 #include <commun/dispatchers.hpp>
 
