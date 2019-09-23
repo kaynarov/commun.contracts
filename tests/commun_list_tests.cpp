@@ -23,7 +23,7 @@ public:
         , community({this, cfg::list_name})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas,
-            cfg::control_name, cfg::point_name, cfg::list_name, cfg::invoice_name});
+            cfg::control_name, cfg::point_name, cfg::list_name});
         produce_block();
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::list_name, contracts::commun_list_wasm(), contracts::commun_list_abi());

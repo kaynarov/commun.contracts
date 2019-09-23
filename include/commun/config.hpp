@@ -35,7 +35,6 @@ static const auto point_name = "cmmn.point"_n;
 static const auto code_name = "cyber.code"_n;
 static const auto owner_name = "owner"_n;
 static const auto active_name = "active"_n;
-static const auto invoice_name = "invoice"_n;
 
 // numbers and time
 static constexpr auto _1percent = 100;

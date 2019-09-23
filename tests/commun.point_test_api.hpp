@@ -39,10 +39,7 @@ public:
     bool _creators_added;
     
     //// token actions
-    action_result create(account_name issuer, asset maximum_supply, int16_t cw, int16_t fee, std::vector<name> invoicers = {}) {
-        if (!invoicers.empty())
-            set_authority(issuer, invoicers, commun::config::invoice_name);
-        
+    action_result create(account_name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
         if(!_creators_added)
             return push(N(create), _code, args()
                 ("issuer", issuer)
