@@ -103,22 +103,26 @@ def createAuthority(keys, accounts):
         accountsList.extend([{'weight':1,'permission':{'actor':d[0],'permission':d[1]}}])
     return {'threshold': 1, 'keys': keysList, 'accounts': accountsList, 'waits':[]}
 
-def createAccount(creator, account, key, *, providebw=None, keys=None):
-    return cleos('create account {creator} {acc} {key}'.format(creator=creator, acc=account, key=key), providebw=providebw, keys=keys)
+def createAccount(creator, account, owner_auth, active_auth=None, *, providebw=None, keys=None):
+    if active_auth is None:
+        active_auth = owner_auth
+    return cleos('create account {creator} {acc} {owner} {active}'.format(creator=creator, acc=account, owner=owner_auth, active=active_auth), 
+            providebw=providebw, keys=keys)
 
 def getAccount(account):
     return json.loads(cleos('get account -j {acc}'.format(acc=account)))
 
-def updateAuth(account, permission, parent, keys, accounts):
+def updateAuth(account, permission, parent, keyList, accounts, *, providebw=None, keys=None):
     return pushAction('cyber', 'updateauth', account, {
         'account': account,
         'permission': permission,
         'parent': parent,
-        'auth': createAuthority(keys, accounts)
-    })
+        'auth': createAuthority(keyList, accounts)
+    }, providebw=providebw, keys=keys)
 
-def linkAuth(account, code, action, permission):
-    return cleos('set action permission {acc} {code} {act} {perm}'.format(acc=account, code=code, act=action, perm=permission))
+def linkAuth(account, code, action, permission, *, providebw=None, keys=None):
+    return cleos('set action permission {acc} {code} {act} {perm}'.format(acc=account, code=code, act=action, perm=permission),
+            providebw=providebw, keys=keys)
 
 def transfer(sender, recipient, amount, memo="", *, providebw=None, keys=None):
     return pushAction('cyber.token', 'transfer', sender, {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}
