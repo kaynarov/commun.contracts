@@ -1,5 +1,3 @@
-# WARNING: FAKE Dockerfile, for CI test purposes only!
-
 ARG buildtype=stable
 FROM cyberway/cyberway:$buildtype as cyberway
 FROM cyberway/cyberway.cdt:$buildtype as cdt
@@ -38,7 +36,7 @@ RUN cd commun.contracts/cyberway.contracts \
 FROM ubuntu:18.04
 
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ca-certificates python3 python3-numpy python3-bson \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ca-certificates python3 python3-numpy python3-bson libusb-1.0-0-dev libcurl4-gnutls-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /commun.contracts/version /opt/commun.contracts/version
@@ -52,10 +50,12 @@ COPY --from=builder /commun.contracts/cyberway.contracts/tests/test_contracts /o
 
 COPY --from=builder /commun.contracts/cyberway.contracts/scripts/bios-boot-sequence /opt/cyberway.contracts/scripts/bios-boot-sequence
 COPY --from=builder /commun.contracts/scripts /opt/commun.contracts/scripts
+COPY --from=builder /commun.contracts/genesis /opt/commun.contracts/genesis
 
 COPY --from=builder /usr/local/lib/libbson-1.0.so.0.0.0 /usr/local/lib/
 COPY --from=cyberway /opt/cyberway/bin/cleos /opt/cyberway/bin/cleos
 COPY --from=cyberway /opt/cyberway/bin/keosd /opt/cyberway/bin/keosd
+COPY --from=cyberway /opt/cyberway/bin/create-genesis /opt/cyberway/bin/create-genesis
 
 RUN ldconfig && ln -s ../cyberway.contracts /opt/commun.contracts/cyberway.contracts
 
