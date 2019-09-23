@@ -49,8 +49,8 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
 
 void point::setfreezer(name freezer) {
     require_auth(_self);
-    auto singparam = singparams(_self, _self.value);
-    singparam.set(structures::singleton_param { .point_freezer = freezer }, _self);
+    auto singparam = global_params(_self, _self.value);
+    singparam.set(structures::global_param { .point_freezer = freezer }, _self);
 }
 
 void point::issue(name to, asset quantity, string memo) {
@@ -161,7 +161,7 @@ void point::sub_balance(name owner, asset value) {
    const auto& from = accounts_table.get( value.symbol.code().raw(), "no balance object found");
 
    auto avail_balance = from.balance.amount;
-   auto singparam = singparams(_self, _self.value);
+   auto singparam = global_params(_self, _self.value);
    auto point_freezer = singparam.exists() ? singparam.get().point_freezer : name();
    if (point_freezer) {
        avail_balance -= gallery::get_frozen_amount(point_freezer, owner, value.symbol.code());

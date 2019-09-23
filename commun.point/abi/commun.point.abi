@@ -2,7 +2,7 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
-            "name": "account_stuct",
+            "name": "account_struct",
             "base": "",
             "fields": [
                 { "type": "asset",        "name": "balance" }
@@ -24,7 +24,7 @@
                 { "type": "name",         "name": "issuer" }
             ]
         },{
-            "name": "singlparam_struct",
+            "name": "globalparam_struct",
             "fields": [
                 {"type": "uint64",         "name": "id"},
                 {"type": "name",           "name": "point_freezer"}
@@ -119,8 +119,8 @@
     ],
     "tables": [
         {
-            "name": "account",
-            "type": "account_stuct",
+            "name": "accounts",
+            "type": "account_struct",
             "indexes": [
                 {
                     "name": "primary",
@@ -155,8 +155,8 @@
                 }
             ]
         },{
-            "name": "singlparam",
-            "type": "singlparam_struct",
+            "name": "globalparam",
+            "type": "globalparam_struct",
             "indexes" : [
                 {
                     "name": "primary",

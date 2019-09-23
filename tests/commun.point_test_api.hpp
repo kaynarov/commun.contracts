@@ -140,7 +140,7 @@ public:
     }
     
     int64_t get_amount(account_name acc) {
-        auto v = get_struct(acc, N(account), _symbol.to_symbol_code().value, "account");
+        auto v = get_struct(acc, N(accounts), _symbol.to_symbol_code().value, "account");
         if (v.is_object()) {
             auto o = mvo(v);
             return o["balance"].as<asset>().get_amount();
@@ -149,11 +149,11 @@ public:
     }
 
     std::vector<variant> get_accounts(account_name user) {
-        return _tester->get_all_chaindb_rows(_code, user, N(account), false);
+        return _tester->get_all_chaindb_rows(_code, user, N(accounts), false);
     }
 
     variant get_singparams() {
-        return _tester->get_chaindb_singleton(_code, _code, N(singlparam), "");
+        return _tester->get_chaindb_singleton(_code, _code, N(globalparam), "");
     }
 };
 
