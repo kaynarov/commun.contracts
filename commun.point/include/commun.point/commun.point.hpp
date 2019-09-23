@@ -114,16 +114,16 @@ struct structures {
         uint64_t primary_key()const { return max_supply.symbol.code().raw(); }
     };
 
-    struct [[eosio::table]] singleton_param {
+    struct [[eosio::table]] global_param {
         name point_freezer;
     };
 };
 
     using params = eosio::multi_index<"param"_n, structures::param>;
     using stats  = eosio::multi_index<"stat"_n,  structures::stat>;
-    using accounts  = eosio::multi_index<"account"_n,  structures::account>;
+    using accounts  = eosio::multi_index<"accounts"_n,  structures::account>;
 
-    using singparams = eosio::singleton<"singlparam"_n, structures::singleton_param>;
+    using global_params = eosio::singleton<"globalparam"_n, structures::global_param>;
 
     void notify_balance_change(name owner, asset diff);
     void sub_balance(name owner, asset value);
@@ -157,6 +157,6 @@ struct structures {
         return asset(calc_bancor_amount(stat.reserve.amount, stat.supply.amount, get_cw(param), reserve_quantity.amount), stat.supply.symbol);
     }
 
-    void do_transfer( name  from, name  to, const asset& quantity, const string& memo);
+    void do_transfer(name from, name to, const asset& quantity, const string& memo);
 };
 } /// namespace commun
