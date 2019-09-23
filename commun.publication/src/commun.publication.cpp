@@ -34,23 +34,23 @@ void publication::createmssg(
     require_auth(message_id.author);
 
     eosio::check(message_id.permlink.length() && message_id.permlink.length() < config::max_length,
-            "Permlink length is empty or more than 256.");
+        "Permlink length is empty or more than 256.");
     eosio::check(validate_permlink(message_id.permlink), "Permlink contains wrong symbol.");
     eosio::check(headermssg.length() < config::max_length, "Title length is more than 256.");
     eosio::check(bodymssg.length(), "Body is empty.");
     eosio::check(curators_prcnt <= config::_100percent, "curators_prcnt can't be more than 100%.");
 
     const auto& max_comment_depth_param = params(commun_code).max_comment_depth_param;
-    
+
     vertices vertices_table(_self, commun_code.raw());
     auto vertices_index = vertices_table.get_index<"bykey"_n>();
     auto tracery = message_id.tracery();
     eosio::check(vertices_index.find(std::make_tuple(message_id.author, tracery)) == vertices_index.end(), "This message already exists.");
-    
+
     uint64_t parent_pk = 0;
     uint16_t level = 0;
     uint64_t parent_tracery = 0;
-    if(parent_id.author) {
+    if (parent_id.author) {
         parent_tracery = parent_id.tracery();
         auto parent_vertex = vertices_index.find(std::make_tuple(parent_id.author, parent_tracery));
         eosio::check(parent_vertex != vertices_index.end(), "Parent message doesn't exist");
@@ -58,12 +58,12 @@ void publication::createmssg(
         vertices_index.modify(parent_vertex, eosio::same_payer, [&](auto& item) {
             ++item.childcount;
         });
-        
+
         level = 1 + parent_vertex->level;
     }
     eosio::check(level <= max_comment_depth_param.max_comment_depth, "publication::createmssg: level > MAX_COMMENT_DEPTH");
-    
-    vertices_table.emplace(message_id.author, [&]( auto &item) {
+
+    vertices_table.emplace(message_id.author, [&](auto& item) {
         item.id = vertices_table.available_primary_key();
         item.creator = message_id.author;
         item.tracery = tracery;
@@ -72,12 +72,12 @@ void publication::createmssg(
         item.level = level;
         item.childcount = 0;
     });
-    
+
     gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, message_id.author);
-    
+
     asset quantity(
         get_amount_to_freeze(
             point::get_balance(config::point_name, message_id.author, commun_code).amount, 
@@ -90,10 +90,8 @@ void publication::createmssg(
 }
 
 void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
-                              std::string headermssg, std::string bodymssg,
-                              std::string languagemssg, std::vector<std::string> tags,
-                              std::string jsonmetadata) {
-                                
+        std::string headermssg, std::string bodymssg,
+        std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata) {
     require_auth(message_id.author);
     vertices vertices_table(_self, commun_code.raw());
     auto vertices_index = vertices_table.get_index<"bykey"_n>();
@@ -102,7 +100,6 @@ void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
 }
 
 void publication::deletemssg(symbol_code commun_code, mssgid_t message_id) {
-    
     auto tracery = message_id.tracery();
     claim_gems_by_creator(_self, message_id.author, tracery, commun_code, message_id.author, true);
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -142,12 +139,11 @@ void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_o
 }
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, int16_t weight) {
-    
     gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, voter);
-    
+
     uint16_t abs_weight = std::abs(weight);
     asset quantity(
         safe_pct(abs_weight, get_amount_to_freeze(
@@ -156,18 +152,18 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
             acc_param->actions_per_day, 
             param.mosaic_active_period)), 
         param.commun_symbol);
-    
+
     add_to_mosaic(_self, message_id.author, message_id.tracery(), quantity, weight < 0, voter, get_providers(commun_code, message_id.author, abs_weight));
 }
 
 void publication::setparams(symbol_code commun_code, std::vector<posting_params> params) {
     require_auth(_self);
-    
+
     gallery_types::params params_table(_self, commun_code.raw());
     if (params_table.find(commun_code.raw()) == params_table.end()) {
         create_gallery(_self, point::get_supply(config::point_name, commun_code).symbol);
     }
-    
+
     posting_params_singleton cfg(_self, commun_code.raw());
     param_helper::check_params(params, cfg.exists());
     param_helper::set_parameters<posting_params_setter>(params, cfg, _self);
@@ -182,7 +178,7 @@ void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t messag
         !headermssg.length() || (headermssg.length() && bodymssg.length()),
         "Body must be set if title is set."
     );
-    
+
     vertices vertices_table(_self, commun_code.raw());
     auto vertices_index = vertices_table.get_index<"bykey"_n>();
     eosio::check(vertices_index.find(std::make_tuple(message_id.author, message_id.tracery())) != vertices_index.end(), 
@@ -192,7 +188,7 @@ void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t messag
 void publication::erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id) {
     require_auth(rebloger);
     eosio::check(rebloger != message_id.author, "You cannot erase reblog your own content.");
-    
+
     vertices vertices_table(_self, commun_code.raw());
     auto vertices_index = vertices_table.get_index<"bykey"_n>();
     eosio::check(vertices_index.find(std::make_tuple(message_id.author, message_id.tracery())) != vertices_index.end(), 
@@ -252,7 +248,7 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
                 acc_param->actions_per_day, 
                 param.mosaic_active_period,
                 point::get_balance(config::point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code)));
-        
+
             if (amount) {
                 ret.emplace_back(std::make_pair(prov_name, amount));
             }
@@ -273,7 +269,7 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
     require_auth(recipient);
     gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-    
+
     gallery_types::provs provs_table(_self, commun_code.raw());
     auto provs_index = provs_table.get_index<"bykey"_n>();
     for (size_t n = 0; n < providers.size(); n++) {
@@ -285,7 +281,7 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
     }
     providers.erase(std::remove_if(providers.begin(), providers.end(), [](const name& p) { return p == name(); }), providers.end());
     eosio::check(providers.size() <= config::max_providers_num, "too many providers");
-    
+
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, recipient);
     accparams_table.modify(acc_param, name(), [&](auto& a) { a.providers = providers; });
@@ -295,7 +291,7 @@ void publication::setfrequency(symbol_code commun_code, name account, uint16_t a
     require_auth(account);
     gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-    
+
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, account);
     accparams_table.modify(acc_param, name(), [&](auto& a) { a.actions_per_day = actions_per_day; });
@@ -323,4 +319,3 @@ void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
     (createmssg)(updatemssg)(deletemssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)(setparams)
     (reblog)(erasereblog)(setproviders)(setfrequency)(provide)(advise)(slap))
-

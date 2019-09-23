@@ -21,4 +21,3 @@ namespace eosio { namespace testing {
 #ifdef UNIT_TEST_ENV
 }} // eosio::testing
 #endif
-

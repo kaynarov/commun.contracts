@@ -21,7 +21,7 @@ struct mssgid_t {
         return author == value.author &&
                permlink == value.permlink;
     }
-    
+
     uint64_t tracery() const {
         auto hash = sha256(permlink.c_str(), permlink.size());
         return *(reinterpret_cast<const uint64_t *>(hash.extract_as_byte_array().data()));
