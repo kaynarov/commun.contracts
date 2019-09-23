@@ -85,7 +85,7 @@ void publication::createmssg(
     
     asset quantity(
         get_amount_to_freeze(
-            point::get_balance(config::commun_point_name, message_id.author, commun_code).amount, 
+            point::get_balance(config::point_name, message_id.author, commun_code).amount, 
             get_frozen_amount(_self, message_id.author, commun_code),
             acc_param->actions_per_day, 
             param.mosaic_active_period), 
@@ -156,7 +156,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     uint16_t abs_weight = std::abs(weight);
     asset quantity(
         safe_pct(abs_weight, get_amount_to_freeze(
-            point::get_balance(config::commun_point_name, voter, commun_code).amount, 
+            point::get_balance(config::point_name, voter, commun_code).amount, 
             get_frozen_amount(_self, voter, commun_code),
             acc_param->actions_per_day, 
             param.mosaic_active_period)), 
@@ -170,7 +170,7 @@ void publication::setparams(symbol_code commun_code, std::vector<posting_params>
     
     gallery_types::params params_table(_self, commun_code.raw());
     if (params_table.find(commun_code.raw()) == params_table.end()) {
-        create_gallery(_self, point::get_supply(config::commun_point_name, commun_code).symbol);
+        create_gallery(_self, point::get_supply(config::point_name, commun_code).symbol);
     }
     
     posting_params_singleton cfg(_self, commun_code.raw());
@@ -250,13 +250,13 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
     for (size_t n = 0; n < acc_param->providers.size(); n++) {
         auto prov_name = acc_param->providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, account));
-        if (prov_itr != provs_index.end() && point::balance_exists(config::commun_point_name, prov_name, commun_code)) {
+        if (prov_itr != provs_index.end() && point::balance_exists(config::point_name, prov_name, commun_code)) {
             auto amount = safe_pct(weight, get_amount_to_freeze(
                 prov_itr->total, 
                 prov_itr->frozen,
                 acc_param->actions_per_day, 
                 param.mosaic_active_period,
-                point::get_balance(config::commun_point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code)));
+                point::get_balance(config::point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code)));
         
             if (amount) {
                 ret.emplace_back(std::make_pair(prov_name, amount));
@@ -284,7 +284,7 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
     for (size_t n = 0; n < providers.size(); n++) {
         auto prov_name = providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, recipient));
-        if (prov_itr == provs_index.end() || !point::balance_exists(config::commun_point_name, prov_name, commun_code)) {
+        if (prov_itr == provs_index.end() || !point::balance_exists(config::point_name, prov_name, commun_code)) {
             providers[n] = name();
         }
     }
@@ -325,7 +325,7 @@ void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id
 
 } // commun
 
-DISPATCH_WITH_TRANSFER(commun::publication, commun::config::commun_point_name, ontransfer,
+DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
     (createmssg)(updatemssg)(deletemssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)(setparams)
     (reblog)(erasereblog)(setproviders)(setfrequency)(provide)(advise)(slap))
 

@@ -22,25 +22,25 @@ protected:
 
 public:
     commun_emit_tester()
-        : golos_tester(cfg::commun_emit_name)
+        : golos_tester(cfg::emit_name)
         , token({this, cfg::token_name, cfg::reserve_token})
-        , point({this, cfg::commun_point_name, _point})
+        , point({this, cfg::point_name, _point})
         , emit({this, _code})
     {
         create_accounts({_code, _commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::commun_point_name});
+            cfg::token_name, cfg::point_name});
         produce_block();
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
-        install_contract(cfg::commun_point_name, contracts::point_wasm(), contracts::point_abi());
+        install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(_code, contracts::emit_wasm(), contracts::emit_abi());
 
-        set_authority(cfg::commun_emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
-        link_authority(cfg::commun_emit_name, cfg::commun_emit_name, cfg::reward_perm_name, N(issuereward));
+        set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
 
-        set_authority(cfg::commun_point_name, cfg::issue_permission, create_code_authority({cfg::commun_emit_name}), "active");
-        set_authority(cfg::commun_point_name, cfg::transfer_permission, create_code_authority({cfg::commun_emit_name}), "active");
-        link_authority(cfg::commun_point_name, cfg::commun_point_name, cfg::issue_permission, N(issue));
-        link_authority(cfg::commun_point_name, cfg::commun_point_name, cfg::transfer_permission, N(transfer));
+        set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
+        set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
+        link_authority(cfg::point_name, cfg::point_name, cfg::issue_permission, N(issue));
+        link_authority(cfg::point_name, cfg::point_name, cfg::transfer_permission, N(transfer));
     }
 
     void init() {
@@ -49,7 +49,7 @@ public:
 
         BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
-        BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::commun_point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
+        BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
     }
 
     const account_name _commun = N(commun);
@@ -99,26 +99,26 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
 
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
     produce_blocks(commun::seconds_to_blocks(cfg::reward_mosaics_period));
-    BOOST_CHECK_EQUAL(err.no_account(cfg::commun_gallery_name), emit.issuereward(point._symbol, false));
-    create_accounts({cfg::commun_gallery_name});
+    BOOST_CHECK_EQUAL(err.no_account(cfg::gallery_name), emit.issuereward(point._symbol, false));
+    create_accounts({cfg::gallery_name});
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point._symbol, false));
     BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point._symbol, true));
 
     BOOST_TEST_MESSAGE("-- waiting for leaders reward");
     produce_blocks(commun::seconds_to_blocks(cfg::reward_leaders_period - cfg::reward_mosaics_period));
-    BOOST_CHECK_EQUAL(err.no_account(cfg::commun_ctrl_name), emit.issuereward(point._symbol, true));
+    BOOST_CHECK_EQUAL(err.no_account(cfg::control_name), emit.issuereward(point._symbol, true));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("basic tests");
-    create_accounts({cfg::commun_gallery_name});
+    create_accounts({cfg::gallery_name});
     init();
     int64_t supply = 100000000;
     double annual_rate = 0.5;
     double leaders_rate = 0.25;
     BOOST_CHECK_EQUAL(success(), emit.create(point._symbol, annual_rate*cfg::_100percent, leaders_rate*cfg::_100percent));
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), "issue"));
-    BOOST_CHECK_EQUAL(success(), point.open(cfg::commun_gallery_name, point._symbol, cfg::commun_gallery_name));
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point._symbol, cfg::gallery_name));
 
     int64_t cont_emission = supply * int64_t(std::log(1.0 + annual_rate) * cfg::_100percent) / cfg::_100percent;
     int64_t period_amount = cont_emission * cfg::reward_mosaics_period / seconds_per_year;
@@ -126,7 +126,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
     produce_blocks(commun::seconds_to_blocks(cfg::reward_mosaics_period));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point._symbol, false));
-    BOOST_CHECK_EQUAL(mosaic_amount, point.get_amount(cfg::commun_gallery_name));
+    BOOST_CHECK_EQUAL(mosaic_amount, point.get_amount(cfg::gallery_name));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

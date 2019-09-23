@@ -16,13 +16,13 @@ protected:
     std::vector<account_name> _users;
 public:
     commun_social_tester()
-        : golos_tester(cfg::commun_social_name)
-        , social({this, cfg::commun_social_name})
+        : golos_tester(cfg::social_name)
+        , social({this, cfg::social_name})
         , _users{"dave"_n, "erin"_n} {
         create_accounts(_users);
-        create_account(cfg::commun_social_name);
+        create_account(cfg::social_name);
         produce_block();
-        install_contract(cfg::commun_social_name, contracts::commun_social_wasm(), contracts::commun_social_abi());
+        install_contract(cfg::social_name, contracts::commun_social_wasm(), contracts::commun_social_abi());
     }
 
 protected:

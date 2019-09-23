@@ -18,15 +18,15 @@ protected:
 
 public:
     commun_list_tester()
-        : golos_tester(cfg::commun_list_name)
-        , point({this, cfg::commun_point_name, _token})
-        , community({this, cfg::commun_list_name})
+        : golos_tester(cfg::list_name)
+        , point({this, cfg::point_name, _token})
+        , community({this, cfg::list_name})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas,
-            cfg::control_name, cfg::commun_point_name, cfg::commun_list_name, cfg::invoice_name});
+            cfg::control_name, cfg::point_name, cfg::list_name});
         produce_block();
-        install_contract(cfg::commun_point_name, contracts::point_wasm(), contracts::point_abi());
-        install_contract(cfg::commun_list_name, contracts::commun_list_wasm(), contracts::commun_list_abi());
+        install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
+        install_contract(cfg::list_name, contracts::commun_list_wasm(), contracts::commun_list_abi());
     }
 
     const account_name _commun = N(commun);
@@ -37,7 +37,7 @@ public:
     const account_name _nicolas = N(nicolas);
 
     void create_token(symbol symbol_token) {
-        BOOST_CHECK_EQUAL(success(), point.create(cfg::commun_point_name, asset(1000000, symbol_token), 10000, 1));
+        BOOST_CHECK_EQUAL(success(), point.create(cfg::point_name, asset(1000000, symbol_token), 10000, 1));
         produce_blocks(1);
     }
     
@@ -58,16 +58,16 @@ BOOST_AUTO_TEST_SUITE(community_list_tests)
 BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
     create_token(_token);
 
-    BOOST_CHECK_EQUAL(err.not_found_token, community.create_record(cfg::commun_list_name, _token_e.to_symbol_code(), "community 1"));
+    BOOST_CHECK_EQUAL(err.not_found_token, community.create_record(cfg::list_name, _token_e.to_symbol_code(), "community 1"));
 
-    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::commun_list_name, _token.to_symbol_code(), "community 1"));
+    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token.to_symbol_code(), "community 1"));
 
     produce_blocks(10);
 
     create_token(_token_e);
 
-    BOOST_CHECK_EQUAL(err.community_symbol_code_exists, community.create_record(cfg::commun_list_name, _token.to_symbol_code(), "community 1"));
-    BOOST_CHECK_EQUAL(err.community_exists, community.create_record(cfg::commun_list_name, _token_e.to_symbol_code(), "community 1"));
+    BOOST_CHECK_EQUAL(err.community_symbol_code_exists, community.create_record(cfg::list_name, _token.to_symbol_code(), "community 1"));
+    BOOST_CHECK_EQUAL(err.community_exists, community.create_record(cfg::list_name, _token_e.to_symbol_code(), "community 1"));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(add_info_test, commun_list_tester) try {
@@ -76,11 +76,11 @@ BOOST_FIXTURE_TEST_CASE(add_info_test, commun_list_tester) try {
     create_token(_token);
 
     BOOST_TEST_MESSAGE("--- checking community for existence");
-    BOOST_CHECK_EQUAL(err.no_community, community.add_info(cfg::commun_point_name, _token.to_symbol_code(), "community_name"));
+    BOOST_CHECK_EQUAL(err.no_community, community.add_info(cfg::point_name, _token.to_symbol_code(), "community_name"));
 
     BOOST_TEST_MESSAGE("--- checking that info was added successfully");
-    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::commun_list_name, _token.to_symbol_code(), "community_name"));
-    BOOST_CHECK_EQUAL(success(), community.add_info(cfg::commun_point_name, _token.to_symbol_code(), "community_name"));
+    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token.to_symbol_code(), "community_name"));
+    BOOST_CHECK_EQUAL(success(), community.add_info(cfg::point_name, _token.to_symbol_code(), "community_name"));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

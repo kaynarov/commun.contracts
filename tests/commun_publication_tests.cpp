@@ -15,10 +15,6 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
-using commun::config::default_mosaic_active_period;
-using commun::config::commun_ctrl_name;
-using commun::config::default_evaluation_period;
-using commun::config::reward_mosaics_period;
 
 const account_name _commun = N(commun);
 const account_name _golos = N(golos);
@@ -37,32 +33,32 @@ public:
     commun_publication_tester()
         : gallery_tester(cfg::publish_name)
         , token({this, cfg::token_name, cfg::reserve_token})
-        , point({this, cfg::commun_point_name, _point})
-        , ctrl({this, commun_ctrl_name, _point.to_symbol_code(), _golos})
-        , emit({this, cfg::commun_emit_name})
+        , point({this, cfg::point_name, _point})
+        , ctrl({this, cfg::control_name, _point.to_symbol_code(), _golos})
+        , emit({this, cfg::emit_name})
         , post({this, cfg::publish_name, symbol(0, point_code_str).to_symbol_code()})
         , _users{N(jackiechan), N(brucelee), N(chucknorris), N(alice)} {
         create_accounts(_users);
-        create_accounts({_code, _commun, _golos, cfg::token_name, cfg::commun_point_name, cfg::commun_emit_name, commun_ctrl_name});
+        create_accounts({_code, _commun, _golos, cfg::token_name, cfg::point_name, cfg::emit_name, cfg::control_name});
         produce_block();
-        install_contract(commun_ctrl_name, contracts::ctrl_wasm(), contracts::ctrl_abi());
-        install_contract(cfg::commun_point_name, contracts::point_wasm(), contracts::point_abi());
-        install_contract(cfg::commun_emit_name, contracts::emit_wasm(), contracts::emit_abi());
+        install_contract(cfg::control_name, contracts::ctrl_wasm(), contracts::ctrl_abi());
+        install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
+        install_contract(cfg::emit_name, contracts::emit_wasm(), contracts::emit_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(cfg::publish_name, contracts::commun_publication_wasm(), contracts::commun_publication_abi());
 
-        set_authority(cfg::commun_emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
-        link_authority(cfg::commun_emit_name, cfg::commun_emit_name, cfg::reward_perm_name, N(issuereward));
+        set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
 
-        std::vector<account_name> transfer_perm_accs{_code, cfg::commun_emit_name};
+        std::vector<account_name> transfer_perm_accs{_code, cfg::emit_name};
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
-        set_authority(cfg::commun_point_name, cfg::issue_permission, create_code_authority({cfg::commun_emit_name}), "active");
-        set_authority(cfg::commun_point_name, cfg::transfer_permission, create_code_authority(transfer_perm_accs), "active");
-        set_authority(commun_ctrl_name, N(changepoints), create_code_authority({cfg::commun_point_name}), "active");
+        set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
+        set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority(transfer_perm_accs), "active");
+        set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
 
-        link_authority(cfg::commun_point_name, cfg::commun_point_name, cfg::issue_permission, N(issue));
-        link_authority(cfg::commun_point_name, cfg::commun_point_name, cfg::transfer_permission, N(transfer));
-        link_authority(commun_ctrl_name, commun_ctrl_name, N(changepoints), N(changepoints));
+        link_authority(cfg::point_name, cfg::point_name, cfg::issue_permission, N(issue));
+        link_authority(cfg::point_name, cfg::point_name, cfg::transfer_permission, N(transfer));
+        link_authority(cfg::control_name, cfg::control_name, N(changepoints), N(changepoints));
     }
 
     void init() {
@@ -77,11 +73,11 @@ public:
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _golos, asset(reserve, token._symbol), ""));
 
         BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
-        BOOST_CHECK_EQUAL(success(), point.setfreezer(commun::config::commun_gallery_name));
+        BOOST_CHECK_EQUAL(success(), point.setfreezer(commun::config::gallery_name));
 
         BOOST_CHECK_EQUAL(success(), emit.create(point._symbol, annual_emission_rate, leaders_reward_prop));
 
-        BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::commun_point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
+        BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
 
@@ -362,7 +358,7 @@ BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.hold({N(alice), "alice-in-blockchains"}, N(alice)));
     
     produce_block();
-    produce_block(fc::seconds(default_mosaic_active_period - cfg::block_interval_ms / 1000));
+    produce_block(fc::seconds(cfg::default_mosaic_active_period - cfg::block_interval_ms / 1000));
     
     //a third party can claim it because the active period has expired
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(chucknorris)));
@@ -399,7 +395,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.downvote(N(brucelee), {N(alice), "alice-in-blockchains"}, cfg::_100percent - 1));
     
     produce_block();
-    produce_block(fc::seconds(reward_mosaics_period - (cfg::block_interval_ms / 1000)));
+    produce_block(fc::seconds(cfg::reward_mosaics_period - (cfg::block_interval_ms / 1000)));
     
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "what-are-you-waiting-for-jackie"}));
     BOOST_CHECK_EQUAL(success(), post.hold({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
@@ -413,7 +409,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(errgallery.mosaic_banned, post.downvote(N(chucknorris), {N(alice), "dirt"}, cfg::_100percent));
     
     produce_block();
-    produce_block(fc::seconds(default_evaluation_period - reward_mosaics_period));
+    produce_block(fc::seconds(cfg::default_evaluation_period - cfg::reward_mosaics_period));
     
     auto amount_alice0 = point.get_amount(N(alice));
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(alice)));
@@ -442,8 +438,8 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     
     //at the end of this story, let's verify that jackiechan cannot slap the archive mosaic
     produce_block();
-    produce_block(fc::seconds(default_mosaic_active_period - 
-                             (default_evaluation_period - reward_mosaics_period + (cfg::block_interval_ms / 1000))));
+    produce_block(fc::seconds(cfg::default_mosaic_active_period - 
+                             (cfg::default_evaluation_period - cfg::reward_mosaics_period + (cfg::block_interval_ms / 1000))));
     //curious case: first, the existence of the parent permlink is checked, 
     //then the parent mosaic is archived and the parent permlink is destroyed
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(jackiechan), "what"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));

@@ -11,8 +11,6 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
-using commun::config::commun_point_name;
-using commun::config::commun_gallery_name;
 
 class commun_point_tester : public golos_tester {
 protected:
@@ -21,12 +19,12 @@ protected:
 
 public:
     commun_point_tester()
-        : golos_tester(commun_point_name)
+        : golos_tester(cfg::point_name)
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, _code, _point})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, commun_point_name});
+            cfg::token_name, cfg::point_name});
         produce_block();
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(_code, contracts::point_wasm(), contracts::point_abi());
@@ -262,8 +260,8 @@ BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(300, point.get_amount(_alice));
     BOOST_CHECK_EQUAL(700, point.get_amount(_bob));
 
-    BOOST_CHECK_EQUAL(success(), point.setfreezer(commun_gallery_name));
-    BOOST_CHECK_EQUAL(point.get_singparams()["point_freezer"], commun_gallery_name.to_string());
+    BOOST_CHECK_EQUAL(success(), point.setfreezer(cfg::gallery_name));
+    BOOST_CHECK_EQUAL(point.get_singparams()["point_freezer"], cfg::gallery_name.to_string());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(transfer_buy_tokens_no_supply, commun_point_tester) try {

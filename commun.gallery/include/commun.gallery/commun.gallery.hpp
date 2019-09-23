@@ -180,14 +180,14 @@ template<typename T>
 class gallery_base { 
 private:
     bool send_points(name from, name to, const asset &quantity) {
-        if (to && !point::balance_exists(config::commun_point_name, to, quantity.symbol.code())) {
+        if (to && !point::balance_exists(config::point_name, to, quantity.symbol.code())) {
             return false;
         }
         
         if (quantity.amount) {
             action(
-                permission_level{config::commun_point_name, config::transfer_permission},
-                config::commun_point_name,
+                permission_level{config::point_name, config::transfer_permission},
+                config::point_name,
                 "transfer"_n,
                 std::make_tuple(from, to, quantity, string())
             ).send();
@@ -201,10 +201,10 @@ private:
             return;
         }
         auto commun_code = quantity.symbol.code();
-        auto balance_exists = point::balance_exists(config::commun_point_name, account, commun_code);
+        auto balance_exists = point::balance_exists(config::point_name, account, commun_code);
         eosio::check(balance_exists, quantity.amount > 0 ? "balance doesn't exist" : "SYSTEM: points are frozen while balance doesn't exist");
 
-        auto balance_amount = point::get_balance(config::commun_point_name, account, commun_code).amount;
+        auto balance_amount = point::get_balance(config::point_name, account, commun_code).amount;
         
         gallery_types::inclusions inclusions_table(_self, account.value);
         auto incl = inclusions_table.find(quantity.symbol.code().raw());
@@ -228,7 +228,7 @@ private:
     }
     
     static inline int64_t get_reserve_amount(asset quantity) {
-        return point::get_reserve_quantity(config::commun_point_name, quantity, false).amount;
+        return point::get_reserve_quantity(config::point_name, quantity, false).amount;
     }
     
     static int64_t get_points_sum(int64_t quantity_amount, const gallery_types::providers_t& providers) {
@@ -277,7 +277,7 @@ private:
             }
         }
         if (!send_points(_self, gem.owner, reward_points)) {
-            eosio::check(send_points(_self, point::get_issuer(config::commun_point_name, commun_code), reward_points), "the issuer's balance doesn't exist");
+            eosio::check(send_points(_self, point::get_issuer(config::point_name, commun_code), reward_points), "the issuer's balance doesn't exist");
         }
         
         if (mosaic->gem_count > 1 || mosaic->lead_rating) {
@@ -439,10 +439,10 @@ private:
     }
     
     void maybe_issue_reward(name _self, const gallery_types::param& param) {
-        if (emit::it_is_time_to_reward(config::commun_emit_name, param.commun_symbol.code(), false)) {
+        if (emit::it_is_time_to_reward(config::emit_name, param.commun_symbol.code(), false)) {
             action(
-                permission_level{config::commun_emit_name, config::reward_perm_name},
-                config::commun_emit_name,
+                permission_level{config::emit_name, config::reward_perm_name},
+                config::emit_name,
                 "issuereward"_n,
                 std::make_tuple(param.commun_symbol, false)
             ).send();
@@ -633,7 +633,7 @@ protected:
     void create_gallery(name _self, symbol commun_symbol) {
         require_auth(_self);
         auto commun_code = commun_symbol.code();
-        eosio::check(point::balance_exists(config::commun_point_name, _self, commun_code), "point balance does not exist");
+        eosio::check(point::balance_exists(config::point_name, _self, commun_code), "point balance does not exist");
         
         gallery_types::params params_table(_self, commun_code.raw());
         eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "the gallery with this symbol already exists");
@@ -807,7 +807,7 @@ protected:
         require_auth(leader);
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-        eosio::check(control::in_the_top(config::commun_ctrl_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         eosio::check(favorites.size() <= config::advice_weight.size(), "a surfeit of advice");
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -844,7 +844,7 @@ protected:
         require_auth(leader);
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-        eosio::check(control::in_the_top(config::commun_ctrl_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"bykey"_n>();
@@ -855,7 +855,7 @@ protected:
         mosaics_idx.modify(mosaic, leader, [&](auto& item) {
             for (auto& n : item.slaps) {
                 eosio::check(n != leader, "already done");
-                if (!control::in_the_top(config::commun_ctrl_name, commun_code, n)) {
+                if (!control::in_the_top(config::control_name, commun_code, n)) {
                     n = name();
                 }
             }
