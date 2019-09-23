@@ -23,28 +23,28 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     check(0 <  cw  && cw  <= 10000, "connector weight must be between 0.01% and 100% (1-10000)");
     check(0 <= fee && fee <= 10000, "fee must be between 0% and 100% (0-10000)");
     symbol_code commun_code = commun_symbol.code();
-    
+
     params params_table(_self, commun_code.raw());
     eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "already exists");
     
-    params_table.emplace(_self, [&](auto& p) { p = {
-        .max_supply = maximum_supply,
-        .cw = cw,
-        .fee = fee,
-        .issuer = issuer
-    };});
-        
+    params_table.emplace(_self, [&](auto& p) {
+        p.max_supply = maximum_supply;
+        p.cw = cw;
+        p.fee = fee;
+        p.issuer = issuer;
+    });
+
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "SYSTEM: already exists");
-    stats_table.emplace(_self, [&](auto& s) { s = {
-        .supply = asset(0, commun_symbol),
-        .reserve = asset(0, config::reserve_token)
-    };});
-    
+    stats_table.emplace(_self, [&](auto& s) {
+        s.supply = asset(0, commun_symbol);
+        s.reserve = asset(0, config::reserve_token);
+    });
+
     accounts accounts_table(_self, issuer.value);
-    accounts_table.emplace(_self, [&](auto& a) { a = {
-        .balance = asset(0, commun_symbol)
-    };});
+    accounts_table.emplace(_self, [&](auto& a) {
+        a.balance = asset(0, commun_symbol);
+    });
 }
 
 void point::setfreezer(name freezer) {
@@ -58,7 +58,7 @@ void point::issue(name to, asset quantity, string memo) {
     check(commun_symbol.is_valid(), "invalid symbol name");
     check(memo.size() <= 256, "memo has more than 256 bytes");
     symbol_code commun_code = commun_symbol.code();
-    
+
     params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist, create it before issue");
 
@@ -74,25 +74,25 @@ void point::issue(name to, asset quantity, string memo) {
     check(quantity.symbol == stat.supply.symbol, "symbol precision mismatch");
     check(quantity.amount <= param.max_supply.amount - stat.supply.amount, "quantity exceeds available supply");
 
-    stats_table.modify(stat, same_payer, [&]( auto& s) {
-       s.supply += quantity;
+    stats_table.modify(stat, same_payer, [&](auto& s) {
+        s.supply += quantity;
     });
 
     add_balance(param.issuer, quantity, param.issuer);
 
     if (to != param.issuer) {
-      SEND_INLINE_ACTION(*this, transfer, { {param.issuer, "active"_n} },
-                          { param.issuer, to, quantity, memo }
-      );
+        SEND_INLINE_ACTION(*this, transfer, { {param.issuer, "active"_n} },
+            { param.issuer, to, quantity, memo }
+        );
     }
 }
 
 void point::retire(asset quantity, string memo) {
     auto commun_symbol = quantity.symbol;
-    check( commun_symbol.is_valid(), "invalid symbol name" );
-    check( memo.size() <= 256, "memo has more than 256 bytes" );
+    check(commun_symbol.is_valid(), "invalid symbol name");
+    check(memo.size() <= 256, "memo has more than 256 bytes");
     symbol_code commun_code = commun_symbol.code();
-    
+
     params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
 
@@ -106,14 +106,14 @@ void point::retire(asset quantity, string memo) {
     check(quantity.symbol == stat.supply.symbol, "symbol precision mismatch");
 
     stats_table.modify(stat, same_payer, [&](auto& s) {
-       s.supply -= quantity;
+        s.supply -= quantity;
     });
 
     sub_balance(param.issuer, quantity);
 }
 
 void point::transfer(name from, name to, asset quantity, string memo) {
-     do_transfer(from, to, quantity, memo);
+    do_transfer(from, to, quantity, memo);
 }
 
 void point::on_reserve_transfer(name from, name to, asset quantity, std::string memo) {
@@ -123,14 +123,14 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
     const size_t memo_size = memo.size();
     bool restock = (memo_size >= pref_size) && memo.substr(0, pref_size) == config::restock_prefix;
     auto commun_code = symbol_code(restock ? memo.substr(pref_size).c_str() : memo.c_str());
-    
+
     params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
-    
+
     stats stats_table(_self, commun_code.raw());
     auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
     check(quantity.symbol == stat.reserve.symbol, "invalid reserve token symbol");
-    
+
     asset add_tokens(0, stat.supply.symbol);
     if (!restock) {
         add_tokens = calc_token_quantity(param, stat, quantity);
@@ -156,34 +156,33 @@ void point::notify_balance_change(name owner, asset diff) {
 }
 
 void point::sub_balance(name owner, asset value) {
-   accounts accounts_table(_self, owner.value);
+    accounts accounts_table(_self, owner.value);
 
-   const auto& from = accounts_table.get( value.symbol.code().raw(), "no balance object found");
+    const auto& from = accounts_table.get(value.symbol.code().raw(), "no balance object found");
 
-   auto avail_balance = from.balance.amount;
-   auto singparam = global_params(_self, _self.value);
-   auto point_freezer = singparam.exists() ? singparam.get().point_freezer : name();
-   if (point_freezer) {
-       avail_balance -= gallery::get_frozen_amount(point_freezer, owner, value.symbol.code());
-   }
-   check(avail_balance >= value.amount, "overdrawn balance");
+    auto avail_balance = from.balance.amount;
+    auto singparam = global_params(_self, _self.value);
+    auto point_freezer = singparam.exists() ? singparam.get().point_freezer : name();
+    if (point_freezer) {
+        avail_balance -= gallery::get_frozen_amount(point_freezer, owner, value.symbol.code());
+    }
+    check(avail_balance >= value.amount, "overdrawn balance");
 
-   accounts_table.modify(from, owner, [&](auto& a) {
-         a.balance -= value;
-      });
+    accounts_table.modify(from, owner, [&](auto& a) {
+        a.balance -= value;
+    });
 
-   notify_balance_change(owner, -value);
+    notify_balance_change(owner, -value);
 }
 
 void point::add_balance(name owner, asset value, name ram_payer) {
     accounts accounts_table(_self, owner.value);
     auto to = accounts_table.find(value.symbol.code().raw());
     if (to == accounts_table.end()) {
-        accounts_table.emplace( ram_payer, [&]( auto& a ) {
+        accounts_table.emplace(ram_payer, [&](auto& a) {
             a.balance = value;
         });
-    } 
-    else {
+    } else {
         accounts_table.modify(to, same_payer, [&](auto& a) {
             a.balance += value;
         });
@@ -192,62 +191,61 @@ void point::add_balance(name owner, asset value, name ram_payer) {
 }
 
 void point::open(name owner, const symbol& symbol, name ram_payer) {
-   require_auth(ram_payer);
-   eosio::check( is_account( owner ), "owner account does not exist");
-   auto commun_code = symbol.code();
+    require_auth(ram_payer);
+    eosio::check(is_account(owner), "owner account does not exist");
+    auto commun_code = symbol.code();
 
-   stats stats_table(_self, commun_code.raw());
-   const auto& st = stats_table.get(commun_code.raw(), "symbol does not exist");
-   check(st.supply.symbol == symbol, "symbol precision mismatch");
-   
-   accounts accounts_table(_self, owner.value);
-   auto it = accounts_table.find(commun_code.raw());
-   if (it == accounts_table.end()) {
-      accounts_table.emplace(ram_payer, [&](auto& a){
-         a.balance = asset{0, symbol};
-      });
-   }
+    stats stats_table(_self, commun_code.raw());
+    const auto& st = stats_table.get(commun_code.raw(), "symbol does not exist");
+    check(st.supply.symbol == symbol, "symbol precision mismatch");
+
+    accounts accounts_table(_self, owner.value);
+    auto it = accounts_table.find(commun_code.raw());
+    if (it == accounts_table.end()) {
+        accounts_table.emplace(ram_payer, [&](auto& a){
+            a.balance = asset{0, symbol};
+        });
+    }
 }
 
 void point::close(name owner, const symbol& symbol) {
-   require_auth(owner);
-   
-   params params_table(_self, symbol.code().raw());
-   const auto& param = params_table.get(symbol.code().raw(), "point with symbol does not exist");
-   check(owner != param.issuer, "issuer can't close");
-   
-   accounts accounts_table( _self, owner.value );
-   auto it = accounts_table.find( symbol.code().raw() );
-   check( it != accounts_table.end(), "Balance row already deleted or never existed. Action won't have any effect." );
-   check( it->balance.amount == 0, "Cannot close because the balance is not zero." );
-   accounts_table.erase( it );
+    require_auth(owner);
+
+    params params_table(_self, symbol.code().raw());
+    const auto& param = params_table.get(symbol.code().raw(), "point with symbol does not exist");
+    check(owner != param.issuer, "issuer can't close");
+
+    accounts accounts_table(_self, owner.value);
+    auto it = accounts_table.find(symbol.code().raw());
+    check(it != accounts_table.end(), "Balance row already deleted or never existed. Action won't have any effect.");
+    check(it->balance.amount == 0, "Cannot close because the balance is not zero.");
+    accounts_table.erase(it);
 }
 
-void point::do_transfer(name from, name to, const asset &quantity, const string &memo)
-{
-    check( from != to, "cannot transfer to self" );
+void point::do_transfer(name from, name to, const asset &quantity, const string &memo) {
+    check(from != to, "cannot transfer to self");
     check(has_auth(from) || has_auth(_self), "missing required signature");
-    check( is_account( to ), "to account does not exist");
+    check(is_account(to), "to account does not exist");
     auto commun_code = quantity.symbol.code();
-    
+
     params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
     stats stats_table(_self, commun_code.raw());
     const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
 
-    check( quantity.is_valid(), "invalid quantity" );
-    check( quantity.amount > 0, "must transfer positive quantity" );
-    check( quantity.symbol == stat.supply.symbol, "symbol precision mismatch" );
-    check( memo.size() <= 256, "memo has more than 256 bytes" );
+    check(quantity.is_valid(), "invalid quantity");
+    check(quantity.amount > 0, "must transfer positive quantity");
+    check(quantity.symbol == stat.supply.symbol, "symbol precision mismatch");
+    check(memo.size() <= 256, "memo has more than 256 bytes");
 
     sub_balance(from, quantity);
     auto payer = has_auth(to) ? to : from;
 
     if (to != param.issuer) {
-        require_recipient( from );
-        require_recipient( to );
+        require_recipient(from);
+        require_recipient(to);
 
-        add_balance( to, quantity, payer );
+        add_balance(to, quantity, payer);
     }
     else {
         auto sub_reserve = calc_reserve_quantity(param, stat, quantity);
@@ -258,7 +256,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
         });
 
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
-        {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
+            {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
     }
 }
 
@@ -266,4 +264,4 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
 
 DISPATCH_WITH_TRANSFER(commun::point, commun::config::token_name, on_reserve_transfer,
     (create)(setfreezer)(issue)(transfer)(open)(close)(retire)
-    )
+)

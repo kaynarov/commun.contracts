@@ -28,26 +28,26 @@ public:
     :   base_contract_api(tester, code)
     ,   _symbol(sym)
     ,   _creators_added(false){}
-    
+
     void add_creators(std::vector<name> accs) {
         _creators_added = true;
         set_authority(_code, accs, commun::config::create_permission);
         _tester->link_authority(_code, _code, commun::config::create_permission, N(create));
     }
-    
+
     symbol _symbol;
     bool _creators_added;
-    
+
     //// token actions
     action_result create(account_name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
-        if(!_creators_added)
+        if (!_creators_added)
             return push(N(create), _code, args()
                 ("issuer", issuer)
                 ("maximum_supply", maximum_supply)
                 ("cw", cw)
                 ("fee", fee)
             );
-            
+
         return _tester->push_action_msig_tx(_code, N(create), 
             {permission_level{_code, commun::config::create_permission}}, 
             {{_code}}, 
@@ -58,7 +58,7 @@ public:
                 ("fee", fee)
         );
     }
-    
+
     action_result setfreezer(account_name freezer) {
         return push(N(setfreezer), _code, args()("freezer", freezer));
     }
@@ -128,7 +128,7 @@ public:
         }
         return v;
     }
-    
+
     int64_t get_supply() {
         auto sname = _symbol.to_symbol_code().value;
         auto v = get_struct(sname, N(stat), sname, "currency_stats");
@@ -138,7 +138,7 @@ public:
         }
         return 0;
     }
-    
+
     int64_t get_amount(account_name acc) {
         auto v = get_struct(acc, N(accounts), _symbol.to_symbol_code().value, "account");
         if (v.is_object()) {

@@ -157,6 +157,6 @@ struct structures {
         return asset(calc_bancor_amount(stat.reserve.amount, stat.supply.amount, get_cw(param), reserve_quantity.amount), stat.supply.symbol);
     }
 
-    void do_transfer( name  from, name  to, const asset& quantity, const string& memo);
+    void do_transfer(name from, name to, const asset& quantity, const string& memo);
 };
 } /// namespace commun
