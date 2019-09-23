@@ -256,7 +256,7 @@ BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(700, point.get_amount(_bob));
 
     BOOST_CHECK_EQUAL(success(), point.setfreezer(cfg::gallery_name));
-    BOOST_CHECK_EQUAL(point.get_singparams()["point_freezer"], cfg::gallery_name.to_string());
+    BOOST_CHECK_EQUAL(point.get_global_params()["point_freezer"], cfg::gallery_name.to_string());
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(transfer_buy_tokens_no_supply, commun_point_tester) try {

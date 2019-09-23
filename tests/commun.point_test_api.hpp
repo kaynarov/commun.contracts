@@ -152,7 +152,7 @@ public:
         return _tester->get_all_chaindb_rows(_code, user, N(accounts), false);
     }
 
-    variant get_singparams() {
+    variant get_global_params() {
         return _tester->get_chaindb_singleton(_code, _code, N(globalparam), "");
     }
 };
