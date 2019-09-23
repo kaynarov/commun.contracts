@@ -127,15 +127,15 @@ void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_i
     claim_gems_by_creator(_self, message_id.author, message_id.tracery(), commun_code, voter, true);
 }
 
-void publication::hold(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
+void publication::hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator) {
     hold_gem(_self, message_id.author, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner));
 }
 
-void publication::transfer(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient) {
+void publication::transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient) {
     transfer_gem(_self, message_id.author, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), recipient);
 }
 
-void publication::claim(mssgid_t message_id, symbol_code commun_code, name gem_owner, 
+void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_owner, 
                         std::optional<name> gem_creator, std::optional<bool> eager) {
     
     claim_gem(_self, message_id.author, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));

@@ -129,8 +129,8 @@ struct commun_posting_api: base_contract_api {
     action_result claim(mssgid message_id, account_name gem_owner, 
                     account_name gem_creator = account_name(), bool eager = false, account_name signer = account_name()) {
         auto a = args()
-            ("message_id", message_id)
             ("commun_code", commun_code)
+            ("message_id", message_id)
             ("gem_owner", gem_owner);
         if (gem_creator) {
             a("gem_creator", gem_creator);
@@ -144,8 +144,8 @@ struct commun_posting_api: base_contract_api {
     
     action_result hold(mssgid message_id, account_name gem_owner, account_name gem_creator = account_name()) {
         auto a = args()
-            ("message_id", message_id)
             ("commun_code", commun_code)
+            ("message_id", message_id)
             ("gem_owner", gem_owner);
         if (gem_creator) {
             a("gem_creator", gem_creator);
@@ -155,8 +155,8 @@ struct commun_posting_api: base_contract_api {
     
     action_result transfer(mssgid message_id, account_name gem_owner, account_name gem_creator, account_name recipient, bool recipient_sign = true) {
         auto a = args()
-            ("message_id", message_id)
             ("commun_code", commun_code)
+            ("message_id", message_id)
             ("gem_owner", gem_owner);
         if (gem_creator) {
             a("gem_creator", gem_creator);

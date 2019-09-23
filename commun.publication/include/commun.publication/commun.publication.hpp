@@ -43,10 +43,10 @@ public:
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);
-    void claim(mssgid_t message_id, symbol_code commun_code, name gem_owner, 
+    void claim(symbol_code commun_code, mssgid_t message_id, name gem_owner, 
                     std::optional<name> gem_creator, std::optional<bool> eager);
-    void hold(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator);
-    void transfer(mssgid_t message_id, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient);
+    void hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator);
+    void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
     void setparams(symbol_code commun_code, std::vector<posting_params> params);
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string headermssg, std::string bodymssg);
