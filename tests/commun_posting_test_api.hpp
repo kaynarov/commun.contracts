@@ -24,7 +24,7 @@ struct commun_posting_api: base_contract_api {
     symbol_code commun_code;
     commun_posting_api(golos_tester* tester, name code, symbol_code cmmn_code)
     :   base_contract_api(tester, code)
-        ,commun_code(cmmn_code) {}
+    ,   commun_code(cmmn_code) {}
 
     action_result create_msg(
         mssgid message_id,
@@ -35,7 +35,6 @@ struct commun_posting_api: base_contract_api {
         std::vector<std::string> tags = {"tag"},
         std::string json_metadata = "jsonmetadata",
         uint16_t curators_prcnt = 5000
-        
     ) {
         return push(N(createmssg), message_id.author, args()
             ("commun_code", commun_code)
@@ -127,10 +126,10 @@ struct commun_posting_api: base_contract_api {
     }
     
     action_result claim(mssgid message_id, account_name gem_owner, 
-                    account_name gem_creator = account_name(), bool eager = false, account_name signer = account_name()) {
+            account_name gem_creator = account_name(), bool eager = false, account_name signer = account_name()) {
         auto a = args()
-            ("message_id", message_id)
             ("commun_code", commun_code)
+            ("message_id", message_id)
             ("gem_owner", gem_owner);
         if (gem_creator) {
             a("gem_creator", gem_creator);
@@ -141,28 +140,28 @@ struct commun_posting_api: base_contract_api {
         
         return push(N(claim), signer ? signer : gem_owner, a);
     }
-    
+
     action_result hold(mssgid message_id, account_name gem_owner, account_name gem_creator = account_name()) {
         auto a = args()
-            ("message_id", message_id)
             ("commun_code", commun_code)
+            ("message_id", message_id)
             ("gem_owner", gem_owner);
         if (gem_creator) {
             a("gem_creator", gem_creator);
         }
         return push(N(hold), gem_owner, a);
     }
-    
+
     action_result transfer(mssgid message_id, account_name gem_owner, account_name gem_creator, account_name recipient, bool recipient_sign = true) {
         auto a = args()
-            ("message_id", message_id)
             ("commun_code", commun_code)
+            ("message_id", message_id)
             ("gem_owner", gem_owner);
         if (gem_creator) {
             a("gem_creator", gem_creator);
         }
         a("recipient", recipient);
-        
+
         return recipient_sign ? 
             push_msig(N(transfer), {{gem_owner, config::active_name}, {recipient, config::active_name}}, {gem_owner, recipient}, a) :
             push(N(transfer), gem_owner, a);
@@ -183,14 +182,14 @@ struct commun_posting_api: base_contract_api {
             ("actions_per_day", actions_per_day)
         );
     }
-    
+
     action_result advise(account_name leader, std::vector<mssgid> favorites) {
         return push(N(advise), leader, args()
             ("commun_code", commun_code)
             ("leader", leader)
             ("favorites", favorites));
     }
-    
+
     action_result slap(account_name leader, mssgid message_id) {
         return push(N(slap), leader, args()
             ("commun_code", commun_code)
@@ -206,18 +205,13 @@ struct commun_posting_api: base_contract_api {
 
     action_result init_default_params() {
         auto comment_depth = get_str_comment_depth(max_comment_depth);
-        auto social = get_str_social_acc(name());
 
-        auto params = "[" + comment_depth + "," + social + "]";
+        auto params = "[" + comment_depth + "]";
         return set_params(params);
     }
 
     string get_str_comment_depth(uint16_t max_comment_depth) {
         return string("['st_max_comment_depth', {'value':'") + std::to_string(max_comment_depth) + "'}]";
-    }
-
-    string get_str_social_acc(name social_acc) {
-        return string("['st_social_acc', {'value':'") + name{social_acc}.to_string() + "'}]";
     }
 
     variant get_vertex(mssgid message_id) {
@@ -241,7 +235,6 @@ struct commun_posting_api: base_contract_api {
 
     const uint16_t max_comment_depth = 127;
 };
-
 
 }} // eosio::testing
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <eosio/eosio.hpp>
-#include "types.h"
-#include "config.hpp"
+#include <commun.publication/types.h>
+#include <commun.publication/config.hpp>
 #include <eosio/time.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/singleton.hpp>
@@ -21,7 +21,7 @@ struct mssgid_t {
         return author == value.author &&
                permlink == value.permlink;
     }
-    
+
     uint64_t tracery() const {
         auto hash = sha256(permlink.c_str(), permlink.size());
         return *(reinterpret_cast<const uint64_t *>(hash.extract_as_byte_array().data()));
