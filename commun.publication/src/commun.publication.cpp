@@ -12,10 +12,6 @@ struct posting_params_setter: set_params_visitor<posting_state> {
     bool operator()(const max_comment_depth_prm& param) {
         return set_param(param, &posting_state::max_comment_depth_param);
     }
-
-    bool operator()(const social_acc_prm& param) {
-        return set_param(param, &posting_state::social_acc_param);
-    }
 };
 
 // cached to prevent unneeded db access
@@ -45,7 +41,6 @@ void publication::createmssg(
     eosio::check(curators_prcnt <= config::_100percent, "curators_prcnt can't be more than 100%.");
 
     const auto& max_comment_depth_param = params(commun_code).max_comment_depth_param;
-    const auto& social_acc_param = params(commun_code).social_acc_param;
     
     vertices vertices_table(_self, commun_code.raw());
     auto vertices_index = vertices_table.get_index<"bykey"_n>();

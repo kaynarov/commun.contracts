@@ -17,24 +17,12 @@ namespace commun {
     };
     using max_comment_depth_prm = param_wrapper<st_max_comment_depth, 1>;
 
-    struct st_social_acc : parameter {
-        name account;
-
-        void validate() const override {
-            if (account != name()) {
-                eosio::check(is_account(account), "Social account doesn't exist.");
-            }
-        }
-    };
-    using social_acc_prm = param_wrapper<st_social_acc, 1>;
-
-    using posting_params = std::variant<max_comment_depth_prm, social_acc_prm>;
+    using posting_params = std::variant<max_comment_depth_prm>;
 
     struct [[eosio::table]] posting_state {
         max_comment_depth_prm max_comment_depth_param;
-        social_acc_prm social_acc_param;
 
-        static constexpr int params_count = 2;
+        static constexpr int params_count = 1;
     };
     using posting_params_singleton = eosio::singleton<"pstngparams"_n, posting_state>;
 

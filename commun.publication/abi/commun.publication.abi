@@ -27,8 +27,7 @@
   "variants": [{
     "name": "posting_param",
     "types": [
-      "st_max_comment_depth",
-      "st_social_acc"
+      "st_max_comment_depth"
     ]
   }],
   "structs": [
@@ -345,16 +344,6 @@
     ]
   },
   {
-    "name": "st_social_acc",
-    "base": "",
-    "fields": [
-      {
-        "name": "value",
-        "type": "name"
-      }
-    ]
-  },
-  {
     "name": "posting_state",
     "base": "",
     "fields": [
@@ -365,10 +354,6 @@
       {
         "name": "max_comment_depth",
         "type": "st_max_comment_depth"
-      },
-      {
-        "name": "social_acc",
-        "type": "st_social_acc"
       }
     ]
   },

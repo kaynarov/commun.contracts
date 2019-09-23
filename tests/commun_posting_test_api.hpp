@@ -206,18 +206,13 @@ struct commun_posting_api: base_contract_api {
 
     action_result init_default_params() {
         auto comment_depth = get_str_comment_depth(max_comment_depth);
-        auto social = get_str_social_acc(name());
 
-        auto params = "[" + comment_depth + "," + social + "]";
+        auto params = "[" + comment_depth + "]";
         return set_params(params);
     }
 
     string get_str_comment_depth(uint16_t max_comment_depth) {
         return string("['st_max_comment_depth', {'value':'") + std::to_string(max_comment_depth) + "'}]";
-    }
-
-    string get_str_social_acc(name social_acc) {
-        return string("['st_social_acc', {'value':'") + name{social_acc}.to_string() + "'}]";
     }
 
     variant get_vertex(mssgid message_id) {
