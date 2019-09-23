@@ -381,12 +381,23 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "dirt"}));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}));
     
+    BOOST_CHECK(!get_mosaic(_code, _point, N(alice), post.tracery("facelift"))["meritorious"].as<bool>());
+    BOOST_CHECK(!get_mosaic(_code, _point, N(alice), post.tracery("dirt"))["meritorious"].as<bool>());
+    BOOST_CHECK(!get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["meritorious"].as<bool>());
+    
     BOOST_CHECK_EQUAL(success(), post.slap(N(brucelee), {N(alice), "facelift"}));
     BOOST_CHECK_EQUAL(success(), post.slap(N(brucelee), {N(alice), "dirt"}));
     BOOST_CHECK_EQUAL(success(), post.slap(N(brucelee), {N(alice), "alice-in-blockchains"}));
     
+    produce_block();
+    produce_block(fc::seconds(cfg::reward_mosaics_period - (cfg::block_interval_ms / 1000)));
+    
     //chucknorris will receive a reward as "facelift" will be in the top and will be banned (*1)
     BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(alice), "facelift"}, cfg::_100percent - 1));
+    
+    BOOST_CHECK(get_mosaic(_code, _point, N(alice), post.tracery("facelift"))["meritorious"].as<bool>());
+    BOOST_CHECK(get_mosaic(_code, _point, N(alice), post.tracery("dirt"))["meritorious"].as<bool>());
+    BOOST_CHECK(get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["meritorious"].as<bool>());
     
     //jackiechan will not receive a reward because "dirt" will not be in the top, although it will be banned (*2)
     BOOST_CHECK_EQUAL(success(), post.downvote(N(jackiechan), {N(alice), "dirt"}, cfg::_100percent));
@@ -404,6 +415,14 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     
     BOOST_CHECK_EQUAL(success(), post.slap(N(jackiechan), {N(alice), "facelift"}));
     BOOST_CHECK_EQUAL(success(), post.slap(N(jackiechan), {N(alice), "dirt"}));
+    
+    BOOST_CHECK(get_mosaic(_code, _point, N(alice), post.tracery("facelift"))["banned"].as<bool>());
+    BOOST_CHECK(get_mosaic(_code, _point, N(alice), post.tracery("dirt"))["banned"].as<bool>());
+    BOOST_CHECK(!get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["banned"].as<bool>());
+    
+    BOOST_CHECK(!get_mosaic(_code, _point, N(alice), post.tracery("facelift"))["meritorious"].as<bool>());
+    BOOST_CHECK(!get_mosaic(_code, _point, N(alice), post.tracery("dirt"))["meritorious"].as<bool>());
+    BOOST_CHECK(get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["meritorious"].as<bool>());
     
     BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, post.slap(N(brucelee), {N(alice), "facelift"}));
     BOOST_CHECK_EQUAL(errgallery.mosaic_banned, post.downvote(N(chucknorris), {N(alice), "dirt"}, cfg::_100percent));

@@ -46,7 +46,7 @@ namespace gallery_types {
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
         
-        bool meritorious = false; //TODO: use it
+        bool meritorious = false;
         bool active = true;
         bool banned = false;
         
@@ -124,6 +124,7 @@ namespace gallery_types {
     struct [[eosio::table]] stat {
         uint64_t id;
         int64_t unclaimed = 0;
+        int64_t retained = 0;
 
         uint64_t primary_key()const { return id; }
     };
@@ -566,7 +567,6 @@ protected:
         (void) memo;
         if (_self != to) { return; }
 
-        auto total_reward = quantity.amount;
         auto commun_code = quantity.symbol.code();            
         gallery_types::params params_table(_self, commun_code.raw());
         const auto& param = params_table.get(commun_code.raw(), "param does not exists");
@@ -617,17 +617,28 @@ protected:
         for (auto itr = top_mosaics.begin(); itr != middle; itr++) {
             grades_sum += itr->second;
         }
+        
+        gallery_types::stats stats_table(_self, commun_code.raw());
+        const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: stat does not exists");
+        auto total_reward = quantity.amount + stat.retained;
         auto left_reward  = total_reward;
         for (auto itr = top_mosaics.begin(); itr != middle; itr++) {
             auto cur_reward = safe_prop(total_reward, itr->second, grades_sum);
             
             auto mosaic = mosaics_table.find(itr->first);
-            mosaics_table.modify(mosaic, name(), [&](auto& item) { item.reward += cur_reward; });
+            mosaics_table.modify(mosaic, name(), [&](auto& item) {
+                if (item.meritorious) {
+                    item.reward += cur_reward;
+                    left_reward -= cur_reward;
+                }
+                else {
+                    item.meritorious = true;
+                }
+            });
             
-            left_reward -= cur_reward;
+            
         }
-        auto mosaic = mosaics_table.find(top_mosaics.front().first);
-        mosaics_table.modify(mosaic, name(), [&](auto& item) { item.reward += left_reward; });
+        stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
     }
 
     void create_gallery(name _self, symbol commun_symbol) {
