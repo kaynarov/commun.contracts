@@ -1,5 +1,5 @@
 #include "golos_tester.hpp"
-#include "commun_social_test_api.hpp"
+#include "commun.social_test_api.hpp"
 #include "contracts.hpp"
 #include <commun/config.hpp>
 
@@ -22,7 +22,7 @@ public:
         create_accounts(_users);
         create_account(cfg::social_name);
         produce_block();
-        install_contract(cfg::social_name, contracts::commun_social_wasm(), contracts::commun_social_abi());
+        install_contract(cfg::social_name, contracts::social_wasm(), contracts::social_abi());
     }
 
 protected:

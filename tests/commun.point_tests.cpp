@@ -71,7 +71,7 @@ public:
     } err;
 };
 
-BOOST_AUTO_TEST_SUITE(point_tests)
+BOOST_AUTO_TEST_SUITE(commun_point_tests)
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     BOOST_TEST_MESSAGE("Basic point tests");
