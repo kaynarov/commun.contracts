@@ -27,24 +27,24 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     params params_table(_self, commun_code.raw());
     eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "already exists");
     
-    params_table.emplace(_self, [&](auto& p) {
-        p.max_supply = maximum_supply;
-        p.cw = cw;
-        p.fee = fee;
-        p.issuer = issuer;
-    });
+    params_table.emplace(_self, [&](auto& p) { p = {
+        .max_supply = maximum_supply,
+        .cw = cw,
+        .fee = fee,
+        .issuer = issuer
+    };});
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "SYSTEM: already exists");
-    stats_table.emplace(_self, [&](auto& s) {
-        s.supply = asset(0, commun_symbol);
-        s.reserve = asset(0, config::reserve_token);
-    });
+    stats_table.emplace(_self, [&](auto& s) { s = {
+        .supply = asset(0, commun_symbol),
+        .reserve = asset(0, config::reserve_token)
+    };});
 
     accounts accounts_table(_self, issuer.value);
-    accounts_table.emplace(_self, [&](auto& a) {
-        a.balance = asset(0, commun_symbol);
-    });
+    accounts_table.emplace(_self, [&](auto& a) { a = {
+        .balance = asset(0, commun_symbol)
+    };});
 }
 
 void point::setfreezer(name freezer) {
