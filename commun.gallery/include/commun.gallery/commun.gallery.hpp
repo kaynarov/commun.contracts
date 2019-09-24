@@ -445,7 +445,7 @@ private:
                 permission_level{config::emit_name, config::reward_perm_name},
                 config::emit_name,
                 "issuereward"_n,
-                std::make_tuple(param.commun_symbol, false)
+                std::make_tuple(param.commun_symbol.code(), false)
             ).send();
         }
     }

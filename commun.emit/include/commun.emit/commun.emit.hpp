@@ -34,8 +34,8 @@ struct structures {
     
 public:
     using contract::contract;
-    [[eosio::action]] void create(symbol commun_symbol, uint16_t annual_emission_rate, uint16_t leaders_reward_prop);
-    [[eosio::action]] void issuereward(symbol commun_symbol, bool for_leaders);
+    [[eosio::action]] void create(symbol_code commun_code, uint16_t annual_emission_rate, uint16_t leaders_reward_prop);
+    [[eosio::action]] void issuereward(symbol_code commun_code, bool for_leaders);
     
     static inline bool it_is_time_to_reward(name emit_contract_account, symbol_code commun_code, bool for_leaders) {
         stats stats_table(emit_contract_account, commun_code.raw());
