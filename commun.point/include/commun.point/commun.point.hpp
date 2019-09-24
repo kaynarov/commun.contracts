@@ -20,7 +20,7 @@ namespace commun {
 using std::string;
 using namespace eosio;
 
-class [[eosio::contract("cmmn.point")]] point : public contract {
+class [[eosio::contract("comn.point")]] point : public contract {
 public:
     using contract::contract;
 

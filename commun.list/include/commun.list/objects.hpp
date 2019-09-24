@@ -19,6 +19,6 @@ struct community {
 namespace commun::tables {
     using namespace eosio;
 
-    using cmmn_name_index = eosio::indexed_by<"byname"_n, eosio::member<structures::community, std::string, &structures::community::community_name>>;
-    using community = eosio::multi_index<"community"_n, structures::community, cmmn_name_index>;
+    using comn_name_index = eosio::indexed_by<"byname"_n, eosio::member<structures::community, std::string, &structures::community::community_name>>;
+    using community = eosio::multi_index<"community"_n, structures::community, comn_name_index>;
 }

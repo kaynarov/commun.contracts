@@ -22,9 +22,9 @@ struct mssgid {
 
 struct commun_posting_api: base_contract_api {
     symbol_code commun_code;
-    commun_posting_api(golos_tester* tester, name code, symbol_code cmmn_code)
+    commun_posting_api(golos_tester* tester, name code, symbol_code comn_code)
     :   base_contract_api(tester, code)
-    ,   commun_code(cmmn_code) {}
+    ,   commun_code(comn_code) {}
 
     action_result create_msg(
         mssgid message_id,

@@ -20,13 +20,13 @@ unlockTimeout = 999999999
 
 _communAccounts = [
     # name           contract                permissions (name, keys, accounts, links)
-    #('cmmn',        None),    # cmmn - owner for COMMUN. Must be created outside of this script!
-    ('cmmn.point',   'commun.point',         []),
-    ('cmmn.ctrl',    'commun.ctrl',          [("changepoints", [], ["cmmn.point@cyber.code"], ["cmmn.ctrl:changepoints"])]),
-    ('cmmn.emit',    'commun.emit',          []),
-    ('cmmn.list',    'commun.list',          []),
-    ('cmmn.gallery', 'commun.publication',   []),
-    ('cmmn.social',  'commun.social',        []),
+    #('comn',        None),    # comn - owner for COMMUN. Must be created outside of this script!
+    ('comn.point',   'commun.point',         []),
+    ('comn.ctrl',    'commun.ctrl',          [("changepoints", [], ["comn.point@cyber.code"], ["comn.ctrl:changepoints"])]),
+    ('comn.emit',    'commun.emit',          []),
+    ('comn.list',    'commun.list',          []),
+    ('comn.gallery', 'commun.publication',   []),
+    ('comn.social',  'commun.social',        []),
 ]
 
 communAccounts = []
@@ -96,17 +96,17 @@ def importKeys():
 
 def createCommunAccounts():
     for acc in communAccounts:
-        createAccount('cmmn', acc.name, 'cmmn@owner', 'cmmn@active')
+        createAccount('comn', acc.name, 'comn@owner', 'comn@active')
         for perm in acc.permissions:
-            updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, providebw=acc.name+'/cmmn')
+            updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, providebw=acc.name+'/comn')
             for link in perm.links:
                 (code, action) = link.split(':',2)
-                linkAuth(acc.name, code, action, perm.name, providebw=acc.name+'/cmmn')
+                linkAuth(acc.name, code, action, perm.name, providebw=acc.name+'/comn')
 
 def installContracts():
     for acc in communAccounts:
         if (acc.contract != None):
-            loadContract(acc.name, args.contracts_dir + acc.contract, providebw=acc.name+'/cmmn')
+            loadContract(acc.name, args.contracts_dir + acc.contract, providebw=acc.name+'/comn')
 
 
 # -------------------- Argument parser ----------------------------------------

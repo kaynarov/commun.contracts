@@ -63,14 +63,14 @@ def getResourceUsage(account):
     }
 
 def buyCommunityPoints(owner, quantity, community, ownerKey):
-    testnet.pushAction('cyber.token', 'issue', 'cmmn', {
+    testnet.pushAction('cyber.token', 'issue', 'comn', {
             'to':owner,
             'quantity':quantity,
             'memo':'issue for '+owner
         }, keys=communKey)
     testnet.pushAction('cyber.token', 'transfer', owner, {
             'from':owner,
-            'to':'cmmn.point',
+            'to':'comn.point',
             'quantity':quantity,
             'memo':community
         }, providebw=owner+'/tech', keys=[ownerKey, techKey])
