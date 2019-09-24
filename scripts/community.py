@@ -42,9 +42,8 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
         ]
     }, providebw='{acc}/comn'.format(acc=owner_account), keys=owner_private_key)
 
-    # 6. Create emission (comn.emit:create)
     pushAction('comn.emit', 'create', 'comn.emit', {
-        "commun_symbol": symbol,
+        "commun_code": symbol.code,
         "annual_emission_rate": annual_emission_rate,
         "leaders_reward_prop": leader_reward_prop
     }, providebw='comn.emit/comn', keys=commun_private_key)
