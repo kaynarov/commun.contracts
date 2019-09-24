@@ -78,15 +78,23 @@ void publication::createmssg(
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, message_id.author);
 
-    asset quantity(
-        get_amount_to_freeze(
-            point::get_balance(config::point_name, message_id.author, commun_code).amount, 
-            get_frozen_amount(_self, message_id.author, commun_code),
-            acc_param->actions_per_day, 
-            param.mosaic_active_period), 
-        param.commun_symbol);
+    int64_t amount_to_freeze = 0;
+    if (parent_id.author) {
+        auto opus_itr = std::find_if(param.opuses.begin(), param.opuses.end(), 
+            [](const config::opus_info& arg) { return arg.name == config::comment_opus_name; });
+        
+        check(opus_itr != param.opuses.end(), "unknown opus, probably comments in the community are disabled");
+        amount_to_freeze = std::max(opus_itr->mosaic_pledge, std::max(opus_itr->min_mosaic_inclusion, opus_itr->min_gem_inclusion));
+    }
+    else {
+        amount_to_freeze = get_amount_to_freeze(point::get_balance(config::point_name, message_id.author, commun_code).amount, 
+            get_frozen_amount(_self, message_id.author, commun_code), acc_param->actions_per_day, param.mosaic_active_period);
+    }
+    asset quantity(amount_to_freeze, param.commun_symbol);
 
-    create_mosaic(_self, message_id.author, tracery, quantity, config::_100percent - curators_prcnt, get_providers(commun_code, message_id.author));    
+    //providers are not used for comments
+    create_mosaic(_self, message_id.author, tracery, parent_id.author ? config::comment_opus_name : config::post_opus_name,
+        quantity, config::_100percent - curators_prcnt, parent_id.author ? gallery_types::providers_t() : get_providers(commun_code, message_id.author));    
 }
 
 void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,

@@ -38,6 +38,7 @@
                 { "type": "uint64",        "name": "id" },
                 { "type": "name",          "name": "creator" },
                 { "type": "uint64",        "name": "tracery" },
+                { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
                 { "type": "time_point",    "name": "created" },
                 { "type": "uint16",        "name": "gem_count" },
@@ -45,6 +46,7 @@
                 { "type": "int64",         "name": "shares" },
                 { "type": "int64",         "name": "damn_points" },
                 { "type": "int64",         "name": "damn_shares" },
+                { "type": "int64",         "name": "pledge_points" },
                 { "type": "int64",         "name": "reward" },
                 { "type": "int64",         "name": "comm_rating" },
                 { "type": "int64",         "name": "lead_rating" },
@@ -62,6 +64,7 @@
                 { "type": "time_point",    "name": "claim_date" },
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
+                { "type": "int64",         "name": "pledge_points" },
                 { "type": "name",          "name": "owner" },
                 { "type": "name",          "name": "creator" }
             ]
@@ -70,6 +73,15 @@
             "base": "",
             "fields": [
                 { "type": "asset",         "name": "quantity" }
+            ]
+        },{
+            "name": "opus_info",
+            "base": "",
+            "fields": [
+                { "type": "name",           "name": "name" },
+                { "type": "int64",          "name": "mosaic_pledge" },
+                { "type": "int64",          "name": "min_mosaic_inclusion" },
+                { "type": "int64",          "name": "min_gem_inclusion" }
             ]
         },{
             "name": "param_struct",
@@ -85,7 +97,8 @@
                 { "type": "uint8",          "name": "rewarded_num" },
                 { "type": "int64",          "name": "comm_points_grade_sum" },
                 { "type": "int64[]",        "name": "comm_grades" },
-                { "type": "int64[]",        "name": "lead_grades" }
+                { "type": "int64[]",        "name": "lead_grades" },
+                { "type": "opus_info[]",    "name": "opuses" }
             ]
         },{
             "name": "stat_struct",

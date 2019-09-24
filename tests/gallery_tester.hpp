@@ -31,6 +31,9 @@ public:
         const string already_done = amsg("already done");
         const string mosaic_is_inactive = amsg("mosaic is inactive");
         const string mosaic_banned = amsg("mosaic banned");
+        const string not_enough_for_pledge = amsg("points are not enough for a pledge");
+        const string not_enough_for_mosaic = amsg("points are not enough for mosaic inclusion");
+        const string not_enough_for_gem    = amsg("points are not enough for gem inclusion");
         
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
         
