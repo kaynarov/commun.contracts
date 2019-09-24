@@ -10,6 +10,12 @@ steps:
 
   - wait
 
+  - label: ":cop::skin-tone-2: unit-test check"
+    command: ".buildkite/steps/unit-test.sh"
+    timeout: 20
+
+  - wait
+
   - label: ":cop::skin-tone-2: deploy check"
     command: ".buildkite/steps/deploy-test.sh"
     timeout: 20

@@ -18,7 +18,7 @@ args = {
     'commun_contracts_dir': os.environ.get('COMMUN_CONTRACTS', default_contracts_dir),
 }
 
-commun_boot_sequence=('{basedir}/scripts/commun-boot-sequence/commun-boot-sequence.py '
+commun_boot_sequence=('{basedir}/scripts/commun-boot-sequence.py '
                      '--contracts-dir "{commun_contracts_dir}" ' 
                      '--private-key {private_key} ').format(**args)
 if subprocess.call(commun_boot_sequence, shell=True):
@@ -39,7 +39,7 @@ community_args = ''
 for (key, value) in community_params.items():
     community_args += ' --{arg} "{value}"'.format(arg=key.replace('_', '-'), value=value)
 
-community_boot_sequence=('{basedir}/scripts/community-boot-sequence/community-boot-sequence.py '
+community_boot_sequence=('{basedir}/scripts/community-boot-sequence.py '
                      '--creator-account tech '
                      '--commun-private-key {private_key} '
                      '--creator-private-key {private_key} '

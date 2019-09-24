@@ -61,7 +61,6 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
         "commun_code":symbol.code,
         "params":[
             ['st_max_comment_depth', {'value': 127}],
-            ['st_social_acc', {'value': 'comn.social'}],
         ]
     }, providebw='comn.gallery/comn', keys=commun_private_key)
 

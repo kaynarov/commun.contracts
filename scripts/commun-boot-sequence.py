@@ -7,8 +7,6 @@ import subprocess
 import sys
 import time
 import tempfile
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from testnet import *
 
 class Struct(object): pass
@@ -19,18 +17,18 @@ logFile = None
 unlockTimeout = 999999999
 
 _communAccounts = [
-    # name           contract                permissions (name, keys, accounts, links)
+    # name           contract                warmup_code     permissions (name, keys, accounts, links)
     #('comn',        None),    # comn - owner for COMMUN. Must be created outside of this script!
-    ('comn.point',   'commun.point',         []),
-    ('comn.ctrl',    'commun.ctrl',          [("changepoints", [], ["comn.point@cyber.code"], ["comn.ctrl:changepoints"])]),
-    ('comn.emit',    'commun.emit',          []),
-    ('comn.list',    'commun.list',          []),
-    ('comn.gallery', 'commun.publication',   []),
-    ('comn.social',  'commun.social',        []),
+    ('comn.point',   'commun.point',         None,                []),
+    ('comn.ctrl',    'commun.ctrl',          None,                [("changepoints", [], ["comn.point@cyber.code"], ["comn.ctrl:changepoints"])]),
+    ('comn.emit',    'commun.emit',          None,                []),
+    ('comn.list',    'commun.list',          None,                []),
+    ('comn.gallery', 'commun.publication',   ['commun.gallery'],  []),
+    ('comn.social',  'commun.social',        None,                []),
 ]
 
 communAccounts = []
-for (name, contract, permissions) in _communAccounts:
+for (name, contract, warmup_code, permissions) in _communAccounts:
     acc = Struct()
     perms = []
     for (pname, keys, accounts, links) in permissions:
@@ -38,16 +36,17 @@ for (name, contract, permissions) in _communAccounts:
         parent = "owner" if pname == "active" else "active"
         (perm.name, perm.parent, perm.keys, perm.accounts, perm.links) = (pname, parent, keys, accounts, links)
         perms.append(perm)
-    (acc.name, acc.contract, acc.permissions) = (name, contract, perms)
+    (acc.name, acc.contract, acc.warmup_code, acc.permissions) = (name, contract, warmup_code, perms)
     communAccounts.append(acc)
 
 # In case of large amount of tables transaction `set contract` failed due
 # timeout (`Transaction took too long`). In this case we split ABI-file
 # tables section in small portions and iteratively load ABI.
-def loadContract(account, contract_dir, *, providebw=None, keys=None):
-    while os.path.basename(contract_dir) == '':
-        contract_dir = os.path.dirname(contract_dir)
-    abi_file = os.path.join(contract_dir, os.path.basename(contract_dir) + '.abi')
+def loadContract(account, contract, *, contracts_dir, providebw=None, keys=None, retry=None, warmup_code=None):
+    contract = os.path.join(contracts_dir, contract)
+    while os.path.basename(contract) == '':
+        contract = os.path.dirname(contract)
+    abi_file = os.path.join(contract, os.path.basename(contract) + '.abi')
 
     with open(abi_file) as json_file:
         abi = json.load(json_file)
@@ -59,9 +58,18 @@ def loadContract(account, contract_dir, *, providebw=None, keys=None):
                     json.dump(abi, f)
                     f.flush()
                     cleos('set abi {account} {abi}'.format(account=account, abi=f.name),
-                            providebw=providebw, keys=keys)
-        return cleos('set contract {account} {contract_dir}'.format(account=account, contract_dir=contract_dir),
-                providebw=providebw, keys=keys)
+                            providebw=providebw, keys=keys, retry=retry)
+            cleos('set abi {account} {abi}'.format(account=account, abi=abi_file),
+                    providebw=providebw, keys=keys, retry=retry)
+        if not warmup_code is None:
+            for code in warmup_code:
+                while os.path.basename(code) == '':
+                    code = os.path.dirname(code)
+                code_file = os.path.join(contracts_dir, code, os.path.basename(code) + '.wasm')
+                cleos('set code {account} {code_file}'.format(account=account, code_file=code_file),
+                        providebw=providebw, keys=keys, retry=retry)
+        return cleos('set contract {account} {contract_dir}'.format(account=account, contract_dir=contract),
+                providebw=providebw, keys=keys, retry=retry)
 
 
 def run(args):
@@ -106,7 +114,7 @@ def createCommunAccounts():
 def installContracts():
     for acc in communAccounts:
         if (acc.contract != None):
-            loadContract(acc.name, args.contracts_dir + acc.contract, providebw=acc.name+'/comn')
+            loadContract(acc.name, acc.contract, providebw=acc.name+'/comn', retry=3, contracts_dir=args.contracts_dir, warmup_code=acc.warmup_code)
 
 
 # -------------------- Argument parser ----------------------------------------

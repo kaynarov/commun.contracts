@@ -421,7 +421,7 @@
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "mssgid",                 "name": "message_id" },
                 { "type": "name",                   "name": "gem_owner" },
-                { "type": "name?",                  "name": "gem_creator" },
+                { "type": "name?",                  "name": "gem_creator" }
             ]
         },{
             "name": "claim_args",
@@ -507,15 +507,15 @@
   },
   {
     "name": "claim",
-    "type": "claim_args",
+    "type": "claim_args"
   },
   {
     "name": "hold",
-    "type": "modifygem_args",
+    "type": "modifygem_args"
   },
   {
     "name": "transfer",
-    "type": "transfer_args",
+    "type": "transfer_args"
   },
   {
     "name": "setparams",
