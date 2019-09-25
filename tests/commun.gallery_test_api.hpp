@@ -21,12 +21,13 @@ public:
         return push(N(create), _code, args()("commun_symbol", commun_symbol));
     }
     
-    action_result createmosaic(account_name creator, uint64_t tracery, asset quantity, uint16_t royalty,
+    action_result createmosaic(account_name creator, uint64_t tracery, account_name opus, asset quantity, uint16_t royalty,
                                         std::vector<std::pair<account_name, int64_t> > providers = 
                                         std::vector<std::pair<account_name, int64_t> >()) {
         auto a = args()
             ("creator", creator)
             ("tracery", tracery)
+            ("opus", opus)
             ("quantity", quantity)
             ("royalty", royalty)
             ("providers", providers);

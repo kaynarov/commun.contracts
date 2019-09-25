@@ -17,6 +17,8 @@ using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 
+const account_name default_opus_name = N(regulatum);
+
 const account_name _commun = N(commun);
 const account_name _golos = N(golos);
 const account_name _alice = N(alice);
@@ -66,7 +68,7 @@ public:
         supply  = 5000000000000;
         reserve = 50000000000;
         royalty = 2500;
-        min_gem_points = commun::safe_prop(commun::config::min_gem_cost, supply, reserve);
+        min_gem_points = std::max(cfg::default_mosaic_pledge, std::max(cfg::default_min_mosaic_inclusion, cfg::default_min_gem_inclusion));
         annual_emission_rate = 1000;
         leaders_reward_prop = 1000;
         block_interval = cfg::block_interval_ms / 1000;
@@ -107,9 +109,9 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
 
-    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_alice, 1, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
-    BOOST_CHECK_EQUAL(errgallery.insufficient_quantity, gallery.createmosaic(_alice, 1, asset(min_gem_points - 1, point._symbol), royalty));
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, asset(min_gem_points, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_alice, 1, default_opus_name, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.not_enough_for_mosaic, gallery.createmosaic(_alice, 1, default_opus_name, asset(min_gem_points - 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, default_opus_name, asset(min_gem_points, point._symbol), royalty));
     
     produce_block();
     produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
@@ -144,7 +146,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _bob, asset(init_amount, point._symbol), fee));
     BOOST_CHECK_EQUAL(success(), gallery.provide(_carol, _bob, asset(init_amount, point._symbol), fee));
     
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 1, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount / 2)}));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 1, default_opus_name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount / 2)}));
     produce_block();
     produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
     
@@ -153,14 +155,14 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
     
     //while creating this mosaic - the previous one receives a reward
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, default_opus_name, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
     
     produce_block();
     produce_block(fc::seconds(cfg::default_mosaic_active_period - (2 * cfg::reward_mosaics_period) - block_interval));
 
-    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, default_opus_name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
     produce_block();
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 3, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 3, default_opus_name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
     produce_block();
     auto reward = point.get_amount(_bob) * 2;
     BOOST_CHECK(reward > 0);
@@ -172,7 +174,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     
     produce_block(fc::seconds(cfg::reward_mosaics_period));
     
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 4, asset(reward / 2, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 4, default_opus_name, asset(reward / 2, point._symbol), royalty));
     BOOST_CHECK(point.get_amount(_bob) > reward / 2);
     
     //carol points are unfrozen now, but she did not receive a reward
@@ -184,14 +186,13 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("Reward the top");
     init();
     int mosaics_num = 50;
-    int64_t min_gem_points = commun::safe_prop(commun::config::min_gem_cost, supply, reserve);
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(supply, point._symbol)));
     prepare_ctrl(ctrl, _golos, {_alice, _carol}, _bob, 2, 4);
     int64_t points_sum = 0;
     auto first_comm_mosaic = mosaics_num - cfg::default_comm_grades.size() + 1;
     for (int i = 1; i <= mosaics_num; i++) {
         int64_t cur_points = min_gem_points * i;
-        BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, i, asset(cur_points, point._symbol), royalty));
+        BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, i, default_opus_name, asset(cur_points, point._symbol), royalty));
         if (i >= first_comm_mosaic) {
             points_sum += cur_points;
         }
@@ -219,9 +220,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     produce_block();
     produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
     
-    //supply will be changed
-    BOOST_CHECK_EQUAL(errgallery.insufficient_quantity, gallery.addtomosaic(_bob, 1, asset(min_gem_points, point._symbol), false, _bob));
-    BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_bob, 1, asset(min_gem_points * 2, point._symbol), false, _bob));
+    BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_bob, 1, asset(min_gem_points, point._symbol), false, _bob));
     
     for (int i = first_comm_mosaic; i <= mosaics_num; i++) {
         int64_t cur_points = min_gem_points * i;
@@ -277,9 +276,9 @@ BOOST_FIXTURE_TEST_CASE(createmosaic_tests, commun_gallery_tester) try {
     init();
     int64_t init_amount = supply / 2;
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
-    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_alice, 1, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
-    BOOST_CHECK_EQUAL(errgallery.insufficient_quantity, gallery.createmosaic(_alice, 1, asset(min_gem_points - 1, point._symbol), royalty));
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, asset(min_gem_points, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_alice, 1, default_opus_name, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.not_enough_for_mosaic, gallery.createmosaic(_alice, 1, default_opus_name, asset(min_gem_points - 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, default_opus_name, asset(min_gem_points, point._symbol), royalty));
 
 } FC_LOG_AND_RETHROW()
 
@@ -290,7 +289,7 @@ BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, asset(min_gem_points, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, default_opus_name, asset(min_gem_points, point._symbol), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
 
 } FC_LOG_AND_RETHROW()
@@ -302,7 +301,7 @@ BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
     int64_t init_amount = supply / 2;
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, asset(min_gem_points, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, default_opus_name, asset(min_gem_points, point._symbol), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     produce_block();
     produce_block(fc::seconds(cfg::default_evaluation_period - (cfg::block_interval_ms / 1000)));

@@ -44,6 +44,13 @@ static constexpr int64_t blocks_per_year = int64_t(365)*24*60*60*1000/block_inte
 
 #ifndef UNIT_TEST_ENV
     static constexpr auto reserve_token = eosio::symbol("COMMUN", 4);
+    
+    struct opus_info {
+        eosio::name name;
+        int64_t mosaic_pledge = 0;
+        int64_t min_mosaic_inclusion = 0; 
+        int64_t min_gem_inclusion = 0;
+    };
 #else
     static const auto reserve_token = eosio::chain::symbol(4, "COMMUN");
 #endif

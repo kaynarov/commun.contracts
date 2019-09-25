@@ -35,10 +35,27 @@ static constexpr std::array<int64_t, 10>  advice_weight =
 
 static constexpr uint8_t auto_claim_num = 3;
 static constexpr uint8_t auto_archives_num = 3;
-    
-static constexpr int64_t min_gem_cost = 10;
+
+#ifndef DEFAULT_OPUSES
+    static constexpr int64_t default_mosaic_pledge = 100;
+    static constexpr int64_t default_min_mosaic_inclusion = 1000;
+    static constexpr int64_t default_min_gem_inclusion = 200;
+#endif
 
 #ifndef UNIT_TEST_ENV
+    #ifndef DEFAULT_OPUSES
+        static constexpr eosio::name default_opus_name("regulatum");
+        #define DEFAULT_OPUSES std::array<opus_info, 1> default_opuses = {{ \
+            opus_info {                                                     \
+                .name = default_opus_name,                                  \
+                .mosaic_pledge = default_mosaic_pledge,                     \
+                .min_mosaic_inclusion = default_min_mosaic_inclusion,       \
+                .min_gem_inclusion = default_min_gem_inclusion              \
+            }                                                               \
+        }}
+    #endif
+    static constexpr DEFAULT_OPUSES;
+
     static const eosio::time_point eternity(eosio::days(365 * 8000));
 #endif
 
