@@ -155,6 +155,14 @@
 #            "sys_staked": "100000.0000 CYBER",
         },
 
+        {
+            "name": "gls",
+            "permissions": [
+                {"name": "owner", "key": "INITIAL"},
+                {"name": "active", "accounts": ["@testing"]},
+                {"name": "testing", "key": "GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62"}
+            ],
+        },
 # Add additional accounts here
 
     ],
@@ -179,7 +187,7 @@
                     "scope": "CYBER", "payer": "cyber.token", "pk": 353349294403,
                     "data": {
                         "supply" : {
-                            "_amount" : 40000000006,
+                            "_amount" : 60000000015,
                             "_decs" : 4,
                             "_sym" : "CYBER"
                         },
@@ -227,6 +235,20 @@
                         }
                     }
                 }, {
+                    "scope": "gls", "payer": "gls", "pk": 353349294403,
+                    "data": {
+                        "balance" : {
+                            "_amount" : 10000000004,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        },
+                        "payments" : {
+                            "_amount" : 0,
+                            "_decs" : 4,
+                            "_sym" : "CYBER"
+                        }
+                    }
+                }, {
                     "scope": "comn", "payer": "comn", "pk": 353349294403,
                     "data": {
                         "balance" : {
@@ -244,7 +266,7 @@
                     "scope": "cyber.stake", "payer": "cyber", "pk": 353349294403,
                     "data": {
                         "balance" : {
-                            "_amount" : 20000000005,
+                            "_amount" : 30000000010,
                             "_decs" : 4,
                             "_sym" : "CYBER"
                         },
@@ -335,6 +357,26 @@
                         "min_own_staked" : 0,
                         "provided" : 0,
                         "received" : 0,
+                    }
+                }, {
+                    "scope": "", "payer": "gls", "pk": 3,
+                    "data": {
+                        "id" : 3,
+                        "token_code" : "CYBER",
+                        "account" : "gls",
+                        "proxy_level" : 4,
+                        "last_proxied_update" : "2019-09-05T16:46:33.000",
+                        "balance" : 10000000005,
+                        "proxied" : 0,
+                        "shares_sum" : 10000000005,
+                        "own_share" : 10000000005,
+                        "fee" : 0,
+                        "min_own_staked" : 0,
+                        "provided" : 0,
+                        "received" : 0,
+                    }
+                }
+            ]
         }, {
             "code": "cyber",
             "table": "domain",
