@@ -39,6 +39,7 @@ docker run --rm \
     -e CREATE_GENESIS_CMD="$CREATE_GENESIS_CMD" \
     $COMMUN_IMAGE bash -c \
     '$LS_CMD &&
+     sed -f /opt/commun.contracts/scripts/add_domain_object.sed -i /opt/cyberway.contracts/cyber.bios/cyber.bios.abi &&
      sed "s|\${INITIAL_TIMESTAMP}|'$INITIAL_TIMESTAMP$'|; /^#/d" /opt/commun.contracts/genesis/genesis.json.tmpl | tee genesis.json /genesis-data/genesis.json&& \
      sed "s|\$CYBERWAY_CONTRACTS|$CYBERWAY_CONTRACTS|;s|\$COMMUN_CONTRACTS|$COMMUN_CONTRACTS|; /^#/d" /opt/commun.contracts/genesis/genesis-info.json.tmpl | tee genesis-info.json && \
      $CREATE_GENESIS_CMD 2>&1 | tee create-genesis.log'
