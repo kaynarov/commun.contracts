@@ -68,6 +68,22 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
+    action_result settags(name leader,
+        mssgid message_id,
+        std::vector<std::string> add_tags,
+        std::vector<std::string> remove_tags,
+        std::string reason
+    ) {
+        return push(N(settags), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader)
+            ("message_id", message_id)
+            ("add_tags", add_tags)
+            ("remove_tags", remove_tags)
+            ("reason", reason)
+        );
+    }
+
     action_result delete_msg(mssgid message_id) {
         return push(N(deletemssg), message_id.author, args()
             ("commun_code", commun_code)

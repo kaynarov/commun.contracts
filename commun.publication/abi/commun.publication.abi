@@ -293,6 +293,36 @@
     ]
   },
   {
+    "name": "settags",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
+        "name": "leader",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "add_tags",
+        "type": "string[]"
+      },
+      {
+        "name": "remove_tags",
+        "type": "string[]"
+      },
+      {
+        "name": "reason",
+        "type": "string"
+      }
+    ]
+  },
+  {
     "name": "deletemssg",
     "base": "",
     "fields": [
@@ -501,6 +531,10 @@
   {
     "name": "updatemssg",
     "type": "updatemssg"
+  },
+  {
+    "name": "settags",
+    "type": "settags"
   },
   {
     "name": "deletemssg",
