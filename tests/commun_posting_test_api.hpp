@@ -91,6 +91,18 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
+    action_result report_mssg(name reporter,
+        mssgid message_id,
+        std::string reason
+    ) {
+        return push(N(reportmssg), reporter, args()
+            ("commun_code", commun_code)
+            ("reporter", reporter)
+            ("message_id", message_id)
+            ("reason", reason)
+        );
+    }
+
     action_result reblog_msg(
         account_name rebloger,
         mssgid message_id,

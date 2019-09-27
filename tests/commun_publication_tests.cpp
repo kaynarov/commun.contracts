@@ -109,6 +109,7 @@ public:
         const string wrong_body_length     = amsg("Body is empty.");
         const string wrong_curators_prcnt  = amsg("curators_prcnt can't be more than 100%.");
         const string tags_are_same         = amsg("No changes in tags.");
+        const string reason_empty          = amsg("Reason cannot be empty.");
 
         const string vote_weight_0         = amsg("weight can't be 0.");
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
@@ -257,6 +258,18 @@ BOOST_FIXTURE_TEST_CASE(delete_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.delete_msg({N(brucelee), "permlink"}));
     BOOST_CHECK(get_mosaic(_code, _point, N(brucelee), post.tracery("permlink")).is_null());
     BOOST_CHECK(post.get_vertex({N(brucelee), "permlink"}).is_null());
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Report message testing.");
+    init();
+    mssgid msg = {N(brucelee), "permlink"};
+    BOOST_CHECK_EQUAL(success(), post.create_msg(msg));
+
+    BOOST_CHECK_EQUAL(err.no_message, post.report_mssg(N(jackiechan), {N(brucelee), "notexist"}, "the reason"));
+
+    BOOST_CHECK_EQUAL(success(), post.report_mssg(N(jackiechan), msg, "the reason"));
+    BOOST_CHECK_EQUAL(err.reason_empty, post.report_mssg(N(jackiechan), msg, ""));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
