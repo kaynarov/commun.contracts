@@ -39,6 +39,8 @@ public:
         uint16_t curators_prcnt);
     void updatemssg(symbol_code commun_code, mssgid_t message_id, std::string headermssg, std::string bodymssg,
         std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata);
+    void settags(symbol_code commun_code, name leader, mssgid_t message_id,
+        std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
     void deletemssg(symbol_code commun_code, mssgid_t message_id);
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
@@ -71,6 +73,7 @@ private:
     const posting_state& params(symbol_code commun_code);
     void set_vote(symbol_code commun_code, name voter, const mssgid_t &message_id, int16_t weight);
     bool validate_permlink(std::string permlink);
+    void check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id);
 };
 
 } // commun

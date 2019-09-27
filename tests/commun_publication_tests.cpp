@@ -97,26 +97,25 @@ public:
         const string delete_children       = amsg("comment with child comments can't be deleted during the active period");
         const string no_permlink           = amsg("Permlink doesn't exist.");
         const string no_mosaic             = amsg("mosaic doesn't exist");
-        const string update_no_message     = amsg("You can't update this message, because this message doesn't exist.");
         const string max_comment_depth     = amsg("publication::createmssg: level > MAX_COMMENT_DEPTH");
         const string max_cmmnt_dpth_less_0 = amsg("Max comment depth must be greater than 0.");
         const string msg_exists            = amsg("This message already exists.");
         const string parent_no_message     = amsg("Parent message doesn't exist");
+        const string no_message            = amsg("Message does not exist.");
 
         const string wrong_prmlnk_length   = amsg("Permlink length is empty or more than 256.");
         const string wrong_prmlnk          = amsg("Permlink contains wrong symbol.");
         const string wrong_title_length    = amsg("Title length is more than 256.");
         const string wrong_body_length     = amsg("Body is empty.");
         const string wrong_curators_prcnt  = amsg("curators_prcnt can't be more than 100%.");
+        const string tags_are_same         = amsg("No changes in tags.");
 
         const string vote_weight_0         = amsg("weight can't be 0.");
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
 
-        const string no_reblog_mssg           = amsg("You can't reblog, because this message doesn't exist.");
         const string own_reblog               = amsg("You cannot reblog your own content.");
         const string wrong_reblog_body_length = amsg("Body must be set if title is set.");
         const string own_reblog_erase         = amsg("You cannot erase reblog your own content.");
-        const string no_reblog_mssg_erase     = amsg("You can't erase reblog, because this message doesn't exist.");
         const string gem_type_mismatch        = amsg("gem type mismatch");
         const string author_cannot_unvote     = amsg("author can't unvote");
     } err;
@@ -216,8 +215,26 @@ BOOST_FIXTURE_TEST_CASE(update_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(success(), post.update_msg({N(brucelee), "permlink"},
         "headermssgnew", "bodymssgnew", "languagemssgnew", {{"tagnew"}}, "jsonmetadatanew"));
-    BOOST_CHECK_EQUAL(err.update_no_message, post.update_msg({N(brucelee), "notexist"},
+    BOOST_CHECK_EQUAL(err.no_message, post.update_msg({N(brucelee), "notexist"},
         "headermssgnew", "bodymssgnew", "languagemssgnew", {{"tagnew"}}, "jsonmetadatanew"));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(settags_to_message, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Set message tags by leader testing.");
+    init();
+    prepare_ctrl(ctrl, _golos, {N(jackiechan)}, N(brucelee), 1, 1);
+    mssgid msg = {N(brucelee), "permlink"};
+    BOOST_CHECK_EQUAL(success(), post.create_msg(msg));
+
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(brucelee)), post.settags(N(brucelee), {N(brucelee), "permlink"}, {"newtag"}, {"oldtag"}, "the reason"));
+
+    BOOST_CHECK_EQUAL(err.no_message, post.settags(N(jackiechan), {N(brucelee), "notexist"}, {"newtag"}, {"oldtag"}, "the reason"));
+
+    BOOST_CHECK_EQUAL(success(), post.settags(N(jackiechan), msg, {"newtag"}, {"oldtag"}, "the reason"));
+    BOOST_CHECK_EQUAL(success(), post.settags(N(jackiechan), msg, {"newtag"}, {"oldtag"}, ""));
+    BOOST_CHECK_EQUAL(success(), post.settags(N(jackiechan), msg, {}, {"oldtag"}, "the reason"));
+    BOOST_CHECK_EQUAL(success(), post.settags(N(jackiechan), msg, {"newtag"}, {}, "the reason"));
+    BOOST_CHECK_EQUAL(err.tags_are_same, post.settags(N(jackiechan), msg, {}, {}, "the reason"));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(delete_message, commun_publication_tester) try {
@@ -259,7 +276,7 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
         "headermssg",
         ""));
-    BOOST_CHECK_EQUAL(err.no_reblog_mssg, post.reblog_msg(N(chucknorris), {N(brucelee), "test"},
+    BOOST_CHECK_EQUAL(err.no_message, post.reblog_msg(N(chucknorris), {N(brucelee), "test"},
         "headermssg",
         "bodymssg"));
     BOOST_CHECK_EQUAL(success(), post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
@@ -274,7 +291,7 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog_msg(N(brucelee),
         {N(brucelee), "permlink"}));
-    BOOST_CHECK_EQUAL(err.no_reblog_mssg_erase, post.erase_reblog_msg(N(chucknorris),
+    BOOST_CHECK_EQUAL(err.no_message, post.erase_reblog_msg(N(chucknorris),
         {N(brucelee), "notexist"}));
     BOOST_CHECK_EQUAL(success(), post.erase_reblog_msg(N(chucknorris),
         {N(brucelee), "permlink"}));

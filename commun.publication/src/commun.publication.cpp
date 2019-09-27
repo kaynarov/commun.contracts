@@ -101,10 +101,15 @@ void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
         std::string headermssg, std::string bodymssg,
         std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata) {
     require_auth(message_id.author);
-    vertices vertices_table(_self, commun_code.raw());
-    auto vertices_index = vertices_table.get_index<"bykey"_n>();
-    eosio::check(vertices_index.find(std::make_tuple(message_id.author, message_id.tracery())) != vertices_index.end(), 
-        "You can't update this message, because this message doesn't exist.");
+    check_mssg_exists(commun_code, message_id);
+}
+
+void publication::settags(symbol_code commun_code, name leader, mssgid_t message_id,
+        std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason) {
+    require_auth(leader);
+    eosio::check(!add_tags.empty() || !remove_tags.empty(), "No changes in tags.");
+    eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    check_mssg_exists(commun_code, message_id);
 }
 
 void publication::deletemssg(symbol_code commun_code, mssgid_t message_id) {
@@ -187,20 +192,13 @@ void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t messag
         "Body must be set if title is set."
     );
 
-    vertices vertices_table(_self, commun_code.raw());
-    auto vertices_index = vertices_table.get_index<"bykey"_n>();
-    eosio::check(vertices_index.find(std::make_tuple(message_id.author, message_id.tracery())) != vertices_index.end(), 
-        "You can't reblog, because this message doesn't exist.");
+    check_mssg_exists(commun_code, message_id);
 }
 
 void publication::erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id) {
     require_auth(rebloger);
     eosio::check(rebloger != message_id.author, "You cannot erase reblog your own content.");
-
-    vertices vertices_table(_self, commun_code.raw());
-    auto vertices_index = vertices_table.get_index<"bykey"_n>();
-    eosio::check(vertices_index.find(std::make_tuple(message_id.author, message_id.tracery())) != vertices_index.end(), 
-        "You can't erase reblog, because this message doesn't exist.");
+    check_mssg_exists(commun_code, message_id);
 }
 
 bool publication::validate_permlink(std::string permlink) {
@@ -214,6 +212,13 @@ bool publication::validate_permlink(std::string permlink) {
         }
     }
     return true;
+}
+
+void publication::check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id) {
+    vertices vertices_table(_self, commun_code.raw());
+    auto vertices_index = vertices_table.get_index<"bykey"_n>();
+    eosio::check(vertices_index.find(std::make_tuple(message_id.author, message_id.tracery())) != vertices_index.end(),
+        "Message does not exist.");
 }
 
 accparams::const_iterator publication::get_acc_param(accparams& accparams_table, symbol_code commun_code, name account) {
@@ -325,5 +330,5 @@ void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (createmssg)(updatemssg)(deletemssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)(setparams)
+    (createmssg)(updatemssg)(settags)(deletemssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)(setparams)
     (reblog)(erasereblog)(setproviders)(setfrequency)(provide)(advise)(slap))
