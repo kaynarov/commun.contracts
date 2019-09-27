@@ -99,7 +99,7 @@ public:
 
 };
 
-BOOST_AUTO_TEST_SUITE(gallery_tests)
+BOOST_AUTO_TEST_SUITE(commun_gallery_tests)
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("Basic gallery tests");

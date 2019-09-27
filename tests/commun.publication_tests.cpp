@@ -1,5 +1,5 @@
 #include "gallery_tester.hpp"
-#include "commun_posting_test_api.hpp"
+#include "commun.posting_test_api.hpp"
 #include "commun.point_test_api.hpp"
 #include "commun.emit_test_api.hpp"
 #include "cyber.token_test_api.hpp"
@@ -45,7 +45,7 @@ public:
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::emit_name, contracts::emit_wasm(), contracts::emit_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
-        install_contract(cfg::publish_name, contracts::commun_publication_wasm(), contracts::commun_publication_abi());
+        install_contract(cfg::publish_name, contracts::publication_wasm(), contracts::publication_abi());
 
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));

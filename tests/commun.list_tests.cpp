@@ -1,5 +1,5 @@
 #include <commun.point_test_api.hpp>
-#include <commun_list_test_api.hpp>
+#include <commun.list_test_api.hpp>
 #include "contracts.hpp"
 
 
@@ -26,7 +26,7 @@ public:
             cfg::control_name, cfg::point_name, cfg::list_name});
         produce_block();
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
-        install_contract(cfg::list_name, contracts::commun_list_wasm(), contracts::commun_list_abi());
+        install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
     }
 
     const account_name _commun = N(commun);
@@ -53,7 +53,7 @@ public:
     } err;
 };
 
-BOOST_AUTO_TEST_SUITE(community_list_tests)
+BOOST_AUTO_TEST_SUITE(commun_list_tests)
 
 BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
     create_token(_token);
