@@ -42,6 +42,7 @@ public:
     void settags(symbol_code commun_code, name leader, mssgid_t message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
     void deletemssg(symbol_code commun_code, mssgid_t message_id);
+    void reportmssg(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason);
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight);
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);

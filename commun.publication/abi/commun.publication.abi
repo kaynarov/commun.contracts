@@ -337,6 +337,28 @@
     ]
   },
   {
+    "name": "reportmssg",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
+        "name": "reporter",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "reason",
+        "type": "string"
+      }
+    ]
+  },
+  {
     "name": "vote",
     "base": "",
     "fields": [
@@ -539,6 +561,10 @@
   {
     "name": "deletemssg",
     "type": "deletemssg"
+  },
+  {
+    "name": "reportmssg",
+    "type": "reportmssg"
   },
   {
     "name": "upvote",

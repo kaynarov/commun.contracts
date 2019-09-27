@@ -120,6 +120,12 @@ void publication::deletemssg(symbol_code commun_code, mssgid_t message_id) {
     eosio::check(mosaics_idx.find(std::make_tuple(message_id.author, tracery)) == mosaics_idx.end(), "Unable to delete comment with votes.");
 }
 
+void publication::reportmssg(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason) {
+    require_auth(reporter);
+    eosio::check(!reason.empty(), "Reason cannot be empty.");
+    check_mssg_exists(commun_code, message_id);
+}
+
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight) {
     eosio::check(weight > 0, "weight can't be 0.");
     eosio::check(weight <= config::_100percent, "weight can't be more than 100%.");
@@ -330,5 +336,5 @@ void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (createmssg)(updatemssg)(settags)(deletemssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)(setparams)
-    (reblog)(erasereblog)(setproviders)(setfrequency)(provide)(advise)(slap))
+    (createmssg)(updatemssg)(settags)(deletemssg)(reportmssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
+    (setparams)(reblog)(erasereblog)(setproviders)(setfrequency)(provide)(advise)(slap))
