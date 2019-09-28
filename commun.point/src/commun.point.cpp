@@ -49,6 +49,7 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
 
 void point::setfreezer(name freezer) {
     require_auth(_self);
+    eosio::check(is_account(freezer), "freezer account does not exist");
     auto global_param = global_params(_self, _self.value);
     global_param.set({ .point_freezer = freezer }, _self);
 }

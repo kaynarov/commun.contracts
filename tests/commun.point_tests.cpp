@@ -23,7 +23,7 @@ public:
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, _code, _point}) {
         create_accounts({_commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::point_name});
+            cfg::token_name, cfg::point_name, cfg::gallery_name});
         produce_block();
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(_code, contracts::point_wasm(), contracts::point_abi());
@@ -68,6 +68,7 @@ public:
         const string issuer_cant_close = amsg("issuer can't close");
         const string balance_not_exists = amsg("Balance row already deleted or never existed. Action won't have any effect.");
         const string to_not_exists = amsg("to account does not exist");
+        const string freezer_not_exists = amsg("freezer account does not exist");
     } err;
 };
 
@@ -255,6 +256,7 @@ BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(300, point.get_amount(_alice));
     BOOST_CHECK_EQUAL(700, point.get_amount(_bob));
 
+    BOOST_CHECK_EQUAL(err.freezer_not_exists, point.setfreezer(N(notexist)));
     BOOST_CHECK_EQUAL(success(), point.setfreezer(cfg::gallery_name));
     BOOST_CHECK_EQUAL(point.get_global_params()["point_freezer"], cfg::gallery_name.to_string());
 } FC_LOG_AND_RETHROW()
