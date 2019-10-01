@@ -8,12 +8,12 @@ namespace eosio { namespace testing {
 namespace cfg = commun::config;
 
 struct commun_ctrl_api: base_contract_api {
-    commun_ctrl_api(golos_tester* tester, account_name code, symbol_code point_, account_name owner_)
+    commun_ctrl_api(golos_tester* tester, account_name code, symbol_code commun_code_, account_name owner_)
     :   base_contract_api(tester, code)
-    ,   point(point_)
+    ,   commun_code(commun_code_)
     ,   owner(owner_) {}
     
-    symbol_code point;
+    symbol_code commun_code;
     account_name owner;
 
     using base_contract_api::base_contract_api;
@@ -25,26 +25,26 @@ struct commun_ctrl_api: base_contract_api {
     //// control actions
     action_result set_params(const std::string& json_params) {
         return push(N(setparams), owner, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("params", json_str_to_obj(json_params))
         );
     }
     action_result set_param(const std::string& json_param) {
         return push(N(setparams), owner, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("params", json_str_to_obj(std::string() + "[" + json_param + "]"))
         );
     }
     action_result validate_params(const std::string& json_params) {
         return push(N(validateprms), owner, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("params", json_str_to_obj(json_params))
         );
     }
 
     action_result reg_witness(name witness, string url) {
         return push(N(regwitness), witness, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("witness", witness)
             ("url", url)
         );
@@ -64,21 +64,21 @@ struct commun_ctrl_api: base_contract_api {
 
     action_result stop_witness(name witness) {
         return push(N(stopwitness), witness, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("witness", witness)
         );
     }
 
     action_result vote_witness(name voter, name witness) {
         return push(N(votewitness), voter, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("voter", voter)
             ("witness", witness)
         );
     }
     action_result unvote_witness(name voter, name witness) {
         return push(N(unvotewitn), voter, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("voter", voter)
             ("witness", witness)
         );
@@ -86,7 +86,7 @@ struct commun_ctrl_api: base_contract_api {
 
     action_result change_vests(name who, asset diff) {
         return push(N(changevest), who, args()
-            ("point", point)
+            ("commun_code", commun_code)
             ("who", who)
             ("diff", diff));
     }
@@ -100,7 +100,7 @@ struct commun_ctrl_api: base_contract_api {
     }
 
     std::vector<variant> get_all_witnesses() {
-        return _tester->get_all_chaindb_rows(_code, point.value, N(witness), false);
+        return _tester->get_all_chaindb_rows(_code, commun_code.value, N(witness), false);
     }
 
     variant get_msig_auths() const {

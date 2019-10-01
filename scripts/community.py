@@ -33,7 +33,7 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
     
     # 5. Set ctrl-params (comn.ctrl:setparams)
     pushAction('comn.ctrl', 'setparams', owner_account, {
-        "point":symbol.code,
+        "commun_code":symbol.code,
         "params":[
             ["multisig_acc",{"name":owner_account}],
             ["max_witnesses",{"max":21}],
@@ -51,7 +51,7 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
     # 7. Open point balance for comn.gallery
     pushAction('comn.point', 'open', 'comn', {
         "owner": "comn.gallery",
-        "symbol": symbol,
+        "commun_code": symbol.code,
         "ram_payer": "comn"
     }, keys=commun_private_key)
 
@@ -65,14 +65,14 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
 
     # 9. Register community (comn.list:create)
     pushAction('comn.list', 'create', 'comn.list', {
-        "token_name": symbol.code,
+        "commun_code": symbol.code,
         "community_name": community_name
     }, providebw='comn.list/comn', keys=commun_private_key)
 
-def openBalance(owner, symbol, payer, *, providebw=None, keys=None):
+def openBalance(owner, commun_code, payer, *, providebw=None, keys=None):
     return pushAction('comn.point', 'open', payer, {
             'owner':owner,
-            'symbol':symbol,
+            'commun_code':commun_code,
             'ram_payer':payer
         }, providebw=providebw, keys=keys)
 

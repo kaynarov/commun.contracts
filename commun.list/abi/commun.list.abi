@@ -5,7 +5,7 @@
             "name": "community",
             "base": "",
             "fields": [
-                {"name": "token_name", "type": "symbol_code"},
+                {"name": "commun_code", "type": "symbol_code"},
                 {"name": "community_name", "type": "string"}
             ]
         },
@@ -14,7 +14,7 @@
             "base": "",
             "fields": [
                 {
-                    "name": "token_name",
+                    "name": "commun_code",
                     "type": "symbol_code"
                 },
                 {
@@ -59,7 +59,7 @@
                     "name": "primary",
                     "unique": "true",
                     "orders": [
-                        {"field": "token_name", "order": "asc"}
+                        {"field": "commun_code", "order": "asc"}
                     ]
                 },
                 {

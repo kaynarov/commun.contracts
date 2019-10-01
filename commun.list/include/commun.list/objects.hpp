@@ -6,11 +6,11 @@ namespace commun::structures {
 using namespace eosio;
 
 struct community {
-    symbol_code token_name;
+    symbol_code commun_code;
     std::string community_name;
 
     uint64_t primary_key() const {
-        return token_name.raw();
+        return commun_code.raw();
     }
 };
 

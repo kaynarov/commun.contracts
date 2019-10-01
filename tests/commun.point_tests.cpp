@@ -11,6 +11,7 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
+static const auto point_code = _point.to_symbol_code();
 
 class commun_point_tester : public golos_tester {
 protected:
@@ -95,7 +96,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     supply += amount;
     reserve += price;
     BOOST_TEST_MESSAGE("--- alice buys " << amount  << " for " << price);
-    BOOST_CHECK_EQUAL(success(), point.open(_alice, point._symbol, _alice));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code, _alice));
     BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(price, token._symbol), point_code_str));
     BOOST_CHECK_EQUAL(point.get_amount(_alice), amount);
 
@@ -134,7 +135,7 @@ BOOST_FIXTURE_TEST_CASE(cw05_test, commun_point_tester) try {
     size_t steps  = 7;
     int64_t point_balance = 0;
     int64_t price = balance / steps;
-    BOOST_CHECK_EQUAL(success(), point.open(_alice, point._symbol, _alice));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code, _alice));
     for (size_t i = 0; i < steps; i++) {
         int64_t amount =  supply * sqrt(1.0 + static_cast<double>(price) / reserve) - supply;
         supply += amount;
@@ -227,20 +228,20 @@ BOOST_FIXTURE_TEST_CASE(issue_tests, commun_point_tester) try {
 BOOST_FIXTURE_TEST_CASE(open_tests, commun_point_tester) try {
     BOOST_TEST_MESSAGE("open tests");
 
-    BOOST_CHECK_EQUAL(err.no_symbol, point.open(_alice, point._symbol, _alice));
+    BOOST_CHECK_EQUAL(err.no_symbol, point.open(_alice, point_code, _alice));
     init();
-    BOOST_CHECK_EQUAL(err.wrong_owner, point.open(N(notexist), point._symbol, _alice));
-    BOOST_CHECK_EQUAL(success(), point.open(_alice, point._symbol, _alice));
+    BOOST_CHECK_EQUAL(err.wrong_owner, point.open(N(notexist), point_code, _alice));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code, _alice));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(close_tests, commun_point_tester) try {
     BOOST_TEST_MESSAGE("close tests");
 
     init();
-    BOOST_CHECK_EQUAL(err.issuer_cant_close, point.close(_golos, point._symbol));
-    BOOST_CHECK_EQUAL(err.balance_not_exists, point.close(_alice, point._symbol));
-    BOOST_CHECK_EQUAL(success(), point.open(_alice, point._symbol, _alice));
-    BOOST_CHECK_EQUAL(success(), point.close(_alice, point._symbol));
+    BOOST_CHECK_EQUAL(err.issuer_cant_close, point.close(_golos, point_code));
+    BOOST_CHECK_EQUAL(err.balance_not_exists, point.close(_alice, point_code));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code, _alice));
+    BOOST_CHECK_EQUAL(success(), point.close(_alice, point_code));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
@@ -269,7 +270,7 @@ BOOST_FIXTURE_TEST_CASE(transfer_buy_tokens_no_supply, commun_point_tester) try 
 
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(1+1000, token._symbol), ""));
     BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1, token._symbol), cfg::restock_prefix + point_code_str));
-    BOOST_CHECK_EQUAL(success(), point.open(_carol, point._symbol, _carol));
+    BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code, _carol));
     BOOST_CHECK_EQUAL(err.tokens_cost_zero_points, token.transfer(_carol, _code, asset(1000, token._symbol), point_code_str));
 
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(1, point._symbol), std::string(point_code_str) + " issue"));

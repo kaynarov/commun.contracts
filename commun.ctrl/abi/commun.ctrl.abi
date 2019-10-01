@@ -15,7 +15,7 @@
             "name": "regwitness",
             "base": "",
             "fields": [
-                {"type": "symbol_code", "name": "point"},
+                {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "witness"},
                 {"type": "string", "name": "url"}
             ]
@@ -23,21 +23,21 @@
             "name": "unregwitness",
             "base": "",
             "fields": [
-                {"type": "symbol_code", "name": "point"},
+                {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name",   "name": "witness"}
             ]
         }, {
             "name": "witness_name",
             "base": "",
             "fields": [
-                {"type": "symbol_code", "name": "point"},
+                {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name",   "name": "witness"}
             ]
         }, {
             "name": "votewitness",
             "base": "",
             "fields": [
-                {"type": "symbol_code", "name": "point"},
+                {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "voter"},
                 {"type": "name", "name": "witness"}
             ]
@@ -45,7 +45,7 @@
             "name": "unvotewitn",
             "base": "",
             "fields": [
-                {"type": "symbol_code", "name": "point"},
+                {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "voter"},
                 {"type": "name", "name": "witness"}
             ]
@@ -107,12 +107,12 @@
         }, {
             "name": "setparams",
             "fields": [
-                {"type": "symbol_code", "name": "point"},
+                {"type": "symbol_code", "name": "commun_code"},
                 {"type": "ctrl_param[]", "name": "params"}]
         }, {
             "name": "witnessstate",
             "fields": [
-                {"type": "symbol_code", "name": "point"},
+                {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "witness"},
                 {"type": "uint64", "name": "weight"},
                 {"type": "bool", "name": "active"}

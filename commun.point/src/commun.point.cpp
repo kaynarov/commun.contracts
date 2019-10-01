@@ -191,33 +191,31 @@ void point::add_balance(name owner, asset value, name ram_payer) {
     notify_balance_change(owner, value);
 }
 
-void point::open(name owner, const symbol& symbol, name ram_payer) {
+void point::open(name owner, symbol_code commun_code, name ram_payer) {
     require_auth(ram_payer);
     eosio::check(is_account(owner), "owner account does not exist");
-    auto commun_code = symbol.code();
 
     stats stats_table(_self, commun_code.raw());
     const auto& st = stats_table.get(commun_code.raw(), "symbol does not exist");
-    check(st.supply.symbol == symbol, "symbol precision mismatch");
 
     accounts accounts_table(_self, owner.value);
     auto it = accounts_table.find(commun_code.raw());
     if (it == accounts_table.end()) {
         accounts_table.emplace(ram_payer, [&](auto& a){
-            a.balance = asset{0, symbol};
+            a.balance = asset{0, st.supply.symbol};
         });
     }
 }
 
-void point::close(name owner, const symbol& symbol) {
+void point::close(name owner, symbol_code commun_code) {
     require_auth(owner);
 
-    params params_table(_self, symbol.code().raw());
-    const auto& param = params_table.get(symbol.code().raw(), "point with symbol does not exist");
+    params params_table(_self, commun_code.raw());
+    const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
     check(owner != param.issuer, "issuer can't close");
 
     accounts accounts_table(_self, owner.value);
-    auto it = accounts_table.find(symbol.code().raw());
+    auto it = accounts_table.find(commun_code.raw());
     check(it != accounts_table.end(), "Balance row already deleted or never existed. Action won't have any effect.");
     check(it->balance.amount == 0, "Cannot close because the balance is not zero.");
     accounts_table.erase(it);

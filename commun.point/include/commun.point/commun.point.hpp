@@ -40,10 +40,10 @@ public:
     void transfer(name from, name to, asset quantity, string memo);
 
     [[eosio::action]]
-    void open(name owner, const symbol& symbol, name ram_payer);
+    void open(name owner, symbol_code commun_code, name ram_payer);
 
     [[eosio::action]]
-    void close(name owner, const symbol& symbol);
+    void close(name owner, symbol_code commun_code);
 
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
 

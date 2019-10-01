@@ -59,46 +59,46 @@ public:
     {
     }
 
-    [[eosio::action]] void validateprms(symbol_code point, std::vector<ctrl_param>);
-    [[eosio::action]] void setparams(symbol_code point, std::vector<ctrl_param>);
+    [[eosio::action]] void validateprms(symbol_code commun_code, std::vector<ctrl_param>);
+    [[eosio::action]] void setparams(symbol_code commun_code, std::vector<ctrl_param>);
 
-    [[eosio::action]] void regwitness(symbol_code point, name witness, std::string url);
-    [[eosio::action]] void unregwitness(symbol_code point, name witness);
-    [[eosio::action]] void stopwitness(symbol_code point, name witness);
-    [[eosio::action]] void startwitness(symbol_code point, name witness);
-    [[eosio::action]] void votewitness(symbol_code point, name voter, name witness);
-    [[eosio::action]] void unvotewitn(symbol_code point, name voter, name witness);
+    [[eosio::action]] void regwitness(symbol_code commun_code, name witness, std::string url);
+    [[eosio::action]] void unregwitness(symbol_code commun_code, name witness);
+    [[eosio::action]] void stopwitness(symbol_code commun_code, name witness);
+    [[eosio::action]] void startwitness(symbol_code commun_code, name witness);
+    [[eosio::action]] void votewitness(symbol_code commun_code, name voter, name witness);
+    [[eosio::action]] void unvotewitn(symbol_code commun_code, name voter, name witness);
 
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_transfer(name from, name to, asset quantity, std::string memo);
 
 private:
-    ctrl_params_singleton& config(symbol_code point) {
-        static ctrl_params_singleton cfg(_self, point.raw());
+    ctrl_params_singleton& config(symbol_code commun_code) {
+        static ctrl_params_singleton cfg(_self, commun_code.raw());
         return cfg;
     }
-    const ctrl_state& props(symbol_code point) {
-        static const ctrl_state cfg = config(point).get();
+    const ctrl_state& props(symbol_code commun_code) {
+        static const ctrl_state cfg = config(commun_code).get();
         return cfg;
     }
-    void assert_started(symbol_code point);
+    void assert_started(symbol_code commun_code);
 
-    std::vector<name> top_witnesses(symbol_code point);
-    std::vector<witness_info> top_witness_info(symbol_code point);
+    std::vector<name> top_witnesses(symbol_code commun_code);
+    std::vector<witness_info> top_witness_info(symbol_code commun_code);
 
-    void change_voter_points(symbol_code point, name voter, share_type diff);
-    void apply_vote_weight(symbol_code point, name voter, name witness, bool add);
-    void update_witnesses_weights(symbol_code point, std::vector<name> witnesses, share_type diff);
+    void change_voter_points(symbol_code commun_code, name voter, share_type diff);
+    void apply_vote_weight(symbol_code commun_code, name voter, name witness, bool add);
+    void update_witnesses_weights(symbol_code commun_code, std::vector<name> witnesses, share_type diff);
     //void update_auths();
-    void send_witness_event(symbol_code point, const witness_info& wi);
-    void active_witness(symbol_code point, name witness, bool flag);
+    void send_witness_event(symbol_code commun_code, const witness_info& wi);
+    void active_witness(symbol_code commun_code, name witness, bool flag);
 
 public:
-    static inline bool in_the_top(name ctrl_contract_account, symbol_code point, name account) {
-        ctrl_params_singleton cfg(ctrl_contract_account, point.raw());
+    static inline bool in_the_top(name ctrl_contract_account, symbol_code commun_code, name account) {
+        ctrl_params_singleton cfg(ctrl_contract_account, commun_code.raw());
         eosio::check(cfg.exists(), "control is not initialized");
         const auto l = cfg.get().witnesses.max;
-        witness_tbl witness(ctrl_contract_account, point.raw());
+        witness_tbl witness(ctrl_contract_account, commun_code.raw());
         auto idx = witness.get_index<"byweight"_n>();    // this index ordered descending
         size_t i = 0;
         for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
