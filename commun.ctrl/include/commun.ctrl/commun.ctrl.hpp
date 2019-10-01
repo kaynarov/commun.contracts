@@ -81,7 +81,7 @@ private:
         static const ctrl_state cfg = config(commun_code).get();
         return cfg;
     }
-    void assert_started(symbol_code commun_code);
+    void check_started(symbol_code commun_code);
 
     std::vector<name> top_witnesses(symbol_code commun_code);
     std::vector<witness_info> top_witness_info(symbol_code commun_code);

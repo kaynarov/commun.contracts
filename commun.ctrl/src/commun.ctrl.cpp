@@ -28,7 +28,7 @@ uint16_t msig_permissions::minority_threshold(uint16_t top) const { return calc_
 
 ////////////////////////////////////////////////////////////////
 /// control
-void control::assert_started(symbol_code commun_code) {
+void control::check_started(symbol_code commun_code) {
     eosio::check(config(commun_code).exists(), "not initialized");
 }
 
@@ -132,7 +132,7 @@ void control::on_transfer(name from, name to, asset quantity, string memo) {
 }
 
 void control::regwitness(symbol_code commun_code, name witness, string url) {
-    assert_started(commun_code);
+    check_started(commun_code);
     eosio::check(url.length() <= config::witness_max_url_size, "url too long");
     require_auth(witness);
 
@@ -150,7 +150,7 @@ void control::regwitness(symbol_code commun_code, name witness, string url) {
 
 // TODO: special action to free memory?
 void control::unregwitness(symbol_code commun_code, name witness) {
-    assert_started(commun_code);
+    check_started(commun_code);
     require_auth(witness);
 
     witness_tbl witness_table(_self, commun_code.raw());
@@ -163,20 +163,20 @@ void control::unregwitness(symbol_code commun_code, name witness) {
 }
 
 void control::stopwitness(symbol_code commun_code, name witness) {
-    assert_started(commun_code);
+    check_started(commun_code);
     require_auth(witness);
     active_witness(commun_code, witness, false);
 }
 
 void control::startwitness(symbol_code commun_code, name witness) {
-    assert_started(commun_code);
+    check_started(commun_code);
     require_auth(witness);
     active_witness(commun_code, witness, true);
 }
 
 // Note: if not weighted, it's possible to pass all witnesses in vector like in BP actions
 void control::votewitness(symbol_code commun_code, name voter, name witness) {
-    assert_started(commun_code);
+    check_started(commun_code);
     require_auth(voter);
 
     witness_tbl witness_table(_self, commun_code.raw());
@@ -208,7 +208,7 @@ void control::votewitness(symbol_code commun_code, name voter, name witness) {
 }
 
 void control::unvotewitn(symbol_code commun_code, name voter, name witness) {
-    assert_started(commun_code);
+    check_started(commun_code);
     require_auth(voter);
 
     witness_tbl witness_table(_self, commun_code.raw());
