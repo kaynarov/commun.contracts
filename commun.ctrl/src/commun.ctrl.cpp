@@ -17,86 +17,58 @@ using namespace eosio;
 using std::vector;
 using std::string;
 
-
-namespace param {
-constexpr uint16_t calc_thrs(uint16_t val, uint16_t top, uint16_t num, uint16_t denom) {
-    return 0 == val ? uint32_t(top) * num / denom + 1 : val;
+void control::setparams(symbol_code commun_code, std::optional<structures::control_param> p) {
+    require_auth(_self);
+    //it is in 2 tables, for convenience when moving to commun_list
+    if (!commun_code) {
+        tables::sysparams sysparams_table(_self, _self.value);
+        structures::sysparam sysparam;
+        if (p.has_value()) {
+            sysparam.control = *p;
+        }
+        else {
+            sysparam.control.leaders_num = config::default_dapp_leaders_num;
+            sysparam.control.thresholds = std::vector<structures::threshold>
+                (config::default_dapp_thresholds.begin(), config::default_dapp_thresholds.end());
+            sysparam.control.max_votes = config::default_dapp_max_votes;
+        }
+        sysparams_table.set(sysparam, _self);
+    }
+    else {
+        structures::control_param control_param;
+        if (p.has_value()) {
+            control_param = *p;
+        }
+        else {
+            control_param.leaders_num = config::default_comm_leaders_num;
+            control_param.thresholds = std::vector<structures::threshold>
+                (config::default_comm_thresholds.begin(), config::default_comm_thresholds.end());
+            control_param.max_votes = config::default_comm_max_votes;
+        }
+        
+        tables::params params_table(_self, commun_code.raw());
+        auto param = params_table.find(commun_code.raw());
+        
+        if (param == params_table.end()) {
+            params_table.emplace(_self, [&](auto& item) {
+                item.commun_code = commun_code;
+                item.control = control_param;
+            });
+        }
+        else {
+            params_table.modify(param, eosio::same_payer, [&](auto& item) { item.control = control_param; });
+        }
+    }
 }
-uint16_t msig_permissions::super_majority_threshold(uint16_t top) const { return calc_thrs(super_majority, top, 2, 3); };
-uint16_t msig_permissions::majority_threshold(uint16_t top) const { return calc_thrs(majority, top, 1, 2); };
-uint16_t msig_permissions::minority_threshold(uint16_t top) const { return calc_thrs(minority, top, 1, 3); };
-}
 
-
-////////////////////////////////////////////////////////////////
 /// control
 void control::check_started(symbol_code commun_code) {
-    eosio::check(config(commun_code).exists(), "not initialized");
-}
-
-struct ctrl_params_setter: set_params_visitor<ctrl_state> {
-    using set_params_visitor::set_params_visitor;
-
-    bool recheck_msig_perms = false;
-
-    bool operator()(const multisig_acc_param& p) {
-        // TODO: if change multisig account, then must set auths
-        return set_param(p, &ctrl_state::multisig);
-    }
-    bool operator()(const max_witnesses_param& p) {
-        // TODO: if change max_witnesses, then must set auths
-        bool changed = set_param(p, &ctrl_state::witnesses);
-        if (changed) {
-            // force re-check multisig_permissions, coz they can become invalid
-            recheck_msig_perms = true;
-        }
-        return changed;
-    }
-
-    void check_msig_perms(const msig_perms_param& p) {
-        const auto max = state.witnesses.max;
-        const auto smaj = p.super_majority_threshold(max);
-        const auto maj = p.majority_threshold(max);
-        const auto min = p.minority_threshold(max);
-        eosio::check(smaj <= max, "super_majority must not be greater than max_witnesses");
-        eosio::check(maj <= max, "majority must not be greater than max_witnesses");
-        eosio::check(min <= max, "minority must not be greater than max_witnesses");
-        eosio::check(maj <= smaj, "majority must not be greater than super_majority");
-        eosio::check(min <= smaj, "minority must not be greater than super_majority");
-        eosio::check(min <= maj, "minority must not be greater than majority");
-    }
-    bool operator()(const msig_perms_param& p) {
-        bool changed = set_param(p, &ctrl_state::msig_perms);
-        if (changed) {
-            // additionals checks against max_witnesses, which is not accessible in `validate()`
-            check_msig_perms(p);
-            recheck_msig_perms = false;     // don't re-check if parameter exists, variant order guarantees it checked after max_witnesses
-        }
-        return changed;
-    }
-    bool operator()(const witness_votes_param& p) {
-        return set_param(p, &ctrl_state::witness_votes);
-    }
-};
-
-void control::validateprms(symbol_code commun_code, vector<ctrl_param> params) {
-    param_helper::check_params(params, config(commun_code).exists());
-}
-
-void control::setparams(symbol_code commun_code, vector<ctrl_param> params) {
-    auto issuer = point::get_issuer(config::point_name, commun_code);
-    require_auth(issuer);
-    auto& cfg = config(commun_code);
-    auto setter = param_helper::set_parameters<ctrl_params_setter>(params, cfg, issuer);
-    if (setter.recheck_msig_perms) {
-        setter.check_msig_perms(setter.state.msig_perms);
-    }
-    // TODO: auto-change auths on params change
+    get_control_param(control_param_contract, commun_code);
 }
 
 void control::on_transfer(name from, name to, asset quantity, string memo) {
-    if (!config(quantity.symbol.code()).exists())
-        return; // distribute only community token
+//    if (!config(quantity.symbol.code()).exists())
+//        return; // distribute only community token
 
 // Commun TODO: process income funds
 //    if (to == _self && quantity.amount > 0) {
@@ -198,7 +170,7 @@ void control::votewitness(symbol_code commun_code, name voter, name witness) {
         auto& w = itr->witnesses;
         auto el = std::find(w.begin(), w.end(), witness);
         eosio::check(el == w.end(), "already voted");
-        eosio::check(w.size() < props(commun_code).witness_votes.max, "all allowed votes already casted");
+        eosio::check(w.size() < get_control_param(control_param_contract, commun_code).max_votes, "all allowed votes already casted");
         tbl.modify(itr, eosio::same_payer, update);
     } else {
         tbl.emplace(voter, update);
@@ -234,7 +206,9 @@ void control::unvotewitn(symbol_code commun_code, name voter, name witness) {
 
 void control::changepoints(name who, asset diff) {
     symbol_code commun_code = diff.symbol.code();
-    if (!config(commun_code).exists()) return;       // allow silent exit if changing vests before community created
+    if (!(commun_code ? created(control_param_contract, commun_code) : initialized(control_param_contract))) {
+        return;       // allow silent exit if changing vests before community created
+    }
     require_auth(_self);
     eosio::check(diff.amount != 0, "diff is 0. something broken");          // in normal conditions sender must guarantee it
     change_voter_points(commun_code, who, diff.amount);
@@ -254,7 +228,9 @@ void control::change_voter_points(symbol_code commun_code, name voter, share_typ
 }
 
 void control::apply_vote_weight(symbol_code commun_code, name voter, name witness, bool add) {
-    const auto power = point::get_balance(config::point_name, voter, commun_code).amount;
+    const auto power = commun_code ? 
+        point::get_balance(config::point_name, voter, commun_code).amount : 
+        point::get_assigned_reserve_amount(config::point_name, voter);
     if (power > 0) {
         update_witnesses_weights(commun_code, {witness}, add ? power : -power);
     }
@@ -295,7 +271,7 @@ void control::active_witness(symbol_code commun_code, name witness, bool flag) {
 
 vector<witness_info> control::top_witness_info(symbol_code commun_code) {
     vector<witness_info> top;
-    const auto l = props(commun_code).witnesses.max;
+    const auto l = get_control_param(control_param_contract, commun_code).leaders_num;
     top.reserve(l);
     witness_tbl witness(_self, commun_code.raw());
     auto idx = witness.get_index<"byweight"_n>();    // this index ordered descending
@@ -489,8 +465,9 @@ void control::invalidate(name account) {
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::control, commun::config::token_name, on_transfer,
-    (validateprms)(setparams)
     (regwitness)(unregwitness)
     (startwitness)(stopwitness)
     (votewitness)(unvotewitn)(changepoints)
     (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
+    (setparams)
+    )

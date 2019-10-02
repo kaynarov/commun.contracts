@@ -1,15 +1,6 @@
 {
     "version": "cyberway::abi/1.1",
     "types": [],
-    "variants": [{
-        "name": "ctrl_param",
-        "types": [
-            "multisig_acc",
-            "max_witnesses",
-            "multisig_perms",
-            "max_witness_votes"
-        ]
-    }],
     "structs": [
         {
             "name": "regwitness",
@@ -79,7 +70,14 @@
             "fields": [
                 {"type": "name", "name": "name"}]
         }, {
-            "name": "max_witnesses",
+            "name": "witnessstate",
+            "fields": [
+                {"type": "symbol_code", "name": "commun_code"},
+                {"type": "name", "name": "witness"},
+                {"type": "uint64", "name": "weight"},
+                {"type": "bool", "name": "active"}
+            ]
+        },
         {
             "name": "permission_level",
             "base": "",
@@ -363,36 +361,44 @@
             ]
         },
         {
+            "name": "threshold",
             "base": "",
             "fields": [
                 { "type": "name",          "name": "permission" },
                 { "type": "uint8",         "name": "required" }
             ]
-        }, {
-            "name": "max_witness_votes",
+        },
+        {
+            "name": "control_param",
             "base": "",
             "fields": [
-                {"type": "uint16", "name": "max"}]
-        }, {
-            "name": "ctrl_state",
+                { "type": "uint8",         "name": "leaders_num" },
+                { "type": "threshold[]",   "name": "thresholds" },
+                { "type": "uint8",         "name": "max_votes" }
+            ]
+        },
+        {
+            "name": "sysparam_struct",
+            "base": "",
             "fields": [
-                {"type": "uint64",              "name": "id"},
-                {"type": "multisig_acc",        "name": "multisig"},
-                {"type": "max_witnesses",       "name": "witnesses"},
-                {"type": "multisig_perms",      "name": "msig_perms"},
-                {"type": "max_witness_votes",   "name": "witness_votes"}]
-        }, {
-            "name": "setparams",
+                { "type": "uint64",         "name": "id" },
+                { "type": "control_param",  "name": "control" }
+            ]
+        },
+        {
+            "name": "param_struct",
+            "base": "",
             "fields": [
-                {"type": "symbol_code", "name": "commun_code"},
-                {"type": "ctrl_param[]", "name": "params"}]
-        }, {
-            "name": "witnessstate",
+                {"type": "symbol_code",     "name": "commun_code"},
+                { "type": "control_param",  "name": "control" }
+            ]
+        },
+        {
+            "name": "setparams_arg",
+            "base": "",
             "fields": [
-                {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name", "name": "witness"},
-                {"type": "uint64", "name": "weight"},
-                {"type": "bool", "name": "active"}
+                {"type": "symbol_code",     "name": "commun_code"},
+                { "type": "control_param?", "name": "p" }
             ]
         }
     ],
@@ -401,12 +407,6 @@
     ],
     "actions": [
         {
-            "name": "setparams",
-            "type": "setparams"
-        }, {
-            "name": "validateprms",
-            "type": "setparams"
-        }, {
             "name": "regwitness",
             "type": "regwitness"
         }, {
@@ -427,7 +427,7 @@
         }, {
             "name": "changepoints",
             "type": "changepoints"
-        }
+        },
         {
             "name": "approve",
             "type": "approve"
@@ -452,6 +452,7 @@
             "name": "unapprove",
             "type": "unapprove"
         },
+        {"name": "setparams", "type": "setparams_arg"}
     ],
     "tables": [
         {
@@ -476,7 +477,7 @@
                 "unique": true,
                 "orders": [{"field": "voter", "order": "asc"}]
             }]
-        }, {
+        },
         {
             "name": "approvals",
             "type": "approvals_info",
@@ -516,9 +517,26 @@
                 }
             ]
         },
+        {
+            "name": "sysparam",
+            "type": "sysparam_struct",
+            "indexes": [{
                 "name": "primary",
-                "unique": true,
-                "orders": [{"field": "id", "order": "asc"}]
+                "unique": "true",
+                "orders": [
+                    {"field": "id", "order": "asc"}
+                ]
+            }]
+        },
+        {
+            "name": "param",
+            "type": "param_struct",
+            "indexes": [{
+                "name": "primary",
+                "unique": "true",
+                "orders": [
+                    {"field": "commun_code", "order": "asc"}
+                ]
             }]
         }
     ],
