@@ -81,11 +81,10 @@ def createPost(commun_code, author, permlink, category, header, body, *, curator
             'commun_code':commun_code,
             'message_id':{'author':author, 'permlink':permlink}, 
             'parent_id':{'author':"", 'permlink':category}, 
-            'headermssg':header,
-            'bodymssg':body,
-            'languagemssg':'ru',
+            'header':header,
+            'body':body,
             'tags':[],
-            'jsonmetadata':'',
+            'metadata':'',
             'curators_prcnt':curators_prcnt
         }, providebw=providebw, keys=keys)
 

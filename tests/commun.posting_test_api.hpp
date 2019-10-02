@@ -29,22 +29,20 @@ struct commun_posting_api: base_contract_api {
     action_result create_msg(
         mssgid message_id,
         mssgid parent_id = {N(), "parentprmlnk"},
-        std::string title = "headermssg",
-        std::string body = "bodymssg",
-        std::string language = "languagemssg",
+        std::string title = "header",
+        std::string body = "body",
         std::vector<std::string> tags = {"tag"},
-        std::string json_metadata = "jsonmetadata",
+        std::string metadata = "metadata",
         uint16_t curators_prcnt = 5000
     ) {
         return push(N(createmssg), message_id.author, args()
             ("commun_code", commun_code)
             ("message_id", message_id)
             ("parent_id", parent_id)
-            ("headermssg", title)
-            ("bodymssg", body)
-            ("languagemssg", language)
+            ("header", title)
+            ("body", body)
             ("tags", tags)
-            ("jsonmetadata", json_metadata)
+            ("metadata", metadata)
             ("curators_prcnt", curators_prcnt)
         );
     }
@@ -53,18 +51,16 @@ struct commun_posting_api: base_contract_api {
         mssgid message_id,
         std::string title,
         std::string body,
-        std::string language,
         std::vector<std::string> tags,
-        std::string json_metadata
+        std::string metadata
     ) {
         return push(N(updatemssg), message_id.author, args()
             ("commun_code", commun_code)
             ("message_id", message_id)
-            ("headermssg", title)
-            ("bodymssg", body)
-            ("languagemssg", language)
+            ("header", title)
+            ("body", body)
             ("tags",tags)
-            ("jsonmetadata", json_metadata)
+            ("metadata", metadata)
         );
     }
 
@@ -106,15 +102,15 @@ struct commun_posting_api: base_contract_api {
     action_result reblog_msg(
         account_name rebloger,
         mssgid message_id,
-        std::string title = "headermssg",
-        std::string body = "bodymssg"
+        std::string title = "header",
+        std::string body = "body"
     ) {
         return push(N(reblog), rebloger, args()
             ("commun_code", commun_code)
             ("rebloger", rebloger)
             ("message_id", message_id)
-            ("headermssg", title)
-            ("bodymssg", body)
+            ("header", title)
+            ("body", body)
         );
     }
 

@@ -233,15 +233,11 @@
         "type": "mssgid"
       },
       {
-        "name": "headermssg",
+        "name": "header",
         "type": "string"
       },
       {
-        "name": "bodymssg",
-        "type": "string"
-      },
-      {
-        "name": "languagemssg",
+        "name": "body",
         "type": "string"
       },
       {
@@ -249,7 +245,7 @@
         "type": "string[]"
       },
       {
-        "name": "jsonmetadata",
+        "name": "metadata",
         "type": "string"
       },
       {
@@ -271,15 +267,11 @@
         "type": "mssgid"
       },
       {
-        "name": "headermssg",
+        "name": "header",
         "type": "string"
       },
       {
-        "name": "bodymssg",
-        "type": "string"
-      },
-      {
-        "name": "languagemssg",
+        "name": "body",
         "type": "string"
       },
       {
@@ -287,7 +279,7 @@
         "type": "string[]"
       },
       {
-        "name": "jsonmetadata",
+        "name": "metadata",
         "type": "string"
       }
     ]
@@ -453,11 +445,11 @@
             "type": "mssgid"
         },
         {
-            "name": "headermssg",
+            "name": "header",
             "type": "string"
         },
         {
-            "name": "bodymssg",
+            "name": "body",
             "type": "string"
         }
     ]

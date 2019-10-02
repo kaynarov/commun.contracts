@@ -35,10 +35,10 @@ public:
     }
 
     void createmssg(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
-        std::string headermssg, std::string bodymssg, std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata,
+        std::string header, std::string body, std::vector<std::string> tags, std::string metadata,
         uint16_t curators_prcnt);
-    void updatemssg(symbol_code commun_code, mssgid_t message_id, std::string headermssg, std::string bodymssg,
-        std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata);
+    void updatemssg(symbol_code commun_code, mssgid_t message_id, std::string header, std::string body,
+        std::vector<std::string> tags, std::string metadata);
     void settags(symbol_code commun_code, name leader, mssgid_t message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
     void deletemssg(symbol_code commun_code, mssgid_t message_id);
@@ -52,7 +52,7 @@ public:
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
     void setparams(symbol_code commun_code, std::vector<posting_params> params);
-    void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string headermssg, std::string bodymssg);
+    void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
     void setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day);
