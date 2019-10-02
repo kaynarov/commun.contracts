@@ -157,6 +157,24 @@ struct structures {
         return asset(calc_bancor_amount(stat.reserve.amount, stat.supply.amount, get_cw(param), reserve_quantity.amount), stat.supply.symbol);
     }
 
-    void do_transfer(name from, name to, const asset& quantity, const string& memo);
+    void do_transfer(name from, name to, const asset& quantity, const string& memo); 
+
+    struct currency_event {
+        asset   supply;
+        asset   reserve;
+        asset   max_supply;
+        int16_t cw; //connector weight
+        int16_t fee;
+        name    issuer;
+    };
+
+    struct balance_event {
+        name    account;
+        asset   balance;
+    };
+
+    void send_currency_event(const structures::stat& st, const structures::param& par);
+
+    void send_balance_event(name acc, const structures::account& accinfo);
 };
 } /// namespace commun

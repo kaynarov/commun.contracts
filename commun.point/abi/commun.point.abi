@@ -83,6 +83,26 @@
                 { "type": "asset",        "name": "quantity" },
                 { "type": "string",       "name": "memo" }
             ]
+        },
+        {
+            "name": "currency_event",
+            "base": "",
+            "fields": [
+                { "type": "asset",        "name": "supply" },
+                { "type": "asset",        "name": "reserve" },
+                { "type": "asset",        "name": "max_supply" },
+                { "type": "int16",        "name": "cw" },
+                { "type": "int16",        "name": "fee" },
+                { "type": "name",         "name": "issuer" }
+            ]
+        },
+        {
+            "name": "balance_event",
+            "base": "",
+            "fields": [
+                { "name": "account", "type": "name" },
+                { "name": "balance", "type": "asset" }
+            ]
         }
     ],
     "types": [],
@@ -90,31 +110,24 @@
         {
             "name": "close",
             "type": "close_args",
-            "ricardian_contract": ""
         },{
             "name": "create",
             "type": "create_args",
-            "ricardian_contract": ""
         },{
             "name": "setfreezer",
             "type": "setfreezer_args",
-            "ricardian_contract": ""
         },{
             "name": "issue",
             "type": "issue_args",
-            "ricardian_contract": ""
         },{
             "name": "open",
             "type": "open_args",
-            "ricardian_contract": ""
         },{
             "name": "retire",
             "type": "retire_args",
-            "ricardian_contract": ""
         },{
             "name": "transfer",
             "type": "transfer_args",
-            "ricardian_contract": ""
         }
     ],
     "tables": [
@@ -168,7 +181,10 @@
             ]
         }
     ],
-    "ricardian_clauses": [],
+    "events": [
+        {"name": "currency", "type": "currency_event"},
+        {"name": "balance", "type": "balance_event"}
+    ],
     "variants": [],
     "abi_extensions": []
 }
