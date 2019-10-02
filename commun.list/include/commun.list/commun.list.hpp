@@ -16,7 +16,7 @@ public:
 
     static inline auto get_community(name list_contract_account, symbol_code commun_code) {
         tables::community community_tbl(list_contract_account, list_contract_account.value);
-        return community_tbl.get(commun_code.raw, "community not exists");
+        return community_tbl.get(commun_code.raw(), "community not exists");
     }
 };
 

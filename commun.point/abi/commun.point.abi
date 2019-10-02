@@ -109,25 +109,25 @@
     "actions": [
         {
             "name": "close",
-            "type": "close_args",
+            "type": "close_args"
         },{
             "name": "create",
-            "type": "create_args",
+            "type": "create_args"
         },{
             "name": "setfreezer",
-            "type": "setfreezer_args",
+            "type": "setfreezer_args"
         },{
             "name": "issue",
-            "type": "issue_args",
+            "type": "issue_args"
         },{
             "name": "open",
-            "type": "open_args",
+            "type": "open_args"
         },{
             "name": "retire",
-            "type": "retire_args",
+            "type": "retire_args"
         },{
             "name": "transfer",
-            "type": "transfer_args",
+            "type": "transfer_args"
         }
     ],
     "tables": [
