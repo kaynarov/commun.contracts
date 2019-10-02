@@ -7,10 +7,21 @@
 #include <commun.gallery/commun.gallery.hpp>
 #include <commun/dispatchers.hpp>
 #include <cyber.token/cyber.token.hpp>
+#include <eosio/event.hpp>
 #include <eosio/system.hpp>
 #include <commun/util.hpp>
 
 namespace commun {
+
+void point::send_currency_event(const structures::stat& st, const structures::param& par) {
+    currency_event data{st.supply, st.reserve, par.max_supply, par.cw, par.fee, par.issuer};
+    eosio::event(_self, "currency"_n, data).send();
+}
+
+void point::send_balance_event(name acc, const structures::account& accinfo) {
+    balance_event data{acc, accinfo.balance};
+    eosio::event(_self, "balance"_n, data).send();
+}
 
 void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     require_auth(_self);
@@ -27,7 +38,7 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     params params_table(_self, commun_code.raw());
     eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "already exists");
     
-    params_table.emplace(_self, [&](auto& p) { p = {
+    auto param = params_table.emplace(_self, [&](auto& p) { p = {
         .max_supply = maximum_supply,
         .cw = cw,
         .fee = fee,
@@ -36,10 +47,12 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "SYSTEM: already exists");
-    stats_table.emplace(_self, [&](auto& s) { s = {
+    auto stat = stats_table.emplace(_self, [&](auto& s) { s = {
         .supply = asset(0, commun_symbol),
         .reserve = asset(0, config::reserve_token)
     };});
+
+    send_currency_event(*stat, *param);
 
     accounts accounts_table(_self, issuer.value);
     accounts_table.emplace(_self, [&](auto& a) { a = {
@@ -77,6 +90,7 @@ void point::issue(name to, asset quantity, string memo) {
 
     stats_table.modify(stat, same_payer, [&](auto& s) {
         s.supply += quantity;
+        send_currency_event(s, param);
     });
 
     add_balance(param.issuer, quantity, param.issuer);
@@ -108,6 +122,7 @@ void point::retire(asset quantity, string memo) {
 
     stats_table.modify(stat, same_payer, [&](auto& s) {
         s.supply -= quantity;
+        send_currency_event(s, param);
     });
 
     sub_balance(param.issuer, quantity);
@@ -143,6 +158,7 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
     stats_table.modify(stat, same_payer, [&](auto& s) {
         s.reserve += quantity;
         s.supply += add_tokens;
+        send_currency_event(s, param);
     });
 }
 
@@ -171,6 +187,7 @@ void point::sub_balance(name owner, asset value) {
 
     accounts_table.modify(from, owner, [&](auto& a) {
         a.balance -= value;
+        send_balance_event(owner, a);
     });
 
     notify_balance_change(owner, -value);
@@ -182,10 +199,12 @@ void point::add_balance(name owner, asset value, name ram_payer) {
     if (to == accounts_table.end()) {
         accounts_table.emplace(ram_payer, [&](auto& a) {
             a.balance = value;
+            send_balance_event(owner, a);
         });
     } else {
         accounts_table.modify(to, same_payer, [&](auto& a) {
             a.balance += value;
+            send_balance_event(owner, a);
         });
     }
     notify_balance_change(owner, value);
@@ -252,6 +271,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
         stats_table.modify(stat, same_payer, [&](auto& s) {
             s.reserve -= sub_reserve;
             s.supply -= quantity;
+            send_currency_event(s, param);
         });
 
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
