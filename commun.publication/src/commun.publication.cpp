@@ -24,11 +24,10 @@ void publication::createmssg(
     symbol_code commun_code,
     mssgid_t message_id,
     mssgid_t parent_id,
-    std::string headermssg,
-    std::string bodymssg,
-    std::string languagemssg,
+    std::string header,
+    std::string body,
     std::vector<std::string> tags,
-    std::string jsonmetadata,
+    std::string metadata,
     uint16_t curators_prcnt
 ) {
     require_auth(message_id.author);
@@ -36,8 +35,8 @@ void publication::createmssg(
     eosio::check(message_id.permlink.length() && message_id.permlink.length() < config::max_length,
         "Permlink length is empty or more than 256.");
     eosio::check(validate_permlink(message_id.permlink), "Permlink contains wrong symbol.");
-    eosio::check(headermssg.length() < config::max_length, "Title length is more than 256.");
-    eosio::check(bodymssg.length(), "Body is empty.");
+    eosio::check(header.length() < config::max_length, "Title length is more than 256.");
+    eosio::check(body.length(), "Body is empty.");
     eosio::check(curators_prcnt <= config::_100percent, "curators_prcnt can't be more than 100%.");
 
     const auto& max_comment_depth_param = params(commun_code).max_comment_depth_param;
@@ -98,8 +97,8 @@ void publication::createmssg(
 }
 
 void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
-        std::string headermssg, std::string bodymssg,
-        std::string languagemssg, std::vector<std::string> tags, std::string jsonmetadata) {
+        std::string header, std::string body,
+        std::vector<std::string> tags, std::string metadata) {
     require_auth(message_id.author);
     check_mssg_exists(commun_code, message_id);
 }
@@ -188,13 +187,13 @@ void publication::setparams(symbol_code commun_code, std::vector<posting_params>
     param_helper::set_parameters<posting_params_setter>(params, cfg, _self);
 }
 
-void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string headermssg, std::string bodymssg) {
+void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {
     require_auth(rebloger);
 
     eosio::check(rebloger != message_id.author, "You cannot reblog your own content.");
-    eosio::check(headermssg.length() < config::max_length, "Title length is more than 256.");
+    eosio::check(header.length() < config::max_length, "Title length is more than 256.");
     eosio::check(
-        !headermssg.length() || (headermssg.length() && bodymssg.length()),
+        !header.length() || (header.length() && body.length()),
         "Body must be set if title is set."
     );
 

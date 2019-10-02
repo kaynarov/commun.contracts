@@ -155,11 +155,11 @@ BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.wrong_title_length, post.create_msg({N(brucelee), "test-title"},
         {N(), "parentprmlnk"}, str256));
     BOOST_CHECK_EQUAL(err.wrong_body_length, post.create_msg({N(brucelee), "test-body"},
-        {N(), "parentprmlnk"}, "headermssg", ""));
+        {N(), "parentprmlnk"}, "header", ""));
 
     BOOST_TEST_MESSAGE("--- checking wrong curators_prcnt.");
     BOOST_CHECK_EQUAL(err.wrong_curators_prcnt, post.create_msg({N(brucelee), "test-title"},
-        {N(), "parentprmlnk"}, "headermssg", "body", "", {""}, "", cfg::_100percent+1));
+        {N(), "parentprmlnk"}, "header", "body", {""}, "", cfg::_100percent+1));
 
     BOOST_TEST_MESSAGE("--- creating post.");
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
@@ -216,9 +216,9 @@ BOOST_FIXTURE_TEST_CASE(update_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(success(), post.update_msg({N(brucelee), "permlink"},
-        "headermssgnew", "bodymssgnew", "languagemssgnew", {{"tagnew"}}, "jsonmetadatanew"));
+        "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
     BOOST_CHECK_EQUAL(err.no_message, post.update_msg({N(brucelee), "notexist"},
-        "headermssgnew", "bodymssgnew", "languagemssgnew", {{"tagnew"}}, "jsonmetadatanew"));
+        "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(settags_to_message, commun_publication_tester) try {
@@ -282,26 +282,26 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(err.own_reblog, post.reblog_msg(N(brucelee), {N(brucelee), "permlink"},
-        "headermssg",
-        "bodymssg"));
+        "header",
+        "body"));
     BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
         str256,
-        "bodymssg"));
+        "body"));
     BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
-        "headermssg",
+        "header",
         ""));
     BOOST_CHECK_EQUAL(err.no_message, post.reblog_msg(N(chucknorris), {N(brucelee), "test"},
-        "headermssg",
-        "bodymssg"));
+        "header",
+        "body"));
     BOOST_CHECK_EQUAL(success(), post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
-        "headermssg",
-        "bodymssg"));
+        "header",
+        "body"));
     BOOST_CHECK_EQUAL(success(), post.reblog_msg(N(jackiechan), {N(brucelee), "permlink"},
         "",
         ""));
     BOOST_CHECK_EQUAL(success(), post.reblog_msg(_code, {N(brucelee), "permlink"},
         "",
-        "bodymssg"));
+        "body"));
 
     BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog_msg(N(brucelee),
         {N(brucelee), "permlink"}));
