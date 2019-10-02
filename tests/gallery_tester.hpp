@@ -6,7 +6,7 @@ namespace eosio { namespace testing {
 class gallery_tester : public golos_tester {
 public:
     gallery_tester(name code, bool push_genesis = true)
-    	: golos_tester(code, push_genesis) {
+        : golos_tester(code, push_genesis) {
     }
 
     struct gallery_errors : contract_error_messages {
@@ -39,20 +39,6 @@ public:
         
     } errgallery;
     
-    void prepare_ctrl(commun_ctrl_api& ctrl, account_name community, const std::vector<account_name>& leaders, account_name voter, 
-                uint16_t max_witnesses, uint16_t max_witness_votes) {
-
-        BOOST_CHECK_EQUAL(success(), ctrl.set_params(ctrl.default_params(community, max_witnesses, max_witness_votes)));
-        produce_block();
-        ctrl.prepare_multisig(community);
-        produce_block();
-        for (int i = 0; i < leaders.size(); i++) {
-            BOOST_CHECK_EQUAL(success(), ctrl.reg_witness(leaders[i], "localhost"));
-            BOOST_CHECK_EQUAL(success(), ctrl.vote_witness(voter, leaders[i]));
-        }
-        produce_block();
-    }
-
     variant get_mosaic(name code, symbol point, name creator, uint64_t tracery) {
         variant obj = get_chaindb_lower_bound_struct(code, point.to_symbol_code(), N(mosaic), N(bykey),
             std::make_pair(creator, tracery), "mosaic");

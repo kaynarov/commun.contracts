@@ -20,7 +20,7 @@ static const auto point_code = _point.to_symbol_code();
 
 const account_name default_opus_name = N(regulatum);
 
-const account_name _commun = N(commun);
+const account_name _commun = cfg::dapp_name;
 const account_name _golos = N(golos);
 const account_name _alice = N(alice);
 const account_name _bob = N(bob);
@@ -188,7 +188,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     init();
     int mosaics_num = 50;
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(supply, point._symbol)));
-    prepare_ctrl(ctrl, _golos, {_alice, _carol}, _bob, 2, 4);
+    ctrl.prepare({_alice, _carol}, _bob);
     int64_t points_sum = 0;
     auto first_comm_mosaic = mosaics_num - cfg::default_comm_grades.size() + 1;
     for (int i = 1; i <= mosaics_num; i++) {

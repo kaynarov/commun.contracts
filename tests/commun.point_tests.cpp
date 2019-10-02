@@ -41,7 +41,7 @@ public:
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), "issue"));
     }
 
-    const account_name _commun = N(commun);
+    const account_name _commun = cfg::dapp_name;
     const account_name _golos = N(golos);
     const account_name _alice = N(alice);
     const account_name _bob = N(bob);
@@ -184,7 +184,8 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(success(), point.create(_golos, max_supply, 5000, 0));
     produce_block();
     BOOST_CHECK_EQUAL(err.already_exists, point.create(_golos, max_supply, 5000, 0));
-    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(1000, another), 5000, 0));
+    BOOST_CHECK_EQUAL(err.already_exists, point.create(_alice, max_supply, 5000, 0));
+    BOOST_CHECK_EQUAL(success(), point.create(_alice, asset(1000, another), 5000, 0));
     produce_block();
 
     CHECK_MATCHING_OBJECT(point.get_params(), mvo()
@@ -197,7 +198,7 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_point_tester) try {
         ("cw", 5000)
         ("fee", 0)
         ("max_supply", "1.000 ANOTHER")
-        ("issuer", _golos.to_string())
+        ("issuer", _alice.to_string())
     );
 } FC_LOG_AND_RETHROW()
 
