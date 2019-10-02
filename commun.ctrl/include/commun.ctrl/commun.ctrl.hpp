@@ -45,13 +45,38 @@ struct [[eosio::table]] witness_voter {
 };
 using witness_vote_tbl = eosio::multi_index<"witnessvote"_n, witness_voter>;
 
-//struct [[eosio::table]] msig_auths {
-//    std::vector<name> witnesses;
-//    time_point_sec last_update;
-//};
-//using msig_auth_singleton = eosio::singleton<"msigauths"_n, msig_auths>;
+struct [[eosio::table]] proposal {
+    name proposal_name;
+    symbol_code commun_code;
+    name permission;
+    std::vector<char> packed_transaction;
 
+    uint64_t primary_key()const { return proposal_name.value; }
+};
 
+using proposals = eosio::multi_index< "proposal"_n, proposal>;
+
+struct approval {
+    name approver;
+    time_point time;
+};
+
+struct [[eosio::table]] approvals_info {
+    name proposal_name;
+    std::vector<approval> provided_approvals; 
+    uint64_t primary_key()const { return proposal_name.value; }
+};
+
+using approvals = eosio::multi_index< "approvals"_n, approvals_info>;
+
+struct [[eosio::table]] invalidation {
+    name account;
+    time_point last_invalidation_time;
+
+    uint64_t primary_key() const { return account.value; }
+};
+
+using invalidations = eosio::multi_index< "invals"_n, invalidation>;
 class control: public contract {
 public:
     control(name self, name code, datastream<const char*> ds)
@@ -71,6 +96,17 @@ public:
 
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_transfer(name from, name to, asset quantity, std::string memo);
+
+    [[eosio::action]] void propose(ignore<symbol_code> commun_code, ignore<name> proposer, ignore<name> proposal_name,
+                ignore<name> permission, ignore<eosio::transaction> trx);
+    [[eosio::action]] void approve(name proposer, name proposal_name, name approver, 
+                const eosio::binary_extension<eosio::checksum256>& proposal_hash);
+    [[eosio::action]] void unapprove(name proposer, name proposal_name, name approver);
+    [[eosio::action]] void cancel(name proposer, name proposal_name, name canceler);
+    [[eosio::action]] void exec(name proposer, name proposal_name, name executer);
+    [[eosio::action]] void invalidate(name account);
+    
+    [[eosio::action]] void setparams(symbol_code commun_code, std::optional<structures::control_param> p); //TODO: remove it
 
 private:
     ctrl_params_singleton& config(symbol_code commun_code) {

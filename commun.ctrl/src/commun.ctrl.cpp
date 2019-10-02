@@ -7,6 +7,8 @@
 //#include <cyber.system/native.hpp>
 #include <eosio/transaction.hpp>
 #include <eosio/event.hpp>
+#include <eosio/permission.hpp>
+#include <eosio/crypto.hpp>
 
 namespace commun {
 
@@ -144,8 +146,6 @@ void control::regwitness(symbol_code commun_code, name witness, string url) {
             w.active = true;
         };
     });
-
-    //update_auths();
 }
 
 // TODO: special action to free memory?
@@ -159,7 +159,6 @@ void control::unregwitness(symbol_code commun_code, name witness) {
     witness_table.erase(*it);
 
     //TODO remove votes for witness
-    //update_auths();
 }
 
 void control::stopwitness(symbol_code commun_code, name witness) {
@@ -275,80 +274,7 @@ void control::update_witnesses_weights(symbol_code commun_code, vector<name> wit
             print("apply_vote_weight: witness not found\n");
         }
     }
-
-    //update_auths();
 }
-
-// Commun TODO: remove update_auths
-//void control::update_auths() {
-//    msig_auth_singleton tbl(_self, _self.value);
-//    const auto& top_auths = tbl.get_or_default();
-//
-//    auto now = eosio::current_time_point();
-//    if (top_auths.last_update + eosio::seconds(props().update_auth_period.period) > now)
-//        return;
-//
-//    auto set_last_update = [&]() {
-//        tbl.set({top_auths.witnesses, now}, _self);
-//    };
-//
-//    auto top = top_witnesses();
-//    std::sort(top.begin(), top.end(), [](const auto& it1, const auto& it2) {
-//        return it1.value < it2.value;
-//    });
-//
-//    const auto& old_top = top_auths.witnesses;
-//    if (old_top.size() > 0 && old_top.size() == top.size()) {
-//        bool result = std::equal(old_top.begin(), old_top.end(), top.begin(), [](const auto& prev, const auto& cur) {
-//            return prev.value == cur.value;
-//        });
-//        if (result) {
-//            set_last_update();
-//            return;
-//        }
-//    }
-//
-//    if (top.size()) {
-//        tbl.set({top, now}, _self);
-//    } else {
-//        set_last_update();
-//    }
-//
-//    auto& max_witn = props().witnesses.max;
-//    if (top.size() < max_witn) {           // TODO: ?restrict only just after creation and allow later
-//        print("Not enough witnesses to change auth\n");
-//        return;
-//    }
-//    cyber::authority auth;
-//    for (const auto& i : top) {
-//        auth.accounts.push_back({{i,config::active_name},1});
-//    }
-//
-//    auto& thrs = props().msig_perms;
-//    vector<std::pair<name,uint16_t>> auths = {
-//        {config::minority_name, thrs.minority_threshold(max_witn)},
-//        {config::majority_name, thrs.majority_threshold(max_witn)},
-//        {config::super_majority_name, thrs.super_majority_threshold(max_witn)}
-//    };
-//
-//    const auto& owner = props().multisig.name;
-//    for (const auto& [perm, thrs]: auths) {
-//        //permissions must be sorted
-//        std::sort(auth.accounts.begin(), auth.accounts.end(),
-//            [](const cyber::permission_level_weight& l, const cyber::permission_level_weight& r) {
-//                return std::tie(l.permission.actor, l.permission.permission) <
-//                    std::tie(r.permission.actor, r.permission.permission);
-//            }
-//        );
-//
-//        auth.threshold = thrs;
-//        action(
-//            permission_level{owner, config::active_name},
-//            config::internal_name, "updateauth"_n,
-//            std::make_tuple(owner, perm, config::active_name, auth)
-//        ).send();
-//    }
-//}
 
 void control::send_witness_event(symbol_code commun_code, const witness_info& wi) {
     eosio::event(_self, "witnessstate"_n, std::make_tuple(commun_code, wi.name, wi.total_weight, wi.active)).send();
@@ -365,8 +291,6 @@ void control::active_witness(symbol_code commun_code, name witness, bool flag) {
         };
     }, false);
     eosio::check(exists, "witness not found");
-
-    //update_auths();
 }
 
 vector<witness_info> control::top_witness_info(symbol_code commun_code) {
@@ -391,10 +315,182 @@ vector<name> control::top_witnesses(symbol_code commun_code) {
     return top;
 }
 
+//multisig:
+void control::propose(ignore<symbol_code> commun_code,
+                      ignore<name> proposer,
+                      ignore<name> proposal_name,
+                      ignore<name> permission,
+                      ignore<transaction> trx) {
+
+    symbol_code _commun_code;
+    name _proposer;
+    name _proposal_name;
+    name _permission;
+    transaction_header _trx_header;
+
+    _ds >> _commun_code >> _proposer >> _proposal_name >> _permission;
+
+    const char* trx_pos = _ds.pos();
+    size_t size    = _ds.remaining();
+    _ds >> _trx_header;
+    
+    require_auth(_proposer);
+    eosio::check(in_the_top(_self, _commun_code, _proposer), _proposer.to_string() + " is not a leader");
+    
+    auto governance = _commun_code ? point::get_issuer(config::point_name, _commun_code) : config::dapp_name;
+    
+    eosio::check(_trx_header.expiration >= eosio::current_time_point(), "transaction expired");
+
+    proposals proptable(_self, _proposer.value);
+    eosio::check(proptable.find( _proposal_name.value ) == proptable.end(), "proposal with the same name exists");
+
+    auto packed_requested = pack(std::vector<permission_level>{{governance, _permission}}); 
+
+    auto res = eosio::check_transaction_authorization(trx_pos, size,
+                                                 (const char*)0, 0,
+                                                 packed_requested.data(), packed_requested.size());
+ 
+    eosio::check(res > 0, "transaction authorization failed");
+    
+    std::vector<char> pkd_trans;
+    pkd_trans.resize(size);
+    memcpy((char*)pkd_trans.data(), trx_pos, size);
+    proptable.emplace(_proposer, [&]( auto& prop) {
+        prop.proposal_name       = _proposal_name;
+        prop.commun_code         = _commun_code;
+        prop.permission          = _permission;
+        prop.packed_transaction  = pkd_trans;
+    });
+
+    approvals apptable(_self, _proposer.value);
+    apptable.emplace( _proposer, [&]( auto& a ) {
+        a.proposal_name = _proposal_name;
+    });
+}
+
+void control::approve(name proposer, name proposal_name, name approver, const eosio::binary_extension<eosio::checksum256>& proposal_hash) {
+    require_auth(approver);
+    proposals proptable(_self, proposer.value);
+    auto& prop = proptable.get(proposal_name.value, "proposal not found");
+    
+    eosio::check(in_the_top(_self, prop.commun_code, approver), approver.to_string() + " is not a leader");
+
+    if(proposal_hash) {
+        assert_sha256(prop.packed_transaction.data(), prop.packed_transaction.size(), *proposal_hash);
+    }
+
+    approvals apptable(_self, proposer.value);
+    auto& apps = apptable.get(proposal_name.value, "proposal not found");
+    
+    eosio::check(std::find_if(apps.provided_approvals.begin(), apps.provided_approvals.end(), [&](const approval& a) { return a.approver == approver; })
+        == apps.provided_approvals.end(), "already approved");
+
+    apptable.modify(apps, approver, [&]( auto& a ) { a.provided_approvals.push_back(approval{approver, current_time_point()}); });
+}
+
+void control::unapprove(name proposer, name proposal_name, name approver) {
+    require_auth(approver);
+
+    approvals apptable( _self, proposer.value);
+    auto& apps = apptable.get(proposal_name.value, "proposal not found");
+    auto itr = std::find_if( apps.provided_approvals.begin(), apps.provided_approvals.end(), [&](const approval& a) { return a.approver == approver; } );
+    eosio::check(itr != apps.provided_approvals.end(), "no approval previously granted");
+    
+    apptable.modify(apps, approver, [&]( auto& a ) { a.provided_approvals.erase(itr); });
+}
+
+void control::cancel(name proposer, name proposal_name, name canceler) {
+    require_auth(canceler);
+
+    proposals proptable(_self, proposer.value);
+    auto& prop = proptable.get( proposal_name.value, "proposal not found" );
+
+    if(canceler != proposer) {
+        eosio::check(unpack<transaction_header>( prop.packed_transaction ).expiration < current_time_point(), "cannot cancel until expiration");
+    }
+    proptable.erase(prop);
+
+    approvals apptable( _self, proposer.value);
+    auto& apps = apptable.get(proposal_name.value, "SYSTEM: proposal not found");
+    apptable.erase(apps);
+}
+
+
+void control::exec(name proposer, name proposal_name, name executer) {
+    require_auth(executer);
+
+    proposals proptable(_self, proposer.value);
+    auto& prop = proptable.get(proposal_name.value, "proposal not found");
+    transaction_header trx_header;
+    datastream<const char*> ds(prop.packed_transaction.data(), prop.packed_transaction.size());
+    ds >> trx_header;
+    eosio::check(trx_header.expiration >= current_time_point(), "transaction expired");
+    
+    auto governance = prop.commun_code ? point::get_issuer(config::point_name, prop.commun_code) : config::dapp_name;
+    
+    auto packed_requested = pack(std::vector<permission_level>{{governance, prop.permission}});
+    auto res = eosio::check_transaction_authorization(prop.packed_transaction.data(), prop.packed_transaction.size(),
+                                             (const char*)0, 0,
+                                             packed_requested.data(), packed_requested.size());
+    eosio::check(res > 0, "transaction authorization is no longer satisfied");
+    
+    auto thresholds = get_control_param(control_param_contract, prop.commun_code).thresholds;
+    auto threshold = std::find_if(thresholds.begin(), thresholds.end(), 
+        [&](const structures::threshold& t) { return t.permission == prop.permission; });
+    eosio::check(threshold != thresholds.end(), "unknown permission");
+
+    auto top = top_witnesses(prop.commun_code);
+    std::sort(top.begin(), top.end());
+    
+    uint16_t approvals_num = 0;
+
+    approvals apptable( _self, proposer.value);
+    auto& apps = apptable.get(proposal_name.value, "SYSTEM: proposal not found");
+    invalidations inv_table(_self, _self.value);
+    
+    for (auto& p : apps.provided_approvals) {
+        if (std::binary_search(top.begin(), top.end(), p.approver)) {
+            auto it = inv_table.find(p.approver.value);
+            if (it == inv_table.end() || it->last_invalidation_time < p.time) {
+                ++approvals_num;
+                if (approvals_num >= threshold->required) {
+                    break;
+                }
+            }
+        }
+    }
+    eosio::check(approvals_num >= threshold->required, "transaction authorization failed");
+    apptable.erase(apps);
+
+    eosio::send_deferred((uint128_t(proposer.value) << 64) | proposal_name.value, executer,
+                  prop.packed_transaction.data(), prop.packed_transaction.size());
+
+    proptable.erase(prop);
+}
+
+
+void control::invalidate(name account) {
+    require_auth(account);
+    invalidations inv_table(_self, _self.value);
+    auto it = inv_table.find(account.value);
+    if (it == inv_table.end()) {
+        inv_table.emplace(account, [&](auto& i) {
+            i.account = account;
+            i.last_invalidation_time = eosio::current_time_point();
+        });
+    }
+    else {
+        inv_table.modify(it, account, [&](auto& i) {
+            i.last_invalidation_time = eosio::current_time_point();
+        });
+    }
+}
+
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::control, commun::config::token_name, on_transfer,
     (validateprms)(setparams)
     (regwitness)(unregwitness)
     (startwitness)(stopwitness)
-    (votewitness)(unvotewitn)(changepoints))
+    (votewitness)(unvotewitn)(changepoints)
+    (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
