@@ -5,8 +5,76 @@
             "name": "community",
             "base": "",
             "fields": [
-                {"name": "commun_code", "type": "symbol_code"},
-                {"name": "community_name", "type": "string"}
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "community_name",
+                    "type": "string"
+                },
+                {
+                    "name": "leaders_num",
+                    "type": "uint16"
+                },
+                {
+                    "name": "emission_rate",
+                    "type": "uint16"
+                },
+                {
+                    "name": "leaders_percent",
+                    "type": "uint16"
+                },
+                {
+                    "name": "author_percent",
+                    "type": "uint16"
+                },
+                {
+                    "name": "collection_period",
+                    "type": "int64"
+                },
+                {
+                    "name": "moderation_period",
+                    "type": "int64"
+                },
+                {
+                    "name": "lock_period",
+                    "type": "int64"
+                },
+                {
+                    "name": "gems_per_day",
+                    "type": "uint16"
+                },
+                {
+                    "name": "rewarded_mosaic_num",
+                    "type": "uint16"
+                },
+                {
+                    "name": "post_pledge_token",
+                    "type": "int64"
+                },
+                {
+                    "name": "comment_pledge_token",
+                    "type": "int64"
+                },
+                {
+                    "name": "min_gem_pledge_token",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "community_name",
+                    "type": "string"
+                }
             ]
         },
         {
@@ -46,7 +114,7 @@
     ],
     "types": [],
     "actions": [
-        {"name": "create", "type": "community"},
+        {"name": "create", "type": "create"},
         {"name": "addinfo", "type": "addinfo"}
     ],
     "events": [],
