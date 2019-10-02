@@ -19,29 +19,99 @@ namespace commun {
 
 using std::string;
 using namespace eosio;
-
+/**
+* \brief This class implements comn.point contract behaviour
+* \ingroup point_class
+*/
 class [[eosio::contract("comn.point")]] point : public contract {
 public:
     using contract::contract;
 
+    /**
+        \brief A create token action
+
+        \param issuer an account who issues the token
+        \param maximum_supply a structure value containing the fields:
+                - maximum number of tokens supplied;
+                - token symbol (data type that uniquely identifies the token). This is a structure value containing fields:
+                   + token name, consisting of a set of capital letters;
+                   + field that specifies a token cost accuracy in the form of decimal places number.
+        \param cw
+        \param fee
+
+    */
     [[eosio::action]]
     void create(name issuer, asset maximum_supply, int16_t cw, int16_t fee);
 
+
+    /**
+      \brief Set token freezer
+
+      \param freezer a freezer account
+    */
     [[eosio::action]]
     void setfreezer(name freezer);
 
+
+    /**
+        \brief Issue tokens to an account action
+
+        \param to recipient account to balance of which the tokens are transferred.
+        \param quantity number of the supplied tokens. This is a structure value containing fields:
+                - number of the supplied tokens in the system;
+                - the token symbol. This is a structure value containing fields:
+                    + the token name, consisting of a set of capital letters;
+                    + the field that specifies a token cost accuracy in the form of decimal places number.
+        \param memo memo text that clarifies a meaning (necessity) of the token emission in the system. The text volume should not exceed 384 symbols including blanks.
+    */
     [[eosio::action]]
     void issue(name to, asset quantity, string memo);
 
+    /**
+        \brief withdraw a certain number of tokens from the system
+
+        \param quantity number of withdrawn tokens.
+        \param memo a memo text clarifying a purpose of withdrawing tokens from circulation.
+
+
+        Use of the bandwidth resources (RAM) is charged to the issuer account. The number of tokens withdrawn from circulation is also removed from issuer account balance, so this account can not withdraw tokens more than he/she has them on own balance.
+        To perform this action, the issuer account authorization is required.
+    */
     [[eosio::action]]
     void retire(name from, asset quantity, string memo);
 
+    /**
+        \brief ransfer tokens from one account to another
+
+        \param from sender account from balance of which the tokens are withdrawn..
+        \param to recipient account to balance of which the tokens are transferred
+        \param quantity number of tokens to be transferred. This value should be greater than zero
+        \param memo a memo text that clarifies a meaning of the tokens transfer
+
+    */
     [[eosio::action]]
     void transfer(name from, name to, asset quantity, string memo);
 
+    /**
+        \brief action is used to create a record in database
+
+        \param owner account name to which the memory is allocated.
+        \param commun_code symbol for which the entry is being created.
+        \param ram_payer account name that pays for the used memory.
+
+        Performing the open action requires a signature of the ram_payer account.
+     */
     [[eosio::action]]
     void open(name owner, symbol_code commun_code, std::optional<name> ram_payer);
 
+    /**
+        \brief  action is an opposite of open and is used to free allocated memory in database
+
+        \param owner  account name to which the memory was allocated.
+        \param commun_code symbol for which the entry is being created.
+
+        Performing the open action requires a signature of the ram_payer account.
+     */
     [[eosio::action]]
     void close(name owner, symbol_code commun_code);
     
@@ -114,30 +184,51 @@ public:
     }
 
 private:
+
 struct structures {
 
+    /**
+
+      \brief struct represents an account table in  a db
+      \ingroup point_tables
+    */
     struct [[eosio::table]] account {
-        asset    balance;
+        asset    balance; /**< amount of points belongs to the ram payer*/
         uint64_t primary_key()const { return balance.symbol.code().raw(); }
     };
 
+    /**
+
+      \brief struct represents token statistics table in a db
+      \ingroup point_tables
+    */
     struct [[eosio::table]] stat {
-        asset    supply;
-        asset    reserve;
+        asset    supply; /**< amount of points used in the system*/
+        asset    reserve; /**< amount of points not used in the system*/
         uint64_t primary_key()const { return supply.symbol.code().raw(); }
     };
 
+
+    /**
+      \brief struct represents params table in a db
+      \ingroup point_tables
+    */
     struct [[eosio::table]] param {
-        asset max_supply;
-        int16_t  cw; //connector weight
-        int16_t fee;
-        name    issuer;
+        asset max_supply; /**< maximum amount of tokens supplied*/
+        int16_t  cw; /**< connector weight*/
+        int16_t fee; /**< fee */
+        name     issuer; /**< an token issuer */
+
         uint64_t primary_key()const { return max_supply.symbol.code().raw(); }
         name by_issuer()const { return issuer; }
     };
 
+    /**
+      \brief struct represents global params table in a db
+      \ingroup point_tables
+    */
     struct [[eosio::table]] global_param {
-        name point_freezer;
+        name point_freezer; /**< need description*/
     };
 };
 
