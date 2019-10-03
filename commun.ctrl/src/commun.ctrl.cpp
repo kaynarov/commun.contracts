@@ -397,10 +397,10 @@ void control::exec(name proposer, name proposal_name, name executer) {
 
     proposals proptable(_self, proposer.value);
     auto& prop = proptable.get(proposal_name.value, "proposal not found");
-    transaction_header trx_header;
+    transaction trx;
     datastream<const char*> ds(prop.packed_transaction.data(), prop.packed_transaction.size());
-    ds >> trx_header;
-    eosio::check(trx_header.expiration >= current_time_point(), "transaction expired");
+    ds >> trx;
+    eosio::check(trx.expiration >= current_time_point(), "transaction expired");
     
     auto governance = prop.commun_code ? point::get_issuer(config::point_name, prop.commun_code) : config::dapp_name;
     
@@ -437,9 +437,13 @@ void control::exec(name proposer, name proposal_name, name executer) {
     }
     eosio::check(approvals_num >= threshold->required, "transaction authorization failed");
     apptable.erase(apps);
-
-    eosio::send_deferred((uint128_t(proposer.value) << 64) | proposal_name.value, executer,
-                  prop.packed_transaction.data(), prop.packed_transaction.size());
+    
+    for (const auto& a : trx.context_free_actions) {
+        a.send_context_free();
+    }
+    for (const auto& a : trx.actions) {
+        a.send();
+    }
 
     proptable.erase(prop);
 }

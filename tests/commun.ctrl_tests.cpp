@@ -114,13 +114,11 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_ctrl_tester) try {
     BOOST_CHECK_EQUAL(err.approved, dapp_ctrl.approve(leaders[0], N(goloscreate), leaders[9]));
     BOOST_CHECK_EQUAL(err.authorization_failed, dapp_ctrl.exec(leaders[0], N(goloscreate), _bob));
     
+    produce_block();
     BOOST_CHECK(point.get_params().is_null());
     
     BOOST_CHECK_EQUAL(success(), dapp_ctrl.approve(leaders[0], N(goloscreate), leaders[10]));
     BOOST_CHECK_EQUAL(success(), dapp_ctrl.exec(leaders[0], N(goloscreate), _bob));
-    
-    BOOST_CHECK(point.get_params().is_null());
-    produce_block();
     
     CHECK_MATCHING_OBJECT(point.get_params(), mvo()
         ("cw", 5000)
