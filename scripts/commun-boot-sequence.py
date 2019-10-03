@@ -107,6 +107,8 @@ def importKeys():
 def createCommunAccounts():
     for acc in communAccounts:
         createAccount('comn', acc.name, 'comn@owner', 'comn@active')
+
+    for acc in communAccounts:
         for perm in acc.permissions:
             updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, providebw=acc.name+'/comn')
             for link in perm.links:
