@@ -78,6 +78,48 @@
             ]
         },
         {
+            "name": "setsysparams",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "collection_period",
+                    "type": "int64?"
+                },
+                {
+                    "name": "moderation_period",
+                    "type": "int64?"
+                },
+                {
+                    "name": "lock_period",
+                    "type": "int64?"
+                },
+                {
+                    "name": "gems_per_day",
+                    "type": "uint16?"
+                },
+                {
+                    "name": "rewarded_mosaic_num",
+                    "type": "uint16?"
+                },
+                {
+                    "name": "post_pledge_token",
+                    "type": "int64?"
+                },
+                {
+                    "name": "comment_pledge_token",
+                    "type": "int64?"
+                },
+                {
+                    "name": "min_gem_pledge_token",
+                    "type": "int64?"
+                }
+            ]
+        },
+        {
             "name": "addinfo",
             "base": "",
             "fields": [
