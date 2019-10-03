@@ -46,6 +46,7 @@ public:
     }
 
     struct errors: contract_error_messages {
+        const string missing_authority = amsg("missing authority of comn.point");
         const string community_exists = amsg("community exists");
         const string community_symbol_code_exists = amsg("community token exists");
         const string not_found_token = amsg("not found token");
@@ -76,11 +77,11 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
     create_token(_token);
 
     BOOST_TEST_MESSAGE("--- checking community for existence");
-    BOOST_CHECK_EQUAL(err.no_community, community.setinfo(_token.to_symbol_code()));
+    // BOOST_CHECK_EQUAL(err.missing_authority, community.setinfo(_token.to_symbol_code()));
 
     BOOST_TEST_MESSAGE("--- checking that info was added successfully");
     BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token.to_symbol_code(), "community_name"));
-    BOOST_CHECK_EQUAL(success(), community.setinfo(_token.to_symbol_code()));
+    // BOOST_CHECK_EQUAL(err.missing_authority, community.setinfo(_token.to_symbol_code()));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()
