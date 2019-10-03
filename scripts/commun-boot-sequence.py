@@ -19,9 +19,11 @@ unlockTimeout = 999999999
 _communAccounts = [
     # name           contract                warmup_code     permissions (name, keys, accounts, links)
     #('comn',        None),    # comn - owner for COMMUN. Must be created outside of this script!
-    ('comn.point',   'commun.point',         None,                []),
+    ('comn.point',   'commun.point',         None,                [("active", [], ["comn@active", "comn.point@cyber.code"], []),
+                                                                   ("issueperm", [], ["comn.emit@cyber.code"], ["comn.point:issue"]),
+                                                                   ("transferperm", [], ["comn.emit@cyber.code"], ["comn.point:transfer"])]),
     ('comn.ctrl',    'commun.ctrl',          None,                [("changepoints", [], ["comn.point@cyber.code"], ["comn.ctrl:changepoints"])]),
-    ('comn.emit',    'commun.emit',          None,                []),
+    ('comn.emit',    'commun.emit',          None,                [("rewardperm", [], ["comn.gallery@cyber.code"], ["comn.emit:issuereward"])]),
     ('comn.list',    'commun.list',          None,                []),
     ('comn.gallery', 'commun.publication',   ['commun.gallery'],  []),
     ('comn.social',  'commun.social',        None,                []),
