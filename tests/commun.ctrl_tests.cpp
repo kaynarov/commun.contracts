@@ -96,11 +96,13 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_ctrl_tester) try {
     
     dapp_ctrl.prepare(leaders, _bob);
     set_authority(cfg::dapp_name, cfg::active_name, create_code_authority({cfg::control_name}), "owner");
+    set_authority(cfg::point_name, cfg::active_name,
+                  authority (1, {}, {{.permission = {cfg::dapp_name, config::active_name}, .weight = 1}}), "owner");
     
     produce_block();
     
     asset max_supply(999999, point._symbol);
-    auto trx = get_point_create_trx({permission_level{cfg::dapp_name, cfg::active_name}},
+    auto trx = get_point_create_trx({permission_level{cfg::point_name, cfg::active_name}},
         _golos, max_supply, 5000, 0);
 
     BOOST_CHECK_EQUAL(err.not_a_leader(_alice), dapp_ctrl.propose(_alice, N(goloscreate), cfg::active_name, trx));

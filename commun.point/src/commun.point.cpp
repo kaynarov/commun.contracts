@@ -30,7 +30,7 @@ static eosio::asset vague_asset(int64_t amount) { //bypass non-zero symbol restr
 }
 
 void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
-    require_auth(config::dapp_name);
+    require_auth(_self);
     check(is_account(issuer), "issuer account does not exist");
 
     auto commun_symbol = maximum_supply.symbol;

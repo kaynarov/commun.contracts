@@ -41,7 +41,7 @@ public:
     //// token actions
     action_result create(account_name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
         if (!_creators_added)
-            return push(N(create), commun::config::dapp_name, args()
+            return push(N(create), _code, args()
                 ("issuer", issuer)
                 ("maximum_supply", maximum_supply)
                 ("cw", cw)
