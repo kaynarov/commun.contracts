@@ -30,7 +30,8 @@ void commun_list::setsysparams(symbol_code commun_code,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         optional<int64_t> post_pledge_token, optional<int64_t> comment_pledge_token, optional<int64_t> min_gem_pledge_token) {
-    require_auth(point::get_issuer(config::point_name, commun_code));
+
+    require_auth(_self);
 
     // <> Place for checks
 
@@ -55,7 +56,7 @@ void commun_list::setsysparams(symbol_code commun_code,
 
 void commun_list::setinfo(symbol_code commun_code, std::string description,
         std::string language, std::string rules, std::string avatar_image, std::string cover_image) {
-    require_auth(_self);
+    require_auth(point::get_issuer(config::point_name, commun_code));
     get_community(_self, commun_code);
 }
 
