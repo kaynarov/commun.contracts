@@ -1,4 +1,5 @@
 #include <commun.list.hpp>
+#include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
 #include <commun/config.hpp>
 
@@ -52,15 +53,10 @@ void commun_list::setsysparams(symbol_code commun_code,
 
 #undef SET_PARAM
 
-void commun_list::addinfo(symbol_code commun_code, std::string community_name, 
-                          std::string ticker, std::string avatar, std::string cover_img_link, 
-                          std::string description, std::string rules) {
-    require_auth(commun::point::get_issuer(config::point_name, commun_code));
-    
-    tables::community community_tbl(_self, _self.value);
-    auto community_index = community_tbl.get_index<"byname"_n>();
-    auto community_itr = community_index.find(community_name);
-    check(community_itr != community_index.end(), "community doesn't exist");
+void commun_list::setinfo(symbol_code commun_code, std::string description,
+        std::string language, std::string rules, std::string avatar_image, std::string cover_image) {
+    require_auth(_self);
+    get_community(_self, commun_code);
 }
 
-EOSIO_DISPATCH(commun::commun_list, (create)(addinfo))
+EOSIO_DISPATCH(commun::commun_list, (create)(setinfo))
