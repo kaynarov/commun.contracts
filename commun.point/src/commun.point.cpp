@@ -289,7 +289,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
     sub_balance(from, quantity);
     auto payer = has_auth(to) ? to : from;
 
-    if (to != param.issuer) {
+    if (to != _self) {
         require_recipient(from);
         require_recipient(to);
 

@@ -14,18 +14,17 @@ struct commun_list_api: base_contract_api {
                     );
     }
 
-    action_result add_info(name sender, symbol_code commun_code, std::string community_name, std::string ticker = "ticker",
-                           std::string avatar = "avatar", std::string cover_img_link = "cover_img_link",
-                           std::string description = "description", std::string rules = "rules") {
-        return push(N(addinfo), sender, args()
-                    ("commun_code", commun_code)
-                    ("community_name", community_name)
-                    ("ticker", ticker)
-                    ("avatar", avatar)
-                    ("cover_img_link", cover_img_link)
-                    ("description", description)
-                    ("rules", rules)
-                    );
+    action_result setinfo(symbol_code commun_code, std::string description = "description",
+            std::string language = "language", std::string rules = "rules",
+            std::string avatar_image = "avatar_image", std::string cover_image = "cover_image") {
+        return push(N(setinfo), _code, args()
+            ("commun_code", commun_code)
+            ("description", description)
+            ("language", language)
+            ("rules", rules)
+            ("avatar_image", avatar_image)
+            ("cover_image", cover_image)
+        );
     }
 };
 
