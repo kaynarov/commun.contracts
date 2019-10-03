@@ -15,6 +15,7 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
+static const auto point_code = _point.to_symbol_code();
 
 const account_name _commun = N(commun);
 const account_name _golos = N(golos);
@@ -79,13 +80,13 @@ public:
 
         BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
-        BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
+        BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
 
         BOOST_CHECK_EQUAL(success(), post.init_default_params());
 
         produce_block();
         for (auto& u : _users) {
-            BOOST_CHECK_EQUAL(success(), point.open(u, point._symbol, u));
+            BOOST_CHECK_EQUAL(success(), point.open(u, point_code, u));
             BOOST_CHECK_EQUAL(success(), point.transfer(_golos, u, asset(supply / _users.size(), point._symbol)));
         }
     }
@@ -131,7 +132,7 @@ BOOST_FIXTURE_TEST_CASE(set_params, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(errgallery.no_balance, post.init_default_params());
 
-    BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
+    BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
     BOOST_CHECK_EQUAL(success(), post.init_default_params());
     produce_block();
 } FC_LOG_AND_RETHROW()
@@ -154,11 +155,11 @@ BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.wrong_title_length, post.create_msg({N(brucelee), "test-title"},
         {N(), "parentprmlnk"}, str256));
     BOOST_CHECK_EQUAL(err.wrong_body_length, post.create_msg({N(brucelee), "test-body"},
-        {N(), "parentprmlnk"}, "headermssg", ""));
+        {N(), "parentprmlnk"}, "header", ""));
 
     BOOST_TEST_MESSAGE("--- checking wrong curators_prcnt.");
     BOOST_CHECK_EQUAL(err.wrong_curators_prcnt, post.create_msg({N(brucelee), "test-title"},
-        {N(), "parentprmlnk"}, "headermssg", "body", "", {""}, "", cfg::_100percent+1));
+        {N(), "parentprmlnk"}, "header", "body", {""}, "", cfg::_100percent+1));
 
     BOOST_TEST_MESSAGE("--- creating post.");
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
@@ -215,9 +216,9 @@ BOOST_FIXTURE_TEST_CASE(update_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(success(), post.update_msg({N(brucelee), "permlink"},
-        "headermssgnew", "bodymssgnew", "languagemssgnew", {{"tagnew"}}, "jsonmetadatanew"));
+        "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
     BOOST_CHECK_EQUAL(err.no_message, post.update_msg({N(brucelee), "notexist"},
-        "headermssgnew", "bodymssgnew", "languagemssgnew", {{"tagnew"}}, "jsonmetadatanew"));
+        "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(settags_to_message, commun_publication_tester) try {
@@ -281,26 +282,26 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(err.own_reblog, post.reblog_msg(N(brucelee), {N(brucelee), "permlink"},
-        "headermssg",
-        "bodymssg"));
+        "header",
+        "body"));
     BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
         str256,
-        "bodymssg"));
+        "body"));
     BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
-        "headermssg",
+        "header",
         ""));
     BOOST_CHECK_EQUAL(err.no_message, post.reblog_msg(N(chucknorris), {N(brucelee), "test"},
-        "headermssg",
-        "bodymssg"));
+        "header",
+        "body"));
     BOOST_CHECK_EQUAL(success(), post.reblog_msg(N(chucknorris), {N(brucelee), "permlink"},
-        "headermssg",
-        "bodymssg"));
+        "header",
+        "body"));
     BOOST_CHECK_EQUAL(success(), post.reblog_msg(N(jackiechan), {N(brucelee), "permlink"},
         "",
         ""));
     BOOST_CHECK_EQUAL(success(), post.reblog_msg(_code, {N(brucelee), "permlink"},
         "",
-        "bodymssg"));
+        "body"));
 
     BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog_msg(N(brucelee),
         {N(brucelee), "permlink"}));

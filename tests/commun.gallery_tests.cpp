@@ -16,6 +16,7 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
+static const auto point_code = _point.to_symbol_code();
 
 const account_name default_opus_name = N(regulatum);
 
@@ -84,7 +85,7 @@ public:
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(errgallery.no_balance, gallery.create(point._symbol));
-        BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
+        BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
         BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
 
     }
@@ -140,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
-    BOOST_CHECK_EQUAL(success(), point.open(_bob, point._symbol, _bob));
+    BOOST_CHECK_EQUAL(success(), point.open(_bob, point_code, _bob));
     
     BOOST_CHECK_EQUAL(errgallery.no_points_provided, gallery.provide(_alice, _carol, asset(0, point._symbol)));
     BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _bob, asset(init_amount, point._symbol), fee));
@@ -266,7 +267,7 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_gallery_tester) try {
 
     BOOST_CHECK_EQUAL(errgallery.no_balance, gallery.create(point._symbol));
     BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
-    BOOST_CHECK_EQUAL(success(), point.open(_code, point._symbol, _code));
+    BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
     BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
 
 } FC_LOG_AND_RETHROW()

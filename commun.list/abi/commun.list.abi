@@ -5,16 +5,8 @@
             "name": "community",
             "base": "",
             "fields": [
-                {"name": "token_name", "type": "symbol_code"},
-                {"name": "community_name", "type": "string"}
-            ]
-        },
-        {
-            "name": "addinfo",
-            "base": "",
-            "fields": [
                 {
-                    "name": "token_name",
+                    "name": "commun_code",
                     "type": "symbol_code"
                 },
                 {
@@ -22,23 +14,137 @@
                     "type": "string"
                 },
                 {
-                    "name": "ticker",
-                    "type": "string"
+                    "name": "leaders_num",
+                    "type": "uint16"
                 },
                 {
-                    "name": "avatar",
-                    "type": "string"
+                    "name": "emission_rate",
+                    "type": "uint16"
                 },
                 {
-                    "name": "cover_img_link",
+                    "name": "leaders_percent",
+                    "type": "uint16"
+                },
+                {
+                    "name": "author_percent",
+                    "type": "uint16"
+                },
+                {
+                    "name": "collection_period",
+                    "type": "int64"
+                },
+                {
+                    "name": "moderation_period",
+                    "type": "int64"
+                },
+                {
+                    "name": "lock_period",
+                    "type": "int64"
+                },
+                {
+                    "name": "gems_per_day",
+                    "type": "uint16"
+                },
+                {
+                    "name": "rewarded_mosaic_num",
+                    "type": "uint16"
+                },
+                {
+                    "name": "post_pledge_token",
+                    "type": "int64"
+                },
+                {
+                    "name": "comment_pledge_token",
+                    "type": "int64"
+                },
+                {
+                    "name": "min_gem_pledge_token",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "community_name",
                     "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "setsysparams",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "collection_period",
+                    "type": "int64?"
+                },
+                {
+                    "name": "moderation_period",
+                    "type": "int64?"
+                },
+                {
+                    "name": "lock_period",
+                    "type": "int64?"
+                },
+                {
+                    "name": "gems_per_day",
+                    "type": "uint16?"
+                },
+                {
+                    "name": "rewarded_mosaic_num",
+                    "type": "uint16?"
+                },
+                {
+                    "name": "post_pledge_token",
+                    "type": "int64?"
+                },
+                {
+                    "name": "comment_pledge_token",
+                    "type": "int64?"
+                },
+                {
+                    "name": "min_gem_pledge_token",
+                    "type": "int64?"
+                }
+            ]
+        },
+        {
+            "name": "setinfo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
                 },
                 {
                     "name": "description",
                     "type": "string"
                 },
                 {
+                    "name": "language",
+                    "type": "string"
+                },
+                {
                     "name": "rules",
+                    "type": "string"
+                },
+                {
+                    "name": "avatar_image",
+                    "type": "string"
+                },
+                {
+                    "name": "cover_image",
                     "type": "string"
                 }
             ]
@@ -46,8 +152,9 @@
     ],
     "types": [],
     "actions": [
-        {"name": "create", "type": "community"},
-        {"name": "addinfo", "type": "addinfo"}
+        {"name": "create", "type": "create"},
+        {"name": "setsysparams", "type": "setsysparams"},
+        {"name": "setinfo", "type": "setinfo"}
     ],
     "events": [],
     "tables": [
@@ -59,7 +166,7 @@
                     "name": "primary",
                     "unique": "true",
                     "orders": [
-                        {"field": "token_name", "order": "asc"}
+                        {"field": "commun_code", "order": "asc"}
                     ]
                 },
                 {

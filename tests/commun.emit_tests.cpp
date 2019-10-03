@@ -116,7 +116,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     double leaders_rate = 0.25;
     BOOST_CHECK_EQUAL(success(), emit.create(point_code, annual_rate*cfg::_100percent, leaders_rate*cfg::_100percent));
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), "issue"));
-    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point._symbol, cfg::gallery_name));
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point_code, cfg::gallery_name));
 
     int64_t cont_emission = supply * int64_t(std::log(1.0 + annual_rate) * cfg::_100percent) / cfg::_100percent;
     int64_t period_amount = cont_emission * cfg::reward_mosaics_period / seconds_per_year;

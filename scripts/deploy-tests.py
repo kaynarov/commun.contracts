@@ -82,12 +82,12 @@ class TestCommunity(unittest.TestCase):
     def test_createPost(self):
         (private, public) = createKey()
         author = createRandomAccount(public, keys=techKey)
-        community.openBalance(author, '3,CATS', 'tech', keys=techKey)
+        community.openBalance(author, 'CATS', 'tech', keys=techKey)
         buyCommunityPoints(author, '1000.0000 COMMUN', 'CATS', private)
 
         (private2, public2) = createKey()
         voter = createRandomAccount(public2, keys=techKey)
-        community.openBalance(voter, '3,CATS', 'tech', keys=techKey)
+        community.openBalance(voter, 'CATS', 'tech', keys=techKey)
         buyCommunityPoints(voter, '10.0000 COMMUN', 'CATS', private2)
 
         permlink = randomPermlink()

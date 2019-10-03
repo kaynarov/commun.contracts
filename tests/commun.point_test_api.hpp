@@ -78,18 +78,18 @@ public:
         );
     }
 
-    action_result open(account_name owner, symbol symbol, account_name payer) {
+    action_result open(account_name owner, symbol_code commun_code, account_name payer) {
         return push(N(open), payer, args()
             ("owner", owner)
-            ("symbol", symbol)
+            ("commun_code", commun_code)
             ("ram_payer", payer)
         );
     }
 
-    action_result close(account_name owner, symbol symbol) {
+    action_result close(account_name owner, symbol_code commun_code) {
         return push(N(close), owner, args()
             ("owner", owner)
-            ("symbol", symbol)
+            ("commun_code", commun_code)
         );
     }
 
