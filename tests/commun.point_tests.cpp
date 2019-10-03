@@ -105,7 +105,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     BOOST_TEST_MESSAGE("--- alice sends " << amount_sent  << " to bob ");
     BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _bob, asset(amount_sent, point._symbol)));
     BOOST_TEST_MESSAGE("--- bob sells " << amount_sent << " for " << price_sent);
-    BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _golos, asset(amount_sent, point._symbol)));
+    BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _code, asset(amount_sent, point._symbol)));
     CHECK_MATCHING_OBJECT(token.get_account(_bob), mvo()("balance", asset(price_sent, token._symbol).to_string()));
 
     supply -= amount_sent;
@@ -113,7 +113,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     int64_t amount_sell = amount / 4;
     int64_t price_sell = (amount_sell * reserve / supply) * (1.0 - fee);
     BOOST_TEST_MESSAGE("--- alice sells " << amount_sell << " for " << price_sell);
-    BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _golos, asset(amount_sell, point._symbol)));
+    BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _code, asset(amount_sell, point._symbol)));
     CHECK_MATCHING_OBJECT(token.get_account(_alice), mvo()("balance", asset(price_sell + (init_balance - price), token._symbol).to_string()));
 } FC_LOG_AND_RETHROW()
 
@@ -161,7 +161,7 @@ BOOST_FIXTURE_TEST_CASE(cw05_test, commun_point_tester) try {
         point_balance -= amount;
         balance += price;
         BOOST_TEST_MESSAGE("--- alice sells " << amount << " for " << price);
-        BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _golos, asset(amount, point._symbol)));
+        BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _code, asset(amount, point._symbol)));
         BOOST_CHECK_EQUAL(point.get_amount(_alice), point_balance);
         CHECK_MATCHING_OBJECT(token.get_account(_alice), mvo()("balance", asset(balance, token._symbol).to_string()));
         produce_block();
