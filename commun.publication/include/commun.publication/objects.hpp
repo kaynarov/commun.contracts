@@ -45,7 +45,6 @@ struct vertex_t {
 
 struct acc_param_t {
     name account;
-    uint16_t actions_per_day; //? maybe actions_per_period is better 
     std::vector<name> providers;
     uint64_t primary_key() const { return account.value; }
 };

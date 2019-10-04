@@ -20,7 +20,7 @@ struct community {
     int64_t collection_period = 7 * 24 * 60 * 60;
     int64_t moderation_period = 10 * 24 * 60 * 60;
     int64_t lock_period = 0; // TODO
-    uint16_t gems_per_day = 0; // TODO
+    uint16_t gems_per_day = 10;
     uint16_t rewarded_mosaic_num = 20;
     int64_t post_pledge_token = 0; // TODO
     int64_t comment_pledge_token = 0; // TODO
