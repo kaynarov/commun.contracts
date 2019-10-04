@@ -3,42 +3,42 @@
     "types": [],
     "structs": [
         {
-            "name": "regwitness",
+            "name": "regleader",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name", "name": "witness"},
+                {"type": "name", "name": "leader"},
                 {"type": "string", "name": "url"}
             ]
         }, {
-            "name": "unregwitness",
+            "name": "unregleader",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name",   "name": "witness"}
+                {"type": "name",   "name": "leader"}
             ]
         }, {
-            "name": "witness_name",
+            "name": "leader_name",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name",   "name": "witness"}
+                {"type": "name",   "name": "leader"}
             ]
         }, {
-            "name": "votewitness",
+            "name": "voteleader",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "voter"},
-                {"type": "name", "name": "witness"}
+                {"type": "name", "name": "leader"}
             ]
         }, {
-            "name": "unvotewitn",
+            "name": "unvotelead",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "voter"},
-                {"type": "name", "name": "witness"}
+                {"type": "name", "name": "leader"}
             ]
         }, {
             "name": "changepoints",
@@ -48,7 +48,7 @@
                 {"type": "asset", "name": "diff"}
             ]
         }, {
-            "name": "witness_info",
+            "name": "leader_info",
             "base": "",
             "fields": [
                 {"type": "name", "name": "name"},
@@ -58,11 +58,11 @@
                 {"type": "uint64", "name": "counter_votes"}
             ]
         }, {
-            "name": "witness_voter",
+            "name": "leader_voter",
             "base": "",
             "fields": [
                 {"type": "name", "name": "voter"},
-                {"type": "name[]", "name": "witnesses"}
+                {"type": "name[]", "name": "leaders"}
             ]
         }, {
             "name": "multisig_acc",
@@ -70,10 +70,10 @@
             "fields": [
                 {"type": "name", "name": "name"}]
         }, {
-            "name": "witnessstate",
+            "name": "leaderstate",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name", "name": "witness"},
+                {"type": "name", "name": "leader"},
                 {"type": "uint64", "name": "weight"},
                 {"type": "bool", "name": "active"}
             ]
@@ -403,27 +403,27 @@
         }
     ],
     "events": [
-        {"name": "witnessstate", "type": "witnessstate"}
+        {"name": "leaderstate", "type": "leaderstate"}
     ],
     "actions": [
         {
-            "name": "regwitness",
-            "type": "regwitness"
+            "name": "regleader",
+            "type": "regleader"
         }, {
-            "name": "unregwitness",
-            "type": "unregwitness"
+            "name": "unregleader",
+            "type": "unregleader"
         }, {
-            "name": "startwitness",
-            "type": "witness_name"
+            "name": "startleader",
+            "type": "leader_name"
         }, {
-            "name": "stopwitness",
-            "type": "witness_name"
+            "name": "stopleader",
+            "type": "leader_name"
         }, {
-            "name": "votewitness",
-            "type": "votewitness"
+            "name": "voteleader",
+            "type": "voteleader"
         }, {
-            "name": "unvotewitn",
-            "type": "unvotewitn"
+            "name": "unvotelead",
+            "type": "unvotelead"
         }, {
             "name": "changepoints",
             "type": "changepoints"
@@ -456,8 +456,8 @@
     ],
     "tables": [
         {
-            "name": "witness",
-            "type": "witness_info",
+            "name": "leader",
+            "type": "leader_info",
             "scope_type": "symbol_code",
             "indexes" : [{
                 "name": "primary",
@@ -469,8 +469,8 @@
                 "orders": [{"field": "total_weight", "order": "desc"}]
             }]
         }, {
-            "name": "witnessvote",
-            "type": "witness_voter",
+            "name": "leadervote",
+            "type": "leader_voter",
             "scope_type": "symbol_code",
             "indexes" : [{
                 "name": "primary",
