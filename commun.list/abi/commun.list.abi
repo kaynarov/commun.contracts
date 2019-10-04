@@ -124,20 +124,24 @@
             "base": "",
             "fields": [
                 {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
                     "name": "leaders_num",
-                    "type": "uint16"
+                    "type": "uint16?"
                 },
                 {
                     "name": "emission_rate",
-                    "type": "uint16"
+                    "type": "uint16?"
                 },
                 {
                     "name": "leaders_percent",
-                    "type": "uint16"
+                    "type": "uint16?"
                 },
                 {
                     "name": "author_percent",
-                    "type": "uint16"
+                    "type": "uint16?"
                 }
             ]
         },

@@ -7,11 +7,17 @@ struct commun_list_api: base_contract_api {
     commun_list_api(golos_tester* tester, name code)
         :   base_contract_api(tester, code) {}
 
-    action_result create_record(name sender, symbol_code commun_code, std::string community_name) {
-        return push(N(create), sender, args()
+    action_result create_record(name signer, symbol_code commun_code, std::string community_name) {
+        return push(N(create), signer, args()
                     ("commun_code", commun_code)
                     ("community_name", community_name)
                     );
+    }
+
+    action_result setparams(name signer, symbol_code commun_code, mvo params) {
+        return push(N(setparams), signer, params
+            ("commun_code", commun_code)
+        );
     }
 
     action_result setinfo(symbol_code commun_code, std::string description = "description",
