@@ -99,4 +99,14 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
     // BOOST_CHECK_EQUAL(err.missing_authority, community.setinfo(_token.to_symbol_code()));
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(follow_test, commun_list_tester) try {
+    BOOST_TEST_MESSAGE("follow test");
+    create_token(_golos, _token);
+    BOOST_CHECK_EQUAL(err.no_community, community.follow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(err.no_community, community.unfollow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token_code, "community_name"));
+    BOOST_CHECK_EQUAL(success(), community.follow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.unfollow(_token_code, _alice));
+} FC_LOG_AND_RETHROW()
+
 BOOST_AUTO_TEST_SUITE_END()

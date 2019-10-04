@@ -23,6 +23,9 @@ public:
     [[eosio::action]] void setinfo(symbol_code commun_code, std::string description,
         std::string language, std::string rules, std::string avatar_image, std::string cover_image);
 
+    [[eosio::action]] void follow(symbol_code commun_code, name follower);
+    [[eosio::action]] void unfollow(symbol_code commun_code, name follower);
+
     static inline auto get_community(name list_contract_account, symbol_code commun_code) {
         tables::community community_tbl(list_contract_account, list_contract_account.value);
         return community_tbl.get(commun_code.raw(), "community not exists");
