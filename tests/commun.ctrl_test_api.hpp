@@ -18,9 +18,9 @@ struct commun_ctrl_api: base_contract_api {
 
     using base_contract_api::base_contract_api;
 
-    const name _minority_name = N(witn.minor);
-    const name _majority_name = N(witn.major);
-    const name _supermajority_name = N(witn.smajor);
+    const name _minority_name = N(lead.minor);
+    const name _majority_name = N(lead.major);
+    const name _supermajority_name = N(lead.smajor);
 
     //// control actions
     
@@ -28,45 +28,45 @@ struct commun_ctrl_api: base_contract_api {
         return push(N(setparams), _code, args()("commun_code", commun_code));
     }
 
-    action_result reg_witness(name witness, string url) {
-        return push(N(regwitness), witness, args()
+    action_result reg_leader(name leader, string url) {
+        return push(N(regleader), leader, args()
             ("commun_code", commun_code)
-            ("witness", witness)
+            ("leader", leader)
             ("url", url)
         );
     }
 
-    action_result unreg_witness(name witness) {
-        return push(N(unregwitness), witness, args()
-            ("witness", witness)
+    action_result unreg_leader(name leader) {
+        return push(N(unregleader), leader, args()
+            ("leader", leader)
         );
     }
 
-    action_result start_witness(name witness) {
-        return push(N(startwitness), witness, args()
-            ("witness", witness)
+    action_result start_leader(name leader) {
+        return push(N(startleader), leader, args()
+            ("leader", leader)
         );
     }
 
-    action_result stop_witness(name witness) {
-        return push(N(stopwitness), witness, args()
+    action_result stop_leader(name leader) {
+        return push(N(stopleader), leader, args()
             ("commun_code", commun_code)
-            ("witness", witness)
+            ("leader", leader)
         );
     }
 
-    action_result vote_witness(name voter, name witness) {
-        return push(N(votewitness), voter, args()
-            ("commun_code", commun_code)
-            ("voter", voter)
-            ("witness", witness)
-        );
-    }
-    action_result unvote_witness(name voter, name witness) {
-        return push(N(unvotewitn), voter, args()
+    action_result vote_leader(name voter, name leader) {
+        return push(N(voteleader), voter, args()
             ("commun_code", commun_code)
             ("voter", voter)
-            ("witness", witness)
+            ("leader", leader)
+        );
+    }
+    action_result unvote_leader(name voter, name leader) {
+        return push(N(unvotelead), voter, args()
+            ("commun_code", commun_code)
+            ("voter", voter)
+            ("leader", leader)
         );
     }
 
@@ -119,20 +119,20 @@ struct commun_ctrl_api: base_contract_api {
             ("account", account));
     }
 
-    variant get_witness(name witness) const {
-        return get_struct(_code, N(witness), witness, "witness_info");
+    variant get_leader(name leader) const {
+        return get_struct(_code, N(leader), leader, "leader_info");
     }
 
-    std::vector<variant> get_all_witnesses() {
-        return _tester->get_all_chaindb_rows(_code, commun_code.value, N(witness), false);
+    std::vector<variant> get_all_leaders() {
+        return _tester->get_all_chaindb_rows(_code, commun_code.value, N(leader), false);
     }
     
     void prepare(const std::vector<name>& leaders, name voter) {
         
         BOOST_CHECK_EQUAL(base_tester::success(), set_default_params());
         for (int i = 0; i < leaders.size(); i++) {
-            BOOST_CHECK_EQUAL(base_tester::success(), reg_witness(leaders[i], "localhost"));
-            BOOST_CHECK_EQUAL(base_tester::success(), vote_witness(voter, leaders[i]));
+            BOOST_CHECK_EQUAL(base_tester::success(), reg_leader(leaders[i], "localhost"));
+            BOOST_CHECK_EQUAL(base_tester::success(), vote_leader(voter, leaders[i]));
         }
     }
 

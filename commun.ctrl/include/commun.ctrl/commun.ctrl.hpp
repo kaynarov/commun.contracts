@@ -68,9 +68,9 @@ static const name control_param_contract = config::control_name; // TODO: config
 
 using share_type = int64_t;
 
-struct [[eosio::table]] witness_info {
+struct [[eosio::table]] leader_info {
     name name;
-    std::string url;        // not sure it's should be in db (but can be useful to get witness info)
+    std::string url;        // not sure it's should be in db (but can be useful to get leader info)
     bool active;            // can check key instead or even remove record
 
     uint64_t total_weight;
@@ -83,19 +83,19 @@ struct [[eosio::table]] witness_info {
         return total_weight;
     }
 };
-using witness_weight_idx = indexed_by<"byweight"_n, const_mem_fun<witness_info, uint64_t, &witness_info::weight_key>>;
-using witness_tbl = eosio::multi_index<"witness"_n, witness_info, witness_weight_idx>;
+using leader_weight_idx = indexed_by<"byweight"_n, const_mem_fun<leader_info, uint64_t, &leader_info::weight_key>>;
+using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx>;
 
 
-struct [[eosio::table]] witness_voter {
+struct [[eosio::table]] leader_voter {
     name voter;
-    std::vector<name> witnesses;
+    std::vector<name> leaders;
 
     uint64_t primary_key() const {
         return voter.value;
     }
 };
-using witness_vote_tbl = eosio::multi_index<"witnessvote"_n, witness_voter>;
+using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter>;
 
 struct [[eosio::table]] proposal {
     name proposal_name;
@@ -138,12 +138,12 @@ public:
     {
     }
 
-    [[eosio::action]] void regwitness(symbol_code commun_code, name witness, std::string url);
-    [[eosio::action]] void unregwitness(symbol_code commun_code, name witness);
-    [[eosio::action]] void stopwitness(symbol_code commun_code, name witness);
-    [[eosio::action]] void startwitness(symbol_code commun_code, name witness);
-    [[eosio::action]] void votewitness(symbol_code commun_code, name voter, name witness);
-    [[eosio::action]] void unvotewitn(symbol_code commun_code, name voter, name witness);
+    [[eosio::action]] void regleader(symbol_code commun_code, name leader, std::string url);
+    [[eosio::action]] void unregleader(symbol_code commun_code, name leader);
+    [[eosio::action]] void stopleader(symbol_code commun_code, name leader);
+    [[eosio::action]] void startleader(symbol_code commun_code, name leader);
+    [[eosio::action]] void voteleader(symbol_code commun_code, name voter, name leader);
+    [[eosio::action]] void unvotelead(symbol_code commun_code, name voter, name leader);
 
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_transfer(name from, name to, asset quantity, std::string memo);
@@ -162,14 +162,14 @@ public:
 private:
     void check_started(symbol_code commun_code);
 
-    std::vector<name> top_witnesses(symbol_code commun_code);
-    std::vector<witness_info> top_witness_info(symbol_code commun_code);
+    std::vector<name> top_leaders(symbol_code commun_code);
+    std::vector<leader_info> top_leader_info(symbol_code commun_code);
 
     void change_voter_points(symbol_code commun_code, name voter, share_type diff);
-    void apply_vote_weight(symbol_code commun_code, name voter, name witness, bool add);
-    void update_witnesses_weights(symbol_code commun_code, std::vector<name> witnesses, share_type diff);
-    void send_witness_event(symbol_code commun_code, const witness_info& wi);
-    void active_witness(symbol_code commun_code, name witness, bool flag);
+    void apply_vote_weight(symbol_code commun_code, name voter, name leader, bool add);
+    void update_leaders_weights(symbol_code commun_code, std::vector<name> leaders, share_type diff);
+    void send_leader_event(symbol_code commun_code, const leader_info& wi);
+    void active_leader(symbol_code commun_code, name leader, bool flag);
     
     // TODO: move to commun_list
     static inline structures::control_param get_control_param(name contract_account, symbol_code commun_code) {
@@ -198,8 +198,8 @@ private:
 public:
     static inline bool in_the_top(name ctrl_contract_account, symbol_code commun_code, name account) {
         const auto l = get_control_param(control_param_contract, commun_code).leaders_num;
-        witness_tbl witness(ctrl_contract_account, commun_code.raw());
-        auto idx = witness.get_index<"byweight"_n>();    // this index ordered descending
+        leader_tbl leader(ctrl_contract_account, commun_code.raw());
+        auto idx = leader.get_index<"byweight"_n>();    // this index ordered descending
         size_t i = 0;
         for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
             if (itr->active && itr->total_weight > 0) {

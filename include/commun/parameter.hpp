@@ -23,7 +23,7 @@ struct parameter {
     // validates parameter value(s), throws assert if invalid
     virtual void validate() const {};
 
-    // returns true if parameter can't be changed after initialization; TODO: must not present in local witness params
+    // returns true if parameter can't be changed after initialization; TODO: must not present in local leader params
     virtual bool immutable() const { return false; }
 
     // NOTE: the following fields are unused now, `golos.config` will need them later
@@ -186,13 +186,13 @@ struct param_helper {
     }
 
     /**
-     * Get contract parameters, individually set by top witnesses
+     * Get contract parameters, individually set by top leaders
      *
      * @brief helper to obtain top parameters to calculate median or majority value
      * @tparam Tbl - multi-index table, where parameters stored. Must be singleton
      * @tparam Item - type of parameters struct
      * @param code - contract to get parameters for
-     * @param top - top witnesses
+     * @param top - top leaders
      */
     template<typename Tbl, typename Item>   // TODO: Item can be derived from Tbl
     static std::vector<Item> get_top_params(name code, const std::vector<name>& top) {

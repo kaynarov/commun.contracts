@@ -508,9 +508,9 @@ BOOST_FIXTURE_TEST_CASE(changing_leaders_and_slaps, commun_publication_tester) t
     BOOST_CHECK_EQUAL(success(), post.slap(N(jackiechan), {N(alice), "alice-in-blockchains"}));
     BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(chucknorris)), post.slap(N(chucknorris), {N(alice), "alice-in-blockchains"}));
 
-    BOOST_CHECK_EQUAL(success(), ctrl.unvote_witness(N(chucknorris), N(jackiechan)));
-    BOOST_CHECK_EQUAL(success(), ctrl.reg_witness(N(chucknorris), "chucknorris"));
-    BOOST_CHECK_EQUAL(success(), ctrl.vote_witness(N(chucknorris), N(chucknorris)));
+    BOOST_CHECK_EQUAL(success(), ctrl.unvote_leader(N(chucknorris), N(jackiechan)));
+    BOOST_CHECK_EQUAL(success(), ctrl.reg_leader(N(chucknorris), "chucknorris"));
+    BOOST_CHECK_EQUAL(success(), ctrl.vote_leader(N(chucknorris), N(chucknorris)));
 
     BOOST_CHECK_EQUAL(1,
         get_mosaic(_code, _point, N(alice), post.tracery("alice-in-blockchains"))["slaps"].as<std::vector<account_name> >().size());

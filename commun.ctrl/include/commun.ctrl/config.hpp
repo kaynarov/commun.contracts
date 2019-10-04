@@ -3,6 +3,6 @@
 
 namespace commun { namespace config {
 
-static const auto witness_max_url_size = 256;
+static const auto leader_max_url_size = 256;
 
 } } // commun::config
