@@ -1,3 +1,4 @@
+#pragma once
 #include "objects.hpp"
 
 namespace commun {
@@ -29,6 +30,10 @@ public:
     static inline auto get_community(name list_contract_account, symbol_code commun_code) {
         tables::community community_tbl(list_contract_account, list_contract_account.value);
         return community_tbl.get(commun_code.raw(), "community not exists");
+    }
+
+    static inline void check_community_exists(name list_contract_account, symbol_code commun_code) {
+        get_community(list_contract_account, commun_code);
     }
 };
 

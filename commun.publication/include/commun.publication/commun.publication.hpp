@@ -18,9 +18,8 @@ public:
         auto vertex = vertices_index.find(std::make_tuple(mosaic.creator, mosaic.tracery));
         eosio::check(vertex != vertices_index.end(), "SYSTEM: Permlink doesn't exist.");
 
-        gallery_types::params params_table(self, commun_code.raw());
-        const auto& param = params_table.get(commun_code.raw(), "SYSTEM: param does not exists");
-        auto active_period_end = mosaic.created + eosio::seconds(param.mosaic_active_period);
+        auto community = commun_list::get_community(config::list_name, commun_code);
+        auto active_period_end = mosaic.created + eosio::seconds(community.active_period);
         auto now = eosio::current_time_point();
 
         eosio::check(vertex->childcount == 0 || now > active_period_end, "comment with child comments can't be deleted during the active period");

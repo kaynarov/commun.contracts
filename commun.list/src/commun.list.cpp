@@ -6,10 +6,8 @@
 using namespace commun;
 
 void commun_list::create(symbol_code commun_code, std::string community_name) {
-
-    check(commun::point::exist(config::point_name, commun_code), "not found token");
-
     require_auth(_self);
+    auto commun_symbol = point::get_supply(config::point_name, commun_code).symbol;
 
     tables::community community_tbl(_self, _self.value);
 
@@ -19,7 +17,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
     check(community_index.find(community_name) == community_index.end(), "community exists");
 
     community_tbl.emplace(_self, [&](auto& item) {
-        item.commun_code = commun_code;
+        item.commun_symbol = commun_symbol;
         item.community_name = community_name;
     });
 }

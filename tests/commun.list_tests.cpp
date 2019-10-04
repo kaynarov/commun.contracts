@@ -50,7 +50,7 @@ public:
         const string missing_authority = amsg("missing authority of comn.point");
         const string community_exists = amsg("community exists");
         const string community_symbol_code_exists = amsg("community token exists");
-        const string not_found_token = amsg("not found token");
+        const string no_point_symbol = amsg("point with symbol does not exist");
         const string no_community = amsg("community not exists");
         const string no_changes = amsg("No params changed");
     } err;
@@ -62,7 +62,7 @@ BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
     BOOST_TEST_MESSAGE("create_community");
     create_token(_golos, _token);
 
-    BOOST_CHECK_EQUAL(err.not_found_token, community.create_record(cfg::list_name, _token_e.to_symbol_code(), "community 1"));
+    BOOST_CHECK_EQUAL(err.no_point_symbol, community.create_record(cfg::list_name, _token_e.to_symbol_code(), "community 1"));
 
     BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token.to_symbol_code(), "community 1"));
 
