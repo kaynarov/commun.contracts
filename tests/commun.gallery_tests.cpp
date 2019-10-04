@@ -92,7 +92,7 @@ public:
         BOOST_CHECK_EQUAL(errgallery.no_balance, gallery.create(point._symbol));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
 
-        BOOST_CHECK_EQUAL(success(), list.create_record(cfg::list_name, point_code, "community 1"));
+        BOOST_CHECK_EQUAL(success(), list.create(cfg::list_name, point_code, "community 1"));
 
         BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
     }
