@@ -17,7 +17,7 @@ static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 static const auto point_code = _point.to_symbol_code();
 
-const account_name _commun = N(commun);
+const account_name _commun = cfg::dapp_name;
 const account_name _golos = N(golos);
 
 class commun_publication_tester : public gallery_tester {
@@ -224,7 +224,7 @@ BOOST_FIXTURE_TEST_CASE(update_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(settags_to_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Set message tags by leader testing.");
     init();
-    prepare_ctrl(ctrl, _golos, {N(jackiechan)}, N(brucelee), 1, 1);
+    ctrl.prepare({N(jackiechan)}, N(brucelee));
     mssgid msg = {N(brucelee), "permlink"};
     BOOST_CHECK_EQUAL(success(), post.create_msg(msg));
 
@@ -405,7 +405,7 @@ BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Reward for downvote testing.");
     init();
-    prepare_ctrl(ctrl, _golos, {N(jackiechan), N(brucelee)}, N(chucknorris), 2, 4);
+    ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "facelift"}));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "dirt"}));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}));
@@ -502,7 +502,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(changing_leaders_and_slaps, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Changing leaders and slaps testing.");
     init();
-    prepare_ctrl(ctrl, _golos, {N(jackiechan), N(brucelee)}, N(chucknorris), 2, 4);
+    ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}));
 
     BOOST_CHECK_EQUAL(success(), post.slap(N(jackiechan), {N(alice), "alice-in-blockchains"}));

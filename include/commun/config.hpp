@@ -20,6 +20,7 @@ inline eosio::chain::name operator ""_n() {
 namespace commun { namespace config {
 
 // contracts
+static const auto dapp_name = "commn"_n;
 static const auto list_name = "comn.list"_n;
 static const auto emit_name = "comn.emit"_n;
 static const auto control_name = "comn.ctrl"_n;
@@ -35,6 +36,8 @@ static const auto point_name = "comn.point"_n;
 static const auto code_name = "cyber.code"_n;
 static const auto owner_name = "owner"_n;
 static const auto active_name = "active"_n;
+
+static const auto ban_name = "ban"_n;
 
 // numbers and time
 static constexpr auto _1percent = 100;

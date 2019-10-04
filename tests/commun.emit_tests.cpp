@@ -53,7 +53,7 @@ public:
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
     }
 
-    const account_name _commun = N(commun);
+    const account_name _commun = cfg::dapp_name;
     const account_name _golos = N(golos);
     const account_name _alice = N(alice);
     const account_name _bob = N(bob);

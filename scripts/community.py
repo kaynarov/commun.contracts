@@ -32,15 +32,9 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
     }, providebw='{acc}/comn'.format(acc=owner_account), keys=owner_private_key)
     
     # 5. Set ctrl-params (comn.ctrl:setparams)
-    pushAction('comn.ctrl', 'setparams', owner_account, {
-        "commun_code":symbol.code,
-        "params":[
-            ["multisig_acc",{"name":owner_account}],
-            ["max_witnesses",{"max":21}],
-            ["multisig_perms", {"super_majority":0,"majority":0,"minority":0}],
-            ["max_witness_votes",{"max":30}]
-        ]
-    }, providebw='{acc}/comn'.format(acc=owner_account), keys=owner_private_key)
+    pushAction('comn.ctrl', 'setparams', 'comn.ctrl', {
+        "commun_code":symbol.code
+    }, providebw='{acc}/comn'.format(acc='comn.ctrl'), keys=owner_private_key)
 
     pushAction('comn.emit', 'create', 'comn.emit', {
         "commun_code": symbol.code,
