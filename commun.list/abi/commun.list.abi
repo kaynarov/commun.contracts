@@ -120,6 +120,32 @@
             ]
         },
         {
+            "name": "setparams",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "leaders_num",
+                    "type": "uint16?"
+                },
+                {
+                    "name": "emission_rate",
+                    "type": "uint16?"
+                },
+                {
+                    "name": "leaders_percent",
+                    "type": "uint16?"
+                },
+                {
+                    "name": "author_percent",
+                    "type": "uint16?"
+                }
+            ]
+        },
+        {
             "name": "setinfo",
             "base": "",
             "fields": [
@@ -154,6 +180,7 @@
     "actions": [
         {"name": "create", "type": "create"},
         {"name": "setsysparams", "type": "setsysparams"},
+        {"name": "setparams", "type": "setparams"},
         {"name": "setinfo", "type": "setinfo"}
     ],
     "events": [],

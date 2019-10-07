@@ -16,6 +16,10 @@ public:
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         optional<int64_t> post_pledge_token, optional<int64_t> comment_pledge_token, optional<int64_t> min_gem_pledge_token);
 
+    [[eosio::action]] void setparams(symbol_code commun_code,
+        optional<uint16_t> leaders_num, optional<uint16_t> emission_rate,
+        optional<uint16_t> leaders_percent, optional<uint16_t> author_percent);
+
     [[eosio::action]] void setinfo(symbol_code commun_code, std::string description,
         std::string language, std::string rules, std::string avatar_image, std::string cover_image);
 

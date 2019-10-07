@@ -10,6 +10,7 @@ using namespace fc;
 static const auto token_code_str = "GLS";
 static const auto _token = symbol(3, token_code_str);
 static const auto _token_e = symbol(3, "SLG");
+static const auto _token_code = _token.to_symbol_code();
 
 class commun_list_tester : public golos_tester {
 protected:
@@ -50,7 +51,8 @@ public:
         const string community_exists = amsg("community exists");
         const string community_symbol_code_exists = amsg("community token exists");
         const string not_found_token = amsg("not found token");
-        const string no_community = amsg("community not exists");
+        const string no_community = amsg("community token doesn't exist");
+        const string no_changes = amsg("No params changed");
     } err;
 };
 
@@ -70,6 +72,18 @@ BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
 
     BOOST_CHECK_EQUAL(err.community_symbol_code_exists, community.create_record(cfg::list_name, _token.to_symbol_code(), "community 1"));
     BOOST_CHECK_EQUAL(err.community_exists, community.create_record(cfg::list_name, _token_e.to_symbol_code(), "community 1"));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(setparams_test, commun_list_tester) try {
+    BOOST_TEST_MESSAGE("setparams test");
+    create_token(_golos, _token);
+    BOOST_CHECK_EQUAL(err.no_community, community.setparams( _golos, _token_code, community.args() ));
+    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token_code, "community_name"));
+    BOOST_CHECK_EQUAL(err.no_changes, community.setparams( _golos, _token_code, community.args() ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("leaders_num", 20) ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("leaders_num", 20)("emission_rate", 5000) ));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
