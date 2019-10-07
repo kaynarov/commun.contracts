@@ -1,53 +1,44 @@
 {
     "version": "cyberway::abi/1.1",
     "types": [],
-    "variants": [{
-        "name": "ctrl_param",
-        "types": [
-            "multisig_acc",
-            "max_witnesses",
-            "multisig_perms",
-            "max_witness_votes"
-        ]
-    }],
     "structs": [
         {
-            "name": "regwitness",
+            "name": "regleader",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name", "name": "witness"},
+                {"type": "name", "name": "leader"},
                 {"type": "string", "name": "url"}
             ]
         }, {
-            "name": "unregwitness",
+            "name": "unregleader",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name",   "name": "witness"}
+                {"type": "name",   "name": "leader"}
             ]
         }, {
-            "name": "witness_name",
+            "name": "leader_name",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name",   "name": "witness"}
+                {"type": "name",   "name": "leader"}
             ]
         }, {
-            "name": "votewitness",
+            "name": "voteleader",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "voter"},
-                {"type": "name", "name": "witness"}
+                {"type": "name", "name": "leader"}
             ]
         }, {
-            "name": "unvotewitn",
+            "name": "unvotelead",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "voter"},
-                {"type": "name", "name": "witness"}
+                {"type": "name", "name": "leader"}
             ]
         }, {
             "name": "changepoints",
@@ -57,7 +48,7 @@
                 {"type": "asset", "name": "diff"}
             ]
         }, {
-            "name": "witness_info",
+            "name": "leader_info",
             "base": "",
             "fields": [
                 {"type": "name", "name": "name"},
@@ -67,11 +58,11 @@
                 {"type": "uint64", "name": "counter_votes"}
             ]
         }, {
-            "name": "witness_voter",
+            "name": "leader_voter",
             "base": "",
             "fields": [
                 {"type": "name", "name": "voter"},
-                {"type": "name[]", "name": "witnesses"}
+                {"type": "name[]", "name": "leaders"}
             ]
         }, {
             "name": "multisig_acc",
@@ -79,83 +70,394 @@
             "fields": [
                 {"type": "name", "name": "name"}]
         }, {
-            "name": "max_witnesses",
-            "base": "",
-            "fields": [
-                {"type": "uint16", "name": "max"}]
-        }, {
-            "name": "multisig_perms",
-            "base": "",
-            "fields": [
-                {"type": "uint16", "name": "super_majority"},
-                {"type": "uint16", "name": "majority"},
-                {"type": "uint16", "name": "minority"}
-            ]
-        }, {
-            "name": "max_witness_votes",
-            "base": "",
-            "fields": [
-                {"type": "uint16", "name": "max"}]
-        }, {
-            "name": "ctrl_state",
-            "fields": [
-                {"type": "uint64",              "name": "id"},
-                {"type": "multisig_acc",        "name": "multisig"},
-                {"type": "max_witnesses",       "name": "witnesses"},
-                {"type": "multisig_perms",      "name": "msig_perms"},
-                {"type": "max_witness_votes",   "name": "witness_votes"}]
-        }, {
-            "name": "setparams",
+            "name": "leaderstate",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
-                {"type": "ctrl_param[]", "name": "params"}]
-        }, {
-            "name": "witnessstate",
-            "fields": [
-                {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name", "name": "witness"},
+                {"type": "name", "name": "leader"},
                 {"type": "uint64", "name": "weight"},
                 {"type": "bool", "name": "active"}
+            ]
+        },
+        {
+            "name": "permission_level",
+            "base": "",
+            "fields": [
+                {
+                    "name": "actor",
+                    "type": "name"
+                },
+                {
+                    "name": "permission",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "action",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "name",
+                    "type": "name"
+                },
+                {
+                    "name": "authorization",
+                    "type": "permission_level[]"
+                },
+                {
+                    "name": "data",
+                    "type": "bytes"
+                }
+            ]
+        },
+        {
+            "name": "approval",
+            "base": "",
+            "fields": [
+                {
+                    "name": "approver",
+                    "type": "name"
+                },
+                {
+                    "name": "time",
+                    "type": "time_point"
+                }
+            ]
+        },
+        {
+            "name": "approvals_info",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "provided_approvals",
+                    "type": "approval[]"
+                }
+            ]
+        },
+        {
+            "name": "approve",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "approver",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_hash",
+                    "type": "checksum256$"
+                }
+            ]
+        },
+        {
+            "name": "cancel",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "canceler",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "exec",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "executer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "extension",
+            "base": "",
+            "fields": [
+                {
+                    "name": "type",
+                    "type": "uint16"
+                },
+                {
+                    "name": "data",
+                    "type": "bytes"
+                }
+            ]
+        },
+        {
+            "name": "invalidate",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "invalidation",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "last_invalidation_time",
+                    "type": "time_point"
+                }
+            ]
+        },
+        {
+            "name": "proposal",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "permission",
+                    "type": "name"
+                },
+                {
+                    "name": "packed_transaction",
+                    "type": "bytes"
+                }
+            ]
+        },
+        {
+            "name": "propose",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "permission",
+                    "type": "name"
+                },
+                {
+                    "name": "trx",
+                    "type": "transaction"
+                }
+            ]
+        },
+        {
+            "name": "transaction",
+            "base": "transaction_header",
+            "fields": [
+                {
+                    "name": "context_free_actions",
+                    "type": "action[]"
+                },
+                {
+                    "name": "actions",
+                    "type": "action[]"
+                },
+                {
+                    "name": "transaction_extensions",
+                    "type": "extension[]"
+                }
+            ]
+        },
+        {
+            "name": "transaction_header",
+            "base": "",
+            "fields": [
+                {
+                    "name": "expiration",
+                    "type": "time_point_sec"
+                },
+                {
+                    "name": "ref_block_num",
+                    "type": "uint16"
+                },
+                {
+                    "name": "ref_block_prefix",
+                    "type": "uint32"
+                },
+                {
+                    "name": "max_net_usage_words",
+                    "type": "varuint32"
+                },
+                {
+                    "name": "max_cpu_usage_ms",
+                    "type": "uint8"
+                },
+                {
+                    "name": "max_ram_kbytes",
+                    "type": "varuint32"
+                },
+                {
+                    "name": "max_storage_kbytes",
+                    "type": "varuint32"
+                },
+                {
+                    "name": "delay_sec",
+                    "type": "varuint32"
+                }
+            ]
+        },
+        { 
+            "name": "unapprove",
+            "base": "",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "name"
+                },
+                {
+                    "name": "proposal_name",
+                    "type": "name"
+                },
+                {
+                    "name": "approver",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "threshold",
+            "base": "",
+            "fields": [
+                { "type": "name",          "name": "permission" },
+                { "type": "uint8",         "name": "required" }
+            ]
+        },
+        {
+            "name": "control_param",
+            "base": "",
+            "fields": [
+                { "type": "uint8",         "name": "leaders_num" },
+                { "type": "threshold[]",   "name": "thresholds" },
+                { "type": "uint8",         "name": "max_votes" }
+            ]
+        },
+        {
+            "name": "sysparam_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",         "name": "id" },
+                { "type": "control_param",  "name": "control" }
+            ]
+        },
+        {
+            "name": "param_struct",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code",     "name": "commun_code"},
+                { "type": "control_param",  "name": "control" }
+            ]
+        },
+        {
+            "name": "setparams_arg",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code",     "name": "commun_code"},
+                { "type": "control_param?", "name": "p" }
             ]
         }
     ],
     "events": [
-        {"name": "witnessstate", "type": "witnessstate"}
+        {"name": "leaderstate", "type": "leaderstate"}
     ],
     "actions": [
         {
-            "name": "setparams",
-            "type": "setparams"
+            "name": "regleader",
+            "type": "regleader"
         }, {
-            "name": "validateprms",
-            "type": "setparams"
+            "name": "unregleader",
+            "type": "unregleader"
         }, {
-            "name": "regwitness",
-            "type": "regwitness"
+            "name": "startleader",
+            "type": "leader_name"
         }, {
-            "name": "unregwitness",
-            "type": "unregwitness"
+            "name": "stopleader",
+            "type": "leader_name"
         }, {
-            "name": "startwitness",
-            "type": "witness_name"
+            "name": "voteleader",
+            "type": "voteleader"
         }, {
-            "name": "stopwitness",
-            "type": "witness_name"
-        }, {
-            "name": "votewitness",
-            "type": "votewitness"
-        }, {
-            "name": "unvotewitn",
-            "type": "unvotewitn"
+            "name": "unvotelead",
+            "type": "unvotelead"
         }, {
             "name": "changepoints",
             "type": "changepoints"
-        }
+        },
+        {
+            "name": "approve",
+            "type": "approve"
+        },
+        {
+            "name": "cancel",
+            "type": "cancel"
+        },
+        {
+            "name": "exec",
+            "type": "exec"
+        },
+        {
+            "name": "invalidate",
+            "type": "invalidate"
+        },
+        {
+            "name": "propose",
+            "type": "propose"
+        },
+        {
+            "name": "unapprove",
+            "type": "unapprove"
+        },
+        {"name": "setparams", "type": "setparams_arg"}
     ],
     "tables": [
         {
-            "name": "witness",
-            "type": "witness_info",
+            "name": "leader",
+            "type": "leader_info",
             "scope_type": "symbol_code",
             "indexes" : [{
                 "name": "primary",
@@ -167,22 +469,74 @@
                 "orders": [{"field": "total_weight", "order": "desc"}]
             }]
         }, {
-            "name": "witnessvote",
-            "type": "witness_voter",
+            "name": "leadervote",
+            "type": "leader_voter",
             "scope_type": "symbol_code",
             "indexes" : [{
                 "name": "primary",
                 "unique": true,
                 "orders": [{"field": "voter", "order": "asc"}]
             }]
-        }, {
-            "name": "ctrlparams",
-            "type": "ctrl_state",
-            "scope_type": "symbol_code",
-            "indexes" : [{
+        },
+        {
+            "name": "approvals",
+            "type": "approvals_info",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "proposal_name", "order": "asc"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "invals",
+            "type": "invalidation",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "account", "order": "asc"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "proposal",
+            "type": "proposal",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "proposal_name", "order": "asc"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "sysparam",
+            "type": "sysparam_struct",
+            "indexes": [{
                 "name": "primary",
-                "unique": true,
-                "orders": [{"field": "id", "order": "asc"}]
+                "unique": "true",
+                "orders": [
+                    {"field": "id", "order": "asc"}
+                ]
+            }]
+        },
+        {
+            "name": "param",
+            "type": "param_struct",
+            "indexes": [{
+                "name": "primary",
+                "unique": "true",
+                "orders": [
+                    {"field": "commun_code", "order": "asc"}
+                ]
             }]
         }
     ],

@@ -6,10 +6,8 @@
 using namespace commun;
 
 void commun_list::create(symbol_code commun_code, std::string community_name) {
-
-    check(commun::point::exist(config::point_name, commun_code), "not found token");
-
     require_auth(_self);
+    auto commun_symbol = point::get_supply(config::point_name, commun_code).symbol;
 
     tables::community community_tbl(_self, _self.value);
 
@@ -19,7 +17,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
     check(community_index.find(community_name) == community_index.end(), "community exists");
 
     community_tbl.emplace(_self, [&](auto& item) {
-        item.commun_code = commun_code;
+        item.commun_symbol = commun_symbol;
         item.community_name = community_name;
     });
 }
@@ -36,7 +34,7 @@ void commun_list::setsysparams(symbol_code commun_code,
     // <> Place for checks
 
     tables::community community_tbl(_self, _self.value);
-    auto community = community_tbl.get(commun_code.raw(), "community token doesn't exist");
+    auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
         bool _empty = true;
@@ -52,6 +50,26 @@ void commun_list::setsysparams(symbol_code commun_code,
     });
 }
 
+void commun_list::setparams(symbol_code commun_code,
+        optional<uint16_t> leaders_num, optional<uint16_t> emission_rate,
+        optional<uint16_t> leaders_percent, optional<uint16_t> author_percent) {
+    require_auth(point::get_issuer(config::point_name, commun_code));
+
+    // <> Place for checks
+
+    tables::community community_tbl(_self, _self.value);
+    auto community = community_tbl.get(commun_code.raw(), "community not exists");
+
+    community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
+        bool _empty = true;
+        SET_PARAM(leaders_num);
+        SET_PARAM(emission_rate);
+        SET_PARAM(leaders_percent);
+        SET_PARAM(author_percent);
+        eosio::check(!_empty, "No params changed");
+    });
+}
+
 #undef SET_PARAM
 
 void commun_list::setinfo(symbol_code commun_code, std::string description,
@@ -60,4 +78,14 @@ void commun_list::setinfo(symbol_code commun_code, std::string description,
     get_community(_self, commun_code);
 }
 
-EOSIO_DISPATCH(commun::commun_list, (create)(setinfo))
+void commun_list::follow(symbol_code commun_code, name follower) {
+    require_auth(follower);
+    get_community(_self, commun_code);
+}
+
+void commun_list::unfollow(symbol_code commun_code, name follower) {
+    require_auth(follower);
+    get_community(_self, commun_code);
+}
+
+EOSIO_DISPATCH(commun::commun_list, (create)(setsysparams)(setparams)(setinfo)(follow)(unfollow))

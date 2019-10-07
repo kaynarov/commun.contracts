@@ -78,15 +78,16 @@ public:
         );
     }
 
-    action_result open(account_name owner, symbol_code commun_code, account_name payer) {
-        return push(N(open), payer, args()
-            ("owner", owner)
-            ("commun_code", commun_code)
-            ("ram_payer", payer)
-        );
+    action_result open(account_name owner, symbol_code commun_code = symbol_code(), account_name payer = account_name()) {
+        auto a = args()("owner", owner)("commun_code", commun_code);
+
+        if (payer) {
+            a("ram_payer", payer);
+        }
+        return push(N(open), payer ? payer : owner, a);
     }
 
-    action_result close(account_name owner, symbol_code commun_code) {
+    action_result close(account_name owner, symbol_code commun_code = symbol_code()) {
         return push(N(close), owner, args()
             ("owner", owner)
             ("commun_code", commun_code)
@@ -102,13 +103,20 @@ public:
         );
     }
 
+    action_result withdraw(account_name owner, asset quantity) {
+        return push(N(withdraw), owner, args()
+            ("owner", owner)
+            ("quantity", quantity)
+        );
+    }
+
     //// token tables
     variant get_params() {
         return get_params(_symbol);
     }
     variant get_params(symbol sym) {
         auto sname = sym.to_symbol_code().value;
-        auto v = get_struct(sname, N(param), sname, "param");
+        auto v = get_struct(_code, N(param), sname, "param");
         if (v.is_object()) {
             auto o = mvo(v);
             o["max_supply"] = o["max_supply"].as<asset>().to_string();

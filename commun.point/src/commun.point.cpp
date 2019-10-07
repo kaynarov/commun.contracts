@@ -23,6 +23,12 @@ void point::send_balance_event(name acc, const structures::account& accinfo) {
     eosio::event(_self, "balance"_n, data).send();
 }
 
+static eosio::asset vague_asset(int64_t amount) { //bypass non-zero symbol restriction
+    eosio::asset ret;
+    ret.amount = amount;
+    return ret;
+}
+
 void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     require_auth(_self);
     check(is_account(issuer), "issuer account does not exist");
@@ -35,7 +41,7 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     check(0 <= fee && fee <= 10000, "fee must be between 0% and 100% (0-10000)");
     symbol_code commun_code = commun_symbol.code();
 
-    params params_table(_self, commun_code.raw());
+    params params_table(_self, _self.value);
     eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "already exists");
     
     auto param = params_table.emplace(_self, [&](auto& p) { p = {
@@ -73,7 +79,7 @@ void point::issue(name to, asset quantity, string memo) {
     check(memo.size() <= 256, "memo has more than 256 bytes");
     symbol_code commun_code = commun_symbol.code();
 
-    params params_table(_self, commun_code.raw());
+    params params_table(_self, _self.value);
     const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist, create it before issue");
 
     stats stats_table(_self, commun_code.raw());
@@ -108,7 +114,7 @@ void point::retire(asset quantity, string memo) {
     check(memo.size() <= 256, "memo has more than 256 bytes");
     symbol_code commun_code = commun_symbol.code();
 
-    params params_table(_self, commun_code.raw());
+    params params_table(_self, _self.value);
     const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
 
     stats stats_table(_self, commun_code.raw());
@@ -132,34 +138,48 @@ void point::transfer(name from, name to, asset quantity, string memo) {
     do_transfer(from, to, quantity, memo);
 }
 
+void point::withdraw(name owner, asset quantity) {
+    require_auth(owner);
+    check(quantity.symbol == config::reserve_token, "invalid reserve token symbol");
+    sub_balance(owner, vague_asset(quantity.amount));
+    INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name}, {_self, owner, quantity, ""});
+}
+
 void point::on_reserve_transfer(name from, name to, asset quantity, std::string memo) {
     if(_self != to)
         return;
-    const size_t pref_size = config::restock_prefix.size();
     const size_t memo_size = memo.size();
-    bool restock = (memo_size >= pref_size) && memo.substr(0, pref_size) == config::restock_prefix;
-    auto commun_code = symbol_code(restock ? memo.substr(pref_size).c_str() : memo.c_str());
+    if (memo_size) {
+        const size_t pref_size = config::restock_prefix.size();
+        bool restock = (memo_size >= pref_size) && memo.substr(0, pref_size) == config::restock_prefix;
+        auto commun_code = symbol_code(restock ? memo.substr(pref_size).c_str() : memo.c_str());
 
-    params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
+        params params_table(_self, _self.value);
+        const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
 
-    stats stats_table(_self, commun_code.raw());
-    auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
-    check(quantity.symbol == stat.reserve.symbol, "invalid reserve token symbol");
+        stats stats_table(_self, commun_code.raw());
+        auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
+        check(quantity.symbol == stat.reserve.symbol, "invalid reserve token symbol");
 
-    asset add_tokens(0, stat.supply.symbol);
-    if (!restock) {
-        add_tokens = calc_token_quantity(param, stat, quantity);
-        check(add_tokens.amount > 0, "these tokens cost zero points");
-        check(add_tokens.amount <= param.max_supply.amount - stat.supply.amount, "quantity exceeds available supply");
-        add_balance(from, add_tokens, from);
+        asset add_tokens(0, stat.supply.symbol);
+        if (!restock) {
+            add_tokens = calc_token_quantity(param, stat, quantity);
+            check(add_tokens.amount > 0, "these tokens cost zero points");
+            check(add_tokens.amount <= param.max_supply.amount - stat.supply.amount, "quantity exceeds available supply");
+            add_balance(from, add_tokens, from);
+        }
+
+        stats_table.modify(stat, same_payer, [&](auto& s) {
+            s.reserve += quantity;
+            s.supply += add_tokens;
+            send_currency_event(s, param);
+        });
+        
+        notify_balance_change(param.issuer, vague_asset(quantity.amount));
     }
-
-    stats_table.modify(stat, same_payer, [&](auto& s) {
-        s.reserve += quantity;
-        s.supply += add_tokens;
-        send_currency_event(s, param);
-    });
+    else {
+        add_balance(from, vague_asset(quantity.amount), from);
+    }
 }
 
 void point::notify_balance_change(name owner, asset diff) {
@@ -210,18 +230,25 @@ void point::add_balance(name owner, asset value, name ram_payer) {
     notify_balance_change(owner, value);
 }
 
-void point::open(name owner, symbol_code commun_code, name ram_payer) {
-    require_auth(ram_payer);
-    eosio::check(is_account(owner), "owner account does not exist");
+void point::open(name owner, symbol_code commun_code, std::optional<name> ram_payer) {
 
-    stats stats_table(_self, commun_code.raw());
-    const auto& st = stats_table.get(commun_code.raw(), "symbol does not exist");
+    auto actual_ram_payer = ram_payer.value_or(owner);
+    
+    require_auth(actual_ram_payer);
+    eosio::check(is_account(owner), "owner account does not exist");
+    symbol sym;
+    
+    if (commun_code) {
+        stats stats_table(_self, commun_code.raw());
+        const auto& st = stats_table.get(commun_code.raw(), "symbol does not exist");
+        sym = st.supply.symbol;
+    }
 
     accounts accounts_table(_self, owner.value);
     auto it = accounts_table.find(commun_code.raw());
     if (it == accounts_table.end()) {
-        accounts_table.emplace(ram_payer, [&](auto& a){
-            a.balance = asset{0, st.supply.symbol};
+        accounts_table.emplace(actual_ram_payer, [&](auto& a){
+            a.balance = commun_code ? asset{0, sym} : vague_asset(0);
         });
     }
 }
@@ -229,9 +256,12 @@ void point::open(name owner, symbol_code commun_code, name ram_payer) {
 void point::close(name owner, symbol_code commun_code) {
     require_auth(owner);
 
-    params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
-    check(owner != param.issuer, "issuer can't close");
+    params params_table(_self, _self.value);
+
+    if (commun_code) {
+        const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
+        check(owner != param.issuer, "issuer can't close");
+    }
 
     accounts accounts_table(_self, owner.value);
     auto it = accounts_table.find(commun_code.raw());
@@ -246,7 +276,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
     check(is_account(to), "to account does not exist");
     auto commun_code = quantity.symbol.code();
 
-    params params_table(_self, commun_code.raw());
+    params params_table(_self, _self.value);
     const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
     stats stats_table(_self, commun_code.raw());
     const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
@@ -276,11 +306,12 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
 
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
             {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
+        notify_balance_change(param.issuer, vague_asset(-quantity.amount));
     }
 }
 
 } /// namespace commun
 
 DISPATCH_WITH_TRANSFER(commun::point, commun::config::token_name, on_reserve_transfer,
-    (create)(setfreezer)(issue)(transfer)(open)(close)(retire)
+    (create)(setfreezer)(issue)(transfer)(withdraw)(open)(close)(retire)
 )

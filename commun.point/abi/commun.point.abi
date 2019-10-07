@@ -59,7 +59,7 @@
             "fields": [
                 { "type": "name",         "name": "owner" },
                 { "type": "symbol_code",  "name": "commun_code" },
-                { "type": "name",         "name": "ram_payer" }
+                { "type": "name?",        "name": "ram_payer" }
             ]
         },{
             "name": "setfreezer_args",
@@ -82,6 +82,13 @@
                 { "type": "name",         "name": "to" },
                 { "type": "asset",        "name": "quantity" },
                 { "type": "string",       "name": "memo" }
+            ]
+        },{
+            "name": "withdraw_args",
+            "base": "",
+            "fields": [
+                { "type": "name",         "name": "owner" },
+                { "type": "asset",        "name": "quantity" }
             ]
         },
         {
@@ -128,6 +135,9 @@
         },{
             "name": "transfer",
             "type": "transfer_args"
+        },{
+            "name": "withdraw",
+            "type": "withdraw_args"
         }
     ],
     "tables": [
@@ -164,6 +174,13 @@
                     "unique": "true",
                     "orders": [
                         {"field": "max_supply._sym", "order": "asc"}
+                    ]
+                },
+                {
+                    "name": "byissuer", 
+                    "unique": "true", 
+                    "orders": [
+                        {"field": "issuer", "order": "asc"} 
                     ]
                 }
             ]

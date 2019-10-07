@@ -40,12 +40,15 @@ public:
     void transfer(name from, name to, asset quantity, string memo);
 
     [[eosio::action]]
-    void open(name owner, symbol_code commun_code, name ram_payer);
+    void open(name owner, symbol_code commun_code, std::optional<name> ram_payer);
 
     [[eosio::action]]
     void close(name owner, symbol_code commun_code);
-
+    
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
+    
+    [[eosio::action]]
+    void withdraw(name owner, asset quantity);
 
     static inline bool exist(name token_contract_account, symbol_code commun_code) {
         stats stats_table(token_contract_account, commun_code.raw());
@@ -57,6 +60,12 @@ public:
         const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
         return st.supply;
     }
+    
+    static inline asset get_reserve(name token_contract_account, symbol_code commun_code) {
+        stats stats_table(token_contract_account, commun_code.raw());
+        const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
+        return st.reserve;
+    }
 
     static inline asset get_balance(name token_contract_account, name owner, symbol_code commun_code) {
         accounts accountstable(token_contract_account, owner.value);
@@ -65,14 +74,26 @@ public:
     }
 
     static inline name get_issuer(name token_contract_account, symbol_code commun_code) {
-        params params_table(token_contract_account, commun_code.raw());
+        params params_table(token_contract_account, token_contract_account.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
         return param.issuer;
+    }
+    
+    static inline int64_t get_assigned_reserve_amount(name token_contract_account, name owner) {
+        params params_table(token_contract_account, token_contract_account.value);
+        auto params_idx = params_table.get_index<"byissuer"_n>();
+        accounts accounts_table(token_contract_account, owner.value);
+        auto param = params_idx.find(owner);
+        
+        auto ac = accounts_table.find(symbol_code().raw());
+        eosio::check(param != params_idx.end() || ac != accounts_table.end(), "no assigned reserve");
+        return (param != params_idx.end()  ? get_reserve(token_contract_account, symbol_code()).amount : 0) + 
+               (ac != accounts_table.end() ? ac->balance.amount : 0);
     }
 
     static inline asset get_reserve_quantity(name token_contract_account, asset token_quantity, bool apply_fee = true) {
         auto commun_code = token_quantity.symbol.code();
-        params params_table(token_contract_account, commun_code.raw());
+        params params_table(token_contract_account, token_contract_account.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
         stats stats_table(token_contract_account, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw());
@@ -80,7 +101,7 @@ public:
     }
 
     static inline asset get_token_quantity(name token_contract_account, symbol_code commun_code, asset reserve_quantity) {
-        params params_table(token_contract_account, commun_code.raw());
+        params params_table(token_contract_account, token_contract_account.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
         stats stats_table(token_contract_account, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw());
@@ -110,8 +131,9 @@ struct structures {
         asset max_supply;
         int16_t  cw; //connector weight
         int16_t fee;
-        name     issuer;
+        name    issuer;
         uint64_t primary_key()const { return max_supply.symbol.code().raw(); }
+        name by_issuer()const { return issuer; }
     };
 
     struct [[eosio::table]] global_param {
@@ -119,7 +141,10 @@ struct structures {
     };
 };
 
-    using params = eosio::multi_index<"param"_n, structures::param>;
+    using param_id_index = eosio::indexed_by<"paramid"_n, eosio::const_mem_fun<structures::param, uint64_t, &structures::param::primary_key> >;
+    using param_issuer_index = eosio::indexed_by<"byissuer"_n, eosio::const_mem_fun<structures::param, name, &structures::param::by_issuer> >;
+    using params = eosio::multi_index<"param"_n, structures::param, param_id_index, param_issuer_index>;
+    
     using stats  = eosio::multi_index<"stat"_n,  structures::stat>;
     using accounts  = eosio::multi_index<"accounts"_n,  structures::account>;
 

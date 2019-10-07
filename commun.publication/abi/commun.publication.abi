@@ -88,16 +88,6 @@
             "base": "",
             "fields": [
                 { "type": "uint64",         "name": "id" },
-                { "type": "symbol",         "name": "commun_symbol" },
-                { "type": "int64",          "name": "collection_period" },
-                { "type": "int64",          "name": "evaluation_period" },
-                { "type": "int64",          "name": "mosaic_active_period" },
-                { "type": "uint16",         "name": "max_royalty" },
-                { "type": "uint8",          "name": "ban_threshold" },
-                { "type": "uint8",          "name": "rewarded_num" },
-                { "type": "int64",          "name": "comm_points_grade_sum" },
-                { "type": "int64[]",        "name": "comm_grades" },
-                { "type": "int64[]",        "name": "lead_grades" },
                 { "type": "opus_info[]",    "name": "opuses" }
             ]
         },{
@@ -207,10 +197,6 @@
           "type": "name"
         },
         {
-          "name": "actions_per_day",
-          "type": "uint16"
-        },
-        {
           "name": "providers",
           "type": "name[]"
         }
@@ -251,6 +237,10 @@
       {
         "name": "curators_prcnt",
         "type": "uint16"
+      },
+      {
+        "name": "weight",
+        "type": "uint16?"
       }
     ]
   },
@@ -368,7 +358,7 @@
       },
       {
         "name": "weight",
-        "type": "percent_t"
+        "type": "uint16?"
       }
     ]
   },
@@ -501,14 +491,6 @@
                 { "type": "name[]",                 "name": "providers" }
             ]
         },{
-            "name": "setfrequency_args",
-            "base": "",
-            "fields": [
-                { "type": "symbol_code",            "name": "commun_code" },
-                { "type": "name",                   "name": "account" },
-                { "type": "uint16",                 "name": "actions_per_day" }
-            ]
-        },{
             "name": "provide_args",
             "base": "",
             "fields": [
@@ -597,10 +579,6 @@
   {
     "name": "setproviders",
     "type": "setproviders_args"
-  },
-  {
-    "name": "setfrequency",
-    "type": "setfrequency_args"
   },
   {
     "name": "provide",

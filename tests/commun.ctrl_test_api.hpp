@@ -18,69 +18,55 @@ struct commun_ctrl_api: base_contract_api {
 
     using base_contract_api::base_contract_api;
 
-    const name _minority_name = N(witn.minor);
-    const name _majority_name = N(witn.major);
-    const name _supermajority_name = N(witn.smajor);
+    const name _minority_name = N(lead.minor);
+    const name _majority_name = N(lead.major);
+    const name _supermajority_name = N(lead.smajor);
 
     //// control actions
-    action_result set_params(const std::string& json_params) {
-        return push(N(setparams), owner, args()
-            ("commun_code", commun_code)
-            ("params", json_str_to_obj(json_params))
-        );
-    }
-    action_result set_param(const std::string& json_param) {
-        return push(N(setparams), owner, args()
-            ("commun_code", commun_code)
-            ("params", json_str_to_obj(std::string() + "[" + json_param + "]"))
-        );
-    }
-    action_result validate_params(const std::string& json_params) {
-        return push(N(validateprms), owner, args()
-            ("commun_code", commun_code)
-            ("params", json_str_to_obj(json_params))
-        );
+    
+    action_result set_default_params() {
+        return push(N(setparams), _code, args()("commun_code", commun_code));
     }
 
-    action_result reg_witness(name witness, string url) {
-        return push(N(regwitness), witness, args()
+    action_result reg_leader(name leader, string url) {
+        return push(N(regleader), leader, args()
             ("commun_code", commun_code)
-            ("witness", witness)
+            ("leader", leader)
             ("url", url)
         );
     }
 
-    action_result unreg_witness(name witness) {
-        return push(N(unregwitness), witness, args()
-            ("witness", witness)
+    action_result unreg_leader(name leader) {
+        return push(N(unregleader), leader, args()
+            ("leader", leader)
         );
     }
 
-    action_result start_witness(name witness) {
-        return push(N(startwitness), witness, args()
-            ("witness", witness)
+    action_result start_leader(name leader) {
+        return push(N(startleader), leader, args()
+            ("leader", leader)
         );
     }
 
-    action_result stop_witness(name witness) {
-        return push(N(stopwitness), witness, args()
+    action_result stop_leader(name leader) {
+        return push(N(stopleader), leader, args()
             ("commun_code", commun_code)
-            ("witness", witness)
+            ("leader", leader)
         );
     }
 
-    action_result vote_witness(name voter, name witness) {
-        return push(N(votewitness), voter, args()
-            ("commun_code", commun_code)
-            ("voter", voter)
-            ("witness", witness)
-        );
-    }
-    action_result unvote_witness(name voter, name witness) {
-        return push(N(unvotewitn), voter, args()
+    action_result vote_leader(name voter, name leader) {
+        return push(N(voteleader), voter, args()
             ("commun_code", commun_code)
             ("voter", voter)
-            ("witness", witness)
+            ("leader", leader)
+        );
+    }
+    action_result unvote_leader(name voter, name leader) {
+        return push(N(unvotelead), voter, args()
+            ("commun_code", commun_code)
+            ("voter", voter)
+            ("leader", leader)
         );
     }
 
@@ -90,67 +76,64 @@ struct commun_ctrl_api: base_contract_api {
             ("who", who)
             ("diff", diff));
     }
-
-    variant get_params() const {
-        return get_struct(_code, N(ctrlparams), N(ctrlparams), "ctrl_state");  // TODO: get_singleton instead of get_struct
+    
+    action_result propose(name proposer, name proposal_name, name permission, transaction trx) {
+        return push(N(propose), proposer, args()
+            ("commun_code", commun_code)
+            ("proposer", proposer)
+            ("proposal_name", proposal_name)
+            ("permission", permission)
+            ("trx", trx));
+    }
+    
+    action_result approve(name proposer, name proposal_name, name approver) { // TODO: proposal_hash
+        return push(N(approve), approver, args()
+            ("proposer", proposer)
+            ("proposal_name", proposal_name)
+            ("approver", approver));
+    }
+    
+    action_result unapprove(name proposer, name proposal_name, name approver) {
+        return push(N(unapprove), approver, args()
+            ("proposer", proposer)
+            ("proposal_name", proposal_name)
+            ("approver", approver));
+    }
+    
+    action_result cancel(name proposer, name proposal_name, name canceler) {
+        return push(N(cancel), canceler, args()
+            ("proposer", proposer)
+            ("proposal_name", proposal_name)
+            ("canceler", canceler));
+    }
+    
+    action_result exec(name proposer, name proposal_name, name executer) {
+        return push(N(exec), executer, args()
+            ("proposer", proposer)
+            ("proposal_name", proposal_name)
+            ("executer", executer));
+    }
+    
+    action_result invalidate(name account) {
+        return push(N(invalidate), account, args()
+            ("account", account));
     }
 
-    variant get_witness(name witness) const {
-        return get_struct(_code, N(witness), witness, "witness_info");
+    variant get_leader(name leader) const {
+        return get_struct(_code, N(leader), leader, "leader_info");
     }
 
-    std::vector<variant> get_all_witnesses() {
-        return _tester->get_all_chaindb_rows(_code, commun_code.value, N(witness), false);
+    std::vector<variant> get_all_leaders() {
+        return _tester->get_all_chaindb_rows(_code, commun_code.value, N(leader), false);
     }
-
-    variant get_msig_auths() const {
-        return get_struct(_code, N(msigauths), N(msigauths), "msig_auths");
-    }
-
-    //// helpers
-    static std::string multisig_param(name acc) {
-        return std::string() + "['multisig_acc',{'name':'"+acc.to_string()+"'}]";
-    }
-    static std::string max_witnesses_param(uint16_t max = 21) {
-        return std::string() + "['max_witnesses',{'max':"+std::to_string(max)+"}]";
-    }
-    static std::string max_witness_votes_param(uint16_t max = 30) {
-        return std::string() + "['max_witness_votes',{'max':"+std::to_string(max)+"}]";
-    }
-    static std::string msig_perms_param(uint16_t smajor = 0, uint16_t major = 0, uint16_t minor = 0) {
-        return std::string() + "['multisig_perms',{"
-            "'super_majority':"+std::to_string(smajor) +
-            ",'majority':"+std::to_string(major) +
-            ",'minority':"+std::to_string(minor) + "}]";
-    }
-    static std::string update_auth_param(uint32_t delay_sec = 30*60) {
-        return std::string() + "['update_auth',{'period':"+std::to_string(delay_sec)+"}]";
-    }
-    static std::string default_params(name owner, uint16_t witnesses = 21, uint16_t witness_votes = 30,
-            uint16_t smajor = 0, uint16_t major = 0, uint16_t minor = 0) {
-        return std::string() + "[" +
-            multisig_param(owner) + "," +
-            max_witnesses_param(witnesses) + "," +
-            msig_perms_param(smajor, major, minor) + "," +
-            max_witness_votes_param(witness_votes) + "," +"]";
-    }
-
-    // sets permissions for "multisig" account
-    void prepare_multisig(name msig) {
-        // witn.major/minor
-        auto auth = authority(1, {}, {
-            {.permission = {msig, config::active_name}, .weight = 1}
-        });
-        _tester->set_authority(msig, _majority_name, auth, "active");
-        _tester->set_authority(msig, _minority_name, auth, "active");
-
-        // eosio.code
-        auto code_auth = authority(1, {
-            {_tester->get_public_key(msig, "active"), 1}
-        }, {
-            {.permission = {_code, config::eosio_code_name}, .weight = 1}
-        });
-        _tester->set_authority(msig, config::active_name, code_auth, "owner");
+    
+    void prepare(const std::vector<name>& leaders, name voter) {
+        
+        BOOST_CHECK_EQUAL(base_tester::success(), set_default_params());
+        for (int i = 0; i < leaders.size(); i++) {
+            BOOST_CHECK_EQUAL(base_tester::success(), reg_leader(leaders[i], "localhost"));
+            BOOST_CHECK_EQUAL(base_tester::success(), vote_leader(voter, leaders[i]));
+        }
     }
 
 };

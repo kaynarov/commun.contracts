@@ -41,7 +41,7 @@ public:
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), "issue"));
     }
 
-    const account_name _commun = N(commun);
+    const account_name _commun = cfg::dapp_name;
     const account_name _golos = N(golos);
     const account_name _alice = N(alice);
     const account_name _bob = N(bob);
@@ -61,6 +61,8 @@ public:
         const string no_symbol = amsg("symbol does not exist");
         const string no_auth = amsg("missing required signature");
         const string no_reserve = amsg("no reserve");
+        const string no_balance = amsg("no balance object found");
+        const string overdrawn_balance = amsg("overdrawn balance");
         const string tokens_cost_zero_points = amsg("these tokens cost zero points");
         const string invalid_quantity = amsg("invalid quantity");
         const string quantity_not_positive = amsg("must issue positive quantity");
@@ -70,6 +72,7 @@ public:
         const string balance_not_exists = amsg("Balance row already deleted or never existed. Action won't have any effect.");
         const string to_not_exists = amsg("to account does not exist");
         const string freezer_not_exists = amsg("freezer account does not exist");
+        const string not_reserve_symbol = amsg("invalid reserve token symbol");
     } err;
 };
 
@@ -184,7 +187,8 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(success(), point.create(_golos, max_supply, 5000, 0));
     produce_block();
     BOOST_CHECK_EQUAL(err.already_exists, point.create(_golos, max_supply, 5000, 0));
-    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(1000, another), 5000, 0));
+    BOOST_CHECK_EQUAL(err.already_exists, point.create(_alice, max_supply, 5000, 0));
+    BOOST_CHECK_EQUAL(success(), point.create(_alice, asset(1000, another), 5000, 0));
     produce_block();
 
     CHECK_MATCHING_OBJECT(point.get_params(), mvo()
@@ -197,7 +201,7 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_point_tester) try {
         ("cw", 5000)
         ("fee", 0)
         ("max_supply", "1.000 ANOTHER")
-        ("issuer", _golos.to_string())
+        ("issuer", _alice.to_string())
     );
 } FC_LOG_AND_RETHROW()
 
@@ -276,6 +280,22 @@ BOOST_FIXTURE_TEST_CASE(transfer_buy_tokens_no_supply, commun_point_tester) try 
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(1, point._symbol), std::string(point_code_str) + " issue"));
     BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1000, token._symbol), point_code_str));
     BOOST_CHECK_EQUAL(point.get_amount(_carol), 1000);
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(withdraw_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("withdraw tests");
+    init();
+
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code, _alice));
+    BOOST_CHECK_EQUAL(err.not_reserve_symbol, point.withdraw(_alice, asset(100, _point)));
+    BOOST_CHECK_EQUAL(err.no_balance, point.withdraw(_alice, asset(100, cfg::reserve_token)));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, symbol_code(), _alice));
+    BOOST_CHECK_EQUAL(err.overdrawn_balance, point.withdraw(_alice, asset(100, cfg::reserve_token)));
+
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(1000, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(300, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.withdraw(_alice, asset(100, cfg::reserve_token)));
+    BOOST_CHECK_EQUAL(token.get_account(_alice)["balance"], asset(700+100, token._symbol).to_string());
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()
