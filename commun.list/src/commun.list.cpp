@@ -36,7 +36,7 @@ void commun_list::setsysparams(symbol_code commun_code,
     // <> Place for checks
 
     tables::community community_tbl(_self, _self.value);
-    auto community = community_tbl.get(commun_code.raw(), "community token doesn't exist");
+    auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
         bool _empty = true;
@@ -60,7 +60,7 @@ void commun_list::setparams(symbol_code commun_code,
     // <> Place for checks
 
     tables::community community_tbl(_self, _self.value);
-    auto community = community_tbl.get(commun_code.raw(), "community token doesn't exist");
+    auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
         bool _empty = true;
@@ -80,4 +80,14 @@ void commun_list::setinfo(symbol_code commun_code, std::string description,
     get_community(_self, commun_code);
 }
 
-EOSIO_DISPATCH(commun::commun_list, (create)(setsysparams)(setparams)(setinfo))
+void commun_list::follow(symbol_code commun_code, name follower) {
+    require_auth(follower);
+    get_community(_self, commun_code);
+}
+
+void commun_list::unfollow(symbol_code commun_code, name follower) {
+    require_auth(follower);
+    get_community(_self, commun_code);
+}
+
+EOSIO_DISPATCH(commun::commun_list, (create)(setsysparams)(setparams)(setinfo)(follow)(unfollow))

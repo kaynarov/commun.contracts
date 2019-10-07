@@ -51,7 +51,7 @@ public:
         const string community_exists = amsg("community exists");
         const string community_symbol_code_exists = amsg("community token exists");
         const string not_found_token = amsg("not found token");
-        const string no_community = amsg("community token doesn't exist");
+        const string no_community = amsg("community not exists");
         const string no_changes = amsg("No params changed");
     } err;
 };
@@ -97,6 +97,16 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
     BOOST_TEST_MESSAGE("--- checking that info was added successfully");
     BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token.to_symbol_code(), "community_name"));
     // BOOST_CHECK_EQUAL(err.missing_authority, community.setinfo(_token.to_symbol_code()));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(follow_test, commun_list_tester) try {
+    BOOST_TEST_MESSAGE("follow test");
+    create_token(_golos, _token);
+    BOOST_CHECK_EQUAL(err.no_community, community.follow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(err.no_community, community.unfollow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, _token_code, "community_name"));
+    BOOST_CHECK_EQUAL(success(), community.follow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.unfollow(_token_code, _alice));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()
