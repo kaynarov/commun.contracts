@@ -13,7 +13,7 @@ public:
         const string no_balance = amsg("point balance does not exist");
         const string no_reserve = amsg("no reserve");
         const string overdrawn_balance = amsg("overdrawn balance");
-        const string eval_period = amsg("evaluation period isn't over yet");
+        const string moderation_period = amsg("moderation period isn't over yet");
         const string insufficient_quantity = amsg("insufficient quantity");
         const string no_mosaic = amsg("mosaic doesn't exist");
         const string collect_period = amsg("collection period is over");
@@ -36,7 +36,8 @@ public:
         const string not_enough_for_gem    = amsg("points are not enough for gem inclusion");
         
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
-        
+
+        const string no_community = amsg("community not exists");
     } errgallery;
     
     variant get_mosaic(name code, symbol point, name creator, uint64_t tracery) {

@@ -7,6 +7,7 @@
 #include "../commun.point/include/commun.point/config.hpp"
 #include "../commun.emit/include/commun.emit/config.hpp"
 #include "../commun.gallery/include/commun.gallery/config.hpp"
+#include "../commun.list/include/commun.list/config.hpp"
 #include "contracts.hpp"
 #include <commun/config.hpp>
 
@@ -320,7 +321,7 @@ BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Upvote testing.");
     auto permlink = "permlink";
     auto vote_brucelee = [&](auto weight){ return post.upvote(N(brucelee), {N(brucelee), permlink}, weight); };
-    BOOST_CHECK_EQUAL(err.no_param, vote_brucelee(1));
+    BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
     BOOST_CHECK_EQUAL(errgallery.no_mosaic, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
@@ -334,7 +335,7 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Downvote testing.");
     auto permlink = "permlink";
     auto vote_brucelee = [&](auto weight){ return post.downvote(N(brucelee), {N(brucelee), permlink}, weight); };
-    BOOST_CHECK_EQUAL(err.no_param, vote_brucelee(1));
+    BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
     BOOST_CHECK_EQUAL(errgallery.no_mosaic, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
@@ -361,7 +362,7 @@ BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
 
 BOOST_FIXTURE_TEST_CASE(setproviders, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("setproviders testing.");
-    BOOST_CHECK_EQUAL(err.no_param, post.setproviders(N(brucelee), {N(chucknorris)}));
+    BOOST_CHECK_EQUAL(errgallery.no_community, post.setproviders(N(brucelee), {N(chucknorris)}));
     init();
     BOOST_CHECK_EQUAL(success(), post.setproviders(N(brucelee), {N(chucknorris)}));
     BOOST_CHECK(!post.get_accparam(N(brucelee)).is_null());
@@ -381,7 +382,7 @@ BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.hold({N(alice), "alice-in-blockchains"}, N(alice)));
 
     produce_block();
-    produce_block(fc::seconds(cfg::default_mosaic_active_period - cfg::block_interval_ms / 1000));
+    produce_block(fc::seconds(cfg::def_active_period - cfg::block_interval_ms / 1000));
 
     //a third party can claim it because the active period has expired
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(chucknorris)));
@@ -452,7 +453,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(errgallery.mosaic_banned, post.downvote(N(chucknorris), {N(alice), "dirt"}, weight));
 
     produce_block();
-    produce_block(fc::seconds(cfg::default_evaluation_period - cfg::reward_mosaics_period));
+    produce_block(fc::seconds(cfg::def_moderation_period - cfg::reward_mosaics_period));
 
     auto amount_alice0 = point.get_amount(N(alice));
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(alice)));
@@ -481,8 +482,8 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
 
     //at the end of this story, let's verify that jackiechan cannot slap the archive mosaic
     produce_block();
-    produce_block(fc::seconds(cfg::default_mosaic_active_period - 
-                             (cfg::default_evaluation_period - cfg::reward_mosaics_period + (cfg::block_interval_ms / 1000))));
+    produce_block(fc::seconds(cfg::def_active_period - 
+                             (cfg::def_moderation_period - cfg::reward_mosaics_period + (cfg::block_interval_ms / 1000))));
     //curious case: first, the existence of the parent permlink is checked, 
     //then the parent mosaic is archived and the parent permlink is destroyed
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(jackiechan), "what"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));

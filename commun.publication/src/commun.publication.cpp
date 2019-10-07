@@ -1,7 +1,6 @@
 #include <commun.publication/commun.publication.hpp>
 #include <eosio/event.hpp>
 #include <commun.publication/objects.hpp>
-#include <commun.social/commun.social.hpp>
 #include <commun.list/commun.list.hpp>
 #include <commun/dispatchers.hpp>
 
@@ -79,6 +78,7 @@ void publication::createmssg(
 
     gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+    auto community = commun_list::get_community(config::list_name, commun_code);
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, message_id.author);
     auto gems_per_period = get_gems_per_period(commun_code);
@@ -93,13 +93,10 @@ void publication::createmssg(
         amount_to_freeze = std::max(opus_itr->mosaic_pledge, std::max(opus_itr->min_mosaic_inclusion, opus_itr->min_gem_inclusion));
     }
     else {
-        amount_to_freeze = get_amount_to_freeze(
-            point::get_balance(config::point_name, message_id.author, commun_code).amount, 
-            get_frozen_amount(_self, message_id.author, commun_code), 
-            gems_per_period,
-            weight);
+        amount_to_freeze = get_amount_to_freeze(point::get_balance(config::point_name, message_id.author, commun_code).amount, 
+            get_frozen_amount(_self, message_id.author, commun_code), community.gems_per_day, weight);
     }
-    asset quantity(amount_to_freeze, param.commun_symbol);
+    asset quantity(amount_to_freeze, community.commun_symbol);
 
     //providers are not used for comments
     create_mosaic(_self, message_id.author, tracery, parent_id.author ? config::comment_opus_name : config::post_opus_name,
@@ -166,8 +163,7 @@ void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_o
 }
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, std::optional<uint16_t> weight, bool damn) {
-    gallery_types::params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+    auto community = commun_list::get_community(config::list_name, commun_code);
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, voter);
     auto gems_per_period = get_gems_per_period(commun_code);
@@ -178,7 +174,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
             get_frozen_amount(_self, voter, commun_code),
             gems_per_period,
             weight), 
-        param.commun_symbol);
+        community.commun_symbol);
 
     add_to_mosaic(_self, message_id.author, message_id.tracery(), quantity, damn, voter, 
         get_providers(commun_code, message_id.author, gems_per_period, weight));
@@ -246,12 +242,9 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
 
 uint16_t publication::get_gems_per_period(symbol_code commun_code) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
-    //TODO: list
-    gallery_types::params params_table(_self, commun_code.raw());
-    int64_t mosaic_active_period = params_table.get(commun_code.raw(), "param does not exists").mosaic_active_period;
-    
-    uint16_t gems_per_day = commun_list::get_community(config::list_name, commun_code).gems_per_day;
-    
+    auto community = commun_list::get_community(config::list_name, commun_code);
+    int64_t mosaic_active_period = community.active_period;
+    uint16_t gems_per_day = community.gems_per_day;
     return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
 }
 
@@ -266,8 +259,7 @@ int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint1
 
 gallery_types::providers_t publication::get_providers(symbol_code commun_code, name account, 
                                                       uint16_t gems_per_period, std::optional<uint16_t> weight) {
-    gallery_types::params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+    auto community = commun_list::get_community(config::list_name, commun_code);
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, account);
     gallery_types::provs provs_table(_self, commun_code.raw());
@@ -298,8 +290,7 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
 
 void publication::setproviders(symbol_code commun_code, name recipient, std::vector<name> providers) {
     require_auth(recipient);
-    gallery_types::params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+    commun_list::check_community_exists(config::list_name, commun_code);
 
     gallery_types::provs provs_table(_self, commun_code.raw());
     auto provs_index = provs_table.get_index<"bykey"_n>();

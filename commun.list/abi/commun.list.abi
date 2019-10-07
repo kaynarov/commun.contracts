@@ -6,8 +6,8 @@
             "base": "",
             "fields": [
                 {
-                    "name": "commun_code",
-                    "type": "symbol_code"
+                    "name": "commun_symbol",
+                    "type": "symbol"
                 },
                 {
                     "name": "community_name",
@@ -35,6 +35,10 @@
                 },
                 {
                     "name": "moderation_period",
+                    "type": "int64"
+                },
+                {
+                    "name": "active_period",
                     "type": "int64"
                 },
                 {
@@ -209,7 +213,7 @@
                     "name": "primary",
                     "unique": "true",
                     "orders": [
-                        {"field": "commun_code", "order": "asc"}
+                        {"field": "commun_symbol._sym", "order": "asc"}
                     ]
                 },
                 {

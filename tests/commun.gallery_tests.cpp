@@ -1,12 +1,14 @@
 #include "gallery_tester.hpp"
 #include "commun.point_test_api.hpp"
 #include "commun.emit_test_api.hpp"
+#include "commun.list_test_api.hpp"
 #include "commun.gallery_test_api.hpp"
 #include "cyber.token_test_api.hpp"
 #include "contracts.hpp"
 #include "../commun.point/include/commun.point/config.hpp"
 #include "../commun.gallery/include/commun.gallery/config.hpp"
 #include "../commun.emit/include/commun.emit/config.hpp"
+#include "../commun.list/include/commun.list/config.hpp"
 using int128_t = fc::int128_t;
 #include "../include/commun/util.hpp"
 
@@ -32,6 +34,7 @@ protected:
     commun_point_api point;
     commun_ctrl_api ctrl;
     commun_emit_api emit;
+    commun_list_api list;
     commun_gallery_api gallery;
 public:
     commun_gallery_tester()
@@ -40,15 +43,17 @@ public:
         , point({this, cfg::point_name, _point})
         , ctrl({this, cfg::control_name, _point.to_symbol_code(), _golos})
         , emit({this, cfg::emit_name})
+        , list({this, cfg::list_name})
         , gallery({this, _code, _point})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::control_name, cfg::point_name, cfg::gallery_name, cfg::emit_name});
+            cfg::token_name, cfg::control_name, cfg::point_name, cfg::list_name, cfg::gallery_name, cfg::emit_name});
         produce_block();
         install_contract(cfg::control_name, contracts::ctrl_wasm(), contracts::ctrl_abi());
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::emit_name, contracts::emit_wasm(), contracts::emit_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
+        install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
         install_contract(_code, contracts::gallery_wasm(), contracts::gallery_abi());
         
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
@@ -86,8 +91,10 @@ public:
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(errgallery.no_balance, gallery.create(point._symbol));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
-        BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
 
+        BOOST_CHECK_EQUAL(success(), list.create_record(cfg::list_name, point_code, "community 1"));
+
+        BOOST_CHECK_EQUAL(success(), gallery.create(point._symbol));
     }
     
     int64_t supply;
@@ -120,8 +127,8 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
 
     produce_block();
-    produce_block(fc::seconds(cfg::default_evaluation_period - cfg::reward_mosaics_period - block_interval));
-    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claim(_alice, 1, _alice));
+    produce_block(fc::seconds(cfg::def_moderation_period - cfg::reward_mosaics_period - block_interval));
+    BOOST_CHECK_EQUAL(errgallery.moderation_period, gallery.claim(_alice, 1, _alice));
     
     produce_blocks(1);
 
@@ -159,7 +166,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, default_opus_name, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
     
     produce_block();
-    produce_block(fc::seconds(cfg::default_mosaic_active_period - (2 * cfg::reward_mosaics_period) - block_interval));
+    produce_block(fc::seconds(cfg::def_active_period - (2 * cfg::reward_mosaics_period) - block_interval));
 
     BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, default_opus_name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
     produce_block();
@@ -238,7 +245,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     std::sort(top_mosaics.begin(), top_mosaics.end(),
         [](const std::pair<uint64_t, int64_t>& lhs, const std::pair<uint64_t, int64_t>& rhs) { return lhs.second > rhs.second; });
     uint64_t grades_sum = 0;
-    for (int i = 0; i < cfg::default_rewarded_num; i++) {
+    for (int i = 0; i < cfg::def_rewarded_mosaic_num; i++) {
         grades_sum += top_mosaics[i].second;
     }
     
@@ -246,7 +253,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     std::map<uint64_t, int64_t> rewards;
     auto left_reward  = total_reward;
     
-    for (int i = 0; i < cfg::default_rewarded_num; i++) {
+    for (int i = 0; i < cfg::def_rewarded_mosaic_num; i++) {
         auto cur_reward = commun::safe_prop(total_reward, top_mosaics[i].second, grades_sum);
         rewards[top_mosaics[i].first] = cur_reward;
         left_reward -= cur_reward;
@@ -305,8 +312,8 @@ BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, default_opus_name, asset(min_gem_points, point._symbol), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(_alice, 1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     produce_block();
-    produce_block(fc::seconds(cfg::default_evaluation_period - (cfg::block_interval_ms / 1000)));
-    BOOST_CHECK_EQUAL(errgallery.eval_period, gallery.claim(_alice, 1, _alice));
+    produce_block(fc::seconds(cfg::def_moderation_period - (cfg::block_interval_ms / 1000)));
+    BOOST_CHECK_EQUAL(errgallery.moderation_period, gallery.claim(_alice, 1, _alice));
 
     produce_blocks(1);
 
