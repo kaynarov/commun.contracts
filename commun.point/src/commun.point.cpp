@@ -313,5 +313,5 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
 } /// namespace commun
 
 DISPATCH_WITH_TRANSFER(commun::point, commun::config::token_name, on_reserve_transfer,
-    (create)(setfreezer)(issue)(transfer)(open)(close)(retire)
+    (create)(setfreezer)(issue)(transfer)(withdraw)(open)(close)(retire)
 )
