@@ -103,6 +103,13 @@ public:
         );
     }
 
+    action_result withdraw(account_name owner, asset quantity) {
+        return push(N(withdraw), owner, args()
+            ("owner", owner)
+            ("quantity", quantity)
+        );
+    }
+
     //// token tables
     variant get_params() {
         return get_params(_symbol);
