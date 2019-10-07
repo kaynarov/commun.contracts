@@ -33,9 +33,10 @@ struct commun_posting_api: base_contract_api {
         std::string body = "body",
         std::vector<std::string> tags = {"tag"},
         std::string metadata = "metadata",
-        uint16_t curators_prcnt = 5000
+        uint16_t curators_prcnt = 5000,
+        std::optional<uint16_t> weight = std::optional<uint16_t>()
     ) {
-        return push(N(createmssg), message_id.author, args()
+        auto a = args()
             ("commun_code", commun_code)
             ("message_id", message_id)
             ("parent_id", parent_id)
@@ -43,8 +44,12 @@ struct commun_posting_api: base_contract_api {
             ("body", body)
             ("tags", tags)
             ("metadata", metadata)
-            ("curators_prcnt", curators_prcnt)
-        );
+            ("curators_prcnt", curators_prcnt);
+
+        if (weight.has_value()) {
+            a("weight", *weight);
+        }
+        return push(N(createmssg), message_id.author, a);
     }
 
     action_result update_msg(
@@ -124,22 +129,23 @@ struct commun_posting_api: base_contract_api {
             ("message_id", message_id)
         );
     }
-
-    action_result upvote(account_name voter, mssgid message_id, uint16_t weight = cfg::_100percent) {
-        return push(N(upvote), voter, args()
+    
+    mvo get_vote_args(account_name voter, mssgid message_id, std::optional<uint16_t> weight = std::optional<uint16_t>()) {
+        auto ret = args()
             ("commun_code", commun_code)
             ("voter", voter)
-            ("message_id", message_id)
-            ("weight", weight)
-        );
+            ("message_id", message_id);
+        if (weight.has_value()) {
+            ret("weight", *weight);
+        }
+        return ret;
     }
-    action_result downvote(account_name voter, mssgid message_id, uint16_t weight = cfg::_100percent) {
-        return push(N(downvote), voter, args()
-            ("commun_code", commun_code)
-            ("voter", voter)
-            ("message_id", message_id)
-            ("weight", weight)
-        );
+
+    action_result upvote(account_name voter, mssgid message_id, std::optional<uint16_t> weight = std::optional<uint16_t>()) {
+        return push(N(upvote), voter, get_vote_args(voter, message_id, weight));
+    }
+    action_result downvote(account_name voter, mssgid message_id, std::optional<uint16_t> weight = std::optional<uint16_t>()) {
+        return push(N(downvote), voter, get_vote_args(voter, message_id, weight));
     }
     action_result unvote(account_name voter, mssgid message_id) {
         return push(N(unvote), voter, args()
@@ -196,14 +202,6 @@ struct commun_posting_api: base_contract_api {
             ("commun_code", commun_code)
             ("recipient", recipient)
             ("providers", providers)
-        );
-    }
-
-    action_result setfrequency(account_name account, uint16_t actions_per_day) {
-        return push(N(setfrequency), account, args()
-            ("commun_code", commun_code)
-            ("account", account)
-            ("actions_per_day", actions_per_day)
         );
     }
 

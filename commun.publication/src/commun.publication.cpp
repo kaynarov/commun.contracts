@@ -2,6 +2,7 @@
 #include <eosio/event.hpp>
 #include <commun.publication/objects.hpp>
 #include <commun.social/commun.social.hpp>
+#include <commun.list/commun.list.hpp>
 #include <commun/dispatchers.hpp>
 
 namespace commun {
@@ -28,9 +29,13 @@ void publication::createmssg(
     std::string body,
     std::vector<std::string> tags,
     std::string metadata,
-    uint16_t curators_prcnt
+    uint16_t curators_prcnt,
+    std::optional<uint16_t> weight
 ) {
     require_auth(message_id.author);
+    
+    eosio::check(!weight.has_value() || (*weight > 0), "weight can't be 0.");
+    eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
 
     eosio::check(message_id.permlink.length() && message_id.permlink.length() < config::max_length,
         "Permlink length is empty or more than 256.");
@@ -76,9 +81,11 @@ void publication::createmssg(
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, message_id.author);
+    auto gems_per_period = get_gems_per_period(commun_code);
 
     int64_t amount_to_freeze = 0;
     if (parent_id.author) {
+        eosio::check(!weight.has_value(), "weight is redundant for comments");
         auto opus_itr = std::find_if(param.opuses.begin(), param.opuses.end(), 
             [](const config::opus_info& arg) { return arg.name == config::comment_opus_name; });
         
@@ -86,14 +93,18 @@ void publication::createmssg(
         amount_to_freeze = std::max(opus_itr->mosaic_pledge, std::max(opus_itr->min_mosaic_inclusion, opus_itr->min_gem_inclusion));
     }
     else {
-        amount_to_freeze = get_amount_to_freeze(point::get_balance(config::point_name, message_id.author, commun_code).amount, 
-            get_frozen_amount(_self, message_id.author, commun_code), acc_param->actions_per_day, param.mosaic_active_period);
+        amount_to_freeze = get_amount_to_freeze(
+            point::get_balance(config::point_name, message_id.author, commun_code).amount, 
+            get_frozen_amount(_self, message_id.author, commun_code), 
+            gems_per_period,
+            weight);
     }
     asset quantity(amount_to_freeze, param.commun_symbol);
 
     //providers are not used for comments
     create_mosaic(_self, message_id.author, tracery, parent_id.author ? config::comment_opus_name : config::post_opus_name,
-        quantity, config::_100percent - curators_prcnt, parent_id.author ? gallery_types::providers_t() : get_providers(commun_code, message_id.author));    
+        quantity, config::_100percent - curators_prcnt, 
+        parent_id.author ? gallery_types::providers_t() : get_providers(commun_code, message_id.author, gems_per_period, weight));    
 }
 
 void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
@@ -125,16 +136,14 @@ void publication::reportmssg(symbol_code commun_code, name reporter, mssgid_t me
     check_mssg_exists(commun_code, message_id);
 }
 
-void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight) {
-    eosio::check(weight > 0, "weight can't be 0.");
-    eosio::check(weight <= config::_100percent, "weight can't be more than 100%.");
-    set_vote(commun_code, voter, message_id, weight);
+void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
+    eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
+    set_vote(commun_code, voter, message_id, weight, false);
 }
 
-void publication::downvote(symbol_code commun_code, name voter, mssgid_t message_id, uint16_t weight) {
-    eosio::check(weight > 0, "weight can't be 0.");
-    eosio::check(weight <= config::_100percent, "weight can't be more than 100%.");
-    set_vote(commun_code, voter, message_id, -weight);
+void publication::downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
+    eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
+    set_vote(commun_code, voter, message_id, weight, true);
 }
 
 void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_id) {
@@ -156,22 +165,23 @@ void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_o
     claim_gem(_self, message_id.author, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
 }
 
-void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, int16_t weight) {
+void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, std::optional<uint16_t> weight, bool damn) {
     gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, voter);
+    auto gems_per_period = get_gems_per_period(commun_code);
 
-    uint16_t abs_weight = std::abs(weight);
     asset quantity(
-        safe_pct(abs_weight, get_amount_to_freeze(
+        get_amount_to_freeze(
             point::get_balance(config::point_name, voter, commun_code).amount, 
             get_frozen_amount(_self, voter, commun_code),
-            acc_param->actions_per_day, 
-            param.mosaic_active_period)), 
+            gems_per_period,
+            weight), 
         param.commun_symbol);
 
-    add_to_mosaic(_self, message_id.author, message_id.tracery(), quantity, weight < 0, voter, get_providers(commun_code, message_id.author, abs_weight));
+    add_to_mosaic(_self, message_id.author, message_id.tracery(), quantity, damn, voter, 
+        get_providers(commun_code, message_id.author, gems_per_period, weight));
 }
 
 void publication::setparams(symbol_code commun_code, std::vector<posting_params> params) {
@@ -229,26 +239,33 @@ void publication::check_mssg_exists(symbol_code commun_code, const mssgid_t& mes
 accparams::const_iterator publication::get_acc_param(accparams& accparams_table, symbol_code commun_code, name account) {
     auto ret = accparams_table.find(account.value);
     if (ret == accparams_table.end()) {
-        ret = accparams_table.emplace(account, [&](auto& p) { p = {
-            .account = account,
-            .actions_per_day = config::default_actions_per_day
-        };});
+        ret = accparams_table.emplace(account, [&](auto& p) { p = { .account = account };});
     }
     return ret;
 }
 
-int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t actions_per_day, int64_t mosaic_active_period, int64_t actual_limit) {
-    int64_t available = balance - frozen;
-    if (available <= 0 || actual_limit <= 0) {
-        return 0;
-    }
+uint16_t publication::get_gems_per_period(symbol_code commun_code) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
-    int64_t actions_per_period = std::max<int64_t>(safe_prop(actions_per_day, mosaic_active_period, seconds_per_day), 1);
-    int64_t points_per_action = balance / actions_per_period;
-    return std::min(points_per_action ? std::min(available, points_per_action) : available, actual_limit);
+    //TODO: list
+    gallery_types::params params_table(_self, commun_code.raw());
+    int64_t mosaic_active_period = params_table.get(commun_code.raw(), "param does not exists").mosaic_active_period;
+    
+    uint16_t gems_per_day = commun_list::get_community(config::list_name, commun_code).gems_per_day;
+    
+    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
 }
 
-gallery_types::providers_t publication::get_providers(symbol_code commun_code, name account, uint16_t weight) {
+int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight) {
+    int64_t available = balance - frozen;
+    if (available <= 0) {
+        return 0;
+    }
+    int64_t weighted_points = weight.has_value() ? safe_pct(*weight, balance) : balance / gems_per_period;
+    return (weighted_points || weight.has_value()) ? std::min(available, weighted_points) : available;
+}
+
+gallery_types::providers_t publication::get_providers(symbol_code commun_code, name account, 
+                                                      uint16_t gems_per_period, std::optional<uint16_t> weight) {
     gallery_types::params params_table(_self, commun_code.raw());
     const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     accparams accparams_table(_self, commun_code.raw());
@@ -260,13 +277,9 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
         auto prov_name = acc_param->providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, account));
         if (prov_itr != provs_index.end() && point::balance_exists(config::point_name, prov_name, commun_code)) {
-            auto amount = safe_pct(weight, get_amount_to_freeze(
-                prov_itr->total, 
-                prov_itr->frozen,
-                acc_param->actions_per_day, 
-                param.mosaic_active_period,
-                point::get_balance(config::point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code)));
-
+            auto actual_limit = std::max<int64_t>(
+                0, point::get_balance(config::point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code));
+            auto amount = std::min(get_amount_to_freeze(prov_itr->total, prov_itr->frozen, gems_per_period, weight), actual_limit);
             if (amount) {
                 ret.emplace_back(std::make_pair(prov_name, amount));
             }
@@ -305,16 +318,6 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
     accparams_table.modify(acc_param, name(), [&](auto& a) { a.providers = providers; });
 }
 
-void publication::setfrequency(symbol_code commun_code, name account, uint16_t actions_per_day) {
-    require_auth(account);
-    gallery_types::params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-
-    accparams accparams_table(_self, commun_code.raw());
-    auto acc_param = get_acc_param(accparams_table, commun_code, account);
-    accparams_table.modify(acc_param, name(), [&](auto& a) { a.actions_per_day = actions_per_day; });
-}
-
 void publication::provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
     provide_points(_self, grantor, recipient, quantity, fee);
 }
@@ -336,4 +339,4 @@ void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
     (createmssg)(updatemssg)(settags)(deletemssg)(reportmssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
-    (setparams)(reblog)(erasereblog)(setproviders)(setfrequency)(provide)(advise)(slap))
+    (setparams)(reblog)(erasereblog)(setproviders)(provide)(advise)(slap))
