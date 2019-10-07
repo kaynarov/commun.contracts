@@ -36,7 +36,7 @@ void commun_list::setsysparams(symbol_code commun_code,
     // <> Place for checks
 
     tables::community community_tbl(_self, _self.value);
-    auto community = community_tbl.get(commun_code.raw(), "community token doesn't exist");
+    auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
         bool _empty = true;
@@ -60,7 +60,7 @@ void commun_list::setparams(symbol_code commun_code,
     // <> Place for checks
 
     tables::community community_tbl(_self, _self.value);
-    auto community = community_tbl.get(commun_code.raw(), "community token doesn't exist");
+    auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
         bool _empty = true;

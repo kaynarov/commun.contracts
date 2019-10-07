@@ -51,7 +51,7 @@ public:
         const string community_exists = amsg("community exists");
         const string community_symbol_code_exists = amsg("community token exists");
         const string not_found_token = amsg("not found token");
-        const string no_community = amsg("community token doesn't exist");
+        const string no_community = amsg("community not exists");
         const string no_changes = amsg("No params changed");
     } err;
 };
