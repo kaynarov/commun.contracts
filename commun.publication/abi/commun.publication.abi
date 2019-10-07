@@ -24,12 +24,6 @@
       "type": "int16"
     }
   ],
-  "variants": [{
-    "name": "posting_param",
-    "types": [
-      "st_max_comment_depth"
-    ]
-  }],
   "structs": [
           {
             "name": "mosaic_struct",
@@ -381,26 +375,12 @@
     ]
   },
   {
-    "name": "st_max_comment_depth",
-    "base": "",
-    "fields": [
-      {
-        "name": "value",
-        "type": "uint16"
-      }
-    ]
-  },
-  {
     "name": "posting_state",
     "base": "",
     "fields": [
       {
         "name": "id",
         "type": "uint64"
-      },
-      {
-        "name": "max_comment_depth",
-        "type": "st_max_comment_depth"
       }
     ]
   },
@@ -411,10 +391,6 @@
       {
         "name": "commun_code",
         "type": "symbol_code"
-      },
-      {
-        "name": "params",
-        "type": "posting_param[]"
       }
     ]
   },

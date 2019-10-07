@@ -4,6 +4,7 @@
 #include "commun.emit_test_api.hpp"
 #include "commun.list_test_api.hpp"
 #include "cyber.token_test_api.hpp"
+#include "../commun.publication/include/commun.publication/config.hpp"
 #include "../commun.point/include/commun.point/config.hpp"
 #include "../commun.emit/include/commun.emit/config.hpp"
 #include "../commun.gallery/include/commun.gallery/config.hpp"
@@ -206,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(nesting_level_test, commun_publication_tester) try {
     init();
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink0"}));
     size_t i = 0;
-    for (; i < post.max_comment_depth; i++) {
+    for (; i < cfg::max_comment_depth; i++) {
         BOOST_CHECK_EQUAL(success(), post.create_msg(
             {N(brucelee), "permlink" + std::to_string(i+1)},
             {N(brucelee), "permlink" + std::to_string(i)}));

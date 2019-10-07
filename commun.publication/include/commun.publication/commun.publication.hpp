@@ -1,6 +1,5 @@
 #pragma once
 #include <commun.publication/objects.hpp>
-#include <commun.publication/parameters.hpp>
 #include <eosio/transaction.hpp>
 
 namespace commun {
@@ -50,7 +49,7 @@ public:
     void hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator);
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
-    void setparams(symbol_code commun_code, std::vector<posting_params> params);
+    void setparams(symbol_code commun_code);
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
@@ -69,7 +68,6 @@ private:
     accparams::const_iterator get_acc_param(accparams& accparams_table, symbol_code commun_code, name account);
     uint16_t get_gems_per_period(symbol_code commun_code);
     static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight);
-    const posting_state& params(symbol_code commun_code);
     void set_vote(symbol_code commun_code, name voter, const mssgid_t &message_id, std::optional<uint16_t> weight, bool damn);
     bool validate_permlink(std::string permlink);
     void check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id);
