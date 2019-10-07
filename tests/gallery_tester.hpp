@@ -40,25 +40,18 @@ public:
         const string no_community = amsg("community not exists");
     } errgallery;
     
-    variant get_mosaic(name code, symbol point, name creator, uint64_t tracery) {
-        variant obj = get_chaindb_lower_bound_struct(code, point.to_symbol_code(), N(mosaic), N(bykey),
-            std::make_pair(creator, tracery), "mosaic");
-        if (!obj.is_null() && obj.get_object().size()) { 
-            if (obj["creator"] == creator.to_string() && obj["tracery"] == std::to_string(tracery)) {
-                return obj;
-            }
-        }
-        return variant();
+    variant get_mosaic(name code, symbol point, uint64_t tracery) {
+        return get_chaindb_struct(code, point.to_symbol_code().value, N(mosaic), tracery, "mosaic");
     }
 
-    variant get_gem(name code, symbol point, uint64_t mosaic_id, name creator, name owner = name()) {
+    variant get_gem(name code, symbol point, uint64_t tracery, name creator, name owner = name()) {
         if (!owner) {
             owner = creator;
         }
         variant obj = get_chaindb_lower_bound_struct(code, point.to_symbol_code(), N(gem), N(bykey),
-            std::make_pair(mosaic_id, std::make_pair(creator, owner)), "gem");
+            std::make_pair(tracery, std::make_pair(creator, owner)), "gem");
         if (!obj.is_null() && obj.get_object().size()) { 
-            if (obj["mosaic_id"] == std::to_string(mosaic_id) && obj["creator"] == creator.to_string() && obj["owner"] == owner.to_string()) {
+            if (obj["tracery"] == std::to_string(tracery) && obj["creator"] == creator.to_string() && obj["owner"] == owner.to_string()) {
                 return obj;
             }
         }

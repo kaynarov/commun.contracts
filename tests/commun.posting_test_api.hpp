@@ -12,7 +12,8 @@ struct mssgid {
     std::string permlink;
 
     uint64_t tracery() const {
-        return fc::hash64(permlink.c_str(), permlink.size());
+        std::string key = author.to_string() + "/" + permlink;
+        return fc::hash64(key.c_str(), key.size());
     }
 
     bool operator ==(const mssgid& rhs) const {
@@ -229,22 +230,11 @@ struct commun_posting_api: base_contract_api {
     }
 
     variant get_vertex(mssgid message_id) {
-        variant obj = _tester->get_chaindb_lower_bound_struct(_code, commun_code.value, N(vertex), N(bykey),
-            std::make_pair(message_id.author, message_id.tracery()), "message");
-        if (!obj.is_null() && obj.get_object().size()) {
-            if (obj["creator"] == message_id.author.to_string() && obj["tracery"].as<uint64_t>() == message_id.tracery()) {
-                return obj;
-            }
-        }
-        return variant();
+        return get_struct(commun_code.value, N(vertex), message_id.tracery(), "vertex");
     }
 
     variant get_accparam(account_name acc) {
         return _tester->get_chaindb_struct(_code, commun_code.value, N(accparam), acc.value, "accparam");
-    }
-
-    uint64_t tracery(std::string permlink) const {
-        return mssgid{name(), permlink}.tracery();
     }
 };
 
