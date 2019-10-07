@@ -6,20 +6,6 @@
 
 namespace commun {
 
-struct posting_params_setter: set_params_visitor<posting_state> {
-    using set_params_visitor::set_params_visitor;
-
-    bool operator()(const max_comment_depth_prm& param) {
-        return set_param(param, &posting_state::max_comment_depth_param);
-    }
-};
-
-// cached to prevent unneeded db access
-const posting_state& publication::params(symbol_code commun_code) {
-    static const auto cfg = posting_params_singleton(_self, commun_code.raw()).get();
-    return cfg;
-}
-
 void publication::createmssg(
     symbol_code commun_code,
     mssgid_t message_id,
@@ -43,8 +29,6 @@ void publication::createmssg(
     eosio::check(body.length(), "Body is empty.");
     eosio::check(curators_prcnt <= config::_100percent, "curators_prcnt can't be more than 100%.");
 
-    const auto& max_comment_depth_param = params(commun_code).max_comment_depth_param;
-
     vertices vertices_table(_self, commun_code.raw());
     auto vertices_index = vertices_table.get_index<"bykey"_n>();
     auto tracery = message_id.tracery();
@@ -64,7 +48,7 @@ void publication::createmssg(
 
         level = 1 + parent_vertex->level;
     }
-    eosio::check(level <= max_comment_depth_param.max_comment_depth, "publication::createmssg: level > MAX_COMMENT_DEPTH");
+    eosio::check(level <= config::max_comment_depth, "publication::createmssg: level > MAX_COMMENT_DEPTH");
 
     vertices_table.emplace(message_id.author, [&](auto& item) {
         item.id = vertices_table.available_primary_key();
@@ -180,17 +164,13 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         get_providers(commun_code, message_id.author, gems_per_period, weight));
 }
 
-void publication::setparams(symbol_code commun_code, std::vector<posting_params> params) {
+void publication::setparams(symbol_code commun_code) {
     require_auth(_self);
 
     gallery_types::params params_table(_self, commun_code.raw());
     if (params_table.find(commun_code.raw()) == params_table.end()) {
         create_gallery(_self, point::get_supply(config::point_name, commun_code).symbol);
     }
-
-    posting_params_singleton cfg(_self, commun_code.raw());
-    param_helper::check_params(params, cfg.exists());
-    param_helper::set_parameters<posting_params_setter>(params, cfg, _self);
 }
 
 void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {

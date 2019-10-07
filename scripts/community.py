@@ -51,10 +51,7 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
 
     # 8. Set publication params (comn.gallery:setparams) (fix to check issuer permission instead of _self)
     pushAction('comn.gallery', 'setparams', 'comn.gallery', {
-        "commun_code":symbol.code,
-        "params":[
-            ['st_max_comment_depth', {'value': 127}],
-        ]
+        "commun_code":symbol.code
     }, providebw='comn.gallery/comn', keys=commun_private_key)
 
     # 9. Register community (comn.list:create)
