@@ -56,8 +56,14 @@ void commun_list::setparams(symbol_code commun_code,
     require_auth(point::get_issuer(config::point_name, commun_code));
 
     // <> Place for checks
+    eosio::check(!emission_rate.has_value() || *emission_rate == config::_1percent ||
+        ((config::_1percent * 5) <= *emission_rate && *emission_rate <= (config::_1percent * 50)  && (*emission_rate % (config::_1percent * 5)) == 0),
+        "incorrect emission rate");
+    eosio::check(!leaders_percent.has_value() ||
+        ((config::_1percent) <= *leaders_percent && *leaders_percent <= (config::_1percent * 10)  && (*leaders_percent % (config::_1percent)) == 0),
+        "incorrect leaders percent");
 
-    tables::community community_tbl(_self, _self.value);
+    tables::community community_tbl(_self, _self.value); 
     auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& item) {

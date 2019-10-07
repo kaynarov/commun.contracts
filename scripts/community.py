@@ -1,6 +1,6 @@
 from testnet import *
 
-def createCommunity(community_name, owner_account, maximum_supply, reserve_amount, *, commun_private_key, owner_private_key, cw=10000, fee=100, annual_emission_rate=1000, leader_reward_prop=2000):
+def createCommunity(community_name, owner_account, maximum_supply, reserve_amount, *, commun_private_key, owner_private_key, cw=10000, fee=100):
     symbol = maximum_supply.symbol
     initial_supply = Asset(str(maximum_supply))
     initial_supply.amount //= 1000
@@ -37,9 +37,7 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
     }, providebw='{acc}/comn'.format(acc='comn.ctrl'), keys=owner_private_key)
 
     pushAction('comn.emit', 'create', 'comn.emit', {
-        "commun_code": symbol.code,
-        "annual_emission_rate": annual_emission_rate,
-        "leaders_reward_prop": leader_reward_prop
+        "commun_code": symbol.code
     }, providebw='comn.emit/comn', keys=commun_private_key)
 
     # 7. Open point balance for comn.gallery
