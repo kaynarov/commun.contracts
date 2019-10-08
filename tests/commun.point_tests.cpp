@@ -55,7 +55,8 @@ public:
         const string max_supply_not_positive = amsg("max-supply must be positive");
         const string invalid_cw = amsg("connector weight must be between 0.01% and 100% (1-10000)");
         const string invalid_fee = amsg("fee must be between 0% and 100% (0-10000)");
-        const string already_exists = amsg("already exists");
+        const string point_already_exists = amsg("point already exists");
+        const string issuer_already_has_point = amsg("issuer already has a point");
         const string memo_too_long = amsg("memo has more than 256 bytes");
         const string no_point_symbol = amsg("point with symbol does not exist, create it before issue");
         const string no_symbol = amsg("symbol does not exist");
@@ -186,8 +187,9 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_point_tester) try {
 
     BOOST_CHECK_EQUAL(success(), point.create(_golos, max_supply, 5000, 0));
     produce_block();
-    BOOST_CHECK_EQUAL(err.already_exists, point.create(_golos, max_supply, 5000, 0));
-    BOOST_CHECK_EQUAL(err.already_exists, point.create(_alice, max_supply, 5000, 0));
+    BOOST_CHECK_EQUAL(err.point_already_exists, point.create(_golos, max_supply, 5000, 0));
+    BOOST_CHECK_EQUAL(err.point_already_exists, point.create(_alice, max_supply, 5000, 0));
+    BOOST_CHECK_EQUAL(err.issuer_already_has_point, point.create(_golos, asset(1000, another), 5000, 0));
     BOOST_CHECK_EQUAL(success(), point.create(_alice, asset(1000, another), 5000, 0));
     produce_block();
 
