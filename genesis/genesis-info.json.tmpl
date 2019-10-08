@@ -160,7 +160,8 @@
             "permissions": [
                 {"name": "owner", "key": "INITIAL"},
                 {"name": "active", "accounts": ["@testing"]},
-                {"name": "testing", "key": "GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62"}
+                {"name": "testing", "key": "GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62"},
+                {"name": "providebw", "key": "GLS7KqcmMzmVURzrPvpjfq8ZJSS7Dno82xQ7rpHVYxhz5JnZ9RxY9"}
             ],
         },
 # Add additional accounts here
@@ -176,6 +177,8 @@
         {"permission": "cyber.govern@prods",      "links": ["cyber:setcode", "cyber:setabi"]},
         {"permission": "cyber.stake@prods",       "links": ["cyber:setcode", "cyber:setabi"]},
         {"permission": "cyber.token@prods",       "links": ["cyber:setcode", "cyber:setabi", "cyber.token:create"]},
+
+        {"permission": "gls@providebw",           "links": ["cyber:providebw"]},
     ],
     "tables": [
         {
