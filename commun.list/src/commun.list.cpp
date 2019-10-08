@@ -1,6 +1,7 @@
 #include <commun.list.hpp>
 #include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
+#include <commun.emit/commun.emit.hpp>
 #include <commun/config.hpp>
 
 using namespace commun;
@@ -20,6 +21,13 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
         item.commun_symbol = commun_symbol;
         item.community_name = community_name;
     });
+    
+    action(
+        permission_level{config::emit_name, "create"_n},
+        config::emit_name,
+        "create"_n,
+        std::make_tuple(commun_code)
+    ).send();
 }
 
 #define SET_PARAM(PARAM) if (PARAM) { item.PARAM = *PARAM; _empty = false; }

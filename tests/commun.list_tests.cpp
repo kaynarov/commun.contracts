@@ -25,10 +25,13 @@ public:
         , community({this, cfg::list_name})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas,
-            cfg::control_name, cfg::point_name, cfg::list_name});
+            cfg::control_name, cfg::point_name, cfg::list_name, cfg::emit_name});
         produce_block();
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
+        
+        set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
     }
 
     const account_name _commun = cfg::dapp_name;

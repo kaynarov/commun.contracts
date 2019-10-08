@@ -36,10 +36,6 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
         "commun_code":symbol.code
     }, providebw='{acc}/comn'.format(acc='comn.ctrl'), keys=owner_private_key)
 
-    pushAction('comn.emit', 'create', 'comn.emit', {
-        "commun_code": symbol.code
-    }, providebw='comn.emit/comn', keys=commun_private_key)
-
     # 7. Open point balance for comn.gallery
     pushAction('comn.point', 'open', 'comn', {
         "owner": "comn.gallery",
@@ -56,7 +52,7 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
     pushAction('comn.list', 'create', 'comn.list', {
         "commun_code": symbol.code,
         "community_name": community_name
-    }, providebw='comn.list/comn', keys=commun_private_key)
+    }, providebw=['comn.list/comn', 'comn.emit/comn'], keys=commun_private_key)
 
 def openBalance(owner, commun_code, payer, *, providebw=None, keys=None):
     return pushAction('comn.point', 'open', payer, {

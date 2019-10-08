@@ -41,6 +41,8 @@ public:
 
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
+        set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
 
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
         set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
@@ -51,7 +53,6 @@ public:
     void init() {
         int64_t reserve = 100000;
         BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(999999999, point._symbol), 10000, 0));
-        BOOST_CHECK_EQUAL(success(), community.create_record(cfg::list_name, point_code, "golos"));
 
         BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
@@ -83,7 +84,7 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_emit_tester) try {
 
     BOOST_CHECK_EQUAL(err.no_point, emit.create(point_code));
     init();
-    BOOST_CHECK_EQUAL(success(), emit.create(point_code));
+    BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", 0)));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", cfg::_100percent+1)));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", cfg::_1percent * 2)));
@@ -112,7 +113,7 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("issuereward tests");
     BOOST_CHECK_EQUAL(err.no_emitter, emit.issuereward(point_code, false));
     init();
-    BOOST_CHECK_EQUAL(success(), emit.create(point_code));
+    BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, point_code, community.args()
         ("emission_rate", cfg::_1percent * 50)
         ("leaders_percent", cfg::_1percent * 10)));
@@ -139,7 +140,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     int64_t supply = 100000000;
     double annual_rate = 0.5;
     double leaders_rate = 0.1;
-    BOOST_CHECK_EQUAL(success(), emit.create(point_code));
+    BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, point_code, community.args()
         ("emission_rate", uint16_t(annual_rate * cfg::_100percent))
         ("leaders_percent", uint16_t(leaders_rate*cfg::_100percent))));
