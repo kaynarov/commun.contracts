@@ -13,9 +13,8 @@ public:
 
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {
         vertices vertices_table(self, commun_code.raw());
-        auto vertices_index = vertices_table.get_index<"bykey"_n>();
-        auto vertex = vertices_index.find(std::make_tuple(mosaic.creator, mosaic.tracery));
-        eosio::check(vertex != vertices_index.end(), "SYSTEM: Permlink doesn't exist.");
+        auto vertex = vertices_table.find(mosaic.tracery);
+        eosio::check(vertex != vertices_table.end(), "SYSTEM: Permlink doesn't exist.");
 
         auto community = commun_list::get_community(config::list_name, commun_code);
         auto active_period_end = mosaic.created + eosio::seconds(community.active_period);
@@ -23,10 +22,10 @@ public:
 
         eosio::check(vertex->childcount == 0 || now > active_period_end, "comment with child comments can't be deleted during the active period");
 
-        if (vertex->parent_creator) {
-            auto parent_vertex = vertices_index.find(std::make_tuple(vertex->parent_creator, vertex->parent_tracery));
-            if (parent_vertex != vertices_index.end()) {
-                vertices_index.modify(parent_vertex, eosio::same_payer, [&](auto& item) { item.childcount--; });
+        if (vertex->parent_tracery) {
+            auto parent_vertex = vertices_table.find(vertex->parent_tracery);
+            if (parent_vertex != vertices_table.end()) {
+                vertices_table.modify(parent_vertex, eosio::same_payer, [&](auto& item) { item.childcount--; });
             }
         }
         vertices_table.erase(*vertex);

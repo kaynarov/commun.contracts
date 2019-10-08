@@ -2,10 +2,7 @@
 #include "test_api_helper.hpp"
 #include <commun.gallery/include/commun.gallery/config.hpp>
 
-using mosaic_key_t = std::pair<cyberway::chain::account_name, uint64_t>;
-
 namespace eosio { namespace testing {
-
 
 struct commun_gallery_api: base_contract_api {
 private:
@@ -35,11 +32,10 @@ public:
         return push(N(createmosaic), creator, a);
     }
     
-    action_result addtomosaic(account_name mosaic_creator, uint64_t tracery, asset quantity, bool damn, account_name gem_creator, 
+    action_result addtomosaic(uint64_t tracery, asset quantity, bool damn, account_name gem_creator, 
                                        std::vector<std::pair<account_name, int64_t> > providers = 
                                        std::vector<std::pair<account_name, int64_t> >()) {
         auto a = args()
-            ("mosaic_creator", mosaic_creator)
             ("tracery", tracery)
             ("quantity", quantity)
             ("damn", damn)
@@ -49,10 +45,9 @@ public:
         return push(N(addtomosaic), gem_creator, a);
     }
       
-    action_result claim(account_name mosaic_creator, uint64_t tracery, account_name gem_owner, 
+    action_result claim(uint64_t tracery, account_name gem_owner, 
                     account_name gem_creator = account_name(), bool eager = false, account_name signer = account_name()) {
         auto a = args()
-            ("mosaic_creator", mosaic_creator)
             ("tracery", tracery)
             ("commun_code", _symbol.to_symbol_code())
             ("gem_owner", gem_owner);
@@ -66,9 +61,8 @@ public:
         return push(N(claim), signer ? signer : gem_owner, a);
     }
     
-    action_result hold(account_name mosaic_creator, uint64_t tracery, account_name gem_owner, account_name gem_creator = account_name()) {
+    action_result hold(uint64_t tracery, account_name gem_owner, account_name gem_creator = account_name()) {
         auto a = args()
-            ("mosaic_creator", mosaic_creator)
             ("tracery", tracery)
             ("commun_code", _symbol.to_symbol_code())
             ("gem_owner", gem_owner);
@@ -78,10 +72,9 @@ public:
         return push(N(hold), gem_owner, a);
     }
     
-    action_result transfer(account_name mosaic_creator, uint64_t tracery, account_name gem_owner, 
+    action_result transfer(uint64_t tracery, account_name gem_owner, 
                         account_name gem_creator, account_name recipient, bool recipient_sign = true) {
         auto a = args()
-            ("mosaic_creator", mosaic_creator)
             ("tracery", tracery)
             ("commun_code", _symbol.to_symbol_code())
             ("gem_owner", gem_owner);
@@ -107,18 +100,17 @@ public:
         return push(N(provide), grantor, a);
     }
 
-    action_result advise(account_name leader, std::vector<mosaic_key_t> favorites) {
+    action_result advise(account_name leader, std::vector<uint64_t> favorites) {
         return push(N(advise), leader, args()
             ("commun_code", _symbol.to_symbol_code())
             ("leader", leader)
             ("favorites", favorites));
     }
     
-    action_result slap(account_name leader, account_name mosaic_creator, uint64_t tracery) {
+    action_result slap(account_name leader, uint64_t tracery) {
         return push(N(slap), leader, args()
             ("commun_code", _symbol.to_symbol_code())
             ("leader", leader)
-            ("mosaic_creator", mosaic_creator)
             ("tracery", tracery));
     }
     
