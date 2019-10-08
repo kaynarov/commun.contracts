@@ -42,7 +42,10 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     symbol_code commun_code = commun_symbol.code();
 
     params params_table(_self, _self.value);
-    eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "already exists");
+    eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "point already exists");
+
+    auto issuer_idx = params_table.get_index<"byissuer"_n>();
+    eosio::check(issuer_idx.find(issuer) == issuer_idx.end(), "issuer already has a point");
     
     auto param = params_table.emplace(_self, [&](auto& p) { p = {
         .max_supply = maximum_supply,
