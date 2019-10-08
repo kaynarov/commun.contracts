@@ -24,20 +24,13 @@
       "type": "int16"
     }
   ],
-  "variants": [{
-    "name": "posting_param",
-    "types": [
-      "st_max_comment_depth"
-    ]
-  }],
   "structs": [
           {
             "name": "mosaic_struct",
             "base": "",
             "fields": [
-                { "type": "uint64",        "name": "id" },
-                { "type": "name",          "name": "creator" },
                 { "type": "uint64",        "name": "tracery" },
+                { "type": "name",          "name": "creator" },
                 { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
                 { "type": "time_point",    "name": "created" },
@@ -60,7 +53,7 @@
             "base": "",
             "fields": [
                 { "type": "uint64",        "name": "id" },
-                { "type": "uint64",        "name": "mosaic_id" },
+                { "type": "uint64",        "name": "tracery" },
                 { "type": "time_point",    "name": "claim_date" },
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
@@ -158,21 +151,8 @@
       "base": "",
       "fields": [
         {
-          "name": "id",
-          "type": "uint64"
-        },
-        
-        {
-          "name": "creator",
-          "type": "name"
-        },
-        {
           "name": "tracery",
           "type": "uint64"
-        },
-        {
-          "name": "parent_creator",
-          "type": "name"
         },
         {
           "name": "parent_tracery",
@@ -381,26 +361,12 @@
     ]
   },
   {
-    "name": "st_max_comment_depth",
-    "base": "",
-    "fields": [
-      {
-        "name": "value",
-        "type": "uint16"
-      }
-    ]
-  },
-  {
     "name": "posting_state",
     "base": "",
     "fields": [
       {
         "name": "id",
         "type": "uint64"
-      },
-      {
-        "name": "max_comment_depth",
-        "type": "st_max_comment_depth"
       }
     ]
   },
@@ -411,10 +377,6 @@
       {
         "name": "commun_code",
         "type": "symbol_code"
-      },
-      {
-        "name": "params",
-        "type": "posting_param[]"
       }
     ]
   },
@@ -634,9 +596,7 @@
             "name": "mosaic",
             "type": "mosaic_struct",
             "indexes": [
-                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
-                { "name": "bykey", "unique": "true", "orders": [
-                    {"field": "creator", "order": "asc"}, {"field": "tracery", "order": "asc"} ] },
+                { "name": "primary", "unique": "true", "orders": [ {"field": "tracery", "order": "asc"} ] },
                 { "name": "bycommrating", "unique": "false", "orders": [
                     {"field": "active", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
@@ -650,9 +610,9 @@
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
                 { "name": "bykey", "unique": "true", "orders": [
-                    {"field": "mosaic_id", "order": "asc"}, {"field": "owner", "order": "asc"}, {"field": "creator", "order": "asc"} ] },
+                    {"field": "tracery", "order": "asc"}, {"field": "owner", "order": "asc"}, {"field": "creator", "order": "asc"} ] },
                 { "name": "bycreator", "unique": "true", "orders": [
-                    {"field": "mosaic_id", "order": "asc"}, {"field": "creator", "order": "asc"}, {"field": "owner", "order": "asc"} ] },
+                    {"field": "tracery", "order": "asc"}, {"field": "creator", "order": "asc"}, {"field": "owner", "order": "asc"} ] },
                 { "name": "byclaim", "unique": "false", "orders": [
                     {"field": "owner", "order": "asc"}, {"field": "claim_date", "order": "asc"} ] },
                 { "name": "byclaimjoint", "unique": "false", "orders": [
@@ -683,14 +643,6 @@
             "name": "primary",
             "unique": "true",
             "orders": [
-                {"field": "id", "order": "asc"}
-            ]
-         },
-         {
-            "name": "bykey",
-            "unique": "true",
-            "orders": [
-                {"field": "creator", "order": "asc"},
                 {"field": "tracery", "order": "asc"}
             ]
          }

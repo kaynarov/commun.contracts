@@ -12,7 +12,8 @@ struct mssgid {
     std::string permlink;
 
     uint64_t tracery() const {
-        return fc::hash64(permlink.c_str(), permlink.size());
+        std::string key = author.to_string() + "/" + permlink;
+        return fc::hash64(key.c_str(), key.size());
     }
 
     bool operator ==(const mssgid& rhs) const {
@@ -219,43 +220,22 @@ struct commun_posting_api: base_contract_api {
             ("message_id", message_id));
     }
 
-    action_result set_params(std::string json_params) {
+    action_result set_params() {
         return push(N(setparams), _code, args()
-            ("commun_code", commun_code)
-            ("params", json_str_to_obj(json_params)));
+            ("commun_code", commun_code));
     }
 
     action_result init_default_params() {
-        auto comment_depth = get_str_comment_depth(max_comment_depth);
-
-        auto params = "[" + comment_depth + "]";
-        return set_params(params);
-    }
-
-    string get_str_comment_depth(uint16_t max_comment_depth) {
-        return string("['st_max_comment_depth', {'value':'") + std::to_string(max_comment_depth) + "'}]";
+        return set_params();
     }
 
     variant get_vertex(mssgid message_id) {
-        variant obj = _tester->get_chaindb_lower_bound_struct(_code, commun_code.value, N(vertex), N(bykey),
-            std::make_pair(message_id.author, message_id.tracery()), "message");
-        if (!obj.is_null() && obj.get_object().size()) {
-            if (obj["creator"] == message_id.author.to_string() && obj["tracery"].as<uint64_t>() == message_id.tracery()) {
-                return obj;
-            }
-        }
-        return variant();
+        return get_struct(commun_code.value, N(vertex), message_id.tracery(), "vertex");
     }
 
     variant get_accparam(account_name acc) {
         return _tester->get_chaindb_struct(_code, commun_code.value, N(accparam), acc.value, "accparam");
     }
-
-    uint64_t tracery(std::string permlink) const {
-        return mssgid{name(), permlink}.tracery();
-    }
-
-    const uint16_t max_comment_depth = 127;
 };
 
 }} // eosio::testing

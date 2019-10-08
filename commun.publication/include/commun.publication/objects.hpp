@@ -23,24 +23,19 @@ struct mssgid_t {
     }
 
     uint64_t tracery() const {
-        auto hash = sha256(permlink.c_str(), permlink.size());
+        std::string key = author.to_string() + "/" + permlink;
+        auto hash = sha256(key.c_str(), key.size());
         return *(reinterpret_cast<const uint64_t *>(hash.extract_as_byte_array().data()));
     }
 };
 
 struct vertex_t {
-    uint64_t id;
-    name     creator;
     uint64_t tracery;
-    name     parent_creator;
     uint64_t parent_tracery;
     uint16_t level;
     uint32_t childcount;
 
-    uint64_t primary_key() const { return id; }
-
-    using key_t = gallery_types::mosaic_key_t;
-    key_t by_key()const { return std::make_tuple(creator, tracery); }
+    uint64_t primary_key() const { return tracery; }
 };
 
 struct acc_param_t {
@@ -51,10 +46,7 @@ struct acc_param_t {
 
 using namespace eosio;
 
-using vertex_id_index  = indexed_by<N(primary), const_mem_fun<vertex_t, uint64_t, &vertex_t::primary_key> >;
-using vertex_key_index = indexed_by<N(bykey), const_mem_fun<vertex_t, vertex_t::key_t, &vertex_t::by_key> >;
-using vertices = multi_index<N(vertex), vertex_t, vertex_id_index, vertex_key_index>;
-
+using vertices = eosio::multi_index<"vertex"_n, vertex_t>;
 using accparams = eosio::multi_index<"accparam"_n, acc_param_t>;
 
 } // commun
