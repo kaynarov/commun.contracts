@@ -81,7 +81,7 @@ public:
 
         BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
         BOOST_CHECK_EQUAL(success(), point.setfreezer(commun::config::gallery_name));
-        BOOST_CHECK_EQUAL(success(), list.create_record(cfg::list_name, point_code, "community 1"));
+        BOOST_CHECK_EQUAL(success(), list.create(cfg::list_name, point_code, "community 1"));
 
         BOOST_CHECK_EQUAL(success(), emit.create(point._symbol.to_symbol_code(), annual_emission_rate, leaders_reward_prop));
 
