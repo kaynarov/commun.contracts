@@ -27,6 +27,9 @@ public:
     [[eosio::action]] void follow(symbol_code commun_code, name follower);
     [[eosio::action]] void unfollow(symbol_code commun_code, name follower);
 
+    [[eosio::action]] void ban(symbol_code commun_code, name leader, name account, std::string reason);
+    [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
+
     static inline auto get_community(name list_contract_account, symbol_code commun_code) {
         tables::community community_tbl(list_contract_account, list_contract_account.value);
         return community_tbl.get(commun_code.raw(), "community not exists");
