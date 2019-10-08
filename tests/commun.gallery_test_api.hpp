@@ -1,6 +1,7 @@
 #pragma once
 #include "test_api_helper.hpp"
 #include <commun.gallery/include/commun.gallery/config.hpp>
+#include <commun.list/include/commun.list/config.hpp>
 
 namespace eosio { namespace testing {
 
@@ -13,10 +14,6 @@ public:
     ,   _symbol(sym) {}
     
     symbol _symbol;
-    
-    action_result create(symbol commun_symbol) {
-        return push(N(create), _code, args()("commun_symbol", commun_symbol));
-    }
     
     action_result createmosaic(account_name creator, uint64_t tracery, account_name opus, asset quantity, uint16_t royalty,
                                         std::vector<std::pair<account_name, int64_t> > providers = 
@@ -122,6 +119,16 @@ public:
         }
         return 0;
     }
+
+    const int64_t default_mosaic_pledge = 100;
+    const int64_t default_min_mosaic_inclusion = 1000;
+    const int64_t default_min_gem_inclusion = 200;
+    commun::structures::opus_info default_opus{                                                     \
+        eosio::chain::name("regulatum"),
+        default_mosaic_pledge,
+        default_min_mosaic_inclusion,
+        default_min_gem_inclusion
+    };
 };
 
 

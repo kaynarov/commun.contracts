@@ -68,22 +68,6 @@
                 { "type": "asset",         "name": "quantity" }
             ]
         },{
-            "name": "opus_info",
-            "base": "",
-            "fields": [
-                { "type": "name",           "name": "name" },
-                { "type": "int64",          "name": "mosaic_pledge" },
-                { "type": "int64",          "name": "min_mosaic_inclusion" },
-                { "type": "int64",          "name": "min_gem_inclusion" }
-            ]
-        },{
-            "name": "param_struct",
-            "base": "",
-            "fields": [
-                { "type": "uint64",         "name": "id" },
-                { "type": "opus_info[]",    "name": "opuses" }
-            ]
-        },{
             "name": "stat_struct",
             "base": "",
             "fields": [
@@ -371,16 +355,6 @@
     ]
   },
   {
-    "name": "setparams",
-    "base": "",
-    "fields": [
-      {
-        "name": "commun_code",
-        "type": "symbol_code"
-      }
-    ]
-  },
-  {
     "name": "reblog",
     "base": "",
     "fields": [
@@ -527,10 +501,6 @@
     "type": "transfer_args"
   },
   {
-    "name": "setparams",
-    "type": "setparams"
-  },
-  {
     "name": "reblog",
     "type": "reblog"
   },
@@ -571,18 +541,6 @@
         },{
             "name": "stat",
             "type": "stat_struct",
-            "indexes": [
-                {
-                    "name": "primary",
-                    "unique": "true",
-                    "orders": [
-                        {"field": "id", "order": "asc"}
-                    ]
-                }
-            ]
-        },{
-            "name": "param",
-            "type": "param_struct",
             "indexes": [
                 {
                     "name": "primary",
@@ -658,19 +616,6 @@
                 {"field": "account", "order": "asc"}
             ]
         }]
-  },
-  {
-    "name": "pstngparams",
-    "type": "posting_state",
-    "indexes": [
-       {
-          "name": "primary",
-          "unique": "true",
-          "orders": [
-              {"field": "id", "order": "asc"}
-          ]
-       }
-    ]
   }
   ],
   "error_messages": [],

@@ -2,6 +2,16 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
+            "name": "opus_info",
+            "base": "",
+            "fields": [
+                { "type": "name",           "name": "name" },
+                { "type": "int64",          "name": "mosaic_pledge" },
+                { "type": "int64",          "name": "min_mosaic_inclusion" },
+                { "type": "int64",          "name": "min_gem_inclusion" }
+            ]
+        },
+        {
             "name": "community",
             "base": "",
             "fields": [
@@ -54,16 +64,8 @@
                     "type": "uint16"
                 },
                 {
-                    "name": "post_pledge_token",
-                    "type": "int64"
-                },
-                {
-                    "name": "comment_pledge_token",
-                    "type": "int64"
-                },
-                {
-                    "name": "min_gem_pledge_token",
-                    "type": "int64"
+                    "name": "opuses",
+                    "type": "opus_info[]"
                 }
             ]
         },
@@ -110,16 +112,12 @@
                     "type": "uint16?"
                 },
                 {
-                    "name": "post_pledge_token",
-                    "type": "int64?"
+                    "name": "opuses",
+                    "type": "opus_info[]"
                 },
                 {
-                    "name": "comment_pledge_token",
-                    "type": "int64?"
-                },
-                {
-                    "name": "min_gem_pledge_token",
-                    "type": "int64?"
+                    "name": "remove_opuses",
+                    "type": "name[]"
                 }
             ]
         },

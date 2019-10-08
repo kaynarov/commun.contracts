@@ -220,15 +220,6 @@ struct commun_posting_api: base_contract_api {
             ("message_id", message_id));
     }
 
-    action_result set_params() {
-        return push(N(setparams), _code, args()
-            ("commun_code", commun_code));
-    }
-
-    action_result init_default_params() {
-        return set_params();
-    }
-
     variant get_vertex(mssgid message_id) {
         return get_struct(commun_code.value, N(vertex), message_id.tracery(), "vertex");
     }
