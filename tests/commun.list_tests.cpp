@@ -49,6 +49,7 @@ public:
         const string no_point_symbol = amsg("point with symbol does not exist");
         const string no_community = amsg("community not exists");
         const string no_changes = amsg("No params changed");
+        const string no_opus(name opus) { return amsg("no opus " + opus.to_string()); }
     } err;
 };
 
@@ -97,13 +98,25 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
 BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {
     BOOST_TEST_MESSAGE("setsysparams test");
     create_token(_golos, _token);
-    BOOST_CHECK_EQUAL(err.no_community, community.setsysparams( _token_code, community.args() ));
+    BOOST_CHECK_EQUAL(err.no_community, community.setsysparams( _token_code, community.sysparams() ));
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community_name"));
-    BOOST_CHECK_EQUAL(err.no_changes, community.setsysparams( _token_code, community.args() ));
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.args()
+    BOOST_CHECK_EQUAL(err.no_changes, community.setsysparams( _token_code, community.sysparams() ));
+
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
         ("collection_period", 3600) ));
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.args()
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
         ("collection_period", 3600)("moderation_period", 3600) ));
+
+    BOOST_CHECK_EQUAL(err.no_opus("notexist"), community.setsysparams( _token_code, community.sysparams()
+        ("remove_opuses", std::set<name>{"notexist"} )));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
+        ("opuses", std::set<opus_info>{{"opus1"}, {"opus2"}} )));
+    produce_block();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
+        ("remove_opuses", std::set<name>{"opus1", "opus2"} )));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.no_opus("opus1"), community.setsysparams( _token_code, community.sysparams()
+        ("remove_opuses", std::set<name>{"opus1", "opus2"} )));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(follow_test, commun_list_tester) try {

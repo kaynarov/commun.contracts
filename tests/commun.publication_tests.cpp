@@ -89,8 +89,6 @@ public:
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
 
-        BOOST_CHECK_EQUAL(success(), post.init_default_params());
-
         produce_block();
         for (auto& u : _users) {
             BOOST_CHECK_EQUAL(success(), point.open(u, point_code, u));
@@ -131,18 +129,6 @@ public:
 };
 
 BOOST_AUTO_TEST_SUITE(commun_publication_tests)
-
-BOOST_FIXTURE_TEST_CASE(set_params, commun_publication_tester) try {
-    BOOST_TEST_MESSAGE("Params testing.");
-
-    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(1000000000, point._symbol), 10000, 1));
-
-    BOOST_CHECK_EQUAL(errgallery.no_balance, post.init_default_params());
-
-    BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
-    BOOST_CHECK_EQUAL(success(), post.init_default_params());
-    produce_block();
-} FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Create message testing.");

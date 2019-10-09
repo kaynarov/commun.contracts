@@ -48,7 +48,6 @@ public:
     void hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator);
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
-    void setparams(symbol_code commun_code);
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);

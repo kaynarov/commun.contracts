@@ -21,7 +21,7 @@
 namespace commun {
 
 using std::string;
-using config::opus_info;
+using structures::opus_info;
 
 namespace gallery_types {
     using providers_t = std::vector<std::pair<name, int64_t> >; 
@@ -106,14 +106,6 @@ namespace gallery_types {
         
         uint64_t primary_key()const { return quantity.symbol.code().raw(); }
     };
-
-
-    struct [[eosio::table]] param {
-        uint64_t id;
-
-        std::vector<opus_info> opuses;
-        uint64_t primary_key()const { return id; }
-    };
     
     struct [[eosio::table]] stat {
         uint64_t id;
@@ -164,8 +156,7 @@ namespace gallery_types {
     using provs = eosio::multi_index<"provision"_n, gallery_types::provision, prov_id_index, prov_key_index>;
 
     using advices = eosio::multi_index<"advice"_n, gallery_types::advice>;
-    
-    using params = eosio::multi_index<"param"_n, gallery_types::param>;
+
     using stats = eosio::multi_index<"stat"_n, gallery_types::stat>;   
 }
 
@@ -580,8 +571,6 @@ protected:
         if (_self != to) { return; }
 
         auto commun_code = quantity.symbol.code();            
-        gallery_types::params params_table(_self, commun_code.raw());
-        const auto& param = params_table.get(commun_code.raw(), "param does not exists");
         auto community = commun_list::get_community(config::list_name, commun_code);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -654,34 +643,18 @@ protected:
         stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
     }
 
-    void create_gallery(name _self, symbol commun_symbol) {
-        require_auth(_self);
-        auto commun_code = commun_symbol.code();
-        eosio::check(point::balance_exists(config::point_name, _self, commun_code), "point balance does not exist");
-        
-        gallery_types::params params_table(_self, commun_code.raw());
-        eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "the gallery with this symbol already exists");
-        
-        params_table.emplace(_self, [&](auto& p) { p = {
-            .id = commun_code.raw(),
-            .opuses = std::vector<opus_info>(config::default_opuses.begin(), config::default_opuses.end())
-        };});
-    }
-
     void create_mosaic(name _self, name creator, uint64_t tracery, name opus,
                        asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
         require_auth(creator);
         auto commun_symbol = quantity.symbol;
         auto commun_code   = commun_symbol.code();
-        
-        gallery_types::params params_table(_self, commun_code.raw());
-        const auto& param = params_table.get(commun_code.raw(), "param does not exists");
+
         auto community = commun_list::get_community(config::list_name, commun_code);
         check(royalty <= community.author_percent, "incorrect royalty");
         check(providers.size() <= config::max_providers_num, "too many providers");
         
-        auto opus_itr = std::find_if(param.opuses.begin(), param.opuses.end(), [opus](const config::opus_info& arg) { return arg.name == opus; } );
-        check(opus_itr != param.opuses.end(), "unknown opus");
+        auto opus_itr = community.opuses.find(opus_info{opus});
+        check(opus_itr != community.opuses.end(), "unknown opus");
         
         auto points_sum = get_points_sum(quantity.amount, providers);
         eosio::check(opus_itr->mosaic_pledge <= points_sum, "points are not enough for a pledge");
@@ -720,15 +693,13 @@ protected:
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
         
-        gallery_types::params params_table(_self, commun_code.raw());
-        const auto& param = params_table.get(commun_code.raw(), "param does not exists");
         auto community = commun_list::get_community(config::list_name, commun_code);
         check(eosio::current_time_point() <= mosaic->created + eosio::seconds(community.collection_period), "collection period is over");
         check(!mosaic->banned, "mosaic banned");
         check(mosaic->active, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
         
-        auto opus_itr = std::find_if(param.opuses.begin(), param.opuses.end(), [opus = mosaic->opus](const config::opus_info& arg) { return arg.name == opus; } );
-        check(opus_itr != param.opuses.end(), "unknown opus"); // it's possible if the parameters are customizable
+        auto opus_itr = community.opuses.find(opus_info{mosaic->opus});
+        check(opus_itr != community.opuses.end(), "unknown opus"); // it's possible if the parameters are customizable
         
         maybe_issue_reward(_self, commun_code);
         
@@ -890,10 +861,6 @@ class [[eosio::contract("comn.gallery")]] gallery : public gallery_base<gallery>
 public:
     using contract::contract;
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
-    
-    [[eosio::action]] void create(symbol commun_symbol) {
-        create_gallery(_self, commun_symbol);
-    }
 
     [[eosio::action]] void createmosaic(name creator, uint64_t tracery, name opus, asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
         create_mosaic(_self, creator, tracery, opus, quantity, royalty, providers);
@@ -937,4 +904,4 @@ public:
     
 } /// namespace commun
 
-#define GALLERY_ACTIONS (create)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(slap)
+#define GALLERY_ACTIONS (createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(slap)
