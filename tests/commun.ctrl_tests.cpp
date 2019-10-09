@@ -1,6 +1,7 @@
 #include "commun.point_test_api.hpp"
 #include "commun.ctrl_test_api.hpp"
 #include "cyber.token_test_api.hpp"
+#include "commun.list_test_api.hpp"
 #include "contracts.hpp"
 
 namespace cfg = commun::config;
@@ -9,7 +10,7 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
-
+static const auto point_code = _point.to_symbol_code();
 
 const account_name _golos = N(golos);
 const account_name _alice = N(alice);
@@ -23,6 +24,7 @@ class commun_ctrl_tester : public golos_tester {
 protected:
     cyber_token_api token;
     commun_point_api point;
+    commun_list_api community;
     commun_ctrl_api dapp_ctrl;
     commun_ctrl_api comm_ctrl;
 public:
@@ -30,16 +32,18 @@ public:
         : golos_tester(cfg::control_name)
         , token({this, cfg::token_name, cfg::reserve_token})
         , point({this, cfg::point_name, _point})
+        , community({this, cfg::list_name})
         , dapp_ctrl({this, cfg::control_name, symbol_code(), cfg::dapp_name})
         , comm_ctrl({this, cfg::control_name, _point.to_symbol_code(), _golos})
     {
         create_accounts({cfg::dapp_name, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::control_name, cfg::point_name});
+            cfg::token_name, cfg::list_name, cfg::control_name, cfg::point_name});
         create_accounts(leaders);
         produce_block();
         install_contract(cfg::control_name, contracts::ctrl_wasm(), contracts::ctrl_abi());
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
+        install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
         
         set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(changepoints), N(changepoints));
@@ -49,7 +53,12 @@ public:
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
         const string approved = amsg("already approved");
         const string authorization_failed = amsg("transaction authorization failed");
-        
+        const string no_leaders = amsg("leaders num must be positive");
+        const string no_votes = amsg("max votes must be positive");
+        const string inconsistent_threshold = amsg("inconsistent set of threshold parameters");
+        const string no_threshold = amsg("required threshold must be positive");
+        const string leaders_less = amsg("leaders num can't be less than required threshold");
+        const string threshold_greater = amsg("required threshold can't be greater than leaders num");
     } err;
     
     transaction get_point_create_trx(const vector<permission_level>& auths, name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
@@ -91,6 +100,9 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_ctrl_tester) try {
     BOOST_CHECK_EQUAL(success(), token.create(_golos, asset(42, token._symbol)));
     BOOST_CHECK_EQUAL(success(), token.issue(_golos, _bob, asset(42, token._symbol), ""));
     
+    BOOST_CHECK_EQUAL(success(), community.setappparams(community.args()
+        ("permission", config::active_name)("required_threshold", 11)));
+    
     BOOST_CHECK_EQUAL(success(), point.open(_bob));
     BOOST_CHECK_EQUAL(success(), token.transfer(_bob, cfg::point_name, asset(42, token._symbol), ""));
     
@@ -129,6 +141,42 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_ctrl_tester) try {
     
     //TODO: test governance of the created community 
     
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(control_param_test, commun_ctrl_tester) try {
+    BOOST_TEST_MESSAGE("control_param_test");
+    
+    BOOST_CHECK_EQUAL(err.no_leaders, community.setappparams(community.args()
+        ("leaders_num", 0)));
+    BOOST_CHECK_EQUAL(err.no_votes, community.setappparams(community.args()
+        ("max_votes", 0)));
+    BOOST_CHECK_EQUAL(err.inconsistent_threshold, community.setappparams(community.args()
+        ("permission", config::active_name)));
+    BOOST_CHECK_EQUAL(err.inconsistent_threshold, community.setappparams(community.args()
+        ("required_threshold", 11)));
+    BOOST_CHECK_EQUAL(err.no_threshold, community.setappparams(community.args()
+        ("permission", config::active_name)("required_threshold", 0)));
+    BOOST_CHECK_EQUAL(err.leaders_less, community.setappparams(community.args()
+        ("leaders_num", 10)("permission", config::active_name)("required_threshold", 11)));
+    BOOST_CHECK_EQUAL(err.threshold_greater, community.setappparams(community.args()
+        ("permission", config::active_name)("required_threshold", 22)));
+        
+    BOOST_CHECK_EQUAL(success(), community.setappparams(community.args()
+        ("leaders_num", 10)));
+    BOOST_CHECK_EQUAL(success(), community.setappparams(community.args()
+        ("permission", config::active_name)("required_threshold", 10)));
+    BOOST_CHECK_EQUAL(err.threshold_greater, community.setappparams(community.args()
+        ("permission", config::active_name)("required_threshold", 11)));
+    
+    BOOST_CHECK_EQUAL(success(), community.setappparams(community.args()
+        ("leaders_num", 21)("permission", N(twelve))("required_threshold", 12)));
+    BOOST_CHECK_EQUAL(err.leaders_less, community.setappparams(community.args()
+        ("leaders_num", 11)));
+    BOOST_CHECK_EQUAL(success(), community.setappparams(community.args()
+        ("leaders_num", 12)));
+    BOOST_CHECK_EQUAL(success(), community.setappparams(community.args()
+        ("leaders_num", 11)("permission", N(twelve))("required_threshold", 0)));
+        
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

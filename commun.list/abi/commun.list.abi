@@ -12,6 +12,31 @@
             ]
         },
         {
+            "name": "threshold",
+            "base": "",
+            "fields": [
+                { "type": "name",          "name": "permission" },
+                { "type": "uint8",         "name": "required" }
+            ]
+        },
+        {
+            "name": "control_param_t",
+            "base": "",
+            "fields": [
+                { "type": "uint8",         "name": "leaders_num" },
+                { "type": "uint8",         "name": "max_votes" },
+                { "type": "threshold[]",   "name": "custom_thresholds" }
+            ]
+        },
+        {
+            "name": "dapp",
+            "base": "",
+            "fields": [
+                { "type": "uint64",          "name": "id" },
+                { "type": "control_param_t", "name": "control_param" }
+            ]
+        },
+        {
             "name": "community",
             "base": "",
             "fields": [
@@ -24,8 +49,8 @@
                     "type": "string"
                 },
                 {
-                    "name": "leaders_num",
-                    "type": "uint16"
+                    "name": "control_param",
+                    "type": "control_param_t"
                 },
                 {
                     "name": "emission_rate",
@@ -84,6 +109,28 @@
             ]
         },
         {
+            "name": "setappparams",
+            "base": "",
+            "fields": [
+                {
+                    "name": "leaders_num",
+                    "type": "uint8?"
+                },
+                {
+                    "name": "max_votes",
+                    "type": "uint8?"
+                },
+                {
+                    "name": "permission",
+                    "type": "name?"
+                },
+                {
+                    "name": "required_threshold",
+                    "type": "uint8?"
+                }
+            ]
+        },
+        {
             "name": "setsysparams",
             "base": "",
             "fields": [
@@ -131,7 +178,19 @@
                 },
                 {
                     "name": "leaders_num",
-                    "type": "uint16?"
+                    "type": "uint8?"
+                },
+                {
+                    "name": "max_votes",
+                    "type": "uint8?"
+                },
+                {
+                    "name": "permission",
+                    "type": "name?"
+                },
+                {
+                    "name": "required_threshold",
+                    "type": "uint8?"
                 },
                 {
                     "name": "emission_rate",
@@ -217,6 +276,7 @@
     "types": [],
     "actions": [
         {"name": "create", "type": "create"},
+        {"name": "setappparams", "type": "setappparams"},
         {"name": "setsysparams", "type": "setsysparams"},
         {"name": "setparams", "type": "setparams"},
         {"name": "setinfo", "type": "setinfo"},
@@ -227,6 +287,17 @@
     ],
     "events": [],
     "tables": [
+        {
+            "name": "dapp",
+            "type": "dapp",
+            "indexes": [{
+                "name": "primary",
+                "unique": "true",
+                "orders": [
+                    {"field": "id", "order": "asc"}
+                ]
+            }]
+        },
         {
             "name": "community",
             "type": "community",

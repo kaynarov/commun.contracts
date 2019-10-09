@@ -359,47 +359,6 @@
                     "type": "name"
                 }
             ]
-        },
-        {
-            "name": "threshold",
-            "base": "",
-            "fields": [
-                { "type": "name",          "name": "permission" },
-                { "type": "uint8",         "name": "required" }
-            ]
-        },
-        {
-            "name": "control_param",
-            "base": "",
-            "fields": [
-                { "type": "uint8",         "name": "leaders_num" },
-                { "type": "threshold[]",   "name": "thresholds" },
-                { "type": "uint8",         "name": "max_votes" }
-            ]
-        },
-        {
-            "name": "sysparam_struct",
-            "base": "",
-            "fields": [
-                { "type": "uint64",         "name": "id" },
-                { "type": "control_param",  "name": "control" }
-            ]
-        },
-        {
-            "name": "param_struct",
-            "base": "",
-            "fields": [
-                {"type": "symbol_code",     "name": "commun_code"},
-                { "type": "control_param",  "name": "control" }
-            ]
-        },
-        {
-            "name": "setparams_arg",
-            "base": "",
-            "fields": [
-                {"type": "symbol_code",     "name": "commun_code"},
-                { "type": "control_param?", "name": "p" }
-            ]
         }
     ],
     "events": [
@@ -451,8 +410,7 @@
         {
             "name": "unapprove",
             "type": "unapprove"
-        },
-        {"name": "setparams", "type": "setparams_arg"}
+        }
     ],
     "tables": [
         {
@@ -516,28 +474,6 @@
                     ]
                 }
             ]
-        },
-        {
-            "name": "sysparam",
-            "type": "sysparam_struct",
-            "indexes": [{
-                "name": "primary",
-                "unique": "true",
-                "orders": [
-                    {"field": "id", "order": "asc"}
-                ]
-            }]
-        },
-        {
-            "name": "param",
-            "type": "param_struct",
-            "indexes": [{
-                "name": "primary",
-                "unique": "true",
-                "orders": [
-                    {"field": "commun_code", "order": "asc"}
-                ]
-            }]
         }
     ],
     "abi_extensions": []
