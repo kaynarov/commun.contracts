@@ -59,13 +59,6 @@
                 { "type": "int64",          "name": "min_gem_inclusion" }
             ]
         },{
-            "name": "param_struct",
-            "base": "",
-            "fields": [
-                { "type": "uint64",         "name": "id" },
-                { "type": "opus_info[]",    "name": "opuses" }
-            ]
-        },{
             "name": "stat_struct",
             "base": "",
             "fields": [
@@ -98,12 +91,6 @@
             "fields": [
                 { "type": "name",           "name": "first" },
                 { "type": "int64",          "name": "second"  }
-            ]
-        },{
-            "name": "create_args",
-            "base": "",
-            "fields": [
-                { "type": "symbol",           "name": "commun_symbol" }
             ]
         },{
             "name": "createmosaic_args",
@@ -177,49 +164,36 @@
     "types": [],
     "actions": [
         {
-            "name": "create",
-            "type": "create_args",
-            "ricardian_contract": ""
-        },
-        {
             "name": "createmosaic",
-            "type": "createmosaic_args",
-            "ricardian_contract": ""
+            "type": "createmosaic_args"
         },
         {
             "name": "addtomosaic",
-            "type": "addtomosaic_args",
-            "ricardian_contract": ""
+            "type": "addtomosaic_args"
         },
         {
             "name": "claim",
-            "type": "claim_args",
-            "ricardian_contract": ""
+            "type": "claim_args"
         },
         {
             "name": "hold",
-            "type": "modifygem_args",
-            "ricardian_contract": ""
+            "type": "modifygem_args"
         },
         {
             "name": "transfer",
-            "type": "transfer_args",
-            "ricardian_contract": ""
+            "type": "transfer_args"
         },
         {
             "name": "provide",
-            "type": "provide_args",
-            "ricardian_contract": ""
+            "type": "provide_args"
         },
         {
             "name": "advise",
-            "type": "advise_args",
-            "ricardian_contract": ""
+            "type": "advise_args"
         },
         {
             "name": "slap",
-            "type": "slap_args",
-            "ricardian_contract": ""
+            "type": "slap_args"
         }
     ],
     "tables": [
@@ -238,18 +212,6 @@
         },{
             "name": "stat",
             "type": "stat_struct",
-            "indexes": [
-                {
-                    "name": "primary",
-                    "unique": "true",
-                    "orders": [
-                        {"field": "id", "order": "asc"}
-                    ]
-                }
-            ]
-        },{
-            "name": "param",
-            "type": "param_struct",
             "indexes": [
                 {
                     "name": "primary",
@@ -301,7 +263,6 @@
             ]
         }
     ],
-    "ricardian_clauses": [],
     "variants": [],
     "abi_extensions": []
 }

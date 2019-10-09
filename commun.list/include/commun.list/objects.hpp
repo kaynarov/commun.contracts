@@ -27,9 +27,7 @@ struct community {
     uint16_t gems_per_day = 10;
     uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num;
 
-    int64_t post_pledge_token = 0; // TODO
-    int64_t comment_pledge_token = 0; // TODO
-    int64_t min_gem_pledge_token = 0; // TODO
+    std::set<opus_info> opuses = config::def_opuses;
 
     uint64_t primary_key() const {
         return commun_symbol.code().raw();

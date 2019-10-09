@@ -30,12 +30,12 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
     ).send();
 }
 
-#define SET_PARAM(PARAM) if (PARAM) { item.PARAM = *PARAM; _empty = false; }
+#define SET_PARAM(PARAM) if (PARAM) { c.PARAM = *PARAM; _empty = false; }
 
 void commun_list::setsysparams(symbol_code commun_code,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
-        optional<int64_t> post_pledge_token, optional<int64_t> comment_pledge_token, optional<int64_t> min_gem_pledge_token) {
+        std::set<structures::opus_info> opuses, std::set<name> remove_opuses) {
 
     require_auth(_self);
 
@@ -44,16 +44,24 @@ void commun_list::setsysparams(symbol_code commun_code,
     tables::community community_tbl(_self, _self.value);
     auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
-    community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
+    community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
         bool _empty = true;
         SET_PARAM(collection_period);
         SET_PARAM(moderation_period);
         SET_PARAM(lock_period);
         SET_PARAM(gems_per_day);
         SET_PARAM(rewarded_mosaic_num);
-        SET_PARAM(post_pledge_token);
-        SET_PARAM(comment_pledge_token);
-        SET_PARAM(min_gem_pledge_token);
+        if (!opuses.empty()) {
+            c.opuses = opuses;
+            _empty = false;
+        }
+        if (!remove_opuses.empty()) {
+            for (auto& opus_name : remove_opuses) {
+                auto removed = c.opuses.erase(structures::opus_info{opus_name});
+                eosio::check(removed, "no opus " + opus_name.to_string());
+            }
+            _empty = false;
+        }
         eosio::check(!_empty, "No params changed");
     });
 }
@@ -74,7 +82,7 @@ void commun_list::setparams(symbol_code commun_code,
     tables::community community_tbl(_self, _self.value); 
     auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
-    community_tbl.modify(community, eosio::same_payer, [&](auto& item) {
+    community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
         bool _empty = true;
         SET_PARAM(leaders_num);
         SET_PARAM(emission_rate);

@@ -56,8 +56,6 @@ void publication::createmssg(
         item.childcount = 0;
     });
 
-    gallery_types::params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
     auto community = commun_list::get_community(config::list_name, commun_code);
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, message_id.author);
@@ -66,10 +64,8 @@ void publication::createmssg(
     int64_t amount_to_freeze = 0;
     if (parent_id.author) {
         eosio::check(!weight.has_value(), "weight is redundant for comments");
-        auto opus_itr = std::find_if(param.opuses.begin(), param.opuses.end(), 
-            [](const config::opus_info& arg) { return arg.name == config::comment_opus_name; });
-        
-        check(opus_itr != param.opuses.end(), "unknown opus, probably comments in the community are disabled");
+        auto opus_itr = community.opuses.find(opus_info{config::comment_opus_name});
+        check(opus_itr != community.opuses.end(), "unknown opus, probably comments in the community are disabled");
         amount_to_freeze = std::max(opus_itr->mosaic_pledge, std::max(opus_itr->min_mosaic_inclusion, opus_itr->min_gem_inclusion));
     }
     else {
@@ -156,15 +152,6 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         community.commun_symbol);
 
     add_to_mosaic(_self, message_id.tracery(), quantity, damn, voter, get_providers(commun_code, message_id.author, gems_per_period, weight));
-}
-
-void publication::setparams(symbol_code commun_code) {
-    require_auth(_self);
-
-    gallery_types::params params_table(_self, commun_code.raw());
-    if (params_table.find(commun_code.raw()) == params_table.end()) {
-        create_gallery(_self, point::get_supply(config::point_name, commun_code).symbol);
-    }
 }
 
 void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {
@@ -302,4 +289,4 @@ void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
     (createmssg)(updatemssg)(settags)(deletemssg)(reportmssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
-    (setparams)(reblog)(erasereblog)(setproviders)(provide)(advise)(slap))
+    (reblog)(erasereblog)(setproviders)(provide)(advise)(slap))
