@@ -33,7 +33,7 @@ public:
 
     void createmssg(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
         std::string header, std::string body, std::vector<std::string> tags, std::string metadata,
-        uint16_t curators_prcnt, std::optional<uint16_t> weight);
+        std::optional<uint16_t> weight);
     void updatemssg(symbol_code commun_code, mssgid_t message_id, std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata);
     void settags(symbol_code commun_code, name leader, mssgid_t message_id,

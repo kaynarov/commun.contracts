@@ -14,7 +14,6 @@ void publication::createmssg(
     std::string body,
     std::vector<std::string> tags,
     std::string metadata,
-    uint16_t curators_prcnt,
     std::optional<uint16_t> weight
 ) {
     require_auth(message_id.author);
@@ -27,7 +26,6 @@ void publication::createmssg(
     eosio::check(validate_permlink(message_id.permlink), "Permlink contains wrong symbol.");
     eosio::check(header.length() < config::max_length, "Title length is more than 256.");
     eosio::check(body.length(), "Body is empty.");
-    eosio::check(curators_prcnt <= config::_100percent, "curators_prcnt can't be more than 100%.");
 
     vertices vertices_table(_self, commun_code.raw());
     auto tracery = message_id.tracery();
@@ -76,7 +74,7 @@ void publication::createmssg(
 
     //providers are not used for comments
     create_mosaic(_self, message_id.author, tracery, parent_id.author ? config::comment_opus_name : config::post_opus_name,
-        quantity, config::_100percent - curators_prcnt, 
+        quantity, community.author_percent,
         parent_id.author ? gallery_types::providers_t() : get_providers(commun_code, message_id.author, gems_per_period, weight));    
 }
 

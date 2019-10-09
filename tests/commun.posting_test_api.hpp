@@ -34,7 +34,6 @@ struct commun_posting_api: base_contract_api {
         std::string body = "body",
         std::vector<std::string> tags = {"tag"},
         std::string metadata = "metadata",
-        uint16_t curators_prcnt = 5000,
         std::optional<uint16_t> weight = std::optional<uint16_t>()
     ) {
         auto a = args()
@@ -44,8 +43,7 @@ struct commun_posting_api: base_contract_api {
             ("header", title)
             ("body", body)
             ("tags", tags)
-            ("metadata", metadata)
-            ("curators_prcnt", curators_prcnt);
+            ("metadata", metadata);
 
         if (weight.has_value()) {
             a("weight", *weight);

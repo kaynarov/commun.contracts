@@ -62,7 +62,7 @@ def openBalance(owner, commun_code, payer, *, providebw=None, keys=None):
             'ram_payer':payer
         }, providebw=providebw, keys=keys)
 
-def createPost(commun_code, author, permlink, category, header, body, *, curators_prcnt=5000, providebw=None, keys=None):
+def createPost(commun_code, author, permlink, category, header, body, *, providebw=None, keys=None):
     return pushAction('comn.gallery', 'createmssg', author, {
             'commun_code':commun_code,
             'message_id':{'author':author, 'permlink':permlink}, 
@@ -70,8 +70,7 @@ def createPost(commun_code, author, permlink, category, header, body, *, curator
             'header':header,
             'body':body,
             'tags':[],
-            'metadata':'',
-            'curators_prcnt':curators_prcnt
+            'metadata':''
         }, providebw=providebw, keys=keys)
 
 def upvotePost(commun_code, voter, author, permlink, weight, *, providebw=None, keys=None):

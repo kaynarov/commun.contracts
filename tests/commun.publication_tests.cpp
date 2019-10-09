@@ -113,7 +113,6 @@ public:
         const string wrong_prmlnk          = amsg("Permlink contains wrong symbol.");
         const string wrong_title_length    = amsg("Title length is more than 256.");
         const string wrong_body_length     = amsg("Body is empty.");
-        const string wrong_curators_prcnt  = amsg("curators_prcnt can't be more than 100%.");
         const string tags_are_same         = amsg("No changes in tags.");
         const string reason_empty          = amsg("Reason cannot be empty.");
 
@@ -149,10 +148,6 @@ BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
         {N(), "parentprmlnk"}, str256));
     BOOST_CHECK_EQUAL(err.wrong_body_length, post.create_msg({N(brucelee), "test-body"},
         {N(), "parentprmlnk"}, "header", ""));
-
-    BOOST_TEST_MESSAGE("--- checking wrong curators_prcnt.");
-    BOOST_CHECK_EQUAL(err.wrong_curators_prcnt, post.create_msg({N(brucelee), "test-title"},
-        {N(), "parentprmlnk"}, "header", "body", {""}, "", cfg::_100percent+1));
 
     BOOST_TEST_MESSAGE("--- creating post.");
     BOOST_CHECK_EQUAL(success(), post.create_msg({N(brucelee), "permlink"}));
@@ -386,9 +381,9 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     uint16_t weight = 100;
     ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
     
-    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "facelift"}, {N(), "p"}, "h", "b", {"t"}, "m", 5000, weight));
-    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "dirt"}, {N(), "p"}, "h", "b", {"t"}, "m", 5000, weight));
-    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}, {N(), "p"}, "h", "b", {"t"}, "m", 5000, weight));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "facelift"}, {N(), "p"}, "h", "b", {"t"}, "m", weight));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "dirt"}, {N(), "p"}, "h", "b", {"t"}, "m", weight));
+    BOOST_CHECK_EQUAL(success(), post.create_msg({N(alice), "alice-in-blockchains"}, {N(), "p"}, "h", "b", {"t"}, "m", weight));
 
     BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["meritorious"].as<bool>());
     BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["meritorious"].as<bool>());
