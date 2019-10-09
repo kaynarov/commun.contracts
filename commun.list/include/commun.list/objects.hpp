@@ -15,8 +15,8 @@ struct community {
     uint16_t leaders_num = 21;
 
     // emit
-    uint16_t emission_rate = 0; // TODO
-    uint16_t leaders_percent = 0; // TODO
+    uint16_t emission_rate = config::def_emission_rate;
+    uint16_t leaders_percent = config::def_leaders_percent;
 
     // publish
     uint16_t author_percent = config::def_author_percent;

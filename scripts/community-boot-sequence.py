@@ -47,6 +47,4 @@ community.createCommunity(
     commun_private_key=args.commun_private_key,
     owner_private_key=args.owner_private_key,
     cw=args.cw,
-    fee=args.fee,
-    annual_emission_rate=args.annual_emission_rate,
-    leader_reward_prop=args.leader_reward_prop)
+    fee=args.fee)

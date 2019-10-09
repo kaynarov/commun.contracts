@@ -32,7 +32,7 @@ protected:
     commun_point_api point;
     commun_ctrl_api ctrl;
     commun_emit_api emit;
-    commun_list_api list;
+    commun_list_api community;
     commun_gallery_api gallery;
 public:
     commun_gallery_tester()
@@ -41,7 +41,7 @@ public:
         , point({this, cfg::point_name, _point})
         , ctrl({this, cfg::control_name, _point.to_symbol_code(), _golos})
         , emit({this, cfg::emit_name})
-        , list({this, cfg::list_name})
+        , community({this, cfg::list_name})
         , gallery({this, _code, _point})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol,
@@ -56,6 +56,8 @@ public:
         
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
+        set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
         
         std::vector<account_name> transfer_perm_accs{_code, cfg::emit_name};
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
@@ -83,14 +85,15 @@ public:
         BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
         BOOST_CHECK_EQUAL(success(), point.setfreezer(cfg::gallery_name));
         
-        BOOST_CHECK_EQUAL(success(), emit.create(point._symbol.to_symbol_code(), annual_emission_rate, leaders_reward_prop));
-        
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
 
-        BOOST_CHECK_EQUAL(success(), list.create(cfg::list_name, point_code, "community 1"));
-        BOOST_CHECK_EQUAL(success(), list.setsysparams( point_code, list.sysparams()
+        BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "community 1"));
+        BOOST_CHECK_EQUAL(success(), community.setparams(_golos, point_code, community.args()
+            ("emission_rate", annual_emission_rate)
+            ("leaders_percent", leaders_reward_prop)));
+        BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
             ("opuses", std::set<opus_info>{gallery.default_opus} )));
     }
     

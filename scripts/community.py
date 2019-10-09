@@ -1,6 +1,6 @@
 from testnet import *
 
-def createCommunity(community_name, owner_account, maximum_supply, reserve_amount, *, commun_private_key, owner_private_key, cw=10000, fee=100, annual_emission_rate=1000, leader_reward_prop=2000):
+def createCommunity(community_name, owner_account, maximum_supply, reserve_amount, *, commun_private_key, owner_private_key, cw=10000, fee=100):
     symbol = maximum_supply.symbol
     initial_supply = Asset(str(maximum_supply))
     initial_supply.amount //= 1000
@@ -36,12 +36,6 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
         "commun_code":symbol.code
     }, providebw='{acc}/comn'.format(acc='comn.ctrl'), keys=owner_private_key)
 
-    pushAction('comn.emit', 'create', 'comn.emit', {
-        "commun_code": symbol.code,
-        "annual_emission_rate": annual_emission_rate,
-        "leaders_reward_prop": leader_reward_prop
-    }, providebw='comn.emit/comn', keys=commun_private_key)
-
     # 7. Open point balance for comn.gallery
     pushAction('comn.point', 'open', 'comn', {
         "owner": "comn.gallery",
@@ -53,7 +47,7 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
     pushAction('comn.list', 'create', 'comn.list', {
         "commun_code": symbol.code,
         "community_name": community_name
-    }, providebw='comn.list/comn', keys=commun_private_key)
+    }, providebw=['comn.list/comn', 'comn.emit/comn'], keys=commun_private_key)
 
 def openBalance(owner, commun_code, payer, *, providebw=None, keys=None):
     return pushAction('comn.point', 'open', payer, {
