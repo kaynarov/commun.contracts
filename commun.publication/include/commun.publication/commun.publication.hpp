@@ -20,7 +20,7 @@ public:
         auto active_period_end = mosaic.created + eosio::seconds(community.active_period);
         auto now = eosio::current_time_point();
 
-        eosio::check(vertex->childcount == 0 || now > active_period_end, "comment with child comments can't be deleted during the active period");
+        eosio::check(vertex->childcount == 0 || now > active_period_end, "comment with child comments can't be removed during the active period");
 
         if (vertex->parent_tracery) {
             auto parent_vertex = vertices_table.find(vertex->parent_tracery);
@@ -31,15 +31,15 @@ public:
         vertices_table.erase(*vertex);
     }
 
-    void createmssg(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
+    void create(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
         std::string header, std::string body, std::vector<std::string> tags, std::string metadata,
         std::optional<uint16_t> weight);
-    void updatemssg(symbol_code commun_code, mssgid_t message_id, std::string header, std::string body,
+    void update(symbol_code commun_code, mssgid_t message_id, std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata);
     void settags(symbol_code commun_code, name leader, mssgid_t message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
-    void deletemssg(symbol_code commun_code, mssgid_t message_id);
-    void reportmssg(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason);
+    void remove(symbol_code commun_code, mssgid_t message_id);
+    void report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason);
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);

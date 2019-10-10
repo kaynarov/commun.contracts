@@ -27,7 +27,7 @@ struct commun_posting_api: base_contract_api {
     :   base_contract_api(tester, code)
     ,   commun_code(comn_code) {}
 
-    action_result create_msg(
+    action_result create(
         mssgid message_id,
         mssgid parent_id = {N(), "parentprmlnk"},
         std::string title = "header",
@@ -48,17 +48,17 @@ struct commun_posting_api: base_contract_api {
         if (weight.has_value()) {
             a("weight", *weight);
         }
-        return push(N(createmssg), message_id.author, a);
+        return push(N(create), message_id.author, a);
     }
 
-    action_result update_msg(
+    action_result update(
         mssgid message_id,
         std::string title,
         std::string body,
         std::vector<std::string> tags,
         std::string metadata
     ) {
-        return push(N(updatemssg), message_id.author, args()
+        return push(N(update), message_id.author, args()
             ("commun_code", commun_code)
             ("message_id", message_id)
             ("header", title)
@@ -84,18 +84,18 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
-    action_result delete_msg(mssgid message_id) {
-        return push(N(deletemssg), message_id.author, args()
+    action_result remove(mssgid message_id) {
+        return push(N(remove), message_id.author, args()
             ("commun_code", commun_code)
             ("message_id", message_id)
         );
     }
 
-    action_result report_mssg(name reporter,
+    action_result report(name reporter,
         mssgid message_id,
         std::string reason
     ) {
-        return push(N(reportmssg), reporter, args()
+        return push(N(report), reporter, args()
             ("commun_code", commun_code)
             ("reporter", reporter)
             ("message_id", message_id)
@@ -103,7 +103,7 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
-    action_result reblog_msg(
+    action_result reblog(
         account_name rebloger,
         mssgid message_id,
         std::string title = "header",
@@ -118,7 +118,7 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
-    action_result erase_reblog_msg(
+    action_result erase_reblog(
         account_name rebloger,
         mssgid message_id
     ) {
