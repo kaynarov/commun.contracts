@@ -26,8 +26,7 @@
                 { "type": "int64",         "name": "lead_rating" },
                 { "type": "bool",          "name": "meritorious" },
                 { "type": "bool",          "name": "active" },
-                { "type": "bool",          "name": "banned" },
-                { "type": "name[]",        "name": "slaps" }
+                { "type": "bool",          "name": "banned" }
             ]
         },{
             "name": "gem_struct",
@@ -151,11 +150,10 @@
                 { "type": "uint64[]",               "name": "favorites" }
             ]
         },{
-            "name": "slap_args",
+            "name": "ban_args",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
-                { "type": "name",                   "name": "leader" },
                 { "type": "uint64",                 "name": "tracery" }
             ]
         }
@@ -191,8 +189,8 @@
             "type": "advise_args"
         },
         {
-            "name": "slap",
-            "type": "slap_args"
+            "name": "ban",
+            "type": "ban_args"
         }
     ],
     "tables": [

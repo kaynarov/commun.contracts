@@ -14,8 +14,6 @@ static constexpr std::array<int64_t, 20>  default_comm_grades =
 static constexpr std::array<int64_t, 4>  default_lead_grades = 
     {{1000, 500, 300, 200}};
 
-static constexpr uint8_t default_ban_threshold = 2;
-
 static constexpr uint16_t max_providers_num = 7;
 
 static constexpr int64_t forced_chopping_delay = 30 * 24 * 60 * 60;
