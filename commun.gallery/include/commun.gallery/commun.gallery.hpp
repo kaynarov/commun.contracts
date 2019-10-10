@@ -43,8 +43,6 @@ namespace gallery_types {
         int64_t damn_points = 0;
         int64_t damn_shares = 0;
         
-        int64_t pledge_points = 0;
-        
         int64_t reward = 0;
         
         int64_t comm_rating = 0;
@@ -273,8 +271,6 @@ private:
                     item.damn_shares += gem.shares;
                     item.comm_rating += gem.points;
                 }
-                item.comm_rating   -= gem.pledge_points;
-                item.pledge_points -= gem.pledge_points;
                 item.reward -= reward;
                 item.gem_count--;
             });
@@ -373,8 +369,6 @@ private:
                 item.shares += shares;
                 item.comm_rating += points;
             }
-            item.comm_rating   += pledge_points;
-            item.pledge_points += pledge_points;
             if (!refilled) {
                 eosio::check(item.gem_count < std::numeric_limits<decltype(item.gem_count)>::max(), "gem_count overflow");
                 item.gem_count++;
