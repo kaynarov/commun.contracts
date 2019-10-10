@@ -593,7 +593,7 @@ protected:
         for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(false, MAXINT64, MAXINT64)); 
                                                    (mosaic_num < by_lead_max) &&
                                                    (by_lead_itr != by_lead_idx.end()) && 
-                                                   (by_lead_itr->lead_rating > 0); by_lead_itr++, mosaic_num++) {
+                                                   (by_lead_itr->lead_rating >= community.min_lead_rating); by_lead_itr++, mosaic_num++) {
 
             ranked_mosaics[by_lead_itr->tracery] += config::default_lead_grades[mosaic_num];
         }
