@@ -37,7 +37,9 @@ static const auto code_name = "cyber.code"_n;
 static const auto owner_name = "owner"_n;
 static const auto active_name = "active"_n;
 
-static const auto ban_name = "ban"_n;
+static const auto super_majority_name = "lead.smajor"_n;
+static const auto majority_name = "lead.major"_n;
+static const auto minority_name = "lead.minor"_n;
 
 // numbers and time
 static constexpr auto _1percent = 100;

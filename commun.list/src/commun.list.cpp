@@ -1,4 +1,4 @@
-#include <commun.list.hpp>
+#include <commun.list/commun.list.hpp>
 #include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
 #include <commun.emit/commun.emit.hpp>
@@ -6,8 +6,25 @@
 
 using namespace commun;
 
+void commun_list::setappparams(optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
+                               optional<name> permission, optional<uint8_t> required_threshold) {
+    require_auth(_self);
+    tables::dapp dapp_tbl(_self, _self.value);
+    bool _empty = dapp_tbl.exists();
+    auto d = dapp_tbl.get_or_default(structures::dapp{});
+    _empty = !d.control_param.update(leaders_num, max_votes, permission, required_threshold) && _empty;
+    eosio::check(!_empty, "No params changed");
+    dapp_tbl.set(d, _self);
+}
+
 void commun_list::create(symbol_code commun_code, std::string community_name) {
     require_auth(_self);
+    
+    tables::dapp dapp_tbl(_self, _self.value);
+    if (!dapp_tbl.exists()) {
+        dapp_tbl.set(structures::dapp{}, _self);
+    }
+
     auto commun_symbol = point::get_supply(config::point_name, commun_code).symbol;
 
     tables::community community_tbl(_self, _self.value);
@@ -67,8 +84,9 @@ void commun_list::setsysparams(symbol_code commun_code,
 }
 
 void commun_list::setparams(symbol_code commun_code,
-        optional<uint16_t> leaders_num, optional<uint16_t> emission_rate,
-        optional<uint16_t> leaders_percent, optional<uint16_t> author_percent) {
+        optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
+        optional<name> permission, optional<uint8_t> required_threshold, 
+        optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent) {
     require_auth(point::get_issuer(config::point_name, commun_code));
 
     // <> Place for checks
@@ -83,8 +101,7 @@ void commun_list::setparams(symbol_code commun_code,
     auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
-        bool _empty = true;
-        SET_PARAM(leaders_num);
+        bool _empty = !c.control_param.update(leaders_num, max_votes, permission, required_threshold);
         SET_PARAM(emission_rate);
         SET_PARAM(leaders_percent);
         SET_PARAM(author_percent);
@@ -126,4 +143,4 @@ void commun_list::unban(symbol_code commun_code, name leader, name account, std:
     check_community_exists(_self, commun_code);
 }
 
-EOSIO_DISPATCH(commun::commun_list, (create)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(ban)(unban))
+EOSIO_DISPATCH(commun::commun_list, (create)(setappparams)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(ban)(unban))

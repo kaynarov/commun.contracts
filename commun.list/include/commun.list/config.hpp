@@ -50,6 +50,12 @@ static std::set<structures::opus_info> def_opuses = {{ \
     structures::opus_info{ .name = comment_opus_name } \
 }};
 
+static constexpr uint8_t def_comm_leaders_num = 3;
+static constexpr uint8_t def_comm_max_votes = 5;
+
+static constexpr uint8_t def_dapp_leaders_num = 21;
+static constexpr uint8_t def_dapp_max_votes = 30;
+
 }} // commun::config
 
 #ifdef UNIT_TEST_ENV

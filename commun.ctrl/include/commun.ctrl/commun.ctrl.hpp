@@ -4,67 +4,15 @@
 #include <eosio/time.hpp>
 //#include <eosiolib/eosio.hpp>
 #include <eosio/asset.hpp>
-#include <eosio/singleton.hpp>
 #include <eosio/transaction.hpp>
 #include <eosio/binary_extension.hpp>
 //#include <eosio/public_key.hpp>
-//#include <commun.list/commun.list.hpp>
+#include <commun.list/commun.list.hpp>
 #include <vector>
 #include <string>
 
 namespace commun {
 using namespace eosio;
-
-
-// TODO: move to commun_list
-namespace structures {
-
-struct threshold {
-    name permission;
-    uint8_t required;
-};
-
-struct control_param {
-    uint8_t leaders_num;
-    std::vector<threshold> thresholds;
-    uint8_t max_votes;
-    void validate() {}; // TODO
-};
-
-struct param {
-    symbol_code commun_code;
-    control_param control;
-    uint64_t primary_key() const {
-        return commun_code.raw();
-    }
-};
-
-struct sysparam {
-    control_param control;
-};
-
-}
-
-namespace config {
-static constexpr uint8_t default_comm_leaders_num = 3;
-static const std::array<structures::threshold, 2>  default_comm_thresholds = 
-    {{structures::threshold{active_name, 2}, structures::threshold{ban_name, 1}}};
-static constexpr uint8_t default_comm_max_votes = 5;
-
-    
-static constexpr uint8_t default_dapp_leaders_num = 21;
-static const std::array<structures::threshold, 1>  default_dapp_thresholds = 
-    {{structures::threshold{active_name, 11}}};
-static constexpr uint8_t default_dapp_max_votes = 30;
-}
-
-namespace tables {
-using params = eosio::multi_index<"param"_n, structures::param>;
-using sysparams = eosio::singleton<"sysparam"_n, structures::sysparam>;
-}
-////////////////////////////////////////////////////////////
-
-static const name control_param_contract = config::control_name; // TODO: config::list_name
 
 using share_type = int64_t;
 
@@ -156,11 +104,10 @@ public:
     [[eosio::action]] void cancel(name proposer, name proposal_name, name canceler);
     [[eosio::action]] void exec(name proposer, name proposal_name, name executer);
     [[eosio::action]] void invalidate(name account);
-    
-    [[eosio::action]] void setparams(symbol_code commun_code, std::optional<structures::control_param> p); //TODO: remove it
 
 private:
     void check_started(symbol_code commun_code);
+    uint8_t get_required(symbol_code commun_code, name permission);
 
     std::vector<name> top_leaders(symbol_code commun_code);
     std::vector<leader_info> top_leader_info(symbol_code commun_code);
@@ -170,34 +117,10 @@ private:
     void update_leaders_weights(symbol_code commun_code, std::vector<name> leaders, share_type diff);
     void send_leader_event(symbol_code commun_code, const leader_info& wi);
     void active_leader(symbol_code commun_code, name leader, bool flag);
-    
-    // TODO: move to commun_list
-    static inline structures::control_param get_control_param(name contract_account, symbol_code commun_code) {
-        if (commun_code) {
-            tables::params params_table(contract_account, commun_code.raw());
-            return params_table.get(commun_code.raw(), "not created").control;
-        }
-        else {
-            tables::sysparams sysparams_table(contract_account, contract_account.value);
-            eosio::check(sysparams_table.exists(), "not initialized");
-            return sysparams_table.get().control;
-        }
-    }
-    
-    static inline bool initialized(name contract_account) {
-        tables::sysparams sysparams_table(contract_account, contract_account.value);
-        return sysparams_table.exists();
-    }
-    
-    static inline bool created(name contract_account, symbol_code commun_code) {
-        tables::params params_table(contract_account, commun_code.raw());
-        return params_table.find(commun_code.raw()) != params_table.end();
-    }
-    ////////////////////////////
 
 public:
     static inline bool in_the_top(name ctrl_contract_account, symbol_code commun_code, name account) {
-        const auto l = get_control_param(control_param_contract, commun_code).leaders_num;
+        const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
         leader_tbl leader(ctrl_contract_account, commun_code.raw());
         auto idx = leader.get_index<"byweight"_n>();    // this index ordered descending
         size_t i = 0;

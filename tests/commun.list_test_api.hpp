@@ -22,6 +22,10 @@ struct commun_list_api: base_contract_api {
             ("opuses", std::set<opus_info>())
             ("remove_opuses", std::set<name>());
     }
+    
+    action_result setappparams(mvo params) {
+        return push(N(setappparams), _code, params);
+    }
 
     action_result setsysparams(symbol_code commun_code, mvo params) {
         return push(N(setsysparams), _code, params
