@@ -71,8 +71,8 @@ public:
         );
     }
 
-    action_result retire(account_name issuer, asset quantity, string memo) {
-        return push(N(retire), issuer, args()
+    action_result retire(account_name from, asset quantity, string memo) {
+        return push(N(retire), from, args()
             ("quantity", quantity)
             ("memo", memo)
         );
