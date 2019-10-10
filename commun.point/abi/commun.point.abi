@@ -71,6 +71,7 @@
             "name": "retire_args",
             "base": "",
             "fields": [
+                { "type": "name",         "name": "from" },
                 { "type": "asset",        "name": "quantity" },
                 { "type": "string",       "name": "memo" }
             ]

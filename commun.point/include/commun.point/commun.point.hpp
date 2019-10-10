@@ -34,7 +34,7 @@ public:
     void issue(name to, asset quantity, string memo);
 
     [[eosio::action]]
-    void retire(asset quantity, string memo);
+    void retire(name from, asset quantity, string memo);
 
     [[eosio::action]]
     void transfer(name from, name to, asset quantity, string memo);
