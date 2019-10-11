@@ -43,8 +43,6 @@ namespace gallery_types {
         int64_t damn_points = 0;
         int64_t damn_shares = 0;
         
-        int64_t pledge_points = 0;
-        
         int64_t reward = 0;
         
         int64_t comm_rating = 0;
@@ -59,8 +57,6 @@ namespace gallery_types {
             active = false;
             meritorious = false;
         };
-        
-        std::vector<name> slaps;
        
         uint64_t primary_key() const { return tracery; }
         using by_rating_t = std::tuple<bool, int64_t, int64_t>;
@@ -273,8 +269,6 @@ private:
                     item.damn_shares += gem.shares;
                     item.comm_rating += gem.points;
                 }
-                item.comm_rating   -= gem.pledge_points;
-                item.pledge_points -= gem.pledge_points;
                 item.reward -= reward;
                 item.gem_count--;
             });
@@ -373,8 +367,6 @@ private:
                 item.shares += shares;
                 item.comm_rating += points;
             }
-            item.comm_rating   += pledge_points;
-            item.pledge_points += pledge_points;
             if (!refilled) {
                 eosio::check(item.gem_count < std::numeric_limits<decltype(item.gem_count)>::max(), "gem_count overflow");
                 item.gem_count++;
@@ -827,34 +819,16 @@ protected:
             mosaics_table.modify(mosaic, name(), [&](auto& item) { item.lead_rating += weight; });
         }
     }
-    void slap_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
-        require_auth(leader);
-        eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
+        require_auth(point::get_issuer(config::point_name, commun_code));
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
         eosio::check(mosaic->active, "mosaic is inactive");
-        
-        mosaics_table.modify(mosaic, leader, [&](auto& item) {
-            for (auto& n : item.slaps) {
-                eosio::check(n != leader, "already done");
-                if (!control::in_the_top(config::control_name, commun_code, n)) {
-                    n = name();
-                }
-            }
-            item.slaps.erase(std::remove_if(item.slaps.begin(), item.slaps.end(), [](const name& n) { return n == name(); }), item.slaps.end());
-            item.slaps.push_back(leader);
-            if (item.slaps.size() >= config::default_ban_threshold) {
-                item.ban();
-            }
-        });
-        
-        if (mosaic->banned) {
-            T::deactivate(_self, commun_code, *mosaic);
-        }
+        mosaics_table.modify(mosaic, name(), [&](auto& item) { item.ban(); });
+        T::deactivate(_self, commun_code, *mosaic);
     }
-    
 };
 
 class [[eosio::contract("comn.gallery")]] gallery : public gallery_base<gallery>, public contract {
@@ -893,8 +867,8 @@ public:
     
     //TODO: [[eosio::action]] void checkadvice (symbol_code commun_code, name leader);
     
-    [[eosio::action]] void slap(symbol_code commun_code, name leader, uint64_t tracery) {
-        slap_mosaic(_self, commun_code, leader, tracery);
+    [[eosio::action]] void ban(symbol_code commun_code, uint64_t tracery) {
+        ban_mosaic(_self, commun_code, tracery);
     }
     
     void ontransfer(name from, name to, asset quantity, std::string memo) {
@@ -904,4 +878,4 @@ public:
     
 } /// namespace commun
 
-#define GALLERY_ACTIONS (createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(slap)
+#define GALLERY_ACTIONS (createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(ban)

@@ -30,20 +30,15 @@ def createCommunity(community_name, owner_account, maximum_supply, reserve_amoun
         'quantity': initial_supply,
         'memo': 'initial'
     }, providebw='{acc}/comn'.format(acc=owner_account), keys=owner_private_key)
-    
-    # 5. Set ctrl-params (comn.ctrl:setparams)
-    pushAction('comn.ctrl', 'setparams', 'comn.ctrl', {
-        "commun_code":symbol.code
-    }, providebw='{acc}/comn'.format(acc='comn.ctrl'), keys=owner_private_key)
 
-    # 7. Open point balance for comn.gallery
+    # 5. Open point balance for comn.gallery
     pushAction('comn.point', 'open', 'comn', {
         "owner": "comn.gallery",
         "commun_code": symbol.code,
         "ram_payer": "comn"
     }, keys=commun_private_key)
 
-    # 8. Register community (comn.list:create)
+    # 6. Register community (comn.list:create)
     pushAction('comn.list', 'create', 'comn.list', {
         "commun_code": symbol.code,
         "community_name": community_name

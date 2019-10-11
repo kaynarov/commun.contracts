@@ -23,10 +23,6 @@ struct commun_ctrl_api: base_contract_api {
     const name _supermajority_name = N(lead.smajor);
 
     //// control actions
-    
-    action_result set_default_params() {
-        return push(N(setparams), _code, args()("commun_code", commun_code));
-    }
 
     action_result reg_leader(name leader, string url) {
         return push(N(regleader), leader, args()
@@ -128,8 +124,6 @@ struct commun_ctrl_api: base_contract_api {
     }
     
     void prepare(const std::vector<name>& leaders, name voter) {
-        
-        BOOST_CHECK_EQUAL(base_tester::success(), set_default_params());
         for (int i = 0; i < leaders.size(); i++) {
             BOOST_CHECK_EQUAL(base_tester::success(), reg_leader(leaders[i], "localhost"));
             BOOST_CHECK_EQUAL(base_tester::success(), vote_leader(voter, leaders[i]));

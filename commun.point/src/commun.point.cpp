@@ -111,7 +111,7 @@ void point::issue(name to, asset quantity, string memo) {
     }
 }
 
-void point::retire(asset quantity, string memo) {
+void point::retire(name from, asset quantity, string memo) {
     auto commun_symbol = quantity.symbol;
     check(commun_symbol.is_valid(), "invalid symbol name");
     check(memo.size() <= 256, "memo has more than 256 bytes");
@@ -123,7 +123,7 @@ void point::retire(asset quantity, string memo) {
     stats stats_table(_self, commun_code.raw());
     const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
 
-    check(has_auth(param.issuer) || has_auth(_self), "missing required signature");
+    check(has_auth(from) || (from == param.issuer && has_auth(_self)), "missing required signature");
     check(quantity.is_valid(), "invalid quantity");
     check(quantity.amount > 0, "must retire positive quantity");
 
@@ -134,7 +134,7 @@ void point::retire(asset quantity, string memo) {
         send_currency_event(s, param);
     });
 
-    sub_balance(param.issuer, quantity);
+    sub_balance(from, quantity);
 }
 
 void point::transfer(name from, name to, asset quantity, string memo) {

@@ -211,10 +211,9 @@ struct commun_posting_api: base_contract_api {
             ("favorites", favorites));
     }
 
-    action_result slap(account_name leader, mssgid message_id) {
-        return push(N(slap), leader, args()
+    action_result ban(account_name issuer, mssgid message_id) {
+        return push(N(ban), issuer, args()
             ("commun_code", commun_code)
-            ("leader", leader)
             ("message_id", message_id));
     }
 
