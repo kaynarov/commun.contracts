@@ -159,8 +159,8 @@ public:
         const string own_reblog_erase         = amsg("You cannot erase reblog your own content.");
         const string gem_type_mismatch        = amsg("gem type mismatch");
         const string author_cannot_unvote     = amsg("author can't unvote");
-        
-        const string authorization_failed = amsg("transaction authorization failed");
+        const string authorization_failed     = amsg("transaction authorization failed");
+        const string advice_surfeit           = amsg("a surfeit of advice");
     } err;
 };
 
@@ -410,6 +410,23 @@ BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(errgallery.no_authority, post.claim({N(alice), "alice-in-blockchains"}, N(alice), N(alice), false, N(chucknorris)));
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "alice-in-blockchains"}, N(alice), N(alice), false, N(alice)));
 
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(advise_message, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Advise message by leader testing.");
+    BOOST_CHECK_EQUAL(errgallery.no_community, post.advise(N(jackiechan), {{N(brucelee), "notexist"}}));
+    init();
+    ctrl.prepare({N(jackiechan)}, N(brucelee));
+    mssgid msg = {N(brucelee), "permlink"};
+    BOOST_CHECK_EQUAL(success(), post.create(msg));
+
+    BOOST_CHECK_EQUAL(err.no_mosaic, post.advise(N(jackiechan), {{N(brucelee), "notexist"}}));
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(brucelee)), post.advise(N(brucelee), {msg}));
+    std::vector<mssgid> too_many;
+    for (int i = 0; i < cfg::advice_weight.size() + 1; ++i) {
+        too_many.push_back({N(brucelee), "test" + std::to_string(i)});
+    }
+    BOOST_CHECK_EQUAL(err.advice_surfeit, post.advise(N(jackiechan), too_many));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
