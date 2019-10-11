@@ -48,15 +48,6 @@
                 { "type": "asset",         "name": "quantity" }
             ]
         },{
-            "name": "opus_info",
-            "base": "",
-            "fields": [
-                { "type": "name",           "name": "name" },
-                { "type": "int64",          "name": "mosaic_pledge" },
-                { "type": "int64",          "name": "min_mosaic_inclusion" },
-                { "type": "int64",          "name": "min_gem_inclusion" }
-            ]
-        },{
             "name": "stat_struct",
             "base": "",
             "fields": [
