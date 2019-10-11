@@ -165,7 +165,7 @@
       ]
   },
   {
-    "name": "createmssg",
+    "name": "create",
     "base": "",
     "fields": [
       {
@@ -203,7 +203,7 @@
     ]
   },
   {
-    "name": "updatemssg",
+    "name": "update",
     "base": "",
     "fields": [
       {
@@ -263,7 +263,7 @@
     ]
   },
   {
-    "name": "deletemssg",
+    "name": "remove",
     "base": "",
     "fields": [
       {
@@ -277,7 +277,7 @@
     ]
   },
   {
-    "name": "reportmssg",
+    "name": "report",
     "base": "",
     "fields": [
       {
@@ -450,24 +450,24 @@
   ],
   "actions": [
   {
-    "name": "createmssg",
-    "type": "createmssg"
+    "name": "create",
+    "type": "create"
   },
   {
-    "name": "updatemssg",
-    "type": "updatemssg"
+    "name": "update",
+    "type": "update"
   },
   {
     "name": "settags",
     "type": "settags"
   },
   {
-    "name": "deletemssg",
-    "type": "deletemssg"
+    "name": "remove",
+    "type": "remove"
   },
   {
-    "name": "reportmssg",
-    "type": "reportmssg"
+    "name": "report",
+    "type": "report"
   },
   {
     "name": "upvote",

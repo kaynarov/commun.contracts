@@ -52,7 +52,7 @@ def openBalance(owner, commun_code, payer, *, providebw=None, keys=None):
         }, providebw=providebw, keys=keys)
 
 def createPost(commun_code, author, permlink, category, header, body, *, providebw=None, keys=None):
-    return pushAction('comn.gallery', 'createmssg', author, {
+    return pushAction('comn.gallery', 'create', author, {
             'commun_code':commun_code,
             'message_id':{'author':author, 'permlink':permlink}, 
             'parent_id':{'author':"", 'permlink':category}, 

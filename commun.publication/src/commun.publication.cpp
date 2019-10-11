@@ -6,7 +6,7 @@
 
 namespace commun {
 
-void publication::createmssg(
+void publication::create(
     symbol_code commun_code,
     mssgid_t message_id,
     mssgid_t parent_id,
@@ -45,7 +45,7 @@ void publication::createmssg(
 
         level = 1 + parent_vertex->level;
     }
-    eosio::check(level <= config::max_comment_depth, "publication::createmssg: level > MAX_COMMENT_DEPTH");
+    eosio::check(level <= config::max_comment_depth, "publication::create: level > MAX_COMMENT_DEPTH");
 
     vertices_table.emplace(message_id.author, [&](auto& item) {
         item.tracery = tracery;
@@ -78,7 +78,7 @@ void publication::createmssg(
         parent_id.author ? gallery_types::providers_t() : get_providers(commun_code, message_id.author, gems_per_period, weight));    
 }
 
-void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
+void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
     require_auth(message_id.author);
@@ -93,14 +93,14 @@ void publication::settags(symbol_code commun_code, name leader, mssgid_t message
     check_mssg_exists(commun_code, message_id);
 }
 
-void publication::deletemssg(symbol_code commun_code, mssgid_t message_id) {
+void publication::remove(symbol_code commun_code, mssgid_t message_id) {
     auto tracery = message_id.tracery();
     claim_gems_by_creator(_self, tracery, commun_code, message_id.author, true);
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-    eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "Unable to delete comment with votes.");
+    eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "Unable to remove comment with votes.");
 }
 
-void publication::reportmssg(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason) {
+void publication::report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason) {
     require_auth(reporter);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     check_mssg_exists(commun_code, message_id);
@@ -286,5 +286,5 @@ void publication::ban(symbol_code commun_code, mssgid_t message_id) {
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (createmssg)(updatemssg)(settags)(deletemssg)(reportmssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
+    (create)(update)(settags)(remove)(report)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
     (reblog)(erasereblog)(setproviders)(provide)(advise)(ban))
