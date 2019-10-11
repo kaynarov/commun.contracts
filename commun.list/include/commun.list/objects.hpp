@@ -85,6 +85,7 @@ struct community {
     int64_t lock_period = 0; // TODO
     uint16_t gems_per_day = 10;
     uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num;
+    int64_t min_lead_rating = config::def_min_lead_rating;
 
     std::set<opus_info> opuses = config::def_opuses;
 

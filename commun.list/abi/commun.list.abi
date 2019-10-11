@@ -89,6 +89,10 @@
                     "type": "uint16"
                 },
                 {
+                    "name": "min_lead_rating",
+                    "type": "int64"
+                },
+                {
                     "name": "opuses",
                     "type": "opus_info[]"
                 }
@@ -203,6 +207,10 @@
                 {
                     "name": "author_percent",
                     "type": "uint16?"
+                },
+                {
+                    "name": "min_lead_rating",
+                    "type": "int64?"
                 }
             ]
         },
