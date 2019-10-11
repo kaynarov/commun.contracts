@@ -104,10 +104,9 @@ public:
             ("favorites", favorites));
     }
     
-    action_result slap(account_name leader, uint64_t tracery) {
-        return push(N(slap), leader, args()
+    action_result ban(account_name issuer, uint64_t tracery) {
+        return push(N(ban), issuer, args()
             ("commun_code", _symbol.to_symbol_code())
-            ("leader", leader)
             ("tracery", tracery));
     }
     

@@ -201,7 +201,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
         int64_t cur_points = min_gem_points * i;
         BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, i, gallery.default_opus.name, asset(cur_points, point._symbol), royalty));
         if (i >= first_comm_mosaic) {
-            points_sum += cur_points;
+            points_sum += cur_points - gallery.default_mosaic_pledge;
         }
     }
     std::map<uint64_t, int64_t> ranked_mosaics;
@@ -230,7 +230,7 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(min_gem_points, point._symbol), false, _bob));
     
     for (int i = first_comm_mosaic; i <= mosaics_num; i++) {
-        int64_t cur_points = min_gem_points * i;
+        int64_t cur_points = min_gem_points * i - gallery.default_mosaic_pledge;
         ranked_mosaics[i] += cfg::default_comm_grades[mosaics_num - i] + commun::safe_prop(cfg::default_comm_points_grade_sum, cur_points, points_sum);
         BOOST_TEST_MESSAGE("--- comm_grades_" << i << " = " << ranked_mosaics[i]);
     }

@@ -279,12 +279,12 @@ void publication::advise(symbol_code commun_code, name leader, std::vector<mssgi
     advise_mosaics(_self, commun_code, leader, favorite_mosaics);
 }
 
-void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id) {
-    slap_mosaic(_self, commun_code, leader, message_id.tracery());
+void publication::ban(symbol_code commun_code, mssgid_t message_id) {
+    ban_mosaic(_self, commun_code, message_id.tracery());
 }
 
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
     (createmssg)(updatemssg)(settags)(deletemssg)(reportmssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
-    (reblog)(erasereblog)(setproviders)(provide)(advise)(slap))
+    (reblog)(erasereblog)(setproviders)(provide)(advise)(ban))
