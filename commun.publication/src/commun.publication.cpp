@@ -270,11 +270,10 @@ void publication::provide(name grantor, name recipient, asset quantity, std::opt
     provide_points(_self, grantor, recipient, quantity, fee);
 }
 
-void publication::advise(symbol_code commun_code, name leader, std::vector<mssgid_t> favorites) {
-    std::vector<uint64_t> favorite_mosaics;
-    favorite_mosaics.reserve(favorites.size());
+void publication::advise(symbol_code commun_code, name leader, std::set<mssgid_t> favorites) {
+    std::set<uint64_t> favorite_mosaics;
     for (const auto& m : favorites) {
-        favorite_mosaics.push_back(m.tracery());
+        favorite_mosaics.insert(m.tracery());
     }
     advise_mosaics(_self, commun_code, leader, favorite_mosaics);
 }

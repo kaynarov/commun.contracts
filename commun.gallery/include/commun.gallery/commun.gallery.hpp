@@ -128,7 +128,7 @@ namespace gallery_types {
     struct [[eosio::table]] advice {
         uint64_t id;
         name leader;
-        std::vector<uint64_t> favorites;
+        std::set<uint64_t> favorites;
         uint64_t primary_key()const { return id; }
     };
     
@@ -784,7 +784,7 @@ protected:
         }
     }
     
-    void advise_mosaics(name _self, symbol_code commun_code, name leader, std::vector<uint64_t> favorites) {
+    void advise_mosaics(name _self, symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
         require_auth(leader);
         commun_list::check_community_exists(config::list_name, commun_code);
         eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
@@ -861,7 +861,7 @@ public:
         provide_points(_self, grantor, recipient, quantity, fee);
     }
     
-    [[eosio::action]] void advise(symbol_code commun_code, name leader, std::vector<uint64_t> favorites) {
+    [[eosio::action]] void advise(symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
         advise_mosaics(_self, commun_code, leader, favorites);
     }
     

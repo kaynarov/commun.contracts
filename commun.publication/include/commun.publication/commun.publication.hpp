@@ -53,7 +53,7 @@ public:
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
 
     void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee);
-    void advise(symbol_code commun_code, name leader, std::vector<mssgid_t> favorites);
+    void advise(symbol_code commun_code, name leader, std::set<mssgid_t> favorites);
     //TODO: void checkadvice (symbol_code commun_code, name leader);
     void ban(symbol_code commun_code, mssgid_t message_id);
 

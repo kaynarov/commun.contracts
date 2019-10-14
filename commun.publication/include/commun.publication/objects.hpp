@@ -22,6 +22,14 @@ struct mssgid_t {
                permlink == value.permlink;
     }
 
+    // for set
+    friend bool operator<(const mssgid_t& a, const mssgid_t& b) {
+        return std::tie(a.author, a.permlink) < std::tie(b.author, b.permlink);
+    }
+    friend bool operator>(const mssgid_t& a, const mssgid_t& b) {
+        return std::tie(a.author, a.permlink) > std::tie(b.author, b.permlink);
+    }
+
     uint64_t tracery() const {
         std::string key = author.to_string() + "/" + permlink;
         auto hash = sha256(key.c_str(), key.size());
