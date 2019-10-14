@@ -422,11 +422,18 @@ BOOST_FIXTURE_TEST_CASE(advise_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(err.no_mosaic, post.advise(N(jackiechan), {{N(brucelee), "notexist"}}));
     BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(brucelee)), post.advise(N(brucelee), {msg}));
+
     std::vector<mssgid> too_many;
     for (int i = 0; i < cfg::advice_weight.size() + 1; ++i) {
         too_many.push_back({N(brucelee), "test" + std::to_string(i)});
     }
     BOOST_CHECK_EQUAL(err.advice_surfeit, post.advise(N(jackiechan), too_many));
+
+    std::vector<mssgid> duplicated;
+    duplicated.push_back(msg);
+    duplicated.push_back(msg);
+    BOOST_CHECK_EQUAL(success(), post.advise(N(jackiechan), duplicated));
+    BOOST_CHECK_EQUAL(get_mosaic(_code, _point, msg.tracery())["lead_rating"], cfg::advice_weight[0]);
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {

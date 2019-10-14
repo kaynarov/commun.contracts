@@ -204,7 +204,7 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
-    action_result advise(account_name leader, std::vector<mssgid> favorites) {
+    action_result advise(account_name leader, std::vector<mssgid> favorites) { // vector is to test if duplicated
         return push(N(advise), leader, args()
             ("commun_code", commun_code)
             ("leader", leader)
