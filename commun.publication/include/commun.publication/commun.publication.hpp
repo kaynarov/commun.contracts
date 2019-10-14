@@ -40,6 +40,8 @@ public:
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
     void remove(symbol_code commun_code, mssgid_t message_id);
     void report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason);
+    void lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
+    void unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);

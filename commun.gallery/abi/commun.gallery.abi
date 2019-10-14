@@ -16,6 +16,7 @@
                 { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
                 { "type": "time_point",    "name": "created" },
+                { "type": "time_point",    "name": "lock_date" },
                 { "type": "uint16",        "name": "gem_count" },
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
@@ -26,7 +27,8 @@
                 { "type": "int64",         "name": "lead_rating" },
                 { "type": "bool",          "name": "meritorious" },
                 { "type": "bool",          "name": "active" },
-                { "type": "bool",          "name": "banned" }
+                { "type": "bool",          "name": "banned" },
+                { "type": "bool",          "name": "locked" }
             ]
         },{
             "name": "gem_struct",
@@ -141,6 +143,23 @@
                 { "type": "uint64[]",               "name": "favorites" }
             ]
         },{
+            "name": "update_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "creator" },
+                { "type": "uint64",                 "name": "tracery" }
+            ]
+        },{
+            "name": "lock_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "leader" },
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "string",                 "name": "reason" }
+            ]
+        },{
             "name": "ban_args",
             "base": "",
             "fields": [
@@ -178,6 +197,18 @@
         {
             "name": "advise",
             "type": "advise_args"
+        },
+        {
+            "name": "update",
+            "type": "update_args"
+        },
+        {
+            "name": "lock",
+            "type": "lock_args"
+        },
+        {
+            "name": "unlock",
+            "type": "lock_args"
         },
         {
             "name": "ban",

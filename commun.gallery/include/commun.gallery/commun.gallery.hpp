@@ -36,6 +36,7 @@ namespace gallery_types {
         uint16_t royalty;
         
         time_point created;
+        time_point lock_date = time_point();
         uint16_t gem_count;
         
         int64_t points;
@@ -51,9 +52,24 @@ namespace gallery_types {
         bool meritorious = false;
         bool active = true;
         bool banned = false;
-        
+        bool locked = false;
+
+        void lock() {
+            lock_date = eosio::current_time_point();
+            locked = true;
+            active = false;
+            meritorious = false;
+        }
+
+        void unlock() {
+            locked = false;
+            active = true;
+            meritorious = true;
+        }
+
         void ban() {
             banned = true;
+            locked = false;
             active = false;
             meritorious = false;
         };
@@ -675,7 +691,7 @@ protected:
         
         freeze_in_gems(_self, true, tracery, claim_date, creator, quantity, providers, false, points_sum, points_sum, opus_itr->mosaic_pledge);
     }
-        
+
     void add_to_mosaic(name _self, uint64_t tracery, asset quantity, bool damn, name gem_creator, gallery_types::providers_t providers) {
         require_auth(gem_creator);
         auto commun_symbol = quantity.symbol;
@@ -819,6 +835,37 @@ protected:
             mosaics_table.modify(mosaic, name(), [&](auto& item) { item.lead_rating += weight; });
         }
     }
+
+    void update_mosaic(name _self, symbol_code commun_code, name creator, uint64_t tracery) {
+        require_auth(creator);
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
+        eosio::check(mosaic.active, "mosaic is inactive");
+        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
+            m.lock_date = time_point();
+        });
+    }
+
+    void lock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
+        require_auth(leader);
+        check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
+        check(mosaic.active, "Mosaic is not active.");
+        check(mosaic.lock_date == time_point(), "Mosaic should be modified to lock again.");
+        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) { m.lock(); });
+    }
+
+    void unlock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
+        require_auth(leader);
+        check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
+        check(mosaic.locked, "Mosaic not locked.");
+        check(!mosaic.banned, "mosaic banned");
+        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) { m.unlock(); });
+    }
+
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
         require_auth(point::get_issuer(config::point_name, commun_code));
         
@@ -866,7 +913,21 @@ public:
     }
     
     //TODO: [[eosio::action]] void checkadvice (symbol_code commun_code, name leader);
-    
+
+    [[eosio::action]] void update(symbol_code commun_code, name creator, uint64_t tracery) {
+        update_mosaic(_self, commun_code, creator, tracery);
+    }
+
+    [[eosio::action]] void lock(symbol_code commun_code, name leader, uint64_t tracery, string reason) {
+        eosio::check(!reason.empty(), "Reason cannot be empty.");
+        lock_mosaic(_self, commun_code, leader, tracery);
+    }
+
+    [[eosio::action]] void unlock(symbol_code commun_code, name leader, uint64_t tracery, string reason) {
+        eosio::check(!reason.empty(), "Reason cannot be empty.");
+        unlock_mosaic(_self, commun_code, leader, tracery);
+    }
+
     [[eosio::action]] void ban(symbol_code commun_code, uint64_t tracery) {
         ban_mosaic(_self, commun_code, tracery);
     }
@@ -878,4 +939,4 @@ public:
     
 } /// namespace commun
 
-#define GALLERY_ACTIONS (createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(ban)
+#define GALLERY_ACTIONS (createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)

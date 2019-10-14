@@ -81,8 +81,7 @@ void publication::create(
 void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
-    require_auth(message_id.author);
-    check_mssg_exists(commun_code, message_id);
+    update_mosaic(_self, commun_code, message_id.author, message_id.tracery());
 }
 
 void publication::settags(symbol_code commun_code, name leader, mssgid_t message_id,
@@ -104,6 +103,16 @@ void publication::report(symbol_code commun_code, name reporter, mssgid_t messag
     require_auth(reporter);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     check_mssg_exists(commun_code, message_id);
+}
+
+void publication::lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    eosio::check(!reason.empty(), "Reason cannot be empty.");
+    lock_mosaic(_self, commun_code, leader, message_id.tracery());
+}
+
+void publication::unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    eosio::check(!reason.empty(), "Reason cannot be empty.");
+    unlock_mosaic(_self, commun_code, leader, message_id.tracery());
 }
 
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
@@ -286,5 +295,5 @@ void publication::ban(symbol_code commun_code, mssgid_t message_id) {
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (create)(update)(settags)(remove)(report)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
-    (reblog)(erasereblog)(setproviders)(provide)(advise)(ban))
+    (create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
+    (claim)(hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise)(ban))
