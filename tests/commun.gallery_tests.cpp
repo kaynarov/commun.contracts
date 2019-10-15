@@ -292,6 +292,41 @@ BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
 
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(advise_test, commun_gallery_tester) try {
+    BOOST_TEST_MESSAGE("Advise mosaic by leader testing.");
+    uint64_t tracery = 1;
+    BOOST_CHECK_EQUAL(errgallery.no_community, gallery.advise(_bob, {tracery}));
+    init();
+    int64_t init_amount = supply / 2;
+    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
+    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(init_amount, point._symbol)));
+    ctrl.prepare({_bob}, _alice);
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, tracery, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
+
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.advise(_bob, {tracery+2}));
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_alice), gallery.advise(_alice, {tracery}));
+
+    std::vector<uint64_t> too_many;
+    for (int i = 0; i < cfg::advice_weight.size() + 1; ++i) {
+        too_many.push_back(tracery + i);
+    }
+    BOOST_CHECK_EQUAL(errgallery.advice_surfeit, gallery.advise(_bob, too_many));
+
+    std::vector<uint64_t> duplicated;
+    duplicated.push_back(tracery);
+    duplicated.push_back(tracery);
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_bob, duplicated));
+    produce_block();
+    BOOST_CHECK_EQUAL(get_mosaic(_code, _point, tracery)["lead_rating"], cfg::advice_weight[0]);
+    BOOST_CHECK_EQUAL(get_advice(_code, _point, _bob)["favorites"].as<std::set<uint64_t>>().size(), 1);
+    BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, duplicated));
+
+    BOOST_CHECK_EQUAL(success(), gallery.advise(_bob, std::vector<uint64_t>()));
+    produce_block();
+    BOOST_CHECK(get_advice(_code, _point, _bob).is_null());
+    BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, std::vector<uint64_t>()));
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("claim tests");
     int64_t supply  = 5000000000000;

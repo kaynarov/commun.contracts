@@ -126,10 +126,9 @@ namespace gallery_types {
     };
     
     struct [[eosio::table]] advice {
-        uint64_t id;
         name leader;
         std::set<uint64_t> favorites;
-        uint64_t primary_key()const { return id; }
+        uint64_t primary_key()const { return leader.value; }
     };
     
     using mosaic_id_index = eosio::indexed_by<"mosaicid"_n, eosio::const_mem_fun<gallery_types::mosaic, uint64_t, &gallery_types::mosaic::primary_key> >;
@@ -795,6 +794,7 @@ protected:
         gallery_types::advices advices_table(_self, commun_code.raw());
         auto prev_advice = advices_table.find(leader.value);
         if (prev_advice != advices_table.end()) {
+            eosio::check(prev_advice->favorites != favorites, "no changes in favorites");
             auto prev_weight = config::advice_weight.at(prev_advice->favorites.size() - 1);
             for (auto& m : prev_advice->favorites) {
                 auto mosaic = mosaics_table.find(m);
@@ -802,11 +802,15 @@ protected:
                     mosaics_table.modify(mosaic, name(), [&](auto& item) { item.lead_rating -= prev_weight; });
                 }
             }
+            if (favorites.empty()) {
+                advices_table.erase(prev_advice);
+                return;
+            }
             advices_table.modify(prev_advice, leader, [&](auto& item) { item.favorites = favorites; });
         }
         else {
+            eosio::check(!favorites.empty(), "no changes in favorites");
             advices_table.emplace(leader, [&] (auto &item) { item = gallery_types::advice {
-                .id = leader.value,
                 .leader = leader,
                 .favorites = favorites
             };});

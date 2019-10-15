@@ -88,7 +88,6 @@
             "name": "advice_struct",
             "base": "",
             "fields": [
-                { "type": "uint64",         "name": "id" },
                 { "type": "name",           "name": "leader" },
                 { "type": "uint64[]",   "name": "favorites" }
             ]
@@ -574,7 +573,7 @@
             "name": "advice",
             "type": "advice_struct",
             "indexes": [
-                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] }
+                { "name": "primary", "unique": "true", "orders": [ {"field": "leader", "order": "asc"} ] }
             ]
         },
   
