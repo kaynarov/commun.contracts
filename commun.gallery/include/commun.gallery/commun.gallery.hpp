@@ -126,10 +126,9 @@ namespace gallery_types {
     };
     
     struct [[eosio::table]] advice {
-        uint64_t id;
         name leader;
         std::set<uint64_t> favorites;
-        uint64_t primary_key()const { return id; }
+        uint64_t primary_key()const { return leader.value; }
     };
     
     using mosaic_id_index = eosio::indexed_by<"mosaicid"_n, eosio::const_mem_fun<gallery_types::mosaic, uint64_t, &gallery_types::mosaic::primary_key> >;
@@ -812,7 +811,6 @@ protected:
         else {
             eosio::check(!favorites.empty(), "no changes in favorites");
             advices_table.emplace(leader, [&] (auto &item) { item = gallery_types::advice {
-                .id = leader.value,
                 .leader = leader,
                 .favorites = favorites
             };});
