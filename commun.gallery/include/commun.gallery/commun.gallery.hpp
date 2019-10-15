@@ -802,6 +802,10 @@ protected:
                     mosaics_table.modify(mosaic, name(), [&](auto& item) { item.lead_rating -= prev_weight; });
                 }
             }
+            if (favorites.empty()) {
+                advices_table.erase(prev_advice);
+                return;
+            }
             advices_table.modify(prev_advice, leader, [&](auto& item) { item.favorites = favorites; });
         }
         else {
