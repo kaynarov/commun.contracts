@@ -249,7 +249,7 @@
                 { "name": "bycommrating", "unique": "false", "orders": [
                     {"field": "active", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
-                    {"field": "banned", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
+                    {"field": "banned", "order": "desc"}, {"field": "locked", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
                 { "name": "byclose", "unique": "false", "orders": [
                     {"field": "active", "order": "asc"}, {"field": "close_date", "order": "asc"} ] }
             ]

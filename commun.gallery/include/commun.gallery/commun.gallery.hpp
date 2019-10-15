@@ -78,7 +78,8 @@ namespace gallery_types {
         uint64_t primary_key() const { return tracery; }
         using by_rating_t = std::tuple<bool, int64_t, int64_t>;
         by_rating_t by_comm_rating()const { return std::make_tuple(active, comm_rating, lead_rating); }
-        by_rating_t by_lead_rating()const { return std::make_tuple(banned, lead_rating, comm_rating); }
+        using by_lead_rating_t = std::tuple<bool, bool, int64_t, int64_t>;
+        by_lead_rating_t by_lead_rating()const { return std::make_tuple(banned, locked, lead_rating, comm_rating); }
         using by_close_t = std::tuple<uint8_t, time_point>;
         by_close_t by_close()const { return std::make_tuple(active, close_date); }
     };
@@ -151,7 +152,7 @@ namespace gallery_types {
     
     using mosaic_id_index = eosio::indexed_by<"mosaicid"_n, eosio::const_mem_fun<gallery_types::mosaic, uint64_t, &gallery_types::mosaic::primary_key> >;
     using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_comm_rating> >;
-    using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_lead_rating> >;
+    using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_lead_rating_t, &gallery_types::mosaic::by_lead_rating> >;
     using mosaic_close_index = eosio::indexed_by<"byclose"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_close_t, &gallery_types::mosaic::by_close> >;
     using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_close_index>;
     
