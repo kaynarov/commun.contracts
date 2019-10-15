@@ -52,7 +52,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 void commun_list::setsysparams(symbol_code commun_code,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
-        std::set<structures::opus_info> opuses, std::set<name> remove_opuses) {
+        std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating) {
 
     require_auth(_self);
 
@@ -79,6 +79,7 @@ void commun_list::setsysparams(symbol_code commun_code,
             }
             _empty = false;
         }
+        SET_PARAM(min_lead_rating);
         eosio::check(!_empty, "No params changed");
     });
 }
@@ -86,8 +87,7 @@ void commun_list::setsysparams(symbol_code commun_code,
 void commun_list::setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
         optional<name> permission, optional<uint8_t> required_threshold, 
-        optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent,
-        optional<int64_t> min_lead_rating) {
+        optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent) {
     require_auth(point::get_issuer(config::point_name, commun_code));
 
     // <> Place for checks
@@ -106,7 +106,6 @@ void commun_list::setparams(symbol_code commun_code,
         SET_PARAM(emission_rate);
         SET_PARAM(leaders_percent);
         SET_PARAM(author_percent);
-        SET_PARAM(min_lead_rating);
         eosio::check(!_empty, "No params changed");
     });
 }

@@ -192,7 +192,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
 BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("Reward the top");
     init();
-    BOOST_CHECK_EQUAL(success(), community.setparams(_golos, point_code, community.args()
+    BOOST_CHECK_EQUAL(success(), community.setsysparams(point_code, community.sysparams()
         ("min_lead_rating", 1)));
     int mosaics_num = 50;
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(supply, point._symbol)));

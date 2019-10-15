@@ -18,13 +18,12 @@ public:
     [[eosio::action]] void setsysparams(symbol_code commun_code,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
-        std::set<structures::opus_info> opuses, std::set<name> remove_opuses);
+        std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating);
 
     [[eosio::action]] void setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
         optional<name> permission, optional<uint8_t> required_threshold, 
-        optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent,
-        optional<int64_t> min_lead_rating);
+        optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent);
 
     [[eosio::action]] void setinfo(symbol_code commun_code, std::string description,
         std::string language, std::string rules, std::string avatar_image, std::string cover_image);
