@@ -34,6 +34,17 @@ public:
         const auto& stat = stats_table.get(commun_code.raw(), "emitter does not exists");
         return (eosio::current_time_point() - stat.latest_reward(for_leaders)).to_seconds() >= config::reward_period(for_leaders);
     }
+    
+    static inline void maybe_issue_reward(name emit_contract_account, symbol_code commun_code, bool for_leaders) {
+        if (it_is_time_to_reward(emit_contract_account, commun_code, for_leaders)) {
+            action(
+                permission_level{emit_contract_account, config::reward_perm_name},
+                emit_contract_account,
+                "issuereward"_n,
+                std::make_tuple(commun_code, for_leaders)
+            ).send();
+        }
+    }
 };
 
 } // commun

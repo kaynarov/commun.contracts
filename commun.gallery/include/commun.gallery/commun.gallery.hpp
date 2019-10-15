@@ -373,7 +373,7 @@ private:
             }
         });
     }
-                              
+
     int64_t pay_royalties(name _self, symbol_code commun_code, uint64_t tracery, name mosaic_creator, int64_t shares) {
     
         gallery_types::gems gems_table(_self, commun_code.raw());
@@ -414,17 +414,6 @@ private:
         mosaics_table.modify(mosaic, name(), [&](auto& item) { item.shares += ret; });
         
         return ret;
-    }
-    
-    void maybe_issue_reward(name _self, symbol_code commun_code) {
-        if (emit::it_is_time_to_reward(config::emit_name, commun_code, false)) {
-            action(
-                permission_level{config::emit_name, config::reward_perm_name},
-                config::emit_name,
-                "issuereward"_n,
-                std::make_tuple(commun_code, false)
-            ).send();
-        }
     }
 
     void freeze_in_gems(name _self, bool creating, uint64_t tracery, time_point claim_date, name creator, 
@@ -493,7 +482,7 @@ private:
         claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.created + eosio::seconds(community.moderation_period), community.commun_symbol};
         check(!ret.premature || eager, "moderation period isn't over yet");
         
-        maybe_issue_reward(_self, commun_code);
+        emit::maybe_issue_reward(config::emit_name, commun_code, false);
         
         return ret;
     }
@@ -653,7 +642,7 @@ protected:
         eosio::check(opus_itr->min_mosaic_inclusion <= points_sum, "points are not enough for mosaic inclusion");
         eosio::check((providers.size() + 1) * opus_itr->min_gem_inclusion <= points_sum, "points are not enough for gem inclusion");
         
-        maybe_issue_reward(_self, commun_code);
+        emit::maybe_issue_reward(config::emit_name, commun_code, false);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "mosaic already exists");
@@ -693,7 +682,7 @@ protected:
         auto opus_itr = community.opuses.find(opus_info{mosaic->opus});
         check(opus_itr != community.opuses.end(), "unknown opus"); // it's possible if the parameters are customizable
         
-        maybe_issue_reward(_self, commun_code);
+        emit::maybe_issue_reward(config::emit_name, commun_code, false);
         
         auto points_sum = get_points_sum(quantity.amount, providers);
         eosio::check((providers.size() + 1) * opus_itr->min_gem_inclusion <= points_sum, "points are not enough for gem inclusion");

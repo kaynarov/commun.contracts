@@ -3,19 +3,25 @@
     "types": [],
     "structs": [
         {
+            "name": "stat_struct",
+            "base": "",
+            "fields": [
+                { "type": "uint64",         "name": "id" },
+                { "type": "int64",          "name": "retained" }
+            ]
+        }, {
+            "name": "create",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "commun_code"}
+            ]
+        }, {
             "name": "regleader",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "leader"},
                 {"type": "string", "name": "url"}
-            ]
-        }, {
-            "name": "unregleader",
-            "base": "",
-            "fields": [
-                {"type": "symbol_code", "name": "commun_code"},
-                {"type": "name",   "name": "leader"}
             ]
         }, {
             "name": "leader_name",
@@ -55,7 +61,8 @@
                 {"type": "string", "name": "url"},
                 {"type": "bool", "name": "active"},
                 {"type": "uint64", "name": "total_weight"},
-                {"type": "uint64", "name": "counter_votes"}
+                {"type": "uint64", "name": "counter_votes"},
+                {"type": "int64",  "name": "unclaimed_points"}
             ]
         }, {
             "name": "leader_voter",
@@ -366,11 +373,14 @@
     ],
     "actions": [
         {
+            "name": "create",
+            "type": "create"
+        }, {
             "name": "regleader",
             "type": "regleader"
         }, {
             "name": "unregleader",
-            "type": "unregleader"
+            "type": "leader_name"
         }, {
             "name": "startleader",
             "type": "leader_name"
@@ -383,6 +393,9 @@
         }, {
             "name": "unvotelead",
             "type": "unvotelead"
+        }, {
+            "name": "claim",
+            "type": "leader_name"
         }, {
             "name": "changepoints",
             "type": "changepoints"
@@ -414,6 +427,18 @@
     ],
     "tables": [
         {
+            "name": "stat",
+            "type": "stat_struct",
+            "indexes": [
+                {
+                    "name": "primary",
+                    "unique": "true",
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
             "name": "leader",
             "type": "leader_info",
             "scope_type": "symbol_code",
