@@ -34,8 +34,9 @@ public:
         const string not_enough_for_pledge = amsg("points are not enough for a pledge");
         const string not_enough_for_mosaic = amsg("points are not enough for mosaic inclusion");
         const string not_enough_for_gem    = amsg("points are not enough for gem inclusion");
-        const string advice_surfeit = amsg("a surfeit of advice");
-        
+        const string advice_surfeit       = amsg("a surfeit of advice");
+        const string no_changes_favorites = amsg("no changes in favorites");
+
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
 
         const string no_community = amsg("community not exists");

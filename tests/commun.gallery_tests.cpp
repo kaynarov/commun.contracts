@@ -319,9 +319,12 @@ BOOST_FIXTURE_TEST_CASE(advise_test, commun_gallery_tester) try {
     produce_block();
     BOOST_CHECK_EQUAL(get_mosaic(_code, _point, tracery)["lead_rating"], cfg::advice_weight[0]);
     BOOST_CHECK_EQUAL(get_advice(_code, _point, _bob)["favorites"].as<std::set<uint64_t>>().size(), 1);
+    BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, duplicated));
 
     BOOST_CHECK_EQUAL(success(), gallery.advise(_bob, std::vector<uint64_t>()));
+    produce_block();
     BOOST_CHECK(get_advice(_code, _point, _bob).is_null());
+    BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, std::vector<uint64_t>()));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {

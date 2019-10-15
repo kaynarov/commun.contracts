@@ -795,6 +795,7 @@ protected:
         gallery_types::advices advices_table(_self, commun_code.raw());
         auto prev_advice = advices_table.find(leader.value);
         if (prev_advice != advices_table.end()) {
+            eosio::check(prev_advice->favorites != favorites, "no changes in favorites");
             auto prev_weight = config::advice_weight.at(prev_advice->favorites.size() - 1);
             for (auto& m : prev_advice->favorites) {
                 auto mosaic = mosaics_table.find(m);
@@ -809,6 +810,7 @@ protected:
             advices_table.modify(prev_advice, leader, [&](auto& item) { item.favorites = favorites; });
         }
         else {
+            eosio::check(!favorites.empty(), "no changes in favorites");
             advices_table.emplace(leader, [&] (auto &item) { item = gallery_types::advice {
                 .id = leader.value,
                 .leader = leader,
