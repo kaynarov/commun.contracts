@@ -148,7 +148,11 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     auto community = commun_list::get_community(config::list_name, commun_code);
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, voter);
-    auto gems_per_period = get_gems_per_period(commun_code);
+
+    gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+    auto mosaic = mosaics_table.get(message_id.tracery(), "mosaic doesn't exist");
+
+    auto gems_per_period = get_gems_per_period(commun_code, mosaic.close_date.sec_since_epoch());
 
     asset quantity(
         get_amount_to_freeze(
@@ -206,10 +210,11 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
     return ret;
 }
 
-uint16_t publication::get_gems_per_period(symbol_code commun_code) {
+uint16_t publication::get_gems_per_period(symbol_code commun_code, int64_t mosaic_active_period) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
     auto community = commun_list::get_community(config::list_name, commun_code);
-    int64_t mosaic_active_period = community.active_period;
+    if (mosaic_active_period == 0)
+        mosaic_active_period = community.active_period;
     uint16_t gems_per_day = community.gems_per_day;
     return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
 }

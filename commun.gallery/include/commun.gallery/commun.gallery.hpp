@@ -37,6 +37,7 @@ namespace gallery_types {
         
         time_point created;
         time_point lock_date = time_point();
+        time_point close_date;
         uint16_t gem_count;
         
         int64_t points;
@@ -78,8 +79,8 @@ namespace gallery_types {
         using by_rating_t = std::tuple<bool, int64_t, int64_t>;
         by_rating_t by_comm_rating()const { return std::make_tuple(active, comm_rating, lead_rating); }
         by_rating_t by_lead_rating()const { return std::make_tuple(banned, lead_rating, comm_rating); }
-        using by_created_t = std::tuple<uint8_t, time_point>;
-        by_created_t by_created()const { return std::make_tuple(active, created); }
+        using by_close_t = std::tuple<uint8_t, time_point>;
+        by_close_t by_close()const { return std::make_tuple(active, close_date); }
     };
     
     struct gem {
@@ -151,8 +152,8 @@ namespace gallery_types {
     using mosaic_id_index = eosio::indexed_by<"mosaicid"_n, eosio::const_mem_fun<gallery_types::mosaic, uint64_t, &gallery_types::mosaic::primary_key> >;
     using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_comm_rating> >;
     using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_lead_rating> >;
-    using mosaic_created_index = eosio::indexed_by<"bycreated"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_created_t, &gallery_types::mosaic::by_created> >;
-    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_created_index>;
+    using mosaic_close_index = eosio::indexed_by<"byclose"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_close_t, &gallery_types::mosaic::by_close> >;
+    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_close_index>;
     
     using gem_id_index = eosio::indexed_by<"gemid"_n, eosio::const_mem_fun<gallery_types::gem, uint64_t, &gallery_types::gem::primary_key> >;
     using gem_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::key_t, &gallery_types::gem::by_key> >;
@@ -543,13 +544,13 @@ private:
         auto community = commun_list::get_community(config::list_name, commun_code);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-        auto mosaics_idx = mosaics_table.get_index<"bycreated"_n>();
+        auto mosaics_idx = mosaics_table.get_index<"byclose"_n>();
         
-        auto max_archive_date = eosio::current_time_point() - eosio::seconds(community.active_period);
+        auto now = eosio::current_time_point();
         
         for (size_t i = 0; i < config::auto_archives_num; i++) {
             auto mosaic = mosaics_idx.lower_bound(std::make_tuple(true, time_point()));
-            if ((mosaic == mosaics_idx.end()) || (mosaic->created > max_archive_date)) {
+            if ((mosaic == mosaics_idx.end()) || (mosaic->close_date > now)) {
                 break;
             }
             mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.active = false; });
@@ -675,6 +676,7 @@ protected:
         eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "mosaic already exists");
         
         auto now = eosio::current_time_point();
+        auto claim_date = now + eosio::seconds(community.active_period);
         
         mosaics_table.emplace(creator, [&]( auto &item ) { item = gallery_types::mosaic {
             .tracery = tracery,
@@ -682,12 +684,11 @@ protected:
             .opus = opus,
             .royalty = royalty,
             .created = now,
+            .close_date = claim_date,
             .gem_count = 0,
             .points = 0,
             .shares = 0
         };});
-        
-        auto claim_date = now + eosio::seconds(community.active_period);
         
         freeze_in_gems(_self, true, tracery, claim_date, creator, quantity, providers, false, points_sum, points_sum, opus_itr->mosaic_pledge);
     }
@@ -722,8 +723,7 @@ protected:
             shares_abs -= pay_royalties(_self, commun_code, tracery, mosaic->creator, safe_pct(mosaic->royalty, shares_abs));
         }
 
-        auto claim_date = mosaic->created + eosio::seconds(community.active_period);
-        freeze_in_gems(_self, false, tracery, claim_date, gem_creator, quantity, providers, damn, points_sum, shares_abs, 0);
+        freeze_in_gems(_self, false, tracery, mosaic->close_date, gem_creator, quantity, providers, damn, points_sum, shares_abs, 0);
     }
     
     void hold_gem(name _self, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator) {
