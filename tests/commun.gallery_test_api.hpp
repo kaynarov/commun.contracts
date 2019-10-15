@@ -97,7 +97,7 @@ public:
         return push(N(provide), grantor, a);
     }
 
-    action_result advise(account_name leader, std::vector<uint64_t> favorites) {
+    action_result advise(account_name leader, std::vector<uint64_t> favorites) { // vector is to test if duplicated
         return push(N(advise), leader, args()
             ("commun_code", _symbol.to_symbol_code())
             ("leader", leader)

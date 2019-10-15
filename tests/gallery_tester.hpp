@@ -34,6 +34,7 @@ public:
         const string not_enough_for_pledge = amsg("points are not enough for a pledge");
         const string not_enough_for_mosaic = amsg("points are not enough for mosaic inclusion");
         const string not_enough_for_gem    = amsg("points are not enough for gem inclusion");
+        const string advice_surfeit = amsg("a surfeit of advice");
         
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
 
@@ -56,6 +57,10 @@ public:
             }
         }
         return variant();
+    }
+
+    variant get_advice(name code, symbol point, name leader) {
+        return get_chaindb_struct(code, point.to_symbol_code().value, N(advice), leader.value, "advice");
     }
 };
 

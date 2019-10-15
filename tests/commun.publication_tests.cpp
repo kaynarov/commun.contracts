@@ -160,7 +160,6 @@ public:
         const string gem_type_mismatch        = amsg("gem type mismatch");
         const string author_cannot_unvote     = amsg("author can't unvote");
         const string authorization_failed     = amsg("transaction authorization failed");
-        const string advice_surfeit           = amsg("a surfeit of advice");
     } err;
 };
 
@@ -419,16 +418,6 @@ BOOST_FIXTURE_TEST_CASE(advise_message, commun_publication_tester) try {
     ctrl.prepare({N(jackiechan)}, N(brucelee));
     mssgid msg = {N(brucelee), "permlink"};
     BOOST_CHECK_EQUAL(success(), post.create(msg));
-
-    BOOST_CHECK_EQUAL(err.no_mosaic, post.advise(N(jackiechan), {{N(brucelee), "notexist"}}));
-    BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(brucelee)), post.advise(N(brucelee), {msg}));
-
-    std::vector<mssgid> too_many;
-    for (int i = 0; i < cfg::advice_weight.size() + 1; ++i) {
-        too_many.push_back({N(brucelee), "test" + std::to_string(i)});
-    }
-    BOOST_CHECK_EQUAL(err.advice_surfeit, post.advise(N(jackiechan), too_many));
-
     std::vector<mssgid> duplicated;
     duplicated.push_back(msg);
     duplicated.push_back(msg);
