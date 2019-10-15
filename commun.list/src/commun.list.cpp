@@ -48,6 +48,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 }
 
 #define SET_PARAM(PARAM) if (PARAM) { c.PARAM = *PARAM; _empty = false; }
+#define PERC(VAL) (config::_1percent * VAL)
 
 void commun_list::setsysparams(symbol_code commun_code,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
@@ -91,12 +92,15 @@ void commun_list::setparams(symbol_code commun_code,
     require_auth(point::get_issuer(config::point_name, commun_code));
 
     // <> Place for checks
-    eosio::check(!emission_rate.has_value() || *emission_rate == config::_1percent ||
-        ((config::_1percent * 5) <= *emission_rate && *emission_rate <= (config::_1percent * 50)  && (*emission_rate % (config::_1percent * 5)) == 0),
+    eosio::check(!emission_rate.has_value() || *emission_rate == PERC(1) ||
+        (PERC(5) <= *emission_rate && *emission_rate <= PERC(50) && (*emission_rate % PERC(5) == 0)),
         "incorrect emission rate");
     eosio::check(!leaders_percent.has_value() ||
-        ((config::_1percent) <= *leaders_percent && *leaders_percent <= (config::_1percent * 10)  && (*leaders_percent % (config::_1percent)) == 0),
+        (PERC(1) <= *leaders_percent && *leaders_percent <= PERC(10) && (*leaders_percent % PERC(1) == 0)),
         "incorrect leaders percent");
+    eosio::check(!author_percent.has_value() ||
+        (*author_percent == PERC(25) || *author_percent == PERC(50) || *author_percent == PERC(75)),
+        "incorrect author percent");
 
     tables::community community_tbl(_self, _self.value); 
     auto community = community_tbl.get(commun_code.raw(), "community not exists");
@@ -111,6 +115,7 @@ void commun_list::setparams(symbol_code commun_code,
 }
 
 #undef SET_PARAM
+#undef PERC
 
 void commun_list::setinfo(symbol_code commun_code, std::string description,
         std::string language, std::string rules, std::string avatar_image, std::string cover_image) {
