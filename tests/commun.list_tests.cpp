@@ -53,6 +53,7 @@ public:
         const string no_community = amsg("community not exists");
         const string no_changes = amsg("No params changed");
         const string no_opus(name opus) { return amsg("no opus " + opus.to_string()); }
+        const string incorrect_author_percent = amsg("incorrect author percent");
     } err;
 };
 
@@ -84,6 +85,15 @@ BOOST_FIXTURE_TEST_CASE(setparams_test, commun_list_tester) try {
         ("leaders_num", 20) ));
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
         ("leaders_num", 20)("emission_rate", 5000) ));
+
+    BOOST_CHECK_EQUAL(err.incorrect_author_percent, community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 24*cfg::_1percent) ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 25*cfg::_1percent) ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 50*cfg::_1percent) ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 75*cfg::_1percent) ));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
