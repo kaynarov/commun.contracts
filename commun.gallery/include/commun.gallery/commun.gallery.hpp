@@ -640,7 +640,7 @@ protected:
         auto commun_symbol = quantity.symbol;
         auto commun_code   = commun_symbol.code();
 
-        auto community = commun_list::get_community(config::list_name, commun_code);
+        auto community = commun_list::get_community(config::list_name, commun_symbol);
         check(royalty <= community.author_percent, "incorrect royalty");
         check(providers.size() <= config::max_providers_num, "too many providers");
         
@@ -684,7 +684,7 @@ protected:
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
         
-        auto community = commun_list::get_community(config::list_name, commun_code);
+        auto community = commun_list::get_community(config::list_name, commun_symbol);
         check(eosio::current_time_point() <= mosaic->created + eosio::seconds(community.collection_period), "collection period is over");
         check(!mosaic->banned, "mosaic banned");
         check(mosaic->active, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
@@ -750,6 +750,7 @@ protected:
     
     void provide_points(name _self, name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
         require_auth(grantor);
+        commun_list::check_community_exists(config::list_name, quantity.symbol);
         
         eosio::check(grantor != recipient, "grantor == recipient");
         gallery_types::provs provs_table(_self, quantity.symbol.code().raw());

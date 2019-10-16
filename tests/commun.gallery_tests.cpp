@@ -18,6 +18,7 @@ using namespace eosio::chain;
 using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
+static const auto _point_wrong = symbol(4, point_code_str);
 static const auto point_code = _point.to_symbol_code();
 
 const account_name _commun = cfg::dapp_name;
@@ -150,6 +151,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), point.open(_bob, point_code, _bob));
     
     BOOST_CHECK_EQUAL(errgallery.no_points_provided, gallery.provide(_alice, _carol, asset(0, point._symbol)));
+    BOOST_CHECK_EQUAL(errgallery.symbol_precision, gallery.provide(_alice, _carol, asset(0, _point_wrong)));
     BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _bob, asset(init_amount, point._symbol), fee));
     BOOST_CHECK_EQUAL(success(), gallery.provide(_carol, _bob, asset(init_amount, point._symbol), fee));
     
@@ -276,8 +278,8 @@ BOOST_FIXTURE_TEST_CASE(createmosaic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_alice, 1, gallery.default_opus.name, asset(point.get_amount(_alice) + 1, point._symbol), royalty));
     BOOST_CHECK_EQUAL(errgallery.not_enough_for_mosaic, gallery.createmosaic(_alice, 1, gallery.default_opus.name, asset(min_gem_points - 1, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.symbol_precision, gallery.createmosaic(_alice, 1, gallery.default_opus.name, asset(min_gem_points, _point_wrong), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
-
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
@@ -288,8 +290,8 @@ BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
     BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.addtomosaic(1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
+    BOOST_CHECK_EQUAL(errgallery.symbol_precision, gallery.addtomosaic(1, asset(point.get_amount(_carol), _point_wrong), false, _carol));
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(point.get_amount(_carol), point._symbol), false, _carol));
-
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(advise_test, commun_gallery_tester) try {
