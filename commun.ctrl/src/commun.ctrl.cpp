@@ -1,6 +1,7 @@
 #include "commun.ctrl/commun.ctrl.hpp"
 #include "commun.ctrl/config.hpp"
 #include "commun.point/commun.point.hpp"
+#include "commun.emit/commun.emit.hpp"
 //#include <golos.vesting/golos.vesting.hpp>
 #include <commun/parameter_ops.hpp>
 #include <commun/dispatchers.hpp>
@@ -21,43 +22,52 @@ void control::check_started(symbol_code commun_code) {
     commun_list::get_control_param(config::list_name, commun_code);
 }
 
-void control::on_transfer(name from, name to, asset quantity, string memo) {
-//    if (!config(quantity.symbol.code()).exists())
-//        return; // distribute only community token
+void control::create(symbol_code commun_code) {
+    require_auth(_self);
+    check(point::exist(config::point_name, commun_code), "point with symbol does not exist");
 
-// Commun TODO: process income funds
-//    if (to == _self && quantity.amount > 0) {
-//        // Don't check `from` for now, just distribute to top leaders
-//        auto total = quantity.amount;
-//        auto top = top_leaders();
-//        auto n = top.size();
-//        if (n == 0) {
-//            print("nobody in top");
-//            return;
-//        }
-//
-//        auto token = quantity.symbol;
-//        static const auto memo = "emission";
-//        auto random = tapos_block_prefix();     // trx.ref_block_prefix; can generate hash from timestamp insead
-//        auto winner = top[random % n];          // leader, who will receive fraction after reward division
-//        auto reward = total / n;
-//
-//        vector<eosio::token::recipient> top_recipients;
-//        for (const auto& w: top) {
-//            if (w == winner)
-//                continue;
-//
-//            if (reward <= 0)
-//                continue;
-//
-//            top_recipients.push_back({w, asset(reward, token), memo});
-//            total -= reward;
-//        }
-//        top_recipients.push_back({winner, asset(total, token), memo});
-//
-//        INLINE_ACTION_SENDER(token, bulkpayment)(config::token_name, {_self, config::code_name},
-//                            {_self, top_recipients});
-//    }
+    stats stats_table(_self, commun_code.raw());
+    eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
+
+    stats_table.emplace(_self, [&](auto& s) { s = { .id = commun_code.raw() };});
+}
+
+void control::on_points_transfer(name from, name to, asset quantity, std::string memo) {
+    (void) memo;
+    if (_self != to) { return; }
+    
+    auto commun_code = quantity.symbol.code();
+    const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
+    leader_tbl leader_table(_self, commun_code.raw());
+    auto idx = leader_table.get_index<"byweight"_n>();
+    
+    stats stats_table(_self, commun_code.raw());
+    const auto& stat = stats_table.get(commun_code.raw(), "stat does not exists");
+    
+    uint64_t weight_sum = 0;
+    size_t i = 0;
+    for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
+        if (itr->active && itr->total_weight > 0) {
+            weight_sum += itr->total_weight;
+            ++i;
+        }
+    }
+    
+    auto left_reward = quantity.amount + stat.retained;
+    if (weight_sum) {
+        int64_t reward_sum = safe_prop(left_reward, i, l);
+        i = 0;
+        for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
+            if (itr->active && itr->total_weight > 0) {
+                auto leader_reward = safe_prop(reward_sum, itr->total_weight, weight_sum);
+                idx.modify(itr, eosio::same_payer, [&](auto& w) { w.unclaimed_points += leader_reward; });
+                left_reward -= leader_reward;
+                ++i;
+            }
+        }
+    }
+    
+    stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
 }
 
 void control::regleader(symbol_code commun_code, name leader, string url) {
@@ -131,6 +141,9 @@ void control::voteleader(symbol_code commun_code, name voter, name leader) {
         tbl.emplace(voter, update);
     }
     apply_vote_weight(commun_code, voter, leader, true);
+    if (commun_code) {
+        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+    }
 }
 
 void control::unvotelead(symbol_code commun_code, name voter, name leader) {
@@ -157,6 +170,27 @@ void control::unvotelead(symbol_code commun_code, name voter, name leader) {
         v.leaders = w;
     });
     apply_vote_weight(commun_code, voter, leader, false);
+    if (commun_code) {
+        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+    }
+}
+
+void control::claim(symbol_code commun_code, name leader) {
+    check_started(commun_code);
+    require_auth(leader);
+    
+    leader_tbl leader_table(_self, commun_code.raw());
+    auto leader_it = leader_table.find(leader.value);
+    eosio::check(leader_it != leader_table.end(), "leader not found");
+    eosio::check(leader_it->unclaimed_points >= 0, "SYSTEM: incorrect unclaimed_points");
+    eosio::check(leader_it->unclaimed_points, "nothing to claim");
+    
+    INLINE_ACTION_SENDER(point, transfer)(config::point_name, {_self, config::active_name},
+        {_self, leader, asset(leader_it->unclaimed_points, point::get_supply(config::point_name, commun_code).symbol), "claimed points"});
+    
+    leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
+        w.unclaimed_points = 0;
+    });
 }
 
 void control::changepoints(name who, asset diff) {
@@ -441,9 +475,11 @@ void control::invalidate(name account) {
 
 } // commun
 
-DISPATCH_WITH_TRANSFER(commun::control, commun::config::token_name, on_transfer,
+DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_transfer,
+    (create)
     (regleader)(unregleader)
     (startleader)(stopleader)
-    (voteleader)(unvotelead)(changepoints)
+    (voteleader)(unvotelead)
+    (claim)(changepoints)
     (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
     )

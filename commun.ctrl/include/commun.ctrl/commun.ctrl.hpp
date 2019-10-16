@@ -29,6 +29,8 @@ struct [[eosio::table]] leader_info {
 
     uint64_t total_weight;
     uint64_t counter_votes;
+    
+    int64_t unclaimed_points = 0;
 
     uint64_t primary_key() const {
         return name.value;
@@ -104,12 +106,20 @@ using invalidations = eosio::multi_index< "invals"_n, invalidation>;
  * \ingroup control_class
  */
 class control: public contract {
+    struct [[eosio::table]] stat {
+        uint64_t id;
+        int64_t retained = 0;
+        uint64_t primary_key() const { return id; }
+    };
+
+    using stats = eosio::multi_index<"stat"_n, stat>;
     
 public:
     control(name self, name code, datastream<const char*> ds)
         : contract(self, code, ds)
     {
     }
+    [[eosio::action]] void create(symbol_code commun_code);
 
     /**
         \brief The regwitness action is used to register candidates for witnesses
@@ -193,6 +203,8 @@ public:
         Doing the unvotewitn action requires signing the voter account.
     */
     [[eosio::action]] void unvotelead(symbol_code commun_code, name voter, name leader);
+    
+    [[eosio::action]] void claim(symbol_code commun_code, name leader);
 
     /**
         \param The changepoints is an internal and unavailable to the user action. It is used by golos.vesting smart contract to notify
@@ -204,7 +216,7 @@ public:
         The changepoints action is called automatically each time in case the points amount is changed on a user's balance.
     */
     [[eosio::action]] void changepoints(name who, asset diff);
-    void on_transfer(name from, name to, asset quantity, std::string memo);
+    void on_points_transfer(name from, name to, asset quantity, std::string memo);
 
     [[eosio::action]] void propose(ignore<symbol_code> commun_code, ignore<name> proposer, ignore<name> proposal_name,
                 ignore<name> permission, ignore<eosio::transaction> trx);

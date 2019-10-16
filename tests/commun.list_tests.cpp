@@ -32,6 +32,9 @@ public:
         
         set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
+        
+        set_authority(cfg::control_name, N(create), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::control_name, cfg::control_name, N(create), N(create));
     }
 
     const account_name _commun = cfg::dapp_name;

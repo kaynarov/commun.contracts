@@ -32,17 +32,24 @@ public:
         , emit({this, _code})
     {
         create_accounts({_code, _commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::point_name, cfg::list_name});
+            cfg::token_name, cfg::point_name, cfg::list_name, cfg::control_name});
         produce_block();
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(_code, contracts::emit_wasm(), contracts::emit_abi());
+        
+        set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
+        link_authority(cfg::control_name, cfg::control_name, N(changepoints), N(changepoints));
 
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
+        
         set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
+        
+        set_authority(cfg::control_name, N(create), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::control_name, cfg::control_name, N(create), N(create));
 
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
         set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
@@ -130,7 +137,7 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
 
     BOOST_TEST_MESSAGE("-- waiting for leaders reward");
     produce_blocks(commun::seconds_to_blocks(cfg::reward_leaders_period - cfg::reward_mosaics_period));
-    BOOST_CHECK_EQUAL(err.no_account(cfg::control_name), emit.issuereward(point_code, true));
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, true));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
