@@ -57,7 +57,6 @@ namespace gallery_types {
         bool locked = false;
 
         void lock() {
-            lock_date = eosio::current_time_point();
             locked = true;
             active = false;
             meritorious = false;
@@ -872,7 +871,10 @@ protected:
         auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         check(mosaic.active, "Mosaic is not active.");
         check(mosaic.lock_date == time_point(), "Mosaic should be modified to lock again.");
-        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) { m.lock(); });
+        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
+            m.lock();
+            m.lock_date = eosio::current_time_point();
+        });
     }
 
     void unlock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
@@ -882,7 +884,22 @@ protected:
         auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         check(mosaic.locked, "Mosaic not locked.");
         check(!mosaic.banned, "mosaic banned");
-        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) { m.unlock(); });
+        auto close_shift = eosio::current_time_point() - mosaic.lock_date;
+        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
+            m.unlock();
+            m.close_date += close_shift;
+        });
+        gallery_types::gems gems_table(_self, commun_code.raw());
+        auto gems_idx = gems_table.get_index<"bycreator"_n>();
+        auto gem_itr = gems_idx.lower_bound(tracery);
+        for (; gem_itr != gems_idx.end() && gem_itr->tracery == tracery; ++gem_itr) {
+            if (gem_itr->claim_date == config::eternity) {
+                continue;
+            }
+            gems_idx.modify(gem_itr, same_payer, [&](auto& item) {
+                item.claim_date += close_shift;
+            });
+        }
     }
 
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
