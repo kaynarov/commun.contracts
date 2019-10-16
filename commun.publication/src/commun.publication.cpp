@@ -81,8 +81,7 @@ void publication::create(
 void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
-    require_auth(message_id.author);
-    check_mssg_exists(commun_code, message_id);
+    update_mosaic(_self, commun_code, message_id.author, message_id.tracery());
 }
 
 void publication::settags(symbol_code commun_code, name leader, mssgid_t message_id,
@@ -104,6 +103,16 @@ void publication::report(symbol_code commun_code, name reporter, mssgid_t messag
     require_auth(reporter);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     check_mssg_exists(commun_code, message_id);
+}
+
+void publication::lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    eosio::check(!reason.empty(), "Reason cannot be empty.");
+    lock_mosaic(_self, commun_code, leader, message_id.tracery());
+}
+
+void publication::unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    eosio::check(!reason.empty(), "Reason cannot be empty.");
+    unlock_mosaic(_self, commun_code, leader, message_id.tracery());
 }
 
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
@@ -139,7 +148,11 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     auto community = commun_list::get_community(config::list_name, commun_code);
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, voter);
-    auto gems_per_period = get_gems_per_period(commun_code);
+
+    gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+    auto mosaic = mosaics_table.get(message_id.tracery(), "mosaic doesn't exist");
+
+    auto gems_per_period = get_gems_per_period(commun_code, mosaic.close_date.sec_since_epoch());
 
     asset quantity(
         get_amount_to_freeze(
@@ -197,10 +210,11 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
     return ret;
 }
 
-uint16_t publication::get_gems_per_period(symbol_code commun_code) {
+uint16_t publication::get_gems_per_period(symbol_code commun_code, int64_t mosaic_active_period) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
     auto community = commun_list::get_community(config::list_name, commun_code);
-    int64_t mosaic_active_period = community.active_period;
+    if (mosaic_active_period == 0)
+        mosaic_active_period = community.active_period;
     uint16_t gems_per_day = community.gems_per_day;
     return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
 }
@@ -285,5 +299,5 @@ void publication::ban(symbol_code commun_code, mssgid_t message_id) {
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (create)(update)(settags)(remove)(report)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
-    (reblog)(erasereblog)(setproviders)(provide)(advise)(ban))
+    (create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
+    (claim)(hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise)(ban))

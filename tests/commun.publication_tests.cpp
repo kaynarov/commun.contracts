@@ -238,7 +238,7 @@ BOOST_FIXTURE_TEST_CASE(update_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(success(), post.update({N(brucelee), "permlink"},
         "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
-    BOOST_CHECK_EQUAL(err.no_message, post.update({N(brucelee), "notexist"},
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.update({N(brucelee), "notexist"},
         "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
 } FC_LOG_AND_RETHROW()
 

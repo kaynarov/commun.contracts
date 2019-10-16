@@ -34,6 +34,9 @@
                 { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
                 { "type": "time_point",    "name": "created" },
+                { "type": "time_point",    "name": "lock_date" },
+                { "type": "time_point",    "name": "moderation_end" },
+                { "type": "time_point",    "name": "close_date" },
                 { "type": "uint16",        "name": "gem_count" },
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
@@ -44,7 +47,8 @@
                 { "type": "int64",         "name": "lead_rating" },
                 { "type": "bool",          "name": "meritorious" },
                 { "type": "bool",          "name": "active" },
-                { "type": "bool",          "name": "banned" }
+                { "type": "bool",          "name": "banned" },
+                { "type": "bool",          "name": "locked" }
             ]
         },{
             "name": "gem_struct",
@@ -291,6 +295,28 @@
     ]
   },
   {
+    "name": "lock",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
+        "name": "leader",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "reason",
+        "type": "string"
+      }
+    ]
+  },
+  {
     "name": "vote",
     "base": "",
     "fields": [
@@ -462,6 +488,14 @@
     "type": "report"
   },
   {
+    "name": "lock",
+    "type": "lock"
+  },
+  {
+    "name": "unlock",
+    "type": "lock"
+  },
+  {
     "name": "upvote",
     "type": "vote"
   },
@@ -543,9 +577,11 @@
                 { "name": "bycommrating", "unique": "false", "orders": [
                     {"field": "active", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
-                    {"field": "banned", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
-                { "name": "bycreated", "unique": "false", "orders": [
-                    {"field": "active", "order": "asc"}, {"field": "created", "order": "asc"} ] }
+                    {"field": "banned", "order": "desc"}, {"field": "locked", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
+                { "name": "byclose", "unique": "false", "orders": [
+                    {"field": "active", "order": "asc"}, {"field": "close_date", "order": "asc"} ] },
+                { "name": "bymoderend", "unique": "false", "orders": [
+                    {"field": "locked", "order": "asc"}, {"field": "moderation_end", "order": "asc"} ] }
             ]
         },{
             "name": "gem",
