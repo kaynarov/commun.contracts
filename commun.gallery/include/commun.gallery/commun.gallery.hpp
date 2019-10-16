@@ -37,6 +37,7 @@ namespace gallery_types {
         
         time_point created;
         time_point lock_date = time_point();
+        time_point moderation_end;
         time_point close_date;
         uint16_t gem_count;
         
@@ -82,6 +83,8 @@ namespace gallery_types {
         by_lead_rating_t by_lead_rating()const { return std::make_tuple(banned, locked, lead_rating, comm_rating); }
         using by_close_t = std::tuple<uint8_t, time_point>;
         by_close_t by_close()const { return std::make_tuple(active, close_date); }
+        using by_moder_end_t = std::tuple<uint8_t, time_point>;
+        by_moder_end_t by_moder_end()const { return std::make_tuple(banned, moderation_end); }
     };
     
     struct gem {
@@ -154,7 +157,8 @@ namespace gallery_types {
     using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_comm_rating> >;
     using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_lead_rating_t, &gallery_types::mosaic::by_lead_rating> >;
     using mosaic_close_index = eosio::indexed_by<"byclose"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_close_t, &gallery_types::mosaic::by_close> >;
-    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_close_index>;
+    using mosaic_moder_end_index = eosio::indexed_by<"bymoderend"_n, eosio::const_mem_fun<mosaic, mosaic::by_moder_end_t, &mosaic::by_moder_end> >;
+    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_close_index, mosaic_moder_end_index>;
     
     using gem_id_index = eosio::indexed_by<"gemid"_n, eosio::const_mem_fun<gallery_types::gem, uint64_t, &gallery_types::gem::primary_key> >;
     using gem_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::key_t, &gallery_types::gem::by_key> >;
@@ -489,8 +493,9 @@ private:
             freeze_points_in_gem(_self, creating, commun_symbol, tracery, claim_date, 
                 cur_points, damn ? -cur_shares_abs : cur_shares_abs, cur_pledge, creator, creator);
         }
-        
+
         archive_old_mosaics(_self, commun_code);
+        auto_ban_mosaics(_self, commun_code);
     }
     
     struct claim_info_t {
@@ -508,7 +513,7 @@ private:
 
         auto community = commun_list::get_community(config::list_name, commun_code);
         
-        claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.created + eosio::seconds(community.moderation_period), community.commun_symbol};
+        claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.moderation_end, community.commun_symbol};
         check(!ret.premature || eager, "moderation period isn't over yet");
         
         maybe_issue_reward(_self, commun_code);
@@ -542,8 +547,6 @@ private:
     }
     
     void archive_old_mosaics(name _self, symbol_code commun_code) {
-        auto community = commun_list::get_community(config::list_name, commun_code);
-        
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"byclose"_n>();
         
@@ -555,6 +558,20 @@ private:
                 break;
             }
             mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.active = false; });
+            T::deactivate(_self, commun_code, *mosaic);
+        }
+    }
+    
+    void auto_ban_mosaics(name _self, symbol_code commun_code) {
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaics_idx = mosaics_table.get_index<"bymoderend"_n>();
+        auto now = eosio::current_time_point();
+        for (size_t i = 0; i < config::auto_ban_num; i++) {
+            auto mosaic = mosaics_idx.lower_bound(std::make_tuple(true, time_point()));
+            if ((mosaic == mosaics_idx.end()) || (mosaic->moderation_end > now)) {
+                break;
+            }
+            mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.ban(); });
             T::deactivate(_self, commun_code, *mosaic);
         }
     }
@@ -686,6 +703,7 @@ protected:
             .royalty = royalty,
             .created = now,
             .close_date = claim_date,
+            .moderation_end = now + eosio::seconds(community.moderation_period),
             .gem_count = 0,
             .points = 0,
             .shares = 0

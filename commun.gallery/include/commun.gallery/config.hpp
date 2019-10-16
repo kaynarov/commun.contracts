@@ -19,6 +19,7 @@ static constexpr int64_t forced_chopping_delay = 30 * 24 * 60 * 60;
 
 static constexpr uint8_t auto_claim_num = 3;
 static constexpr uint8_t auto_archives_num = 3;
+static constexpr uint8_t auto_ban_num = 3;
 
 #ifndef UNIT_TEST_ENV
     static const eosio::time_point eternity(eosio::days(365 * 8000));
