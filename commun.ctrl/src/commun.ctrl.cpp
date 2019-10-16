@@ -43,17 +43,30 @@ void control::on_points_transfer(name from, name to, asset quantity, std::string
     
     stats stats_table(_self, commun_code.raw());
     const auto& stat = stats_table.get(commun_code.raw(), "stat does not exists");
-    auto left_reward = quantity.amount + stat.retained;
-    auto leader_reward = left_reward / l;
     
+    uint64_t weight_sum = 0;
     size_t i = 0;
     for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
         if (itr->active && itr->total_weight > 0) {
-            idx.modify(itr, eosio::same_payer, [&](auto& w) { w.unclaimed_points += leader_reward; });
-            left_reward -= leader_reward;
+            weight_sum += itr->total_weight;
             ++i;
         }
     }
+    
+    auto left_reward = quantity.amount + stat.retained;
+    if (weight_sum) {
+        int64_t reward_sum = safe_prop(left_reward, i, l);
+        i = 0;
+        for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
+            if (itr->active && itr->total_weight > 0) {
+                auto leader_reward = safe_prop(reward_sum, itr->total_weight, weight_sum);
+                idx.modify(itr, eosio::same_payer, [&](auto& w) { w.unclaimed_points += leader_reward; });
+                left_reward -= leader_reward;
+                ++i;
+            }
+        }
+    }
+    
     stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
 }
 

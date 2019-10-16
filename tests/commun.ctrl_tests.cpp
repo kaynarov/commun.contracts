@@ -255,9 +255,13 @@ BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     produce_block();
     produce_block(fc::seconds(cfg::reward_leaders_period - 3 * block_interval));
     BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code));
+    BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code));
     comm_ctrl.prepare(std::vector<account_name>(leaders.begin(), leaders.begin() + cfg::def_comm_leaders_num), _alice);
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, leaders[0]));
     produce_block();
-    BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _alice, asset(point.get_amount(_bob) / 2 + 1, point._symbol)));
+    auto to_transfer = asset(point.get_amount(_bob) / 3 + 1, point._symbol);
+    BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _alice, to_transfer));
+    BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _carol, to_transfer));
     for (size_t i = 0; i < cfg::def_comm_leaders_num; i++) {
         BOOST_CHECK_EQUAL(err.nothing_to_claim, comm_ctrl.claim(leaders[i]));
     }
@@ -267,7 +271,9 @@ BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     for (size_t i = 0; i < cfg::def_comm_leaders_num; i++) {
         reward = comm_ctrl.get_unclaimed(leaders[i]);
         BOOST_TEST_MESSAGE("--- reward_"<< i << " = " << reward);
-        BOOST_CHECK_EQUAL(reward, (emitted + retained) / cfg::def_comm_leaders_num);
+        
+        //leader[0]'s reward is twice as much, because carol voted for him
+        BOOST_CHECK_EQUAL(reward, (emitted + retained) * (i ? 1 : 2) / (cfg::def_comm_leaders_num + 1));
         
         BOOST_CHECK_EQUAL(success(), comm_ctrl.claim(leaders[i]));
         BOOST_CHECK_EQUAL(point.get_amount(leaders[i]), reward);
