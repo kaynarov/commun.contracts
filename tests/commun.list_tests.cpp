@@ -57,6 +57,8 @@ public:
         const string no_changes = amsg("No params changed");
         const string no_opus(name opus) { return amsg("no opus " + opus.to_string()); }
         const string incorrect_author_percent = amsg("incorrect author percent");
+        const string add_perm = amsg("cannot add permission");
+        const string del_perm = amsg("cannot delete permission");
     } err;
 };
 
@@ -88,6 +90,19 @@ BOOST_FIXTURE_TEST_CASE(setparams_test, commun_list_tester) try {
         ("leaders_num", 20) ));
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
         ("leaders_num", 20)("emission_rate", 5000) ));
+    
+    BOOST_CHECK_EQUAL(err.add_perm, community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 19)));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams(_token_code, community.sysparams()
+        ("permission", N(newperm))("required_threshold", 19)));
+    BOOST_CHECK_EQUAL(err.no_changes, community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 19)));
+    BOOST_CHECK_EQUAL(success(), community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 20)));
+    BOOST_CHECK_EQUAL(err.del_perm, community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 0)));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams(_token_code, community.sysparams()
+        ("permission", N(newperm))("required_threshold", 0)));
 
     BOOST_CHECK_EQUAL(err.incorrect_author_percent, community.setparams( _golos, _token_code, community.args()
         ("author_percent", 24*cfg::_1percent) ));
