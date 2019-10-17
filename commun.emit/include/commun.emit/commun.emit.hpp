@@ -6,14 +6,24 @@ namespace commun {
 
 using namespace eosio;
 
+/**
+ * \brief This class implements comn.emit contract behaviour
+ * \ingroup emission_class
+ */
 class emit: public contract {
 struct structures {
 
+    /**
+     * \brief struct represents an stats table in a db
+     * \ingroup emission_tables
+     *
+     * Contains information about last time points of rewards in community
+     */
     struct [[eosio::table]] stat {
-        uint64_t id;
+        uint64_t id;  //!< An unique primary key
 
-        time_point latest_mosaics_reward;
-        time_point latest_leaders_reward;
+        time_point latest_mosaics_reward; //!< Last time point of reward for mosaics
+        time_point latest_leaders_reward; //!< Last time point of reward for leaders
 
         time_point latest_reward(bool for_leaders) const { return (for_leaders ? latest_leaders_reward : latest_mosaics_reward); };
 
@@ -27,6 +37,13 @@ struct structures {
 public:
     using contract::contract;
     [[eosio::action]] void create(symbol_code commun_code);
+
+    /**
+     * \brief action is used by other contracts to emit POINTs
+     *
+     * \param commun_code symbol of POINT to emit.
+     * \param for_leaders true if emission should be done for leaders.
+     */
     [[eosio::action]] void issuereward(symbol_code commun_code, bool for_leaders);
 
     static inline bool it_is_time_to_reward(name emit_contract_account, symbol_code commun_code, bool for_leaders) {
