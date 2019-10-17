@@ -29,9 +29,9 @@ namespace commun { namespace config {
 static constexpr std::array<int64_t, 10>  advice_weight = 
     {{10000, 7071, 5774, 5000, 4472, 4082, 3780, 3536, 3333, 3162}}; //sqrt(100000000/k)
 
-static constexpr int64_t def_collection_period =  7 * 24 * 60 * 60;
-static constexpr int64_t def_moderation_period = 10 * 24 * 60 * 60;
-static constexpr int64_t def_active_period     = 14 * 24 * 60 * 60;
+static constexpr int64_t def_collection_period = 7 * 24 * 60 * 60;
+static constexpr int64_t def_moderation_period = 3 * 24 * 60 * 60;
+static constexpr int64_t def_active_period     = 0;
 
 static constexpr uint16_t def_author_percent = 50 * _1percent;
 

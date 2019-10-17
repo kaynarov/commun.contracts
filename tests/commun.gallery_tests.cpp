@@ -131,7 +131,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(point.get_amount(_carol), point._symbol), false, _carol));
 
     produce_block();
-    produce_block(fc::seconds(cfg::def_moderation_period - cfg::def_reward_mosaics_period - block_interval));
+    produce_block(fc::seconds((cfg::def_collection_period + cfg::def_moderation_period) - cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(errgallery.moderation_period, gallery.claim(1, _alice));
     
     produce_blocks(1);
@@ -171,7 +171,8 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
     
     produce_block();
-    produce_block(fc::seconds(cfg::def_active_period - (2 * cfg::def_reward_mosaics_period) - block_interval));
+    auto archive_date = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_active_period;
+    produce_block(fc::seconds(archive_date - (2 * cfg::def_reward_mosaics_period) - block_interval));
 
     BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
     produce_block();
@@ -343,10 +344,10 @@ BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(point.get_amount(_carol), point._symbol), false, _carol));
     produce_block();
-    produce_block(fc::seconds(cfg::def_moderation_period - (cfg::block_interval_ms / 1000)));
+    produce_block(fc::seconds(cfg::def_collection_period + cfg::def_moderation_period - (cfg::block_interval_ms / 1000)));
     BOOST_CHECK_EQUAL(errgallery.moderation_period, gallery.claim(1, _alice));
 
-    produce_blocks(1);
+    produce_blocks(2);
 
     BOOST_CHECK_EQUAL(point.get_supply(), supply);
     BOOST_CHECK_EQUAL(success(), gallery.claim(1, _carol)); //carol got nothing
