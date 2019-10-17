@@ -31,7 +31,8 @@ RUN cd commun.contracts/cyberway.contracts \
         -DCMAKE_INSTALL_PREFIX=/opt/commun.contracts/ \
         -Dcyberway.cdt_DIR=/opt/cyberway.cdt/lib/cmake/cyberway.cdt \
         -DEOSIO_ROOT=/opt/cyberway \
-    && cmake --build build --target install
+    && cmake --build build --target install \
+    && doxygen Doxyfile
 
 FROM ubuntu:18.04
 
@@ -51,6 +52,8 @@ COPY --from=builder /commun.contracts/cyberway.contracts/tests/test_contracts /o
 COPY --from=builder /commun.contracts/cyberway.contracts/scripts/bios-boot-sequence /opt/cyberway.contracts/scripts/bios-boot-sequence
 COPY --from=builder /commun.contracts/scripts /opt/commun.contracts/scripts
 COPY --from=builder /commun.contracts/genesis /opt/commun.contracts/genesis
+
+COPY --from=builder /commun.contracts/docs/doxygen/html /opt/commun.contracts/docs
 
 COPY --from=builder /usr/local/lib/libbson-1.0.so.0.0.0 /usr/local/lib/
 COPY --from=cyberway /opt/cyberway/bin/cleos /opt/cyberway/bin/cleos
