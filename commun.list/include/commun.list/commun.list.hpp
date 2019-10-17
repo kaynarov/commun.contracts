@@ -6,6 +6,10 @@ namespace commun {
 using namespace eosio;
 using std::optional;
 
+/**
+ * \brief This class implements comn.list contract behaviour
+ * \ingroup list_class
+ */
 class commun_list: public contract {
 public:
     using contract::contract;
@@ -31,6 +35,14 @@ public:
     [[eosio::action]] void follow(symbol_code commun_code, name follower);
     [[eosio::action]] void unfollow(symbol_code commun_code, name follower);
 
+    /**
+     * \brief action is used by a leader to ban user in providebw service
+     *
+     * \param commun_code symbol of community POINT.
+     * \param leader account of the leader
+     * \param account account to ban
+     * \param reason reason of the ban
+     */
     [[eosio::action]] void ban(symbol_code commun_code, name leader, name account, std::string reason);
     [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
 

@@ -6,6 +6,10 @@ namespace commun {
 
 using namespace eosio;
 
+/**
+ * \brief This class implements comn.publish contract behaviour
+ * \ingroup publish_class
+ */
 class publication : public gallery_base<publication>, public contract {
 
 public:
@@ -49,6 +53,15 @@ public:
     void hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator);
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
+    /**
+     * \brief action is used by user to create a reblog on the post/comment
+     *
+     * \param commun_code symbol of community POINT.
+     * \param rebloger account of rebloger
+     * \param message_id post to reblog
+     * \param header header of the reblog
+     * \param body body of the reblog
+     */
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
