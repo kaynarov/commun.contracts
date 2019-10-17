@@ -37,8 +37,14 @@ struct mssgid_t {
     }
 };
 
+/**
+ * \brief struct represents a vertex table in a db
+ * \ingroup publish_tables
+ *
+ * Contains information about posts/comment hierarchy
+ */
 struct vertex_t {
-    uint64_t tracery;
+    uint64_t tracery;  //!< the tracery of mosaic, used as primary key
     uint64_t parent_tracery;
     uint16_t level;
     uint32_t childcount;

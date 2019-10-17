@@ -24,15 +24,21 @@ using std::string;
 using structures::opus_info;
 
 namespace gallery_types {
-    using providers_t = std::vector<std::pair<name, int64_t> >; 
-    
+    using providers_t = std::vector<std::pair<name, int64_t> >;
+
+    /**
+     * \brief struct represents a mosaic table in a db
+     * \ingroup publish_tables
+     *
+     * Contains information about a mosaic
+     */
     struct mosaic {
    
         mosaic() = default;
-        uint64_t tracery;
-        name creator;
+        uint64_t tracery; //!< the mosaic tracery, used as primary key
+        name creator;     //!< the mosaic creator
         
-        name opus;
+        name opus;        //!< the mosaic opus, an example: post/comment for publications
         uint16_t royalty;
         
         time_point created;
