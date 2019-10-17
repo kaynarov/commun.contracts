@@ -232,6 +232,7 @@
         },{
             "name": "stat",
             "type": "stat_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 {
                     "name": "primary",
@@ -244,6 +245,7 @@
         },{
             "name": "mosaic",
             "type": "mosaic_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "tracery", "order": "asc"} ] },
                 { "name": "bycommrating", "unique": "false", "orders": [
@@ -258,6 +260,7 @@
         },{
             "name": "gem",
             "type": "gem_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
                 { "name": "bykey", "unique": "true", "orders": [
@@ -272,6 +275,7 @@
         },{
             "name": "provision",
             "type": "provision_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
                 { "name": "bykey", "unique": "true", "orders": [
@@ -280,6 +284,7 @@
         },{
             "name": "advice",
             "type": "advice_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "leader", "order": "asc"} ] }
             ]

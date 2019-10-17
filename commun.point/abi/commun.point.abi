@@ -157,6 +157,7 @@
         },{
             "name": "stat",
             "type": "stat_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 {
                     "name": "primary",
