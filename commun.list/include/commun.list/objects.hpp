@@ -98,6 +98,12 @@ struct community {
     uint64_t primary_key() const {
         return commun_symbol.code().raw();
     }
+    
+    const opus_info& get_opus(name opus, const std::string s = "unknown opus") {
+        auto opus_itr = opuses.find(opus_info{opus});
+        check(opus_itr != opuses.end(), s);
+        return *opus_itr;
+    }
 };
 
 }

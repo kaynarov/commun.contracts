@@ -41,6 +41,8 @@ static const auto super_majority_name = "lead.smajor"_n;
 static const auto majority_name = "lead.major"_n;
 static const auto minority_name = "lead.minor"_n;
 
+static const auto client_permission_name = "clientperm"_n;
+
 // numbers and time
 static constexpr auto _1percent = 100;
 static constexpr auto _100percent = 100 * _1percent;
