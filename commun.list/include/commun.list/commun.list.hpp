@@ -35,6 +35,9 @@ public:
     [[eosio::action]] void follow(symbol_code commun_code, name follower);
     [[eosio::action]] void unfollow(symbol_code commun_code, name follower);
 
+    [[eosio::action]] void hide(symbol_code commun_code, name follower);
+    [[eosio::action]] void unhide(symbol_code commun_code, name follower);
+
     /**
      * \brief action is used by a leader to ban user in providebw service
      *

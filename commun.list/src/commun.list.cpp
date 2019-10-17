@@ -120,17 +120,27 @@ void commun_list::setparams(symbol_code commun_code,
 void commun_list::setinfo(symbol_code commun_code, std::string description,
         std::string language, std::string rules, std::string avatar_image, std::string cover_image) {
     require_auth(point::get_issuer(config::point_name, commun_code));
-    get_community(_self, commun_code);
+    check_community_exists(_self, commun_code);
 }
 
 void commun_list::follow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    get_community(_self, commun_code);
+    check_community_exists(_self, commun_code);
 }
 
 void commun_list::unfollow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    get_community(_self, commun_code);
+    check_community_exists(_self, commun_code);
+}
+
+void commun_list::hide(symbol_code commun_code, name follower) {
+    require_auth(follower);
+    check_community_exists(_self, commun_code);
+}
+
+void commun_list::unhide(symbol_code commun_code, name follower) {
+    require_auth(follower);
+    check_community_exists(_self, commun_code);
 }
 
 void commun_list::ban(symbol_code commun_code, name leader, name account, std::string reason) {
@@ -149,4 +159,4 @@ void commun_list::unban(symbol_code commun_code, name leader, name account, std:
     check_community_exists(_self, commun_code);
 }
 
-EOSIO_DISPATCH(commun::commun_list, (create)(setappparams)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(ban)(unban))
+EOSIO_DISPATCH(commun::commun_list, (create)(setappparams)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(hide)(unhide)(ban)(unban))

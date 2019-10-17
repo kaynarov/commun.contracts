@@ -290,6 +290,8 @@
         {"name": "setinfo", "type": "setinfo"},
         {"name": "follow", "type": "follow"},
         {"name": "unfollow", "type": "follow"},
+        {"name": "hide", "type": "follow"},
+        {"name": "unhide", "type": "follow"},
         {"name": "ban", "type": "ban"},
         {"name": "unban", "type": "ban"}
     ],
