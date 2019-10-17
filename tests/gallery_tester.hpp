@@ -20,7 +20,7 @@ public:
         const string no_points_provided = amsg("no points provided");
         const string not_enough_provided = amsg("not enough provided points");
         const string gallery_exists = amsg("the gallery with this symbol already exists");
-        const string no_param_no_gallery = amsg("param does not exists");
+        const string symbol_precision = amsg("symbol precision mismatch");
         const string wrong_royalty = amsg("incorrect royalty");
         const string too_many_providers = amsg("too many providers");
         const string cannot_freeze_zero = amsg("can't freeze zero points");

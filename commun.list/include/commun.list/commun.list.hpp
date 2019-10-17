@@ -39,14 +39,23 @@ public:
         return community_tbl.get(commun_code.raw(), "community not exists");
     }
 
+    static inline auto get_community(name list_contract_account, symbol commun_symbol) {
+        auto community = get_community(list_contract_account, commun_symbol.code());
+        eosio::check(community.commun_symbol == commun_symbol, "symbol precision mismatch");
+        return community;
+    }
+
     static inline void check_community_exists(name list_contract_account, symbol_code commun_code) {
         get_community(list_contract_account, commun_code);
     }
 
+    static inline void check_community_exists(name list_contract_account, symbol commun_symbol) {
+        get_community(list_contract_account, commun_symbol);
+    }
+
     static inline structures::control_param_t get_control_param(name list_contract_account, symbol_code commun_code) {
         if (commun_code) {
-            tables::community community_tbl(list_contract_account, list_contract_account.value);
-            return community_tbl.get(commun_code.raw(), "community not exists").control_param;
+            return get_community(list_contract_account, commun_code).control_param;
         }
         else {
             tables::dapp dapp_tbl(list_contract_account, list_contract_account.value);
