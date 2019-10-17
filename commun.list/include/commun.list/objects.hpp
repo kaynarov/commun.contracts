@@ -67,8 +67,14 @@ struct dapp {
     control_param_t control_param = control_param_t{ .leaders_num = config::def_dapp_leaders_num, .max_votes = config::def_dapp_max_votes };
 };
 
+/**
+ * \brief struct represents a community table in a db
+ * \ingroup list_tables
+ *
+ * Contains information about configuration of a community
+ */
 struct community {
-    symbol commun_symbol;
+    symbol commun_symbol; //!< symbol code of the community POINT
     std::string community_name;
 
     control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };
