@@ -238,16 +238,6 @@ private:
         return point::get_reserve_quantity(config::point_name, quantity, false).amount;
     }
     
-    static int64_t get_points_sum(int64_t quantity_amount, const gallery_types::providers_t& providers) {
-        int64_t ret = quantity_amount;
-        for (const auto& p : providers) {
-            check(p.second > 0, "provided points must be positive");
-            ret += p.second;
-        }
-
-        return ret;
-    }
-    
     void chop_gem(name _self, symbol commun_symbol, const gallery_types::gem& gem, bool no_rewards = false) {
     
         auto commun_code = commun_symbol.code();
@@ -576,6 +566,17 @@ public:
         return incl != inclusions_table.end() ? incl->quantity.amount : 0;
     }
 protected:
+
+    static int64_t get_points_sum(int64_t quantity_amount, const gallery_types::providers_t& providers) {
+        int64_t ret = quantity_amount;
+        for (const auto& p : providers) {
+            check(p.second > 0, "provided points must be positive");
+            ret += p.second;
+        }
+
+        return ret;
+    }
+
     auto get_stat(name _self, gallery_types::stats& stats_table, symbol_code commun_code) {
         const auto stats_itr = stats_table.find(commun_code.raw());
         if (stats_itr != stats_table.end()) {
@@ -673,13 +674,12 @@ protected:
         check(royalty <= community.author_percent, "incorrect royalty");
         check(providers.size() <= config::max_providers_num, "too many providers");
         
-        auto opus_itr = community.opuses.find(opus_info{opus});
-        check(opus_itr != community.opuses.end(), "unknown opus");
+        const auto& op = community.get_opus(opus);
         
         auto points_sum = get_points_sum(quantity.amount, providers);
-        eosio::check(opus_itr->mosaic_pledge <= points_sum, "points are not enough for a pledge");
-        eosio::check(opus_itr->min_mosaic_inclusion <= points_sum, "points are not enough for mosaic inclusion");
-        eosio::check((providers.size() + 1) * opus_itr->min_gem_inclusion <= points_sum, "points are not enough for gem inclusion");
+        eosio::check(op.mosaic_pledge <= points_sum, "points are not enough for a pledge");
+        eosio::check(op.min_mosaic_inclusion <= points_sum, "points are not enough for mosaic inclusion");
+        eosio::check((providers.size() + 1) * op.min_gem_inclusion <= points_sum, "points are not enough for gem inclusion");
         
         emit::maybe_issue_reward(config::emit_name, commun_code, false);
         
@@ -702,7 +702,7 @@ protected:
             .shares = 0
         };});
         
-        freeze_in_gems(_self, true, tracery, claim_date, creator, quantity, providers, false, points_sum, points_sum, opus_itr->mosaic_pledge);
+        freeze_in_gems(_self, true, tracery, claim_date, creator, quantity, providers, false, points_sum, points_sum, op.mosaic_pledge);
     }
 
     void add_to_mosaic(name _self, uint64_t tracery, asset quantity, bool damn, name gem_creator, gallery_types::providers_t providers) {
@@ -719,13 +719,11 @@ protected:
         check(!mosaic->banned, "mosaic banned");
         check(mosaic->active, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
         
-        auto opus_itr = community.opuses.find(opus_info{mosaic->opus});
-        check(opus_itr != community.opuses.end(), "unknown opus"); // it's possible if the parameters are customizable
-        
         emit::maybe_issue_reward(config::emit_name, commun_code, false);
         
         auto points_sum = get_points_sum(quantity.amount, providers);
-        eosio::check((providers.size() + 1) * opus_itr->min_gem_inclusion <= points_sum, "points are not enough for gem inclusion");
+        eosio::check((providers.size() + 1) * community.get_opus(mosaic->opus).min_gem_inclusion <= points_sum, 
+            "points are not enough for gem inclusion");
         
         auto shares_abs = damn ?
             calc_bancor_amount(mosaic->damn_points, mosaic->damn_shares, config::shares_cw, points_sum, false) :
