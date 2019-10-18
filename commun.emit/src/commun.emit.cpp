@@ -7,7 +7,7 @@
 
 namespace commun {
 
-void emit::create(symbol_code commun_code) {
+void emit::init(symbol_code commun_code) {
     require_auth(_self);
     check(point::exist(config::point_name, commun_code), "point with symbol does not exist");
 
@@ -75,4 +75,4 @@ void emit::issuereward(symbol_code commun_code, bool for_leaders) {
 
 } // commun
 
-EOSIO_DISPATCH(commun::emit, (create)(issuereward))
+EOSIO_DISPATCH(commun::emit, (init)(issuereward))

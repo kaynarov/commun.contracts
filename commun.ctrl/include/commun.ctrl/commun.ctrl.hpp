@@ -119,7 +119,7 @@ public:
         : contract(self, code, ds)
     {
     }
-    [[eosio::action]] void create(symbol_code commun_code);
+    [[eosio::action]] void init(symbol_code commun_code);
 
     /**
         \brief The regwitness action is used to register candidates for witnesses
