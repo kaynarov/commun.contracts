@@ -135,14 +135,18 @@ BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {
         ("remove_opuses", std::set<name>{"opus1", "opus2"} )));
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(follow_test, commun_list_tester) try {
-    BOOST_TEST_MESSAGE("follow test");
+BOOST_FIXTURE_TEST_CASE(follow_hide_test, commun_list_tester) try {
+    BOOST_TEST_MESSAGE("follow and hide test");
     create_token(_golos, _token);
     BOOST_CHECK_EQUAL(err.no_community, community.follow(_token_code, _alice));
     BOOST_CHECK_EQUAL(err.no_community, community.unfollow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(err.no_community, community.hide(_token_code, _alice));
+    BOOST_CHECK_EQUAL(err.no_community, community.unhide(_token_code, _alice));
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community_name"));
     BOOST_CHECK_EQUAL(success(), community.follow(_token_code, _alice));
     BOOST_CHECK_EQUAL(success(), community.unfollow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.hide(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.unhide(_token_code, _alice));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

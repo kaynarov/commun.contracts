@@ -65,6 +65,20 @@ struct commun_list_api: base_contract_api {
             ("follower", follower)
         );
     }
+
+    action_result hide(symbol_code commun_code, name follower) {
+        return push(N(hide), follower, args()
+            ("commun_code", commun_code)
+            ("follower", follower)
+        );
+    }
+
+    action_result unhide(symbol_code commun_code, name follower) {
+        return push(N(unhide), follower, args()
+            ("commun_code", commun_code)
+            ("follower", follower)
+        );
+    }
 };
 
 }} // eosio::testing
