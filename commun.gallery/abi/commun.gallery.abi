@@ -161,15 +161,65 @@
                 { "type": "string",                 "name": "reason" }
             ]
         },{
-            "name": "ban_args",
+            "name": "mosaic_key",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "uint64",                 "name": "tracery" }
             ]
+        },{
+            "name": "event_mosaic",
+            "base": "",
+            "fields": [
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "name",                   "name": "creator" },
+                { "type": "uint16",                 "name": "gem_count" },
+                { "type": "int64",                  "name": "shares" },
+                { "type": "int64",                  "name": "damn_shares" },
+                { "type": "asset",                  "name": "reward" },
+                { "type": "bool",                   "name": "banned" }
+            ]
+        },{
+            "name": "event_gem",
+            "base": "",
+            "fields": [
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "name",                   "name": "owner" },
+                { "type": "name",                   "name": "creator" },
+                { "type": "asset",                  "name": "points" },
+                { "type": "asset",                  "name": "pledge_points" },
+                { "type": "bool",                   "name": "damn" },
+                { "type": "int64",                  "name": "shares" }
+            ]
+        },{
+            "name": "event_chop",
+            "base": "",
+            "fields": [
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "name",                   "name": "owner" },
+                { "type": "name",                   "name": "creator" },
+                { "type": "asset",                  "name": "reward" }
+            ]
+        },{
+            "name": "event_top",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "uint16",                 "name": "place" },
+                { "type": "int64",                  "name": "comm_rating" },
+                { "type": "int64",                  "name": "lead_rating" }
+            ]
         }
     ],
     "types": [],
+    "events": [
+        { "name": "mosaicerase", "type": "mosaic_key" },
+        { "name": "mosaicstate", "type": "event_mosaic" },
+        { "name": "gemstate",    "type": "event_gem" },
+        { "name": "chopevent",   "type": "event_chop" },
+        { "name": "topstate",   "type": "event_top" }
+    ],
     "actions": [
         {
             "name": "createmosaic",
@@ -213,7 +263,7 @@
         },
         {
             "name": "ban",
-            "type": "ban_args"
+            "type": "mosaic_key"
         }
     ],
     "tables": [
