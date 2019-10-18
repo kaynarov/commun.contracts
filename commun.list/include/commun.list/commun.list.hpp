@@ -20,6 +20,7 @@ public:
                                         optional<name> permission, optional<uint8_t> required_threshold);
 
     [[eosio::action]] void setsysparams(symbol_code commun_code,
+        optional<name> permission, optional<uint8_t> required_threshold,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating);

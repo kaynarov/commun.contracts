@@ -143,6 +143,14 @@
                     "type": "symbol_code"
                 },
                 {
+                    "name": "permission",
+                    "type": "name?"
+                },
+                {
+                    "name": "required_threshold",
+                    "type": "uint8?"
+                },
+                {
                     "name": "collection_period",
                     "type": "int64?"
                 },

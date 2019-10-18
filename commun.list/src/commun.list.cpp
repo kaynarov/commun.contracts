@@ -12,7 +12,7 @@ void commun_list::setappparams(optional<uint8_t> leaders_num, optional<uint8_t> 
     tables::dapp dapp_tbl(_self, _self.value);
     bool _empty = dapp_tbl.exists();
     auto d = dapp_tbl.get_or_default(structures::dapp{});
-    _empty = !d.control_param.update(leaders_num, max_votes, permission, required_threshold) && _empty;
+    _empty = !d.control_param.update(permission, required_threshold, leaders_num, max_votes) && _empty;
     eosio::check(!_empty, "No params changed");
     dapp_tbl.set(d, _self);
 }
@@ -51,6 +51,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 #define PERC(VAL) (config::_1percent * VAL)
 
 void commun_list::setsysparams(symbol_code commun_code,
+        optional<name> permission, optional<uint8_t> required_threshold, 
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating) {
@@ -63,7 +64,7 @@ void commun_list::setsysparams(symbol_code commun_code,
     auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
-        bool _empty = true;
+        bool _empty = !c.control_param.update(permission, required_threshold);
         SET_PARAM(collection_period);
         SET_PARAM(moderation_period);
         SET_PARAM(lock_period);
@@ -106,7 +107,7 @@ void commun_list::setparams(symbol_code commun_code,
     auto community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
-        bool _empty = !c.control_param.update(leaders_num, max_votes, permission, required_threshold);
+        bool _empty = !c.control_param.update(permission, required_threshold, leaders_num, max_votes, false);
         SET_PARAM(emission_rate);
         SET_PARAM(leaders_percent);
         SET_PARAM(author_percent);

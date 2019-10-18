@@ -18,13 +18,17 @@ struct control_param_t {
     uint8_t leaders_num;
     uint8_t max_votes;
     std::vector<threshold> custom_thresholds;
-    bool update(optional<uint8_t> leaders_num_, optional<uint8_t> max_votes_, 
-                optional<name> permission_, optional<uint8_t> required_threshold_) {
+    bool update(optional<name> permission_, optional<uint8_t> required_threshold_,
+                optional<uint8_t> leaders_num_ = optional<uint8_t>(), optional<uint8_t> max_votes_ = optional<uint8_t>(),
+                bool can_change_permissions_num = true) {
+        bool ret = false;
         if (leaders_num_.has_value()) {
+            ret = ret || leaders_num != *leaders_num_;
             leaders_num = *leaders_num_;
             check(leaders_num, "leaders num must be positive");
         }
         if (max_votes_.has_value()) {
+            ret = ret || max_votes != *max_votes_;
             max_votes = *max_votes_;
             check(max_votes, "max votes must be positive");
         }
@@ -39,14 +43,19 @@ struct control_param_t {
                 [perm](const threshold& t) { return t.permission == perm; });
             bool found = thr != custom_thresholds.end();
             if (req && found) {
+                ret = ret || thr->required != req;
                 thr->required = req;
             }
             else if (!req && found) {
+                check(can_change_permissions_num, "cannot delete permission");
                 custom_thresholds.erase(thr);
+                ret = true;
             }
             else {
+                check(can_change_permissions_num, "cannot add permission");
                 check(req, "required threshold must be positive");
                 custom_thresholds.push_back({perm, req});
+                ret = true;
             }
         }
         
@@ -59,7 +68,7 @@ struct control_param_t {
             auto req = *required_threshold_;
             check(!req || req <= leaders_num, "required threshold can't be greater than leaders num");
         }
-        return leaders_num_.has_value() || max_votes_.has_value() || permission_.has_value();
+        return ret;
     };
 };
 
@@ -97,6 +106,12 @@ struct community {
 
     uint64_t primary_key() const {
         return commun_symbol.code().raw();
+    }
+    
+    const opus_info& get_opus(name opus, const std::string s = "unknown opus") {
+        auto opus_itr = opuses.find(opus_info{opus});
+        check(opus_itr != opuses.end(), s);
+        return *opus_itr;
     }
 };
 
