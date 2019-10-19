@@ -45,11 +45,11 @@ public:
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
         
-        set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
-        link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
+        set_authority(cfg::emit_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, N(init), N(init));
         
-        set_authority(cfg::control_name, N(create), create_code_authority({cfg::list_name}), "active");
-        link_authority(cfg::control_name, cfg::control_name, N(create), N(create));
+        set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
 
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
         set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_SUITE(commun_emit_tests)
 BOOST_FIXTURE_TEST_CASE(create_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("create tests");
 
-    BOOST_CHECK_EQUAL(err.no_point, emit.create(point_code));
+    BOOST_CHECK_EQUAL(err.no_point, emit.init(point_code));
     init();
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", 0)));
@@ -113,7 +113,7 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_emit_tester) try {
         ("leaders_percent", cfg::_1percent * 10)));
 
     produce_block();
-    BOOST_CHECK_EQUAL(err.already_exists, emit.create(point_code));
+    BOOST_CHECK_EQUAL(err.already_exists, emit.init(point_code));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {

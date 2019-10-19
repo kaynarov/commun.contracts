@@ -39,11 +39,11 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
         item.community_name = community_name;
     });
     
-    auto send_create_action = [commun_code](name contract_name) { //TODO: rename it to "init"
-        action(permission_level{contract_name, "create"_n}, contract_name, "create"_n, std::make_tuple(commun_code)).send();
+    auto send_init_action = [commun_code](name contract_name) {
+        action(permission_level{contract_name, "init"_n}, contract_name, "init"_n, std::make_tuple(commun_code)).send();
     };
-    send_create_action(config::emit_name);
-    send_create_action(config::control_name);
+    send_init_action(config::emit_name);
+    send_init_action(config::control_name);
     //TODO: init gallery
 }
 

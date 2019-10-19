@@ -36,7 +36,7 @@ struct structures {
 
 public:
     using contract::contract;
-    [[eosio::action]] void create(symbol_code commun_code);
+    [[eosio::action]] void init(symbol_code commun_code);
 
     /**
      * \brief action is used by other contracts to emit POINTs

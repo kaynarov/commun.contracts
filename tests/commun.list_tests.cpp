@@ -30,11 +30,11 @@ public:
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
         
-        set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
-        link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
+        set_authority(cfg::emit_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, N(init), N(init));
         
-        set_authority(cfg::control_name, N(create), create_code_authority({cfg::list_name}), "active");
-        link_authority(cfg::control_name, cfg::control_name, N(create), N(create));
+        set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
     }
 
     const account_name _commun = cfg::dapp_name;

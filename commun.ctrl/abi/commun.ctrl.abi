@@ -10,7 +10,7 @@
                 { "type": "int64",          "name": "retained" }
             ]
         }, {
-            "name": "create",
+            "name": "init",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"}
@@ -373,8 +373,8 @@
     ],
     "actions": [
         {
-            "name": "create",
-            "type": "create"
+            "name": "init",
+            "type": "init"
         }, {
             "name": "regleader",
             "type": "regleader"

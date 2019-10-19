@@ -22,7 +22,7 @@ void control::check_started(symbol_code commun_code) {
     commun_list::get_control_param(config::list_name, commun_code);
 }
 
-void control::create(symbol_code commun_code) {
+void control::init(symbol_code commun_code) {
     require_auth(_self);
     check(point::exist(config::point_name, commun_code), "point with symbol does not exist");
 
@@ -476,7 +476,7 @@ void control::invalidate(name account) {
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_transfer,
-    (create)
+    (init)
     (regleader)(unregleader)
     (startleader)(stopleader)
     (voteleader)(unvotelead)

@@ -58,11 +58,11 @@ public:
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
         
-        set_authority(cfg::emit_name, N(create), create_code_authority({cfg::list_name}), "active");
-        link_authority(cfg::emit_name, cfg::emit_name, N(create), N(create));
+        set_authority(cfg::emit_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, N(init), N(init));
         
-        set_authority(cfg::control_name, N(create), create_code_authority({cfg::list_name}), "active");
-        link_authority(cfg::control_name, cfg::control_name, N(create), N(create));
+        set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
         
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
         set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
