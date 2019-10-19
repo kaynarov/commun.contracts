@@ -607,7 +607,7 @@ private:
         
         auto now = eosio::current_time_point();
 
-        auto community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(config::list_name, commun_code);
         
         claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.moderation_end, community.commun_symbol};
         check(!ret.premature || eager, "moderation period isn't over yet");
@@ -619,7 +619,7 @@ private:
     
     void set_gem_holder(name _self, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator, name holder) {
         require_auth(gem_owner);
-        auto community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(config::list_name, commun_code);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         const auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
@@ -705,7 +705,7 @@ protected:
         if (_self != to) { return; }
 
         auto commun_code = quantity.symbol.code();            
-        auto community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(config::list_name, commun_code);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto by_comm_idx = mosaics_table.get_index<"bycommrating"_n>();
@@ -785,7 +785,7 @@ protected:
         auto commun_symbol = quantity.symbol;
         auto commun_code   = commun_symbol.code();
 
-        auto community = commun_list::get_community(config::list_name, commun_symbol);
+        auto& community = commun_list::get_community(config::list_name, commun_symbol);
         check(royalty <= community.author_percent, "incorrect royalty");
         check(providers.size() <= config::max_providers_num, "too many providers");
         
@@ -970,7 +970,7 @@ protected:
     void update_mosaic(name _self, symbol_code commun_code, name creator, uint64_t tracery) {
         require_auth(creator);
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-        auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
+        auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         eosio::check(mosaic.active, "mosaic is inactive");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
             m.lock_date = time_point();
@@ -981,7 +981,7 @@ protected:
         require_auth(leader);
         check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-        auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
+        auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         check(mosaic.active, "Mosaic is not active.");
         check(mosaic.lock_date == time_point(), "Mosaic should be modified to lock again.");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
@@ -994,7 +994,7 @@ protected:
         require_auth(leader);
         check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-        auto mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
+        auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         check(mosaic.locked, "Mosaic not locked.");
         check(!mosaic.banned, "mosaic banned");
         auto close_shift = eosio::current_time_point() - mosaic.lock_date;

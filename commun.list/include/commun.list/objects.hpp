@@ -73,7 +73,12 @@ struct control_param_t {
 };
 
 struct dapp {
+    uint64_t pk = primary_key();
     control_param_t control_param = control_param_t{ .leaders_num = config::def_dapp_leaders_num, .max_votes = config::def_dapp_max_votes };
+
+    static uint64_t primary_key() {
+        return 0;
+    }
 };
 
 /**
@@ -108,7 +113,7 @@ struct community {
         return commun_symbol.code().raw();
     }
     
-    const opus_info& get_opus(name opus, const std::string s = "unknown opus") {
+    const opus_info& get_opus(name opus, const std::string s = "unknown opus") const {
         auto opus_itr = opuses.find(opus_info{opus});
         check(opus_itr != opuses.end(), s);
         return *opus_itr;
@@ -123,5 +128,5 @@ namespace commun::tables {
     using comn_name_index = eosio::indexed_by<"byname"_n, eosio::member<structures::community, std::string, &structures::community::community_name>>;
     using community = eosio::multi_index<"community"_n, structures::community, comn_name_index>;
     
-    using dapp = eosio::singleton<"dapp"_n, structures::dapp>;
+    using dapp = eosio::multi_index<"dapp"_n, structures::dapp>;
 }

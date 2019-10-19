@@ -6,24 +6,34 @@
 
 using namespace commun;
 
-void commun_list::setappparams(optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
+std::pair<bool, tables::dapp::const_iterator> init_dapp(const tables::dapp& dapp_tbl) {
+    auto itr = dapp_tbl.find(structures::dapp::primary_key());
+    if (itr == dapp_tbl.end()) {
+        itr = dapp_tbl.emplace(dapp_tbl.code(), [&](auto& d) {
+            d = structures::dapp{};
+        });
+        return std::make_pair(true, itr);
+    }
+    return std::make_pair(false, itr);
+}
+
+void commun_list::setappparams(optional<uint8_t> leaders_num, optional<uint8_t> max_votes,
                                optional<name> permission, optional<uint8_t> required_threshold) {
     require_auth(_self);
+
     tables::dapp dapp_tbl(_self, _self.value);
-    bool _empty = dapp_tbl.exists();
-    auto d = dapp_tbl.get_or_default(structures::dapp{});
-    _empty = !d.control_param.update(permission, required_threshold, leaders_num, max_votes) && _empty;
-    eosio::check(!_empty, "No params changed");
-    dapp_tbl.set(d, _self);
+    auto res = init_dapp(dapp_tbl);
+
+    dapp_tbl.modify(res.second, same_payer, [&](auto& d) {
+        res.first = !d.control_param.update(permission, required_threshold, leaders_num, max_votes) && res.first;
+    });
+    eosio::check(!res.first, "No params changed");
 }
 
 void commun_list::create(symbol_code commun_code, std::string community_name) {
     require_auth(_self);
-    
-    tables::dapp dapp_tbl(_self, _self.value);
-    if (!dapp_tbl.exists()) {
-        dapp_tbl.set(structures::dapp{}, _self);
-    }
+
+    init_dapp(tables::dapp(_self, _self.value));
 
     auto commun_symbol = point::get_supply(config::point_name, commun_code).symbol;
 
@@ -61,7 +71,7 @@ void commun_list::setsysparams(symbol_code commun_code,
     // <> Place for checks
 
     tables::community community_tbl(_self, _self.value);
-    auto community = community_tbl.get(commun_code.raw(), "community not exists");
+    auto& community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
         bool _empty = !c.control_param.update(permission, required_threshold);
@@ -104,7 +114,7 @@ void commun_list::setparams(symbol_code commun_code,
         "incorrect author percent");
 
     tables::community community_tbl(_self, _self.value); 
-    auto community = community_tbl.get(commun_code.raw(), "community not exists");
+    auto& community = community_tbl.get(commun_code.raw(), "community not exists");
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
         bool _empty = !c.control_param.update(permission, required_threshold, leaders_num, max_votes, false);

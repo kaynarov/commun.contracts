@@ -50,13 +50,13 @@ public:
     [[eosio::action]] void ban(symbol_code commun_code, name leader, name account, std::string reason);
     [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
 
-    static inline auto get_community(name list_contract_account, symbol_code commun_code) {
-        tables::community community_tbl(list_contract_account, list_contract_account.value);
+    static auto& get_community(name list_contract_account, symbol_code commun_code) {
+        static tables::community community_tbl(list_contract_account, list_contract_account.value);
         return community_tbl.get(commun_code.raw(), "community not exists");
     }
 
-    static inline auto get_community(name list_contract_account, symbol commun_symbol) {
-        auto community = get_community(list_contract_account, commun_symbol.code());
+    static inline auto& get_community(name list_contract_account, symbol commun_symbol) {
+        auto& community = get_community(list_contract_account, commun_symbol.code());
         eosio::check(community.commun_symbol == commun_symbol, "symbol precision mismatch");
         return community;
     }
@@ -69,14 +69,14 @@ public:
         get_community(list_contract_account, commun_symbol);
     }
 
-    static inline structures::control_param_t get_control_param(name list_contract_account, symbol_code commun_code) {
+    static const structures::control_param_t& get_control_param(name list_contract_account, symbol_code commun_code) {
         if (commun_code) {
             return get_community(list_contract_account, commun_code).control_param;
         }
         else {
-            tables::dapp dapp_tbl(list_contract_account, list_contract_account.value);
-            eosio::check(dapp_tbl.exists(), "not initialized");
-            return dapp_tbl.get().control_param;
+            static tables::dapp dapp_tbl(list_contract_account, list_contract_account.value);
+            auto& d = dapp_tbl.get(structures::dapp::primary_key(), "not initialized");
+            return d.control_param;
         }
     }
 };
