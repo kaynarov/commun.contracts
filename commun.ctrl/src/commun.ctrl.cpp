@@ -134,7 +134,7 @@ void control::voteleader(symbol_code commun_code, name voter, name leader) {
         auto el = std::find(w.begin(), w.end(), leader);
         eosio::check(el == w.end(), "already voted");
         eosio::check(w.size() < commun_list::get_control_param(config::list_name, commun_code).max_votes, "all allowed votes already casted");
-        tbl.modify(itr, eosio::same_payer, update);
+        tbl.modify(itr, voter, update);
     } else {
         tbl.emplace(voter, update);
     }
