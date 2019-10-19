@@ -17,6 +17,7 @@
 #include <commun.emit/commun.emit.hpp>
 #include <commun.emit/config.hpp>
 #include <commun.list/commun.list.hpp>
+#include <eosio/event.hpp>
 
 namespace commun {
 
@@ -179,12 +180,111 @@ namespace gallery_types {
 
     using advices = eosio::multi_index<"advice"_n, gallery_types::advice>;
 
-    using stats = eosio::multi_index<"stat"_n, gallery_types::stat>;   
-}
+    using stats = eosio::multi_index<"stat"_n, gallery_types::stat>;
+    
+namespace events {
+    
+    struct mosaic_key {
+        symbol_code commun_code;
+        uint64_t tracery;
+    };
+    
+    struct mosaic {
+        uint64_t tracery;
+        name creator;
+        uint16_t gem_count;
+        int64_t shares;
+        int64_t damn_shares;
+        asset reward;
+        bool banned;
+    };
+    
+    struct gem {
+        uint64_t tracery;
+        name owner;
+        name creator;
+        asset points;
+        asset pledge_points;
+        bool damn;
+        int64_t shares;
+    };
+    
+    struct chop {
+        uint64_t tracery;
+        name owner;
+        name creator;
+        asset reward;
+    };
+    
+    struct top {
+        symbol_code commun_code;
+        uint64_t tracery;
+        uint16_t place;
+        int64_t comm_rating;
+        int64_t lead_rating;
+    };
+    
+}// events
+}// gallery_types
 
 
 template<typename T>
-class gallery_base { 
+class gallery_base {
+    void send_mosaic_event(name _self, symbol commun_symbol, const gallery_types::mosaic& mosaic) {
+        gallery_types::events::mosaic data {
+            .tracery = mosaic.tracery,
+            .creator = mosaic.creator,
+            .gem_count = mosaic.gem_count,
+            .shares = mosaic.shares,
+            .damn_shares = mosaic.damn_shares,
+            .reward = asset(mosaic.reward, commun_symbol),
+            .banned = mosaic.banned
+        };
+        eosio::event(_self, "mosaicstate"_n, data).send();
+    }
+    
+    void send_mosaic_erase_event(name _self, symbol_code commun_code, uint64_t tracery) {
+        gallery_types::events::mosaic_key data {
+            .commun_code = commun_code,
+            .tracery = tracery
+        };
+        eosio::event(_self, "mosaicerase"_n, data).send();
+    }
+    
+    void send_gem_event(name _self, symbol commun_symbol, const gallery_types::gem& gem) {
+        gallery_types::events::gem data {
+            .tracery = gem.tracery,
+            .owner = gem.owner,
+            .creator = gem.creator,
+            .points = asset(gem.points, commun_symbol),
+            .pledge_points = asset(gem.pledge_points, commun_symbol),
+            .damn = gem.shares < 0,
+            .shares = std::abs(gem.shares)
+        };
+        eosio::event(_self, "gemstate"_n, data).send();
+    }
+    
+    void send_chop_event(name _self, const gallery_types::gem& gem, asset reward) {
+        gallery_types::events::chop data {
+            .tracery = gem.tracery,
+            .owner = gem.owner,
+            .creator = gem.creator,
+            .reward = reward
+        };
+        eosio::event(_self, "chopevent"_n, data).send();
+    }
+    
+    void send_top_event(name _self, symbol_code commun_code, const gallery_types::mosaic& mosaic, uint16_t place) {
+        gallery_types::events::top data {
+            .commun_code = commun_code,
+            .tracery = mosaic.tracery,
+            .place = place,
+            .comm_rating = mosaic.comm_rating,
+            .lead_rating = mosaic.lead_rating
+        };
+        eosio::event(_self, "topstate"_n, data).send();
+    }
+    
 private:
     bool send_points(name from, name to, const asset &quantity) {
         if (to && !point::balance_exists(config::point_name, to, quantity.symbol.code())) {
@@ -256,6 +356,7 @@ private:
         asset reward_points(reward, commun_symbol);
         
         freeze(_self, gem.owner, -frozen_points);
+        send_chop_event(_self, gem, reward_points);
 
         if (gem.creator != gem.owner) {
             
@@ -288,6 +389,7 @@ private:
                 item.reward -= reward;
                 item.gem_count--;
             });
+            send_mosaic_event(_self, commun_symbol, *mosaic);
         }
         else {
             gallery_types::stats stats_table(_self, commun_code.raw());
@@ -296,6 +398,7 @@ private:
             if (mosaic->active) {
                 T::deactivate(_self, commun_code, *mosaic);
             }
+            send_mosaic_erase_event(_self, commun_code, mosaic->tracery);
             mosaics_table.erase(mosaic);
         }
     }
@@ -324,6 +427,7 @@ private:
                     item.points += points;
                     item.shares += shares;
                 });
+                send_gem_event(_self, commun_symbol, *gem);
                 refilled = true;
             }
         }
@@ -355,16 +459,19 @@ private:
                 ++gem_num;
             }
             
-            gems_table.emplace(creator, [&]( auto &item ) { item = gallery_types::gem {
-                .id = gems_table.available_primary_key(),
-                .tracery = tracery,
-                .claim_date = claim_date,
-                .points = points,
-                .shares = shares,
-                .pledge_points = pledge_points,
-                .owner = owner,
-                .creator = creator
-            };});
+            gems_table.emplace(creator, [&]( auto &item ) { 
+                item = gallery_types::gem {
+                    .id = gems_table.available_primary_key(),
+                    .tracery = tracery,
+                    .claim_date = claim_date,
+                    .points = points,
+                    .shares = shares,
+                    .pledge_points = pledge_points,
+                    .owner = owner,
+                    .creator = creator
+                };
+                send_gem_event(_self, commun_symbol, item);
+            });
         }
         freeze(_self, owner, asset(points + pledge_points, commun_symbol), creator);
         
@@ -390,8 +497,9 @@ private:
         });
     }
 
-    int64_t pay_royalties(name _self, symbol_code commun_code, uint64_t tracery, name mosaic_creator, int64_t shares) {
+    int64_t pay_royalties(name _self, symbol commun_symbol, uint64_t tracery, name mosaic_creator, int64_t shares) {
     
+        auto commun_code = commun_symbol.code();
         gallery_types::gems gems_table(_self, commun_code.raw());
     
         auto gems_idx = gems_table.get_index<"bycreator"_n>();
@@ -419,6 +527,7 @@ private:
                 gems_idx.modify(gem_itr, name(), [&](auto& item) {
                     item.shares += cur_shares;
                 });
+                send_gem_event(_self, commun_symbol, *gem_itr);
                 ret += cur_shares;
             }
         }
@@ -476,6 +585,10 @@ private:
             freeze_points_in_gem(_self, creating, commun_symbol, tracery, claim_date, 
                 cur_points, damn ? -cur_shares_abs : cur_shares_abs, cur_pledge, creator, creator);
         }
+        
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        auto mosaic = mosaics_table.find(tracery);
+        send_mosaic_event(_self, commun_symbol, *mosaic);
 
         archive_old_mosaics(_self, commun_code);
         auto_ban_mosaics(_self, commun_code);
@@ -645,6 +758,8 @@ protected:
         const auto& stat = get_stat(_self, stats_table, commun_code);
         auto total_reward = quantity.amount + stat->retained;
         auto left_reward  = total_reward;
+        
+        uint16_t place = 0;
         for (auto itr = top_mosaics.begin(); itr != middle; itr++) {
             auto cur_reward = safe_prop(total_reward, itr->second, grades_sum);
             
@@ -653,13 +768,13 @@ protected:
                 if (item.meritorious) {
                     item.reward += cur_reward;
                     left_reward -= cur_reward;
+                    send_mosaic_event(_self, quantity.symbol, item);
                 }
                 else {
                     item.meritorious = true;
                 }
             });
-            
-            
+            send_top_event(_self, commun_code, *mosaic, place++);
         }
         stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
     }
@@ -730,7 +845,7 @@ protected:
             calc_bancor_amount(mosaic->points,      mosaic->shares,      config::shares_cw, points_sum, false);
         
         if (!damn) {
-            shares_abs -= pay_royalties(_self, commun_code, tracery, mosaic->creator, safe_pct(mosaic->royalty, shares_abs));
+            shares_abs -= pay_royalties(_self, commun_symbol, tracery, mosaic->creator, safe_pct(mosaic->royalty, shares_abs));
         }
 
         freeze_in_gems(_self, false, tracery, mosaic->close_date, gem_creator, quantity, providers, damn, points_sum, shares_abs, 0);
