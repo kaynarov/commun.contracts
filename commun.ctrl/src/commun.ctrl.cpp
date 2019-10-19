@@ -294,7 +294,6 @@ uint8_t control::get_required(symbol_code commun_code, name permission) {
     if (permission == config::super_majority_name) { req = calc_req(control_param.leaders_num, 2, 3); }
     else if (permission == config::majority_name)  { req = calc_req(control_param.leaders_num, 1, 2); }
     else if (permission == config::minority_name)  { req = calc_req(control_param.leaders_num, 1, 3); }
-    else if (permission == config::active_name)    { req = calc_req(control_param.leaders_num, 2, 3); }
     else { eosio::check(false, "unknown permission"); }
     
     return req;
