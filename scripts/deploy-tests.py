@@ -1,102 +1,276 @@
 #!/usr/bin/python3
 
-import unittest
-import json
-import os
-import re
 import random
-import time
+import unittest
 import testnet
 import community
+import pymongo
+import json
 
-techKey   ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
-communKey ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
+techKey    ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
+clientKey  ='5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN'
+client     ='comn.com@comn.com'
 
-def wait(timeout):
-    while timeout > 0:
-        w = 3 if timeout > 3 else timeout
-        print('\r                    \rWait %d sec' % timeout, flush=True, end='')
-        timeout -= w
-        time.sleep(w)
+class DeployTests(unittest.TestCase):
 
-def randomUsername():
-    letters = 'abcdefghijklmnopqrstuvwxyz0123456789'
-    return ''.join(random.choice(letters) for i in range(16))
+    def test_createCommunity(self):
+        point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6)) 
+        owner = community.createCommunity(
+            community_name = point,
+            creator_auth = client,
+            creator_key = clientKey,
+            maximum_supply = testnet.Asset('100000000.000 %s'%point),
+            reserve_amount = testnet.Asset('1000000.0000 COMMUN'))
 
-def randomPermlink():
-    letters = "abcdefghijklmnopqrstuvwxyz0123456789-"
-    return ''.join(random.choice(letters) for i in range(128))
-
-def randomText(length):
-    letters = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=;:,.<>/?\\~`"
-    return ''.join(random.choice(letters) for i in range(length))
-
-def createKey():
-    data = testnet.cleos("create key --to-console")
-    m = re.search('Private key: ([a-zA-Z0-9]+)\nPublic key: ([a-zA-Z0-9]+)', data)
-    return (m.group(1), m.group(2))
-
-def importPrivateKey(private):
-    testnet.cleos("wallet import --name test --private-key %s" % private)
-
-def createRandomAccount(key, *, creator='tech', providebw=None, keys=None):
-    letters = "abcdefghijklmnopqrstuvwxyz12345"
-    while True:
-        name = ''.join(random.choice(letters) for i in range(12))
-        try:
-            getAccount(name)
-        except:
-            break
-    testnet.createAccount(creator, name, key, providebw=providebw, keys=keys)
-    return name
-
-def getAccount(account):
-    return json.loads(testnet.cleos('get account %s -j' % account))
-
-def getResourceUsage(account):
-    info = getAccount(account)
-    return {
-        'cpu': info['cpu_limit']['used'],
-        'net': info['net_limit']['used'],
-        'ram': info['ram_limit']['used'],
-        'storage': info['storage_limit']['used']
-    }
-
-def buyCommunityPoints(owner, quantity, community, ownerKey):
-    testnet.pushAction('cyber.token', 'issue', 'comn', {
-            'to':owner,
-            'quantity':quantity,
-            'memo':'issue for '+owner
-        }, keys=communKey)
-    testnet.pushAction('cyber.token', 'transfer', owner, {
-            'from':owner,
-            'to':'comn.point',
-            'quantity':quantity,
-            'memo':community
-        }, providebw=owner+'/tech', keys=[ownerKey, techKey])
-    
-
-
-class TestCommunity(unittest.TestCase):
-    
     def test_createPost(self):
-        (private, public) = createKey()
-        author = createRandomAccount(public, keys=techKey)
+        (private, public) = testnet.createKey()
+        author = testnet.createRandomAccount(public, keys=techKey)
         community.openBalance(author, 'CATS', 'tech', keys=techKey)
-        buyCommunityPoints(author, '1000.0000 COMMUN', 'CATS', private)
+        community.buyCommunityPoints(author, '1000.0000 COMMUN', 'CATS', private, clientKey)
 
-        (private2, public2) = createKey()
-        voter = createRandomAccount(public2, keys=techKey)
+        (private2, public2) = testnet.createKey()
+        voter = testnet.createRandomAccount(public2, keys=techKey)
         community.openBalance(voter, 'CATS', 'tech', keys=techKey)
-        buyCommunityPoints(voter, '10.0000 COMMUN', 'CATS', private2)
+        community.buyCommunityPoints(voter, '10.0000 COMMUN', 'CATS', private2, clientKey)
 
-        permlink = randomPermlink()
-        header = randomText(128)
-        body = randomText(1024)
-        community.createPost('CATS', author, permlink, 'cats', header, body, providebw=author+'/tech', keys=[private, techKey])
+        permlink = testnet.randomPermlink()
+        header = testnet.randomText(128)
+        body = testnet.randomText(1024)
+        community.createPost('CATS', author, permlink, 'cats', header, body, providebw=author+'/comn@providebw', keys=[private, clientKey])
 
-        community.upvotePost('CATS', voter, author, permlink, 10000, providebw=voter+'/tech', keys=[private2, techKey])
+        community.upvotePost('CATS', voter, author, permlink, 10000, providebw=voter+'/comn@providebw', keys=[private2, clientKey])
 
+
+    def test_glsProvideBW(self):
+        (private, public) = testnet.createKey()
+        acc = testnet.createRandomAccount(public, keys=techKey)
+
+appLeadersCount = 5
+class CommunLeaderTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        leaderDb = testnet.mongoClient["_CYBERWAY_comn_ctrl"]["leader"]
+        leadCursor = leaderDb.find_one({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)])
+        min_quantity = leadCursor["total_weight"].to_decimal() if leadCursor else 0
+        quantity = '%.4f COMMUN'%(random.randint(min_quantity+1, min_quantity+100)/10000)
+
+        (voterPrivate, voterPublic) = testnet.createKey()
+        voter = testnet.createRandomAccount(voterPublic, keys=techKey)
+        community.openBalance(voter, '', 'tech', keys=techKey)
+        community.buyCommunityPoints(voter, quantity, '', voterPrivate, clientKey)
+
+        leaders = {}
+        for i in range(appLeadersCount):
+            (private, public) = testnet.createKey()
+            leader = testnet.createRandomAccount(public, keys=techKey)
+            community.openBalance(leader, '', 'tech', keys=techKey)
+            community.regLeader(commun_code='', leader=leader, url=testnet.randomText(16),
+                    providebw=leader+'/tech', keys=[techKey, private])
+            community.voteLeader(commun_code='', voter=voter, leader=leader,
+                    providebw=voter+'/tech', keys=[voterPrivate,techKey])
+            leaders[leader] = private
+
+        self.leaders = leaders
+        approvers = [ (k,v) for k,v in self.leaders.items() ]
+        self.smajor_approvers = approvers[:int(appLeadersCount*3/4+1)]
+        self.major_approvers = approvers[:int(appLeadersCount*1/2+1)]
+        self.minor_approvers = approvers[:int(appLeadersCount*1/3+1)]
+
+    def printTopLeaders(self):
+        leaderDb = testnet.mongoClient["_CYBERWAY_comn_ctrl"]["leader"]
+        leadCursor = leaderDb.find({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)]).limit(appLeadersCount+1)
+        for leader in leadCursor:
+            print("{leader} {weight}".format(leader=leader['name'], weight=leader['total_weight']))
+
+    def test_canUseActiveAuthority(self):
+        trx = testnet.Trx()
+        trx.addAction('cyber.token', 'issue', 'comn@active', {
+                'to': 'comn',
+                'quantity': '0.0001 COMMUN',
+                'memo': ''
+            })
+
+        with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
+            community.createAndExecProposal(
+                    commun_code='',
+                    permission='lead.smajor',
+                    trx=trx,
+                    leaders=self.minor_approvers,
+                    clientKey=clientKey)
+
+        community.createAndExecProposal(
+                commun_code='',
+                permission='lead.smajor',
+                trx=trx,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey)
+
+    def test_canIssueCommunityPoints(self):
+        issuer = testnet.mongoClient["_CYBERWAY_comn_point"]["param"].find_one({"max_supply._sym":"CATS"})["issuer"]
+        trx = testnet.Trx()
+        trx.addAction('comn.point', 'issue', issuer+'@owner', {
+                'to': issuer,
+                'quantity': '0.001 CATS',
+                'memo': 'issue by app leaders'
+            })
+        trx.addAction('comn.point', 'transfer', issuer+'@owner', {
+                'from': issuer,
+                'to': 'comn',
+                'quantity': '0.001 CATS',
+                'memo': 'issue by app leaders'
+            })
+
+        community.createAndExecProposal(
+                commun_code='',
+                permission='lead.smajor',
+                trx=trx,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey,
+                providebw=issuer+'/comn@providebw')
+
+class CommunityLeaderTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+#        while True:
+#            point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6)) 
+#            owner = 'comn..' + point.lower()
+#            try:
+#                getAccount(owner)
+#            except:
+#                break
+
+        # TODO: check such point not exist
+        point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6)) 
+        owner = community.createCommunity(
+            community_name = point,
+            creator_auth = client,
+            creator_key = clientKey,
+            maximum_supply = testnet.Asset('100000000.000 %s'%point),
+            reserve_amount = testnet.Asset('1000000.0000 COMMUN'))
+
+        (voterPrivate, voterPublic) = testnet.createKey()
+        voter = testnet.createRandomAccount(voterPublic, keys=techKey)
+        community.openBalance(voter, point, 'tech', keys=techKey)
+        community.buyCommunityPoints(voter, '%.4f COMMUN'%(random.randint(100, 20000)/10000), point, voterPrivate, clientKey)
+
+        (appLeaderPrivate, appLeaderPublic) = testnet.createKey()
+        appLeader = testnet.createRandomAccount(appLeaderPublic, keys=techKey)
+        community.openBalance(appLeader, '', 'tech', keys=techKey)
+        community.regLeader(commun_code='', leader=appLeader, url=testnet.randomText(16),
+                providebw=appLeader+'/tech', keys=[techKey, appLeaderPrivate])
+
+        leaders = {}
+        for i in range(3):
+            (private, public) = testnet.createKey()
+            leader = testnet.createRandomAccount(public, keys=techKey)
+            leaders[leader] = private
+            community.openBalance(leader, point, 'tech', keys=techKey)
+            community.regLeader(commun_code=point, leader=leader, url=testnet.randomText(16),
+                    providebw=leader+'/tech', keys=[techKey, private])
+
+        for leader in leaders.keys():
+            community.voteLeader(commun_code=point, voter=voter, leader=leader,
+                    providebw=voter+'/tech', keys=[voterPrivate,techKey])
+
+        self.appLeader = appLeader
+        self.point = point
+        self.owner = owner
+        self.leaders = leaders
+
+        leadersCount = 3
+        approvers = [ (k,v) for k,v in self.leaders.items() ]
+        self.smajor_approvers = approvers[:int(leadersCount*3/4+1)]
+        self.major_approvers = approvers[:int(leadersCount*1/2+1)]
+        self.minor_approvers = approvers[:int(leadersCount*1/3+1)]
+
+    def test_setParams(self):
+        trx = testnet.Trx()
+        trx.addAction('comn.list', 'setparams', self.owner+'@active', {
+                'commun_code': self.point,
+                'author_percent': 5000
+            })
+        print(json.dumps(trx.getTrx(), indent=3))
+
+        community.createAndExecProposal(
+                commun_code=self.point,
+                permission='lead.smajor',
+                trx=trx,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey)
+
+    def test_setInfo(self):
+        trx = testnet.Trx()
+        trx.addAction('comn.list', 'setinfo', self.owner+'@active', {
+                'commun_code': self.point,
+                'description': 'Community description',
+                'language': 'ru',
+                'rules': 'Community rules',
+                'avatar_image': 'http://community/avatar.img',
+                'cover_image': 'http://community/cover.img'
+            })
+        print(json.dumps(trx.getTrx(), indent=3))
+
+        community.createAndExecProposal(
+                commun_code=self.point,
+                permission='lead.smajor',
+                trx=trx,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey)
+
+    def test_banPostWithMinorAuthority(self):
+        (private, public) = testnet.createKey()
+        author = testnet.createRandomAccount(public, keys=techKey)
+        community.openBalance(author, self.point, 'tech', keys=techKey)
+        community.buyCommunityPoints(author, '10.0000 COMMUN', self.point, private, clientKey)
+
+        permlink = testnet.randomPermlink()
+        header = testnet.randomText(128)
+        body = testnet.randomText(1024)
+        community.createPost(self.point, author, permlink, 'cats', header, body, providebw=author+'/comn@providebw', keys=[private, clientKey])
+
+        trx = testnet.Trx()
+        trx.addAction('comn.gallery', 'ban', self.owner+'@lead.minor', {
+                'commun_code': self.point,
+                'message_id': {'author': author, 'permlink': permlink}})
+
+        community.createAndExecProposal(
+                commun_code=self.point,
+                permission='lead.minor',
+                trx=trx,
+                leaders=self.minor_approvers,
+                clientKey=clientKey)
+
+
+    def test_voteAppLeader(self):
+        trx = testnet.Trx()
+        trx.addAction('comn.ctrl', 'voteleader', self.owner+'@active', {
+                'commun_code': '',
+                'voter': self.owner,
+                'leader': self.appLeader
+            })
+        print(json.dumps(trx.getTrx(), indent=3))
+        community.createAndExecProposal(
+                commun_code=self.point,
+                permission='lead.smajor',
+                trx=trx,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey,
+                providebw=self.owner+'/comn@providebw')
+
+        trx = testnet.Trx()
+        trx.addAction('comn.ctrl', 'unvotelead', self.owner+'@active', {
+                'commun_code': '',
+                'voter': self.owner,
+                'leader': self.appLeader
+            })
+        print(json.dumps(trx.getTrx(), indent=3))
+        community.createAndExecProposal(
+                commun_code=self.point,
+                permission='lead.smajor',
+                trx=trx,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey,
+                providebw=self.owner+'/comn@providebw')
 
 
 if __name__ == '__main__':

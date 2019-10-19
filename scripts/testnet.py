@@ -1,12 +1,21 @@
 import os
 import json
 import subprocess
+import json
+import re
+import random
+import time
+
+from pymongo import MongoClient
+import pymongo
 
 params = {
     'cleos_path': os.environ.get("CLEOS", "cleos"),
     'nodeos_url': os.environ.get("CYBERWAY_URL", "http://localhost:8888"),
+    'mongodb':    os.environ.get("MONGODB", "mongodb://localhost:27018"),
 }
 cleosCmd = "{cleos_path} --url {nodeos_url} ".format(**params)
+mongoClient = MongoClient(params["mongodb"])
 
 class Symbol():
     def __init__(self, code, precission):
@@ -30,8 +39,9 @@ class JSONEncoder(json.JSONEncoder):
     def default(self, value):
         if isinstance(value, Symbol) or isinstance(value, Asset):
             return value.__str__()
-        else:
-            super().default(self, value)
+        if isinstance(value, Trx):
+            return value.getTrx()
+        super().default(value)
 
 def jsonArg(a):
     return " '" + json.dumps(a, cls=JSONEncoder) + "' "
@@ -83,6 +93,44 @@ def pushAction(code, action, actor, args, *, additional='', delay=None, expirati
     return json.loads(cleos(cmd, additional=additional, providebw=providebw, keys=keys, retry=retry))
 
 
+def pushTrx(trx, *, additional='', keys=None):
+    cmd = 'push transaction -j {trx}'.format(trx=jsonArg(trx.getTrx()))
+    return json.loads(cleos(cmd, additional=additional, keys=keys))
+
+
+def parseAuthority(auth):
+    if type(auth) == type([]):
+        return [parseAuthority(a) for a in auth]
+    d = auth.split('@',2)
+    if len(d) == 1:
+        d.extend(['active'])
+    return {'actor':d[0], 'permission':d[1]}
+
+def createAction(contract, action, actors, args):
+    data = cleos("convert pack_action_data {contract} {action} {args}".format(
+            contract=contract, action=action, args=jsonArg(args))).rstrip()
+    return {
+        'account':contract,
+        'name':action,
+        'authorization':parseAuthority(actors if type(actors)==type([]) else [actors]),
+        'data':data
+    }
+
+class Trx:
+    def __init__(self, expiration=None):
+        additional = '--skip-sign --dont-broadcast'
+        if expiration:
+            additional += ' --expiration {exp}'.format(exp=expiration)
+        self.trx = pushAction('cyber', 'checkwin', 'cyber', {}, additional=additional)
+        self.trx['actions'] = []
+
+    def addAction(self, contract, action, actors, args):
+        self.trx['actions'].append(createAction(contract, action, actors, args))
+
+    def getTrx(self):
+        return self.trx
+
+
 # --------------------- CYBER functions ---------------------------------------
 
 def createAuthority(keys, accounts):
@@ -106,11 +154,18 @@ def createAuthority(keys, accounts):
 def createAccount(creator, account, owner_auth, active_auth=None, *, providebw=None, keys=None):
     if active_auth is None:
         active_auth = owner_auth
-    return cleos('create account {creator} {acc} {owner} {active}'.format(creator=creator, acc=account, owner=owner_auth, active=active_auth), 
-            providebw=providebw, keys=keys)
+    creator_auth = parseAuthority(creator)
+    additional = '' if creator_auth['permission'] is None else ' -p {auth}'.format(auth=creator)
+    return cleos('create account {creator} {acc} {owner} {active}'.format(creator=creator_auth['actor'], acc=account, owner=owner_auth, active=active_auth), 
+            providebw=providebw, keys=keys, additional=additional)
 
 def getAccount(account):
-    return json.loads(cleos('get account -j {acc}'.format(acc=account)))
+    acc = json.loads(cleos('get account -j {acc}'.format(acc=account)))
+    perm = {}
+    for p in acc['permissions']:
+        perm[p['perm_name']] = p
+    acc['permissions'] = perm
+    return acc
 
 def updateAuth(account, permission, parent, keyList, accounts, *, providebw=None, keys=None):
     return pushAction('cyber', 'updateauth', account, {
@@ -127,3 +182,56 @@ def linkAuth(account, code, action, permission, *, providebw=None, keys=None):
 def transfer(sender, recipient, amount, memo="", *, providebw=None, keys=None):
     return pushAction('cyber.token', 'transfer', sender, {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}
         , providebw=providebw, keys=keys)
+
+
+
+def wait(timeout):
+    while timeout > 0:
+        w = 3 if timeout > 3 else timeout
+        print('\r                    \rWait %d sec' % timeout, flush=True, end='')
+        timeout -= w
+        time.sleep(w)
+
+def randomName():
+    letters = "abcdefghijklmnopqrstuvwxyz12345"
+    return ''.join(random.choice(letters) for i in range(12))
+
+def randomUsername():
+    letters = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    return ''.join(random.choice(letters) for i in range(16))
+
+def randomPermlink():
+    letters = "abcdefghijklmnopqrstuvwxyz0123456789-"
+    return ''.join(random.choice(letters) for i in range(128))
+
+def randomText(length):
+    letters = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=;:,.<>/?\\~`"
+    return ''.join(random.choice(letters) for i in range(length))
+
+def createKey():
+    data = cleos("create key --to-console")
+    m = re.search('Private key: ([a-zA-Z0-9]+)\nPublic key: ([a-zA-Z0-9]+)', data)
+    return (m.group(1), m.group(2))
+
+def importPrivateKey(private):
+    cleos("wallet import --name test --private-key %s" % private)
+
+def createRandomAccount(owner_auth, active_auth=None, *, creator='tech', providebw=None, keys=None):
+    while True:
+        name = randomName()
+        try:
+            getAccount(name)
+        except:
+            break
+    createAccount(creator, name, owner_auth, active_auth, providebw=providebw, keys=keys)
+    return name
+
+def getResourceUsage(account):
+    info = getAccount(account)
+    return {
+        'cpu': info['cpu_limit']['used'],
+        'net': info['net_limit']['used'],
+        'ram': info['ram_limit']['used'],
+        'storage': info['storage_limit']['used']
+    }
+

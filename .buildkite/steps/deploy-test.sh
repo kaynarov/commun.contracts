@@ -42,6 +42,6 @@ docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c 
     '/opt/commun.contracts/scripts/boot-sequence.py'
 
 docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c \
-    'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888; /opt/commun.contracts/scripts/deploy-tests.py'
+    'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888 MONGODB=mongodb://mongo:27017; /opt/commun.contracts/scripts/deploy-tests.py'
 
 exit 0
