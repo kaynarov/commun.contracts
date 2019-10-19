@@ -28,7 +28,7 @@ public:
     using contract::contract;
 
     /**
-        \brief A create token action
+        \brief Create point token.
 
         \param issuer an account who issues the token
         \param maximum_supply a structure value containing the fields:
@@ -36,25 +36,28 @@ public:
                 - token symbol (data type that uniquely identifies the token). This is a structure value containing fields:
                    + token name, consisting of a set of capital letters;
                    + field that specifies a token cost accuracy in the form of decimal places number.
-        \param cw
-        \param fee
+        \param cw connector weight of creating token to the system token
+        \param fee fee charging from account when it selling point tokens for system tokens
 
+        Performing the action requires a validators signature.
     */
     [[eosio::action]]
     void create(name issuer, asset maximum_supply, int16_t cw, int16_t fee);
 
 
     /**
-      \brief Set token freezer
+        \brief Set contract account which can freeze point or system tokens from account balance.
 
-      \param freezer a freezer account
+        \param freezer a freezer account
+
+        Performing the action requires the validators signature.
     */
     [[eosio::action]]
     void setfreezer(name freezer);
 
 
     /**
-        \brief Issue tokens to an account action
+        \brief Put the point tokens into circulation in the system.
 
         \param to recipient account to balance of which the tokens are transferred.
         \param quantity number of the supplied tokens. This is a structure value containing fields:
@@ -62,61 +65,73 @@ public:
                 - the token symbol. This is a structure value containing fields:
                     + the token name, consisting of a set of capital letters;
                     + the field that specifies a token cost accuracy in the form of decimal places number.
-        \param memo memo text that clarifies a meaning (necessity) of the token emission in the system. The text volume should not exceed 384 symbols including blanks.
+        \param memo memo text that clarifies a meaning (necessity) of the token emission in the system. Should not exceed 256 symbols including blanks.
+
+        Performing the action requires a signature of token issuer, or of the validators.
     */
     [[eosio::action]]
     void issue(name to, asset quantity, string memo);
 
     /**
-        \brief withdraw a certain number of tokens from the system
+        \brief Retire a certain number of point tokens from the issuer account, or another account.
 
-        \param quantity number of withdrawn tokens.
-        \param memo a memo text clarifying a purpose of withdrawing tokens from circulation.
+        \param from account from which tokens as retiring
+        \param quantity number of retiring tokens
+        \param memo a memo text clarifying a purpose of retiring tokens. Should not exceed 256 symbols including blanks.
 
 
-        Use of the bandwidth resources (RAM) is charged to the issuer account. The number of tokens withdrawn from circulation is also removed from issuer account balance, so this account can not withdraw tokens more than he/she has them on own balance.
-        To perform this action, the issuer account authorization is required.
+        Use of the bandwidth resources (RAM) is charged to the from account. The number of tokens withdrawn from circulation is also removed from from account balance, so this account can not withdraw tokens more than he/she has them on own balance.
+        To perform this action, the from account authorization is required.
     */
     [[eosio::action]]
     void retire(name from, asset quantity, string memo);
 
     /**
-        \brief ransfer tokens from one account to another
+        \brief Transfer point tokens from one account to another, or sell point tokens for system tokens.
 
-        \param from sender account from balance of which the tokens are withdrawn..
-        \param to recipient account to balance of which the tokens are transferred
-        \param quantity number of tokens to be transferred. This value should be greater than zero
-        \param memo a memo text that clarifies a meaning of the tokens transfer
+        \param from sender account from balance of which the tokens are withdrawn
+        \param to recipient account to balance of which the tokens are transferred, or equals to point contract name if selling point tokens
+        \param quantity amount of tokens to be transferred. This value should be greater than zero
+        \param memo a memo text that clarifies a meaning of the tokens transfer. Should not exceed 256 symbols including blanks.
 
+        Performing the action requires a signature of the from account, or of the validators.
     */
     [[eosio::action]]
     void transfer(name from, name to, asset quantity, string memo);
 
     /**
-        \brief action is used to create a record in database
+        \brief Create a record in database for account balance for point or system symbol.
 
-        \param owner account name to which the memory is allocated.
-        \param commun_code symbol for which the entry is being created.
-        \param ram_payer account name that pays for the used memory.
+        \param owner account name to which the memory is allocated
+        \param commun_code symbol for which the entry is being created
+        \param ram_payer account name that pays for the used memory
 
-        Performing the open action requires a signature of the ram_payer account.
+        Performing the action requires a signature of the ram_payer account.
      */
     [[eosio::action]]
     void open(name owner, symbol_code commun_code, std::optional<name> ram_payer);
 
     /**
-        \brief  action is an opposite of open and is used to free allocated memory in database
+        \brief Action is an opposite of open and is used to free allocated memory in database.
 
-        \param owner  account name to which the memory was allocated.
-        \param commun_code symbol for which the entry is being created.
+        \param owner  account name to which the memory is being created
+        \param commun_code symbol for which the entry is being cleared
 
-        Performing the open action requires a signature of the ram_payer account.
+        Performing the action requires a signature of the owner account.
      */
     [[eosio::action]]
     void close(name owner, symbol_code commun_code);
-    
+
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
-    
+
+    /**
+        \brief Withdraw a certain number of system tokens from the account to its balance in system token contract.
+
+        \param owner account name to which the tokens withdrawing
+        \param quantity amount of withdrawing tokens
+
+        Performing the action requires a signature of the owner account.
+     */
     [[eosio::action]]
     void withdraw(name owner, asset quantity);
 
@@ -189,11 +204,11 @@ struct structures {
 
     /**
 
-      \brief struct represents an account table in  a db
+      \brief struct represents an account table in a db
       \ingroup point_tables
     */
     struct [[eosio::table]] account {
-        asset    balance; /**< amount of points belongs to the ram payer*/
+        asset    balance; /**< amount of point or system tokens belongs to the account*/
         uint64_t primary_key()const { return balance.symbol.code().raw(); }
     };
 
@@ -203,8 +218,8 @@ struct structures {
       \ingroup point_tables
     */
     struct [[eosio::table]] stat {
-        asset    supply; /**< amount of points used in the system*/
-        asset    reserve; /**< amount of points not used in the system*/
+        asset    supply; /**< amount of tokens used in the system, point tokens */
+        asset    reserve; /**< amount of tokens not used in the system, system tokens */
         uint64_t primary_key()const { return supply.symbol.code().raw(); }
     };
 
@@ -214,7 +229,7 @@ struct structures {
       \ingroup point_tables
     */
     struct [[eosio::table]] param {
-        asset max_supply; /**< maximum amount of tokens supplied*/
+        asset max_supply; /**< maximum amount of point tokens supplied*/
         int16_t  cw; /**< connector weight*/
         int16_t fee; /**< fee */
         name     issuer; /**< an token issuer */
@@ -228,7 +243,7 @@ struct structures {
       \ingroup point_tables
     */
     struct [[eosio::table]] global_param {
-        name point_freezer; /**< need description*/
+        name point_freezer; /**< a name of contract which can freeze tokens of accounts*/
     };
 };
 
