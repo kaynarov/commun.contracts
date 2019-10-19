@@ -34,7 +34,7 @@ void emit::issuereward(symbol_code commun_code, bool for_leaders) {
     stats stats_table(_self, commun_code.raw());
     const auto& stat = stats_table.get(commun_code.raw(), "emitter does not exists, create it before issue");
     
-    auto community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(config::list_name, commun_code);
 
     auto now = eosio::current_time_point();
     int64_t passed_seconds = (now - stat.latest_reward(for_leaders)).to_seconds();

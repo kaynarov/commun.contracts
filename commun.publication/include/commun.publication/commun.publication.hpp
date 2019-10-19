@@ -20,7 +20,6 @@ public:
         auto vertex = vertices_table.find(mosaic.tracery);
         eosio::check(vertex != vertices_table.end(), "SYSTEM: Permlink doesn't exist.");
 
-        auto community = commun_list::get_community(config::list_name, commun_code);
         auto now = eosio::current_time_point();
 
         eosio::check(vertex->childcount == 0 || now > mosaic.close_date, "comment with child comments can't be removed during the active period");

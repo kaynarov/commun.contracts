@@ -77,9 +77,7 @@ void control::regleader(symbol_code commun_code, name leader, string url) {
 
     upsert_tbl<leader_tbl>(_self, commun_code.raw(), leader, leader.value, [&](bool exists) {
         return [&,exists](leader_info& w) {
-            eosio::check(!exists || w.url != url || !w.active, "already updated in the same way");
             w.name = leader;
-            w.url = url;
             w.active = true;
         };
     });
