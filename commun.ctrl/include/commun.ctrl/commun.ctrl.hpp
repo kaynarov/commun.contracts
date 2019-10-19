@@ -24,7 +24,6 @@ using share_type = int64_t;
 */
 struct [[eosio::table]] leader_info {
     name name;       /**< a leader name*/
-    std::string url; /**< url where with information about the witness*/       // not sure it's should be in db (but can be useful to get witness info)
     bool active;     /**< true if the witness is active*/            // can check key instead or even remove record
 
     uint64_t total_weight;
