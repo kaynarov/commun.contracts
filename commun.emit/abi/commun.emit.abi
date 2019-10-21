@@ -9,20 +9,10 @@
                 { "type": "bool",           "name": "for_leaders" }
             ]
         },{
-            "name": "create_args",
+            "name": "init_args",
             "base": "",
             "fields": [
-                { "type": "symbol_code",    "name": "commun_code" },
-                { "type": "uint16",         "name": "annual_emission_rate" },
-                { "type": "uint16",         "name": "leaders_reward_prop" }
-            ]
-        },{
-            "name": "param_struct",
-            "base": "",
-            "fields": [
-                { "type": "uint64",         "name": "id" },
-                { "type": "uint16",         "name": "annual_emission_rate" },
-                { "type": "uint16",         "name": "leaders_reward_prop" }
+                { "type": "symbol_code",    "name": "commun_code" }
             ]
         },{
             "name": "stat_struct",
@@ -37,8 +27,8 @@
     "types": [],
     "actions": [
         {
-            "name": "create",
-            "type": "create_args"
+            "name": "init",
+            "type": "init_args"
         },
         {
             "name": "issuereward",
@@ -50,18 +40,7 @@
             {
             "name": "stat",
             "type": "stat_struct",
-            "indexes": [
-                {
-                    "name": "primary",
-                    "unique": "true",
-                    "orders": [
-                        {"field": "id", "order": "asc"}
-                    ]
-                }
-            ]
-        },{
-            "name": "param",
-            "type": "param_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 {
                     "name": "primary",

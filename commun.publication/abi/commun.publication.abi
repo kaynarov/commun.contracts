@@ -34,19 +34,21 @@
                 { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
                 { "type": "time_point",    "name": "created" },
+                { "type": "time_point",    "name": "lock_date" },
+                { "type": "time_point",    "name": "moderation_end" },
+                { "type": "time_point",    "name": "close_date" },
                 { "type": "uint16",        "name": "gem_count" },
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
                 { "type": "int64",         "name": "damn_points" },
                 { "type": "int64",         "name": "damn_shares" },
-                { "type": "int64",         "name": "pledge_points" },
                 { "type": "int64",         "name": "reward" },
                 { "type": "int64",         "name": "comm_rating" },
                 { "type": "int64",         "name": "lead_rating" },
                 { "type": "bool",          "name": "meritorious" },
                 { "type": "bool",          "name": "active" },
                 { "type": "bool",          "name": "banned" },
-                { "type": "name[]",        "name": "slaps" }
+                { "type": "bool",          "name": "locked" }
             ]
         },{
             "name": "gem_struct",
@@ -68,22 +70,6 @@
                 { "type": "asset",         "name": "quantity" }
             ]
         },{
-            "name": "opus_info",
-            "base": "",
-            "fields": [
-                { "type": "name",           "name": "name" },
-                { "type": "int64",          "name": "mosaic_pledge" },
-                { "type": "int64",          "name": "min_mosaic_inclusion" },
-                { "type": "int64",          "name": "min_gem_inclusion" }
-            ]
-        },{
-            "name": "param_struct",
-            "base": "",
-            "fields": [
-                { "type": "uint64",         "name": "id" },
-                { "type": "opus_info[]",    "name": "opuses" }
-            ]
-        },{
             "name": "stat_struct",
             "base": "",
             "fields": [
@@ -103,19 +89,11 @@
                 { "type": "int64",          "name": "frozen" }
             ]
         },{
-            "name": "mosaic_key",
-            "base": "",
-            "fields": [
-                { "type": "name",           "name": "creator" },
-                { "type": "uint64",         "name": "tracery" }
-            ]
-        },{
             "name": "advice_struct",
             "base": "",
             "fields": [
-                { "type": "uint64",         "name": "id" },
                 { "type": "name",           "name": "leader" },
-                { "type": "mosaic_key[]",   "name": "favorites" }
+                { "type": "uint64[]",   "name": "favorites" }
             ]
         },
   {
@@ -183,7 +161,7 @@
       ]
   },
   {
-    "name": "createmssg",
+    "name": "create",
     "base": "",
     "fields": [
       {
@@ -215,17 +193,13 @@
         "type": "string"
       },
       {
-        "name": "curators_prcnt",
-        "type": "uint16"
-      },
-      {
         "name": "weight",
         "type": "uint16?"
       }
     ]
   },
   {
-    "name": "updatemssg",
+    "name": "update",
     "base": "",
     "fields": [
       {
@@ -285,7 +259,7 @@
     ]
   },
   {
-    "name": "deletemssg",
+    "name": "remove",
     "base": "",
     "fields": [
       {
@@ -299,7 +273,7 @@
     ]
   },
   {
-    "name": "reportmssg",
+    "name": "report",
     "base": "",
     "fields": [
       {
@@ -308,6 +282,28 @@
       },
       {
         "name": "reporter",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "reason",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "name": "lock",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
+        "name": "leader",
         "type": "name"
       },
       {
@@ -367,16 +363,6 @@
       {
         "name": "id",
         "type": "uint64"
-      }
-    ]
-  },
-  {
-    "name": "setparams",
-    "base": "",
-    "fields": [
-      {
-        "name": "commun_code",
-        "type": "symbol_code"
       }
     ]
   },
@@ -470,37 +456,99 @@
                 { "type": "mssgid[]",               "name": "favorites" }
             ]
         },{
-            "name": "slap_args",
+            "name": "ban_args",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
-                { "type": "name",                   "name": "leader" },
                 { "type": "mssgid",                 "name": "message_id" }
+            ]
+        },{
+            "name": "mosaic_key",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "uint64",                 "name": "tracery" }
+            ]
+        },{
+            "name": "event_mosaic",
+            "base": "",
+            "fields": [
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "name",                   "name": "creator" },
+                { "type": "uint16",                 "name": "gem_count" },
+                { "type": "int64",                  "name": "shares" },
+                { "type": "int64",                  "name": "damn_shares" },
+                { "type": "asset",                  "name": "reward" },
+                { "type": "bool",                   "name": "banned" }
+            ]
+        },{
+            "name": "event_gem",
+            "base": "",
+            "fields": [
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "name",                   "name": "owner" },
+                { "type": "name",                   "name": "creator" },
+                { "type": "asset",                  "name": "points" },
+                { "type": "asset",                  "name": "pledge_points" },
+                { "type": "bool",                   "name": "damn" },
+                { "type": "int64",                  "name": "shares" }
+            ]
+        },{
+            "name": "event_chop",
+            "base": "",
+            "fields": [
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "name",                   "name": "owner" },
+                { "type": "name",                   "name": "creator" },
+                { "type": "asset",                  "name": "reward" }
+            ]
+        },{
+            "name": "event_top",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "uint16",                 "name": "place" },
+                { "type": "int64",                  "name": "comm_rating" },
+                { "type": "int64",                  "name": "lead_rating" }
             ]
         }
   ],
   "events": [
-  ],
+        { "name": "mosaicerase", "type": "mosaic_key" },
+        { "name": "mosaicstate", "type": "event_mosaic" },
+        { "name": "gemstate",    "type": "event_gem" },
+        { "name": "chopevent",   "type": "event_chop" },
+        { "name": "topstate",   "type": "event_top" }
+    ],
   "actions": [
   {
-    "name": "createmssg",
-    "type": "createmssg"
+    "name": "create",
+    "type": "create"
   },
   {
-    "name": "updatemssg",
-    "type": "updatemssg"
+    "name": "update",
+    "type": "update"
   },
   {
     "name": "settags",
     "type": "settags"
   },
   {
-    "name": "deletemssg",
-    "type": "deletemssg"
+    "name": "remove",
+    "type": "remove"
   },
   {
-    "name": "reportmssg",
-    "type": "reportmssg"
+    "name": "report",
+    "type": "report"
+  },
+  {
+    "name": "lock",
+    "type": "lock"
+  },
+  {
+    "name": "unlock",
+    "type": "lock"
   },
   {
     "name": "upvote",
@@ -527,10 +575,6 @@
     "type": "transfer_args"
   },
   {
-    "name": "setparams",
-    "type": "setparams"
-  },
-  {
     "name": "reblog",
     "type": "reblog"
   },
@@ -551,8 +595,8 @@
     "type": "advise_args"
   },
   {
-    "name": "slap",
-    "type": "slap_args"
+    "name": "ban",
+    "type": "ban_args"
   }
   ],
   "tables": [
@@ -571,18 +615,7 @@
         },{
             "name": "stat",
             "type": "stat_struct",
-            "indexes": [
-                {
-                    "name": "primary",
-                    "unique": "true",
-                    "orders": [
-                        {"field": "id", "order": "asc"}
-                    ]
-                }
-            ]
-        },{
-            "name": "param",
-            "type": "param_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 {
                     "name": "primary",
@@ -595,18 +628,22 @@
         },{
             "name": "mosaic",
             "type": "mosaic_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "tracery", "order": "asc"} ] },
                 { "name": "bycommrating", "unique": "false", "orders": [
                     {"field": "active", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
-                    {"field": "banned", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
-                { "name": "bycreated", "unique": "false", "orders": [
-                    {"field": "active", "order": "asc"}, {"field": "created", "order": "asc"} ] }
+                    {"field": "banned", "order": "desc"}, {"field": "locked", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
+                { "name": "byclose", "unique": "false", "orders": [
+                    {"field": "active", "order": "asc"}, {"field": "close_date", "order": "asc"} ] },
+                { "name": "bymoderend", "unique": "false", "orders": [
+                    {"field": "locked", "order": "asc"}, {"field": "moderation_end", "order": "asc"} ] }
             ]
         },{
             "name": "gem",
             "type": "gem_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
                 { "name": "bykey", "unique": "true", "orders": [
@@ -621,6 +658,7 @@
         },{
             "name": "provision",
             "type": "provision_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
                 { "name": "bykey", "unique": "true", "orders": [
@@ -629,8 +667,9 @@
         },{
             "name": "advice",
             "type": "advice_struct",
+            "scope_type": "symbol_code",
             "indexes": [
-                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] }
+                { "name": "primary", "unique": "true", "orders": [ {"field": "leader", "order": "asc"} ] }
             ]
         },
   
@@ -638,6 +677,7 @@
   {
       "name": "vertex",
       "type": "vertex_struct",
+      "scope_type": "symbol_code",
       "indexes": [
          {
             "name": "primary",
@@ -651,6 +691,7 @@
   {
       "name": "accparam",
       "type": "acc_param",
+      "scope_type": "symbol_code",
         "indexes": [{
             "name": "primary",
             "unique": "true",
@@ -658,19 +699,6 @@
                 {"field": "account", "order": "asc"}
             ]
         }]
-  },
-  {
-    "name": "pstngparams",
-    "type": "posting_state",
-    "indexes": [
-       {
-          "name": "primary",
-          "unique": "true",
-          "orders": [
-              {"field": "id", "order": "asc"}
-          ]
-       }
-    ]
   }
   ],
   "error_messages": [],

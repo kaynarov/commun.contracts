@@ -5,4 +5,6 @@ target_include_directories(commun.ctrl.wasm
    ${CMAKE_CURRENT_SOURCE_DIR}/include
    ${CMAKE_CURRENT_SOURCE_DIR}/..
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+   ${CMAKE_CURRENT_SOURCE_DIR}/../commun.emit/include
+   ${CMAKE_CURRENT_SOURCE_DIR}/../commun.list/include
    ${CMAKE_CURRENT_SOURCE_DIR}/../commun.point/include)

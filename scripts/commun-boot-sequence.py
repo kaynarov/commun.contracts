@@ -19,12 +19,37 @@ unlockTimeout = 999999999
 _communAccounts = [
     # name           contract                warmup_code     permissions (name, keys, accounts, links)
     #('comn',        None),    # comn - owner for COMMUN. Must be created outside of this script!
-    ('comn.point',   'commun.point',         None,                [("active", [], ["comn@active", "comn.point@cyber.code"], []),
-                                                                   ("issueperm", [], ["comn.emit@cyber.code"], ["comn.point:issue"]),
-                                                                   ("transferperm", [], ["comn.emit@cyber.code"], ["comn.point:transfer"])]),
-    ('comn.ctrl',    'commun.ctrl',          None,                [("changepoints", [], ["comn.point@cyber.code"], ["comn.ctrl:changepoints"])]),
-    ('comn.emit',    'commun.emit',          None,                [("rewardperm", [], ["comn.gallery@cyber.code"], ["comn.emit:issuereward"])]),
-    ('comn.list',    'commun.list',          None,                []),
+    # Account for commun.com site
+    ('comn.com',     None,                   None, [
+            ("comn.com",     ["GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62"], [], ['cyber:newaccount'])
+        ]),
+
+    ('comn',         None,                   None, [
+            ('lead.smajor',  [], ['comn.ctrl@cyber.code'], []),
+            ('lead.major',   [], ['comn.ctrl@cyber.code'], []),
+            ('lead.minor',   [], ['comn.ctrl@cyber.code'], []),
+            ('clients',      [], ['comn.com@comn.com'], []),
+            ('providebw',    [], ['comn@clients'], ['cyber:providebw', 'comn.point:open']),
+            ('issue',        [], ['comn@clients'], ['cyber.token:issue', 'cyber.token:transfer']),    # Only for testnet purposes
+        ]),
+
+    ('comn.point',   'commun.point',         None, [
+            ("active",       [], ["comn@active", "comn.point@cyber.code"], []),
+            ("issueperm",    [], ["comn.emit@cyber.code"], ["comn.point:issue"]),
+            ("transferperm", [], ["comn.emit@cyber.code"], ["comn.point:transfer"]),
+            ("clients",      [], ["comn@clients"], ["comn.point:create"])
+        ]),
+    ('comn.ctrl',    'commun.ctrl',          None, [
+            ("changepoints", [], ["comn.point@cyber.code"], ["comn.ctrl:changepoints"]),
+            ("init",         [], ["comn.list@cyber.code"], ["comn.ctrl:init"])
+        ]),
+    ('comn.emit',    'commun.emit',          None, [
+            ("rewardperm",   [], ["comn.ctrl@cyber.code", "comn.gallery@cyber.code"], ["comn.emit:issuereward"]),
+            ("init",       [], ["comn.list@cyber.code"], ["comn.emit:init"])
+        ]),
+    ('comn.list',    'commun.list',          None,                [
+            ("clients",      [], ["comn@clients"], ["comn.list:create"])
+        ]),
     ('comn.gallery', 'commun.publication',   ['commun.gallery'],  []),
     ('comn.social',  'commun.social',        None,                []),
 ]
@@ -106,20 +131,30 @@ def importKeys():
 
 def createCommunAccounts():
     for acc in communAccounts:
-        createAccount('comn', acc.name, 'comn@owner', 'comn@active')
+        if acc.name != 'comn':
+            createAccount('comn', acc.name, 'comn@owner', 'comn@active')
 
     for acc in communAccounts:
+        providebw = acc.name+'/comn' if acc.name!='comn' else ''
         for perm in acc.permissions:
-            updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, providebw=acc.name+'/comn')
+            updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, providebw=providebw)
             for link in perm.links:
                 (code, action) = link.split(':',2)
-                linkAuth(acc.name, code, action, perm.name, providebw=acc.name+'/comn')
+                linkAuth(acc.name, code, action, perm.name, providebw=providebw)
 
 def installContracts():
     for acc in communAccounts:
         if (acc.contract != None):
             loadContract(acc.name, acc.contract, providebw=acc.name+'/comn', retry=3, contracts_dir=args.contracts_dir, warmup_code=acc.warmup_code)
 
+def configureCommun():
+    # Only for testnet purposes
+    pushAction('comn.list', 'setappparams', 'comn.list', {
+            "leaders_num":5
+        }, providebw='comn.list/comn')
+
+    comn = getAccount('comn')
+    updateAuth('comn', 'active', 'owner', [], ['comn@lead.smajor'])
 
 # -------------------- Argument parser ----------------------------------------
 # Command Line Arguments
@@ -145,3 +180,4 @@ startWallet()
 importKeys()
 createCommunAccounts()
 installContracts()
+configureCommun()

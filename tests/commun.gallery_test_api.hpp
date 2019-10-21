@@ -1,6 +1,7 @@
 #pragma once
 #include "test_api_helper.hpp"
 #include <commun.gallery/include/commun.gallery/config.hpp>
+#include <commun.list/include/commun.list/config.hpp>
 
 namespace eosio { namespace testing {
 
@@ -13,10 +14,6 @@ public:
     ,   _symbol(sym) {}
     
     symbol _symbol;
-    
-    action_result create(symbol commun_symbol) {
-        return push(N(create), _code, args()("commun_symbol", commun_symbol));
-    }
     
     action_result createmosaic(account_name creator, uint64_t tracery, account_name opus, asset quantity, uint16_t royalty,
                                         std::vector<std::pair<account_name, int64_t> > providers = 
@@ -100,17 +97,16 @@ public:
         return push(N(provide), grantor, a);
     }
 
-    action_result advise(account_name leader, std::vector<uint64_t> favorites) {
+    action_result advise(account_name leader, std::vector<uint64_t> favorites) { // vector is to test if duplicated
         return push(N(advise), leader, args()
             ("commun_code", _symbol.to_symbol_code())
             ("leader", leader)
             ("favorites", favorites));
     }
     
-    action_result slap(account_name leader, uint64_t tracery) {
-        return push(N(slap), leader, args()
+    action_result ban(account_name issuer, uint64_t tracery) {
+        return push(N(ban), issuer, args()
             ("commun_code", _symbol.to_symbol_code())
-            ("leader", leader)
             ("tracery", tracery));
     }
     
@@ -122,6 +118,16 @@ public:
         }
         return 0;
     }
+
+    const int64_t default_mosaic_pledge = 100;
+    const int64_t default_min_mosaic_inclusion = 1000;
+    const int64_t default_min_gem_inclusion = 200;
+    commun::structures::opus_info default_opus{                                                     \
+        eosio::chain::name("regulatum"),
+        default_mosaic_pledge,
+        default_min_mosaic_inclusion,
+        default_min_gem_inclusion
+    };
 };
 
 

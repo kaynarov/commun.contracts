@@ -6,7 +6,7 @@
 
 namespace commun {
 
-void publication::createmssg(
+void publication::create(
     symbol_code commun_code,
     mssgid_t message_id,
     mssgid_t parent_id,
@@ -14,7 +14,6 @@ void publication::createmssg(
     std::string body,
     std::vector<std::string> tags,
     std::string metadata,
-    uint16_t curators_prcnt,
     std::optional<uint16_t> weight
 ) {
     require_auth(message_id.author);
@@ -27,7 +26,6 @@ void publication::createmssg(
     eosio::check(validate_permlink(message_id.permlink), "Permlink contains wrong symbol.");
     eosio::check(header.length() < config::max_length, "Title length is more than 256.");
     eosio::check(body.length(), "Body is empty.");
-    eosio::check(curators_prcnt <= config::_100percent, "curators_prcnt can't be more than 100%.");
 
     vertices vertices_table(_self, commun_code.raw());
     auto tracery = message_id.tracery();
@@ -39,15 +37,18 @@ void publication::createmssg(
     if (parent_id.author) {
         parent_tracery = parent_id.tracery();
         auto parent_vertex = vertices_table.find(parent_tracery);
-        eosio::check(parent_vertex != vertices_table.end(), "Parent message doesn't exist");
-
-        vertices_table.modify(parent_vertex, eosio::same_payer, [&](auto& item) {
-            ++item.childcount;
-        });
-
-        level = 1 + parent_vertex->level;
+        if (parent_vertex != vertices_table.end()) {
+            vertices_table.modify(parent_vertex, eosio::same_payer, [&](auto& item) {
+                ++item.childcount;
+            });
+            level = 1 + parent_vertex->level;
+        }
+        else {
+            check_auth("Parent message doesn't exist");
+            parent_tracery = 0;
+        }
     }
-    eosio::check(level <= config::max_comment_depth, "publication::createmssg: level > MAX_COMMENT_DEPTH");
+    eosio::check(level <= config::max_comment_depth, "publication::create: level > MAX_COMMENT_DEPTH");
 
     vertices_table.emplace(message_id.author, [&](auto& item) {
         item.tracery = tracery;
@@ -56,21 +57,14 @@ void publication::createmssg(
         item.childcount = 0;
     });
 
-    gallery_types::params params_table(_self, commun_code.raw());
-    const auto& param = params_table.get(commun_code.raw(), "param does not exists");
-    auto community = commun_list::get_community(config::list_name, commun_code);
-    accparams accparams_table(_self, commun_code.raw());
-    auto acc_param = get_acc_param(accparams_table, commun_code, message_id.author);
+    auto& community = commun_list::get_community(config::list_name, commun_code);
     auto gems_per_period = get_gems_per_period(commun_code);
 
     int64_t amount_to_freeze = 0;
     if (parent_id.author) {
         eosio::check(!weight.has_value(), "weight is redundant for comments");
-        auto opus_itr = std::find_if(param.opuses.begin(), param.opuses.end(), 
-            [](const config::opus_info& arg) { return arg.name == config::comment_opus_name; });
-        
-        check(opus_itr != param.opuses.end(), "unknown opus, probably comments in the community are disabled");
-        amount_to_freeze = std::max(opus_itr->mosaic_pledge, std::max(opus_itr->min_mosaic_inclusion, opus_itr->min_gem_inclusion));
+        const auto& op = community.get_opus(config::comment_opus_name, "unknown opus, probably comments in the community are disabled");
+        amount_to_freeze = std::max(op.mosaic_pledge, std::max(op.min_mosaic_inclusion, op.min_gem_inclusion));
     }
     else {
         amount_to_freeze = get_amount_to_freeze(point::get_balance(config::point_name, message_id.author, commun_code).amount, 
@@ -80,15 +74,16 @@ void publication::createmssg(
 
     //providers are not used for comments
     create_mosaic(_self, message_id.author, tracery, parent_id.author ? config::comment_opus_name : config::post_opus_name,
-        quantity, config::_100percent - curators_prcnt, 
+        quantity, community.author_percent,
         parent_id.author ? gallery_types::providers_t() : get_providers(commun_code, message_id.author, gems_per_period, weight));    
 }
 
-void publication::updatemssg(symbol_code commun_code, mssgid_t message_id,
+void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
-    require_auth(message_id.author);
-    check_mssg_exists(commun_code, message_id);
+    if (check_mssg_exists(commun_code, message_id, message_id.author)) {
+        update_mosaic(_self, commun_code, message_id.author, message_id.tracery());
+    }
 }
 
 void publication::settags(symbol_code commun_code, name leader, mssgid_t message_id,
@@ -99,17 +94,29 @@ void publication::settags(symbol_code commun_code, name leader, mssgid_t message
     check_mssg_exists(commun_code, message_id);
 }
 
-void publication::deletemssg(symbol_code commun_code, mssgid_t message_id) {
-    auto tracery = message_id.tracery();
-    claim_gems_by_creator(_self, tracery, commun_code, message_id.author, true);
-    gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-    eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "Unable to delete comment with votes.");
+void publication::remove(symbol_code commun_code, mssgid_t message_id) {
+    if (check_mssg_exists(commun_code, message_id, message_id.author)) {
+        auto tracery = message_id.tracery();
+        claim_gems_by_creator(_self, tracery, commun_code, message_id.author, true);
+        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+        eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "Unable to remove comment with votes.");
+    }
 }
 
-void publication::reportmssg(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason) {
+void publication::report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason) {
     require_auth(reporter);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     check_mssg_exists(commun_code, message_id);
+}
+
+void publication::lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    eosio::check(!reason.empty(), "Reason cannot be empty.");
+    lock_mosaic(_self, commun_code, leader, message_id.tracery());
+}
+
+void publication::unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    eosio::check(!reason.empty(), "Reason cannot be empty.");
+    unlock_mosaic(_self, commun_code, leader, message_id.tracery());
 }
 
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
@@ -123,8 +130,10 @@ void publication::downvote(symbol_code commun_code, name voter, mssgid_t message
 }
 
 void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_id) {
-    eosio::check(voter != message_id.author, "author can't unvote");
-    claim_gems_by_creator(_self, message_id.tracery(), commun_code, voter, true);
+    if (check_mssg_exists(commun_code, message_id, voter)) {
+        eosio::check(voter != message_id.author, "author can't unvote");
+        claim_gems_by_creator(_self, message_id.tracery(), commun_code, voter, true);
+    }
 }
 
 void publication::hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator) {
@@ -142,10 +151,31 @@ void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_o
 }
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, std::optional<uint16_t> weight, bool damn) {
-    auto community = commun_list::get_community(config::list_name, commun_code);
-    accparams accparams_table(_self, commun_code.raw());
-    auto acc_param = get_acc_param(accparams_table, commun_code, voter);
-    auto gems_per_period = get_gems_per_period(commun_code);
+    
+    if (weight.has_value() && *weight == 0) {
+        check_auth("weight can't be 0.", voter);
+        return; 
+    }
+    
+    auto& community = commun_list::get_community(config::list_name, commun_code);
+
+    gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+    
+    auto mosaic = mosaics_table.find(message_id.tracery());
+    if (mosaic == mosaics_table.end()) {
+        check_auth("Message does not exist.", voter);
+        return;
+    }
+    if (!mosaic->active) {
+        check_auth("Mosaic is inactive.", voter);
+        return;
+    }
+    if (eosio::current_time_point() > mosaic->created + eosio::seconds(community.collection_period)) {
+        check_auth("collection period is over", voter);
+        return;
+    }
+    
+    auto gems_per_period = get_gems_per_period(commun_code, mosaic->close_date.sec_since_epoch());
 
     asset quantity(
         get_amount_to_freeze(
@@ -154,17 +184,14 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
             gems_per_period,
             weight), 
         community.commun_symbol);
-
-    add_to_mosaic(_self, message_id.tracery(), quantity, damn, voter, get_providers(commun_code, message_id.author, gems_per_period, weight));
-}
-
-void publication::setparams(symbol_code commun_code) {
-    require_auth(_self);
-
-    gallery_types::params params_table(_self, commun_code.raw());
-    if (params_table.find(commun_code.raw()) == params_table.end()) {
-        create_gallery(_self, point::get_supply(config::point_name, commun_code).symbol);
+    auto providers = get_providers(commun_code, message_id.author, gems_per_period, weight);
+    
+    if ((providers.size() + 1) * community.get_opus(mosaic->opus).min_gem_inclusion > get_points_sum(quantity.amount, providers)) {
+        check_auth("points are not enough for gem inclusion", voter);
+        return;
     }
+
+    add_to_mosaic(_self, message_id.tracery(), quantity, damn, voter, providers);
 }
 
 void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {
@@ -199,10 +226,20 @@ bool publication::validate_permlink(std::string permlink) {
     return true;
 }
 
-void publication::check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id) {
+bool publication::check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id, name actor) {
     vertices vertices_table(_self, commun_code.raw());
-    eosio::check(vertices_table.find(message_id.tracery()) != vertices_table.end(), "Message does not exist.");
+    if (vertices_table.find(message_id.tracery()) == vertices_table.end()) {
+        check_auth("Message does not exist.", actor);
+        return false;
+    }
+    return true;
 }
+
+void publication::check_auth(const std::string& s, name actor) {
+    if (actor != name()) { require_auth(actor); }
+    eosio::check(has_auth(_self), "Missing authority of _self. " + s);
+}
+
 
 accparams::const_iterator publication::get_acc_param(accparams& accparams_table, symbol_code commun_code, name account) {
     auto ret = accparams_table.find(account.value);
@@ -212,10 +249,11 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
     return ret;
 }
 
-uint16_t publication::get_gems_per_period(symbol_code commun_code) {
+uint16_t publication::get_gems_per_period(symbol_code commun_code, int64_t mosaic_active_period) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
-    auto community = commun_list::get_community(config::list_name, commun_code);
-    int64_t mosaic_active_period = community.active_period;
+    auto& community = commun_list::get_community(config::list_name, commun_code);
+    if (mosaic_active_period == 0)
+        mosaic_active_period = community.active_period;
     uint16_t gems_per_day = community.gems_per_day;
     return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
 }
@@ -231,7 +269,6 @@ int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint1
 
 gallery_types::providers_t publication::get_providers(symbol_code commun_code, name account, 
                                                       uint16_t gems_per_period, std::optional<uint16_t> weight) {
-    auto community = commun_list::get_community(config::list_name, commun_code);
     accparams accparams_table(_self, commun_code.raw());
     auto acc_param = get_acc_param(accparams_table, commun_code, account);
     gallery_types::provs provs_table(_self, commun_code.raw());
@@ -285,21 +322,20 @@ void publication::provide(name grantor, name recipient, asset quantity, std::opt
     provide_points(_self, grantor, recipient, quantity, fee);
 }
 
-void publication::advise(symbol_code commun_code, name leader, std::vector<mssgid_t> favorites) {
-    std::vector<uint64_t> favorite_mosaics;
-    favorite_mosaics.reserve(favorites.size());
+void publication::advise(symbol_code commun_code, name leader, std::set<mssgid_t> favorites) {
+    std::set<uint64_t> favorite_mosaics;
     for (const auto& m : favorites) {
-        favorite_mosaics.push_back(m.tracery());
+        favorite_mosaics.insert(m.tracery());
     }
     advise_mosaics(_self, commun_code, leader, favorite_mosaics);
 }
 
-void publication::slap(symbol_code commun_code, name leader, mssgid_t message_id) {
-    slap_mosaic(_self, commun_code, leader, message_id.tracery());
+void publication::ban(symbol_code commun_code, mssgid_t message_id) {
+    ban_mosaic(_self, commun_code, message_id.tracery());
 }
 
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (createmssg)(updatemssg)(settags)(deletemssg)(reportmssg)(upvote)(downvote)(unvote)(claim)(hold)(transfer)
-    (setparams)(reblog)(erasereblog)(setproviders)(provide)(advise)(slap))
+    (create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
+    (claim)(hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise)(ban))

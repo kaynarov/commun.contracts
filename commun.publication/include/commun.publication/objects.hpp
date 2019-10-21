@@ -22,6 +22,14 @@ struct mssgid_t {
                permlink == value.permlink;
     }
 
+    // for set
+    friend bool operator<(const mssgid_t& a, const mssgid_t& b) {
+        return std::tie(a.author, a.permlink) < std::tie(b.author, b.permlink);
+    }
+    friend bool operator>(const mssgid_t& a, const mssgid_t& b) {
+        return std::tie(a.author, a.permlink) > std::tie(b.author, b.permlink);
+    }
+
     uint64_t tracery() const {
         std::string key = author.to_string() + "/" + permlink;
         auto hash = sha256(key.c_str(), key.size());
@@ -29,8 +37,14 @@ struct mssgid_t {
     }
 };
 
+/**
+ * \brief struct represents a vertex table in a db
+ * \ingroup publish_tables
+ *
+ * Contains information about posts/comment hierarchy
+ */
 struct vertex_t {
-    uint64_t tracery;
+    uint64_t tracery;  //!< the tracery of mosaic, used as primary key
     uint64_t parent_tracery;
     uint16_t level;
     uint32_t childcount;

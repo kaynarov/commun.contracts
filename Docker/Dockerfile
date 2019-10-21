@@ -20,7 +20,7 @@ RUN cd commun.contracts/cyberway.contracts \
         -GNinja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/cyberway.contracts/ \
-        -Deosio.cdt_DIR=/opt/cyberway.cdt/lib/cmake/eosio.cdt \
+        -Dcyberway.cdt_DIR=/opt/cyberway.cdt/lib/cmake/cyberway.cdt \
         -DEOSIO_ROOT=/opt/cyberway \
     && cmake --build build --target install \
     && cd .. \
@@ -29,14 +29,15 @@ RUN cd commun.contracts/cyberway.contracts \
         -GNinja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/commun.contracts/ \
-        -Deosio.cdt_DIR=/opt/cyberway.cdt/lib/cmake/eosio.cdt \
+        -Dcyberway.cdt_DIR=/opt/cyberway.cdt/lib/cmake/cyberway.cdt \
         -DEOSIO_ROOT=/opt/cyberway \
-    && cmake --build build --target install
+    && cmake --build build --target install \
+    && doxygen Doxyfile
 
 FROM ubuntu:18.04
 
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ca-certificates python3 python3-numpy python3-bson libusb-1.0-0-dev libcurl4-gnutls-dev \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ca-certificates python3 python3-numpy python3-bson python3-pymongo libusb-1.0-0-dev libcurl4-gnutls-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /commun.contracts/version /opt/commun.contracts/version
@@ -51,6 +52,8 @@ COPY --from=builder /commun.contracts/cyberway.contracts/tests/test_contracts /o
 COPY --from=builder /commun.contracts/cyberway.contracts/scripts/bios-boot-sequence /opt/cyberway.contracts/scripts/bios-boot-sequence
 COPY --from=builder /commun.contracts/scripts /opt/commun.contracts/scripts
 COPY --from=builder /commun.contracts/genesis /opt/commun.contracts/genesis
+
+COPY --from=builder /commun.contracts/docs/doxygen/html /opt/commun.contracts/docs
 
 COPY --from=builder /usr/local/lib/libbson-1.0.so.0.0.0 /usr/local/lib/
 COPY --from=cyberway /opt/cyberway/bin/cleos /opt/cyberway/bin/cleos

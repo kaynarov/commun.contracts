@@ -20,7 +20,7 @@ public:
         const string no_points_provided = amsg("no points provided");
         const string not_enough_provided = amsg("not enough provided points");
         const string gallery_exists = amsg("the gallery with this symbol already exists");
-        const string no_param_no_gallery = amsg("param does not exists");
+        const string symbol_precision = amsg("symbol precision mismatch");
         const string wrong_royalty = amsg("incorrect royalty");
         const string too_many_providers = amsg("too many providers");
         const string cannot_freeze_zero = amsg("can't freeze zero points");
@@ -34,7 +34,9 @@ public:
         const string not_enough_for_pledge = amsg("points are not enough for a pledge");
         const string not_enough_for_mosaic = amsg("points are not enough for mosaic inclusion");
         const string not_enough_for_gem    = amsg("points are not enough for gem inclusion");
-        
+        const string advice_surfeit       = amsg("a surfeit of advice");
+        const string no_changes_favorites = amsg("no changes in favorites");
+
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
 
         const string no_community = amsg("community not exists");
@@ -56,6 +58,10 @@ public:
             }
         }
         return variant();
+    }
+
+    variant get_advice(name code, symbol point, name leader) {
+        return get_chaindb_struct(code, point.to_symbol_code().value, N(advice), leader.value, "advice");
     }
 };
 

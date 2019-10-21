@@ -7,11 +7,9 @@ struct commun_emit_api: base_contract_api {
     commun_emit_api(golos_tester* tester, name code)
         :   base_contract_api(tester, code) {}
 
-    action_result create(symbol_code commun_code, uint16_t annual_emission_rate, uint16_t leaders_reward_prop) {
-        return push(N(create), _code, args()
+    action_result init(symbol_code commun_code) {
+        return push(N(init), _code, args()
             ("commun_code", commun_code)
-            ("annual_emission_rate", annual_emission_rate)
-            ("leaders_reward_prop", leaders_reward_prop)
         );
     }
 

@@ -1,6 +1,7 @@
 #include "commun.ctrl/commun.ctrl.hpp"
 #include "commun.ctrl/config.hpp"
 #include "commun.point/commun.point.hpp"
+#include "commun.emit/commun.emit.hpp"
 //#include <golos.vesting/golos.vesting.hpp>
 #include <commun/parameter_ops.hpp>
 #include <commun/dispatchers.hpp>
@@ -12,97 +13,61 @@
 
 namespace commun {
 
-
 using namespace eosio;
 using std::vector;
 using std::string;
 
-void control::setparams(symbol_code commun_code, std::optional<structures::control_param> p) {
-    require_auth(_self);
-    //it is in 2 tables, for convenience when moving to commun_list
-    if (!commun_code) {
-        tables::sysparams sysparams_table(_self, _self.value);
-        structures::sysparam sysparam;
-        if (p.has_value()) {
-            sysparam.control = *p;
-        }
-        else {
-            sysparam.control.leaders_num = config::default_dapp_leaders_num;
-            sysparam.control.thresholds = std::vector<structures::threshold>
-                (config::default_dapp_thresholds.begin(), config::default_dapp_thresholds.end());
-            sysparam.control.max_votes = config::default_dapp_max_votes;
-        }
-        sysparams_table.set(sysparam, _self);
-    }
-    else {
-        structures::control_param control_param;
-        if (p.has_value()) {
-            control_param = *p;
-        }
-        else {
-            control_param.leaders_num = config::default_comm_leaders_num;
-            control_param.thresholds = std::vector<structures::threshold>
-                (config::default_comm_thresholds.begin(), config::default_comm_thresholds.end());
-            control_param.max_votes = config::default_comm_max_votes;
-        }
-        
-        tables::params params_table(_self, commun_code.raw());
-        auto param = params_table.find(commun_code.raw());
-        
-        if (param == params_table.end()) {
-            params_table.emplace(_self, [&](auto& item) {
-                item.commun_code = commun_code;
-                item.control = control_param;
-            });
-        }
-        else {
-            params_table.modify(param, eosio::same_payer, [&](auto& item) { item.control = control_param; });
-        }
-    }
-}
-
 /// control
 void control::check_started(symbol_code commun_code) {
-    get_control_param(control_param_contract, commun_code);
+    commun_list::get_control_param(config::list_name, commun_code);
 }
 
-void control::on_transfer(name from, name to, asset quantity, string memo) {
-//    if (!config(quantity.symbol.code()).exists())
-//        return; // distribute only community token
+void control::init(symbol_code commun_code) {
+    require_auth(_self);
+    check(point::exist(config::point_name, commun_code), "point with symbol does not exist");
 
-// Commun TODO: process income funds
-//    if (to == _self && quantity.amount > 0) {
-//        // Don't check `from` for now, just distribute to top leaders
-//        auto total = quantity.amount;
-//        auto top = top_leaders();
-//        auto n = top.size();
-//        if (n == 0) {
-//            print("nobody in top");
-//            return;
-//        }
-//
-//        auto token = quantity.symbol;
-//        static const auto memo = "emission";
-//        auto random = tapos_block_prefix();     // trx.ref_block_prefix; can generate hash from timestamp insead
-//        auto winner = top[random % n];          // leader, who will receive fraction after reward division
-//        auto reward = total / n;
-//
-//        vector<eosio::token::recipient> top_recipients;
-//        for (const auto& w: top) {
-//            if (w == winner)
-//                continue;
-//
-//            if (reward <= 0)
-//                continue;
-//
-//            top_recipients.push_back({w, asset(reward, token), memo});
-//            total -= reward;
-//        }
-//        top_recipients.push_back({winner, asset(total, token), memo});
-//
-//        INLINE_ACTION_SENDER(token, bulkpayment)(config::token_name, {_self, config::code_name},
-//                            {_self, top_recipients});
-//    }
+    stats stats_table(_self, commun_code.raw());
+    eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
+
+    stats_table.emplace(_self, [&](auto& s) { s = { .id = commun_code.raw() };});
+}
+
+void control::on_points_transfer(name from, name to, asset quantity, std::string memo) {
+    (void) memo;
+    if (_self != to) { return; }
+    
+    auto commun_code = quantity.symbol.code();
+    const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
+    leader_tbl leader_table(_self, commun_code.raw());
+    auto idx = leader_table.get_index<"byweight"_n>();
+    
+    stats stats_table(_self, commun_code.raw());
+    const auto& stat = stats_table.get(commun_code.raw(), "stat does not exists");
+    
+    uint64_t weight_sum = 0;
+    size_t i = 0;
+    for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
+        if (itr->active && itr->total_weight > 0) {
+            weight_sum += itr->total_weight;
+            ++i;
+        }
+    }
+    
+    auto left_reward = quantity.amount + stat.retained;
+    if (weight_sum) {
+        int64_t reward_sum = safe_prop(left_reward, i, l);
+        i = 0;
+        for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {
+            if (itr->active && itr->total_weight > 0) {
+                auto leader_reward = safe_prop(reward_sum, itr->total_weight, weight_sum);
+                idx.modify(itr, eosio::same_payer, [&](auto& w) { w.unclaimed_points += leader_reward; });
+                left_reward -= leader_reward;
+                ++i;
+            }
+        }
+    }
+    
+    stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
 }
 
 void control::regleader(symbol_code commun_code, name leader, string url) {
@@ -112,9 +77,7 @@ void control::regleader(symbol_code commun_code, name leader, string url) {
 
     upsert_tbl<leader_tbl>(_self, commun_code.raw(), leader, leader.value, [&](bool exists) {
         return [&,exists](leader_info& w) {
-            eosio::check(!exists || w.url != url || !w.active, "already updated in the same way");
             w.name = leader;
-            w.url = url;
             w.active = true;
         };
     });
@@ -170,12 +133,15 @@ void control::voteleader(symbol_code commun_code, name voter, name leader) {
         auto& w = itr->leaders;
         auto el = std::find(w.begin(), w.end(), leader);
         eosio::check(el == w.end(), "already voted");
-        eosio::check(w.size() < get_control_param(control_param_contract, commun_code).max_votes, "all allowed votes already casted");
-        tbl.modify(itr, eosio::same_payer, update);
+        eosio::check(w.size() < commun_list::get_control_param(config::list_name, commun_code).max_votes, "all allowed votes already casted");
+        tbl.modify(itr, voter, update);
     } else {
         tbl.emplace(voter, update);
     }
     apply_vote_weight(commun_code, voter, leader, true);
+    if (commun_code) {
+        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+    }
 }
 
 void control::unvotelead(symbol_code commun_code, name voter, name leader) {
@@ -202,18 +168,35 @@ void control::unvotelead(symbol_code commun_code, name voter, name leader) {
         v.leaders = w;
     });
     apply_vote_weight(commun_code, voter, leader, false);
+    if (commun_code) {
+        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+    }
+}
+
+void control::claim(symbol_code commun_code, name leader) {
+    check_started(commun_code);
+    require_auth(leader);
+    
+    leader_tbl leader_table(_self, commun_code.raw());
+    auto leader_it = leader_table.find(leader.value);
+    eosio::check(leader_it != leader_table.end(), "leader not found");
+    eosio::check(leader_it->unclaimed_points >= 0, "SYSTEM: incorrect unclaimed_points");
+    eosio::check(leader_it->unclaimed_points, "nothing to claim");
+    
+    INLINE_ACTION_SENDER(point, transfer)(config::point_name, {_self, config::active_name},
+        {_self, leader, asset(leader_it->unclaimed_points, point::get_supply(config::point_name, commun_code).symbol), "claimed points"});
+    
+    leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
+        w.unclaimed_points = 0;
+    });
 }
 
 void control::changepoints(name who, asset diff) {
     symbol_code commun_code = diff.symbol.code();
-    if (!(commun_code ? created(control_param_contract, commun_code) : initialized(control_param_contract))) {
-        return;       // allow silent exit if changing vests before community created
-    }
     require_auth(_self);
     eosio::check(diff.amount != 0, "diff is 0. something broken");          // in normal conditions sender must guarantee it
     change_voter_points(commun_code, who, diff.amount);
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -271,7 +254,7 @@ void control::active_leader(symbol_code commun_code, name leader, bool flag) {
 
 vector<leader_info> control::top_leader_info(symbol_code commun_code) {
     vector<leader_info> top;
-    const auto l = get_control_param(control_param_contract, commun_code).leaders_num;
+    const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
     top.reserve(l);
     leader_tbl leader(_self, commun_code.raw());
     auto idx = leader.get_index<"byweight"_n>();    // this index ordered descending
@@ -292,6 +275,30 @@ vector<name> control::top_leaders(symbol_code commun_code) {
 }
 
 //multisig:
+
+constexpr uint8_t calc_req(uint8_t top, uint8_t num, uint8_t denom) {
+    return static_cast<uint16_t>(top) * num / denom + 1;
+}
+
+uint8_t control::get_required(symbol_code commun_code, name permission) {
+    eosio::check(!commun_code || permission != config::active_name, "permission not available");
+    
+    auto control_param = commun_list::get_control_param(config::list_name, commun_code);
+    auto custom_thr = std::find_if(control_param.custom_thresholds.begin(), control_param.custom_thresholds.end(), 
+        [&](const structures::threshold& t) { return t.permission == permission; });
+    if (custom_thr != control_param.custom_thresholds.end()) {
+        return custom_thr->required;
+    }
+    
+    uint8_t req = 0;
+    if (permission == config::super_majority_name) { req = calc_req(control_param.leaders_num, 2, 3); }
+    else if (permission == config::majority_name)  { req = calc_req(control_param.leaders_num, 1, 2); }
+    else if (permission == config::minority_name)  { req = calc_req(control_param.leaders_num, 1, 3); }
+    else { eosio::check(false, "unknown permission"); }
+    
+    return req;
+}
+
 void control::propose(ignore<symbol_code> commun_code,
                       ignore<name> proposer,
                       ignore<name> proposal_name,
@@ -409,11 +416,8 @@ void control::exec(name proposer, name proposal_name, name executer) {
                                              (const char*)0, 0,
                                              packed_requested.data(), packed_requested.size());
     eosio::check(res > 0, "transaction authorization is no longer satisfied");
-    
-    auto thresholds = get_control_param(control_param_contract, prop.commun_code).thresholds;
-    auto threshold = std::find_if(thresholds.begin(), thresholds.end(), 
-        [&](const structures::threshold& t) { return t.permission == prop.permission; });
-    eosio::check(threshold != thresholds.end(), "unknown permission");
+
+    auto required = get_required(prop.commun_code, prop.permission);
 
     auto top = top_leaders(prop.commun_code);
     std::sort(top.begin(), top.end());
@@ -429,13 +433,13 @@ void control::exec(name proposer, name proposal_name, name executer) {
             auto it = inv_table.find(p.approver.value);
             if (it == inv_table.end() || it->last_invalidation_time < p.time) {
                 ++approvals_num;
-                if (approvals_num >= threshold->required) {
+                if (approvals_num >= required) {
                     break;
                 }
             }
         }
     }
-    eosio::check(approvals_num >= threshold->required, "transaction authorization failed");
+    eosio::check(approvals_num >= required, "transaction authorization failed");
     apptable.erase(apps);
     
     for (const auto& a : trx.context_free_actions) {
@@ -468,10 +472,11 @@ void control::invalidate(name account) {
 
 } // commun
 
-DISPATCH_WITH_TRANSFER(commun::control, commun::config::token_name, on_transfer,
+DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_transfer,
+    (init)
     (regleader)(unregleader)
     (startleader)(stopleader)
-    (voteleader)(unvotelead)(changepoints)
+    (voteleader)(unvotelead)
+    (claim)(changepoints)
     (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
-    (setparams)
     )

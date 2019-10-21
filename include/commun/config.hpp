@@ -20,7 +20,7 @@ inline eosio::chain::name operator ""_n() {
 namespace commun { namespace config {
 
 // contracts
-static const auto dapp_name = "commn"_n;
+static const auto dapp_name = "comn"_n;
 static const auto list_name = "comn.list"_n;
 static const auto emit_name = "comn.emit"_n;
 static const auto control_name = "comn.ctrl"_n;
@@ -37,7 +37,11 @@ static const auto code_name = "cyber.code"_n;
 static const auto owner_name = "owner"_n;
 static const auto active_name = "active"_n;
 
-static const auto ban_name = "ban"_n;
+static const auto super_majority_name = "lead.smajor"_n;
+static const auto majority_name = "lead.major"_n;
+static const auto minority_name = "lead.minor"_n;
+
+static const auto client_permission_name = "clientperm"_n;
 
 // numbers and time
 static constexpr auto _1percent = 100;
@@ -47,13 +51,6 @@ static constexpr int64_t blocks_per_year = int64_t(365)*24*60*60*1000/block_inte
 
 #ifndef UNIT_TEST_ENV
     static constexpr auto reserve_token = eosio::symbol("COMMUN", 4);
-    
-    struct opus_info {
-        eosio::name name;
-        int64_t mosaic_pledge = 0;
-        int64_t min_mosaic_inclusion = 0; 
-        int64_t min_gem_inclusion = 0;
-    };
 #else
     static const auto reserve_token = eosio::chain::symbol(4, "COMMUN");
 #endif

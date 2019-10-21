@@ -26,16 +26,23 @@ struct commun_posting_api: base_contract_api {
     commun_posting_api(golos_tester* tester, name code, symbol_code comn_code)
     :   base_contract_api(tester, code)
     ,   commun_code(comn_code) {}
+    
+    action_result push_maybe_msig(account_name act, account_name actor, mvo a, account_name client) {
+        return client ?
+            push_msig(act, {{actor, config::active_name}, {_code, cfg::client_permission_name}}, 
+                {actor, client}, a) : 
+            push(act, actor, a);
+    }
 
-    action_result create_msg(
+    action_result create(
         mssgid message_id,
         mssgid parent_id = {N(), "parentprmlnk"},
         std::string title = "header",
         std::string body = "body",
         std::vector<std::string> tags = {"tag"},
         std::string metadata = "metadata",
-        uint16_t curators_prcnt = 5000,
-        std::optional<uint16_t> weight = std::optional<uint16_t>()
+        std::optional<uint16_t> weight = std::optional<uint16_t>(), 
+        account_name client = account_name()
     ) {
         auto a = args()
             ("commun_code", commun_code)
@@ -44,91 +51,97 @@ struct commun_posting_api: base_contract_api {
             ("header", title)
             ("body", body)
             ("tags", tags)
-            ("metadata", metadata)
-            ("curators_prcnt", curators_prcnt);
+            ("metadata", metadata);
 
         if (weight.has_value()) {
             a("weight", *weight);
         }
-        return push(N(createmssg), message_id.author, a);
+        
+        return push_maybe_msig(N(create), message_id.author, a, client);
     }
 
-    action_result update_msg(
+    action_result update(
         mssgid message_id,
         std::string title,
         std::string body,
         std::vector<std::string> tags,
-        std::string metadata
+        std::string metadata,
+        account_name client = account_name()
     ) {
-        return push(N(updatemssg), message_id.author, args()
+        auto a = args()
             ("commun_code", commun_code)
             ("message_id", message_id)
             ("header", title)
             ("body", body)
             ("tags",tags)
-            ("metadata", metadata)
-        );
+            ("metadata", metadata);
+        
+        return push_maybe_msig(N(update), message_id.author, a, client);
     }
 
     action_result settags(name leader,
         mssgid message_id,
         std::vector<std::string> add_tags,
         std::vector<std::string> remove_tags,
-        std::string reason
+        std::string reason,
+        account_name client = account_name()
     ) {
-        return push(N(settags), leader, args()
+        auto a = args()
             ("commun_code", commun_code)
             ("leader", leader)
             ("message_id", message_id)
             ("add_tags", add_tags)
             ("remove_tags", remove_tags)
-            ("reason", reason)
-        );
+            ("reason", reason);
+        return push_maybe_msig(N(settags), leader, a, client);
     }
 
-    action_result delete_msg(mssgid message_id) {
-        return push(N(deletemssg), message_id.author, args()
+    action_result remove(mssgid message_id, account_name client = account_name()) {
+        auto a = args()
             ("commun_code", commun_code)
-            ("message_id", message_id)
-        );
+            ("message_id", message_id);
+        return push_maybe_msig(N(remove), message_id.author, a, client);
     }
 
-    action_result report_mssg(name reporter,
+    action_result report(name reporter,
         mssgid message_id,
-        std::string reason
+        std::string reason,
+        account_name client = account_name()
     ) {
-        return push(N(reportmssg), reporter, args()
+        auto a = args()
             ("commun_code", commun_code)
             ("reporter", reporter)
             ("message_id", message_id)
-            ("reason", reason)
-        );
+            ("reason", reason);
+        return push_maybe_msig(N(report), reporter, a, client);
     }
 
-    action_result reblog_msg(
+    action_result reblog(
         account_name rebloger,
         mssgid message_id,
         std::string title = "header",
-        std::string body = "body"
+        std::string body = "body",
+        account_name client = account_name()
     ) {
-        return push(N(reblog), rebloger, args()
+        auto a = args()
             ("commun_code", commun_code)
             ("rebloger", rebloger)
             ("message_id", message_id)
             ("header", title)
-            ("body", body)
-        );
+            ("body", body);
+        return push_maybe_msig(N(reblog), rebloger, a, client);
     }
 
-    action_result erase_reblog_msg(
+    action_result erase_reblog(
         account_name rebloger,
-        mssgid message_id
+        mssgid message_id,
+        account_name client = account_name()
     ) {
-        return push(N(erasereblog), rebloger, args()
+        auto a = args()
             ("commun_code", commun_code)
             ("rebloger", rebloger)
-            ("message_id", message_id)
-        );
+            ("message_id", message_id);
+        return push_maybe_msig(N(erasereblog), rebloger, a, client);
     }
     
     mvo get_vote_args(account_name voter, mssgid message_id, std::optional<uint16_t> weight = std::optional<uint16_t>()) {
@@ -141,19 +154,28 @@ struct commun_posting_api: base_contract_api {
         }
         return ret;
     }
+    
+    action_result vote(bool damn, account_name voter, mssgid message_id, 
+                       std::optional<uint16_t> weight = std::optional<uint16_t>(), account_name client = account_name()) {
+        auto act = damn ? N(downvote) : N(upvote);
+        auto a = get_vote_args(voter, message_id, weight);
+        return push_maybe_msig(act, voter, a, client);
+    }
 
-    action_result upvote(account_name voter, mssgid message_id, std::optional<uint16_t> weight = std::optional<uint16_t>()) {
-        return push(N(upvote), voter, get_vote_args(voter, message_id, weight));
+    action_result upvote(account_name voter, mssgid message_id, 
+                         std::optional<uint16_t> weight = std::optional<uint16_t>(), account_name client = account_name()) {
+        return vote(false, voter, message_id, weight, client);
     }
-    action_result downvote(account_name voter, mssgid message_id, std::optional<uint16_t> weight = std::optional<uint16_t>()) {
-        return push(N(downvote), voter, get_vote_args(voter, message_id, weight));
+    action_result downvote(account_name voter, mssgid message_id, 
+                         std::optional<uint16_t> weight = std::optional<uint16_t>(), account_name client = account_name()) {
+        return vote(true, voter, message_id, weight, client);
     }
-    action_result unvote(account_name voter, mssgid message_id) {
-        return push(N(unvote), voter, args()
+    action_result unvote(account_name voter, mssgid message_id, account_name client = account_name()) {
+        auto a = args()
             ("commun_code", commun_code)
             ("voter", voter)
-            ("message_id", message_id)
-        );
+            ("message_id", message_id);
+        return push_maybe_msig(N(unvote), voter, a, client);
     }
     
     action_result claim(mssgid message_id, account_name gem_owner, 
@@ -206,27 +228,17 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
-    action_result advise(account_name leader, std::vector<mssgid> favorites) {
+    action_result advise(account_name leader, std::vector<mssgid> favorites) { // vector is to test if duplicated
         return push(N(advise), leader, args()
             ("commun_code", commun_code)
             ("leader", leader)
             ("favorites", favorites));
     }
 
-    action_result slap(account_name leader, mssgid message_id) {
-        return push(N(slap), leader, args()
+    action_result ban(account_name issuer, mssgid message_id) {
+        return push(N(ban), issuer, args()
             ("commun_code", commun_code)
-            ("leader", leader)
             ("message_id", message_id));
-    }
-
-    action_result set_params() {
-        return push(N(setparams), _code, args()
-            ("commun_code", commun_code));
-    }
-
-    action_result init_default_params() {
-        return set_params();
     }
 
     variant get_vertex(mssgid message_id) {

@@ -25,10 +25,16 @@ public:
         , community({this, cfg::list_name})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas,
-            cfg::control_name, cfg::point_name, cfg::list_name});
+            cfg::control_name, cfg::point_name, cfg::list_name, cfg::emit_name});
         produce_block();
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
+        
+        set_authority(cfg::emit_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::emit_name, cfg::emit_name, N(init), N(init));
+        
+        set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
     }
 
     const account_name _commun = cfg::dapp_name;
@@ -49,6 +55,10 @@ public:
         const string no_point_symbol = amsg("point with symbol does not exist");
         const string no_community = amsg("community not exists");
         const string no_changes = amsg("No params changed");
+        const string no_opus(name opus) { return amsg("no opus " + opus.to_string()); }
+        const string incorrect_author_percent = amsg("incorrect author percent");
+        const string add_perm = amsg("cannot add permission");
+        const string del_perm = amsg("cannot delete permission");
     } err;
 };
 
@@ -80,6 +90,28 @@ BOOST_FIXTURE_TEST_CASE(setparams_test, commun_list_tester) try {
         ("leaders_num", 20) ));
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
         ("leaders_num", 20)("emission_rate", 5000) ));
+    
+    BOOST_CHECK_EQUAL(err.add_perm, community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 19)));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams(_token_code, community.sysparams()
+        ("permission", N(newperm))("required_threshold", 19)));
+    BOOST_CHECK_EQUAL(err.no_changes, community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 19)));
+    BOOST_CHECK_EQUAL(success(), community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 20)));
+    BOOST_CHECK_EQUAL(err.del_perm, community.setparams(_golos, _token_code, community.args()
+        ("permission", N(newperm))("required_threshold", 0)));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams(_token_code, community.sysparams()
+        ("permission", N(newperm))("required_threshold", 0)));
+
+    BOOST_CHECK_EQUAL(err.incorrect_author_percent, community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 24*cfg::_1percent) ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 25*cfg::_1percent) ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 50*cfg::_1percent) ));
+    BOOST_CHECK_EQUAL(success(), community.setparams( _golos, _token_code, community.args()
+        ("author_percent", 75*cfg::_1percent) ));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
@@ -97,23 +129,39 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
 BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {
     BOOST_TEST_MESSAGE("setsysparams test");
     create_token(_golos, _token);
-    BOOST_CHECK_EQUAL(err.no_community, community.setsysparams( _token_code, community.args() ));
+    BOOST_CHECK_EQUAL(err.no_community, community.setsysparams( _token_code, community.sysparams() ));
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community_name"));
-    BOOST_CHECK_EQUAL(err.no_changes, community.setsysparams( _token_code, community.args() ));
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.args()
+    BOOST_CHECK_EQUAL(err.no_changes, community.setsysparams( _token_code, community.sysparams() ));
+
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
         ("collection_period", 3600) ));
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.args()
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
         ("collection_period", 3600)("moderation_period", 3600) ));
+
+    BOOST_CHECK_EQUAL(err.no_opus("notexist"), community.setsysparams( _token_code, community.sysparams()
+        ("remove_opuses", std::set<name>{"notexist"} )));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
+        ("opuses", std::set<opus_info>{{"opus1"}, {"opus2"}} )));
+    produce_block();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
+        ("remove_opuses", std::set<name>{"opus1", "opus2"} )));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.no_opus("opus1"), community.setsysparams( _token_code, community.sysparams()
+        ("remove_opuses", std::set<name>{"opus1", "opus2"} )));
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(follow_test, commun_list_tester) try {
-    BOOST_TEST_MESSAGE("follow test");
+BOOST_FIXTURE_TEST_CASE(follow_hide_test, commun_list_tester) try {
+    BOOST_TEST_MESSAGE("follow and hide test");
     create_token(_golos, _token);
     BOOST_CHECK_EQUAL(err.no_community, community.follow(_token_code, _alice));
     BOOST_CHECK_EQUAL(err.no_community, community.unfollow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(err.no_community, community.hide(_token_code, _alice));
+    BOOST_CHECK_EQUAL(err.no_community, community.unhide(_token_code, _alice));
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community_name"));
     BOOST_CHECK_EQUAL(success(), community.follow(_token_code, _alice));
     BOOST_CHECK_EQUAL(success(), community.unfollow(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.hide(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.unhide(_token_code, _alice));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

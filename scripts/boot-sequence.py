@@ -14,7 +14,8 @@ args = {
     'cleos':'/opt/cyberway/bin/cleos --url=%s ' % nodeos_url,
     'public_key':'GLS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV',
     'private_key':'5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3',
-    'cyber_private_key':'5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3',
+    'creator_auth':'comn.com@comn.com',
+    'creator_key':'5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN',
     'commun_contracts_dir': os.environ.get('COMMUN_CONTRACTS', default_contracts_dir),
 }
 
@@ -26,25 +27,19 @@ if subprocess.call(commun_boot_sequence, shell=True):
     sys.exit(1)
 
 community_params = {
-    'owner_account': 'tech.cats',
     'community_name': 'cats',
     'maximum_supply': '1000000000.000 CATS',
     'reserve_amount': '1000000.0000 COMMUN',
     'cw': 10000,
     'fee': 100,
-    'annual_emission_rate': 1000,
-    'leader_reward_prop': 2000,
 }
 community_args = ''
 for (key, value) in community_params.items():
     community_args += ' --{arg} "{value}"'.format(arg=key.replace('_', '-'), value=value)
 
 community_boot_sequence=('{basedir}/scripts/community-boot-sequence.py '
-                     '--creator-account tech '
-                     '--commun-private-key {private_key} '
-                     '--creator-private-key {private_key} '
-                     '--owner-private-key {private_key} '
-                     '--owner-public-key {public_key} '
+                     '--creator-auth {creator_auth} '
+                     '--creator-key {creator_key} '
                      + community_args).format(**args)
 print(community_boot_sequence)
 if subprocess.call(community_boot_sequence, shell=True):

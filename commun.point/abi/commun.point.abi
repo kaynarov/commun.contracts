@@ -71,6 +71,7 @@
             "name": "retire_args",
             "base": "",
             "fields": [
+                { "type": "name",         "name": "from" },
                 { "type": "asset",        "name": "quantity" },
                 { "type": "string",       "name": "memo" }
             ]
@@ -156,6 +157,7 @@
         },{
             "name": "stat",
             "type": "stat_struct",
+            "scope_type": "symbol_code",
             "indexes": [
                 {
                     "name": "primary",

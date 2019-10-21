@@ -6,40 +6,61 @@ namespace commun {
 
 using namespace eosio;
 
+/**
+ * \brief This class implements comn.emit contract behaviour
+ * \ingroup emission_class
+ */
 class emit: public contract {
 struct structures {
-    struct [[eosio::table]] param {
-        uint64_t id;
-        uint16_t annual_emission_rate;
-        uint16_t leaders_reward_prop;
-        uint64_t primary_key() const { return id; }
-    };
 
+    /**
+     * \brief struct represents an stats table in a db
+     * \ingroup emission_tables
+     *
+     * Contains information about last time points of rewards in community
+     */
     struct [[eosio::table]] stat {
-        uint64_t id;
+        uint64_t id;  //!< An unique primary key
 
-        time_point latest_mosaics_reward;
-        time_point latest_leaders_reward;
+        time_point latest_mosaics_reward; //!< Last time point of reward for mosaics
+        time_point latest_leaders_reward; //!< Last time point of reward for leaders
 
         time_point latest_reward(bool for_leaders) const { return (for_leaders ? latest_leaders_reward : latest_mosaics_reward); };
 
         uint64_t primary_key() const { return id; }
     };
 };
-    using params = eosio::multi_index<"param"_n, structures::param>;
     using stats = eosio::multi_index<"stat"_n, structures::stat>;
 
     static int64_t get_continuous_rate(int64_t annual_rate);
 
 public:
     using contract::contract;
-    [[eosio::action]] void create(symbol_code commun_code, uint16_t annual_emission_rate, uint16_t leaders_reward_prop);
+    [[eosio::action]] void init(symbol_code commun_code);
+
+    /**
+     * \brief action is used by other contracts to emit POINTs
+     *
+     * \param commun_code symbol of POINT to emit.
+     * \param for_leaders true if emission should be done for leaders.
+     */
     [[eosio::action]] void issuereward(symbol_code commun_code, bool for_leaders);
 
     static inline bool it_is_time_to_reward(name emit_contract_account, symbol_code commun_code, bool for_leaders) {
         stats stats_table(emit_contract_account, commun_code.raw());
         const auto& stat = stats_table.get(commun_code.raw(), "emitter does not exists");
         return (eosio::current_time_point() - stat.latest_reward(for_leaders)).to_seconds() >= config::reward_period(for_leaders);
+    }
+    
+    static inline void maybe_issue_reward(name emit_contract_account, symbol_code commun_code, bool for_leaders) {
+        if (it_is_time_to_reward(emit_contract_account, commun_code, for_leaders)) {
+            action(
+                permission_level{emit_contract_account, config::reward_perm_name},
+                emit_contract_account,
+                "issuereward"_n,
+                std::make_tuple(commun_code, for_leaders)
+            ).send();
+        }
     }
 };
 

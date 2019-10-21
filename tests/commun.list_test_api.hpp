@@ -1,7 +1,10 @@
 #pragma once
 #include "test_api_helper.hpp"
+#include <commun.list/include/commun.list/config.hpp>
 
 namespace eosio { namespace testing {
+
+using commun::structures::opus_info;
 
 struct commun_list_api: base_contract_api {
     commun_list_api(golos_tester* tester, name code)
@@ -12,6 +15,16 @@ struct commun_list_api: base_contract_api {
             ("commun_code", commun_code)
             ("community_name", community_name)
         );
+    }
+
+    mvo sysparams() {
+        return args()
+            ("opuses", std::set<opus_info>())
+            ("remove_opuses", std::set<name>());
+    }
+    
+    action_result setappparams(mvo params) {
+        return push(N(setappparams), _code, params);
     }
 
     action_result setsysparams(symbol_code commun_code, mvo params) {
@@ -48,6 +61,20 @@ struct commun_list_api: base_contract_api {
 
     action_result unfollow(symbol_code commun_code, name follower) {
         return push(N(unfollow), follower, args()
+            ("commun_code", commun_code)
+            ("follower", follower)
+        );
+    }
+
+    action_result hide(symbol_code commun_code, name follower) {
+        return push(N(hide), follower, args()
+            ("commun_code", commun_code)
+            ("follower", follower)
+        );
+    }
+
+    action_result unhide(symbol_code commun_code, name follower) {
+        return push(N(unhide), follower, args()
             ("commun_code", commun_code)
             ("follower", follower)
         );

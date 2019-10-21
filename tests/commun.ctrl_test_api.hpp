@@ -23,10 +23,6 @@ struct commun_ctrl_api: base_contract_api {
     const name _supermajority_name = N(lead.smajor);
 
     //// control actions
-    
-    action_result set_default_params() {
-        return push(N(setparams), _code, args()("commun_code", commun_code));
-    }
 
     action_result reg_leader(name leader, string url) {
         return push(N(regleader), leader, args()
@@ -77,6 +73,12 @@ struct commun_ctrl_api: base_contract_api {
             ("diff", diff));
     }
     
+    action_result claim(name leader) {
+        return push(N(claim), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader));
+    }
+    
     action_result propose(name proposer, name proposal_name, name permission, transaction trx) {
         return push(N(propose), proposer, args()
             ("commun_code", commun_code)
@@ -120,16 +122,22 @@ struct commun_ctrl_api: base_contract_api {
     }
 
     variant get_leader(name leader) const {
-        return get_struct(_code, N(leader), leader, "leader_info");
+        return get_struct(commun_code.value, N(leader), leader, "leader_info");
     }
 
     std::vector<variant> get_all_leaders() {
         return _tester->get_all_chaindb_rows(_code, commun_code.value, N(leader), false);
     }
     
+    int64_t get_unclaimed(name leader) {
+        return get_leader(leader)["unclaimed_points"].as<int64_t>();
+    }
+    
+    int64_t get_retained() {
+        return get_struct(commun_code.value, N(stat), commun_code.value, "stat")["retained"].as<int64_t>();
+    }
+    
     void prepare(const std::vector<name>& leaders, name voter) {
-        
-        BOOST_CHECK_EQUAL(base_tester::success(), set_default_params());
         for (int i = 0; i < leaders.size(); i++) {
             BOOST_CHECK_EQUAL(base_tester::success(), reg_leader(leaders[i], "localhost"));
             BOOST_CHECK_EQUAL(base_tester::success(), vote_leader(voter, leaders[i]));
