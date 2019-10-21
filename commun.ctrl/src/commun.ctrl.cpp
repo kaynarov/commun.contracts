@@ -134,7 +134,7 @@ void control::voteleader(symbol_code commun_code, name voter, name leader) {
         auto el = std::find(w.begin(), w.end(), leader);
         eosio::check(el == w.end(), "already voted");
         eosio::check(w.size() < commun_list::get_control_param(config::list_name, commun_code).max_votes, "all allowed votes already casted");
-        tbl.modify(itr, eosio::same_payer, update);
+        tbl.modify(itr, voter, update);
     } else {
         tbl.emplace(voter, update);
     }
@@ -294,7 +294,6 @@ uint8_t control::get_required(symbol_code commun_code, name permission) {
     if (permission == config::super_majority_name) { req = calc_req(control_param.leaders_num, 2, 3); }
     else if (permission == config::majority_name)  { req = calc_req(control_param.leaders_num, 1, 2); }
     else if (permission == config::minority_name)  { req = calc_req(control_param.leaders_num, 1, 3); }
-    else if (permission == config::active_name)    { req = calc_req(control_param.leaders_num, 2, 3); }
     else { eosio::check(false, "unknown permission"); }
     
     return req;

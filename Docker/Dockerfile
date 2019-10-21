@@ -37,7 +37,7 @@ RUN cd commun.contracts/cyberway.contracts \
 FROM ubuntu:18.04
 
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ca-certificates python3 python3-numpy python3-bson libusb-1.0-0-dev libcurl4-gnutls-dev \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ca-certificates python3 python3-numpy python3-bson python3-pymongo libusb-1.0-0-dev libcurl4-gnutls-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /commun.contracts/version /opt/commun.contracts/version

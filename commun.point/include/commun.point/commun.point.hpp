@@ -172,7 +172,7 @@ public:
         
         auto ac = accounts_table.find(symbol_code().raw());
         eosio::check(param != params_idx.end() || ac != accounts_table.end(), "no assigned reserve");
-        return (param != params_idx.end()  ? get_reserve(token_contract_account, symbol_code()).amount : 0) + 
+        return (param != params_idx.end()  ? get_reserve(token_contract_account, param->max_supply.symbol.code()).amount : 0) + 
                (ac != accounts_table.end() ? ac->balance.amount : 0);
     }
 
