@@ -6,7 +6,7 @@
  *
  * The commun.point smart contract provides token management functions, generates new tokens and stores information about created tokens
  * and provides an ability to conduct mutual settlements between accounts as well.
- * The cyber.token smart contract includes the following actions: create, setfreezer, issue, retire, transfer, open and close.
+ * The commun.point smart contract includes the following actions: create, setfreezer, issue, retire, transfer, open, close and withdraw.
  */
 
 /**
