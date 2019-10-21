@@ -986,9 +986,12 @@ protected:
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         check(mosaic.locked, "Mosaic not locked.");
         check(!mosaic.banned, "mosaic banned");
+        auto now = eosio::current_time_point();
+        auto& community = commun_list::get_community(config::list_name, commun_code);
+        eosio::check(now <= mosaic.close_date + eosio::seconds(community.moderation_period), "cannot unlock mosaic after moderation period");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
             m.unlock();
-            m.close_date += (eosio::current_time_point() - mosaic.lock_date);
+            m.close_date += (now - mosaic.lock_date);
         });
     }
 
