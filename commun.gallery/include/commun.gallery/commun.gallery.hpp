@@ -328,7 +328,9 @@ private:
         return point::get_reserve_quantity(config::point_name, quantity, false).amount;
     }
     
-    bool chop_gem(name _self, symbol commun_symbol, const gallery_types::gem& gem, bool by_user, bool has_reward, bool no_rewards = false) {
+    template<typename GemIndex, typename GemItr>
+    bool chop_gem(name _self, symbol commun_symbol, GemIndex& gem_idx, GemItr& gem_itr, bool by_user, bool has_reward, bool no_rewards = false) {
+        const auto& gem = *gem_itr;
         auto commun_code = commun_symbol.code();
         auto& community = commun_list::get_community(config::list_name, commun_code);
 
@@ -341,6 +343,9 @@ private:
             eosio::check(ready_to_claim || has_auth(gem.owner) 
                 || (has_auth(gem.creator) && !has_reward && gem.claim_date != config::eternity), "lack of necessary authority");
         } else if (!ready_to_claim) {
+            gem_idx.modify(gem_itr, eosio::same_payer, [&](auto& item) {
+                item.claim_date = mosaic->close_date;
+            });
             return false;
         }
 
@@ -440,12 +445,14 @@ private:
             auto claim_idx = gems_table.get_index<"byclaim"_n>();
             auto chop_gem_of = [&](name account) {
                 auto gem_itr = claim_idx.lower_bound(std::make_tuple(account, time_point()));
-                if ((gem_itr != claim_idx.end()) && (gem_itr->owner == account) && (gem_itr->claim_date < max_claim_date)) {
-                    if (!chop_gem(_self, commun_symbol, *gem_itr, false, true)) {
-                        return;
+                while ((gem_itr != claim_idx.end()) && (gem_itr->owner == account) && (gem_itr->claim_date < max_claim_date)) {
+                    if (!chop_gem(_self, commun_symbol, claim_idx, gem_itr, false, true)) {
+                        ++gem_itr;
+                        continue;
                     }
                     claim_idx.erase(gem_itr);
                     ++gem_num;
+                    break;
                 }
             };
             chop_gem_of(owner);
@@ -457,7 +464,8 @@ private:
             auto gem_itr = joint_idx.begin();
             
             while ((gem_itr != joint_idx.end()) && (gem_itr->claim_date < max_claim_date) && (gem_num < config::auto_claim_num)) {
-                if (!chop_gem(_self, commun_symbol, *gem_itr, false, true, true)) {
+                if (!chop_gem(_self, commun_symbol, joint_idx, gem_itr, false, true, true)) {
+                    ++gem_itr;
                     continue;
                 }
                 gem_itr = joint_idx.erase(gem_itr);
@@ -859,7 +867,7 @@ protected:
         auto gems_idx = gems_table.get_index<"bykey"_n>();
         auto gem = gems_idx.find(std::make_tuple(claim_info.tracery, gem_owner, gem_creator));
         eosio::check(gem != gems_idx.end(), "nothing to claim");
-        chop_gem(_self, claim_info.commun_symbol, *gem, true, claim_info.has_reward, claim_info.premature);
+        chop_gem(_self, claim_info.commun_symbol, gems_idx, gem, true, claim_info.has_reward, claim_info.premature);
         gems_idx.erase(gem);
     }
     
@@ -873,7 +881,7 @@ protected:
         eosio::check((gem != gems_idx.end()) && (gem->tracery == claim_info.tracery) && (gem->creator == gem_creator), "nothing to claim");
         
         while ((gem != gems_idx.end()) && (gem->tracery == claim_info.tracery) && (gem->creator == gem_creator)) {
-            chop_gem(_self, claim_info.commun_symbol, *gem, true, claim_info.has_reward, claim_info.premature);
+            chop_gem(_self, claim_info.commun_symbol, gems_idx, gem, true, claim_info.has_reward, claim_info.premature);
             gem = gems_idx.erase(gem);
         }
         
