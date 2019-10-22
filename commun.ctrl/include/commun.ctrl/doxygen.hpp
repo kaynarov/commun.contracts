@@ -11,7 +11,7 @@
  */
 
 /**
- * \details This structs implements comn.control contract data structures stored in a db
+ * \details This structs implements commun.ctrl contract data structures stored in a db
  * \defgroup control_tables DB Stored structures
  * \ingroup control
  */
