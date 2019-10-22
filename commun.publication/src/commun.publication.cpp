@@ -160,7 +160,6 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     auto& community = commun_list::get_community(config::list_name, commun_code);
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-    
     auto mosaic = mosaics_table.find(message_id.tracery());
     if (mosaic == mosaics_table.end()) {
         check_auth("Message does not exist.", voter);
@@ -170,12 +169,12 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         check_auth("Mosaic is inactive.", voter);
         return;
     }
-    if (eosio::current_time_point() > mosaic->created + eosio::seconds(community.collection_period)) {
+    if (eosio::current_time_point() > mosaic->close_date) {
         check_auth("collection period is over", voter);
         return;
     }
     
-    auto gems_per_period = get_gems_per_period(commun_code, mosaic->close_date.sec_since_epoch());
+    auto gems_per_period = get_gems_per_period(commun_code, mosaic->close_date.sec_since_epoch() + community.moderation_period);
 
     asset quantity(
         get_amount_to_freeze(
@@ -249,13 +248,13 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
     return ret;
 }
 
-uint16_t publication::get_gems_per_period(symbol_code commun_code, int64_t mosaic_active_period) {
+uint16_t publication::get_gems_per_period(symbol_code commun_code, int64_t mosaic_period) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
     auto& community = commun_list::get_community(config::list_name, commun_code);
-    if (mosaic_active_period == 0)
-        mosaic_active_period = community.active_period;
+    if (mosaic_period == 0)
+        mosaic_period = community.collection_period + community.moderation_period;
     uint16_t gems_per_day = community.gems_per_day;
-    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
+    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_period, seconds_per_day), 1);
 }
 
 int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight) {
