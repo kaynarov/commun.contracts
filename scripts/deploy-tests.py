@@ -66,7 +66,7 @@ class CommunLeaderTests(unittest.TestCase):
             community.openBalance(leader, '', 'tech', keys=techKey)
             community.regLeader(commun_code='', leader=leader, url=testnet.randomText(16),
                     providebw=leader+'/tech', keys=[techKey, private])
-            community.voteLeader(commun_code='', voter=voter, leader=leader,
+            community.voteLeader(commun_code='', voter=voter, leader=leader, pct = 1000,
                     providebw=voter+'/tech', keys=[voterPrivate,techKey])
             leaders[leader] = private
 
@@ -169,7 +169,7 @@ class CommunityLeaderTests(unittest.TestCase):
                     providebw=leader+'/tech', keys=[techKey, private])
 
         for leader in leaders.keys():
-            community.voteLeader(commun_code=point, voter=voter, leader=leader,
+            community.voteLeader(commun_code=point, voter=voter, leader=leader, pct = 1000,
                     providebw=voter+'/tech', keys=[voterPrivate,techKey])
 
         self.appLeader = appLeader

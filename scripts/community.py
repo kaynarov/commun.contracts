@@ -156,11 +156,12 @@ def regLeader(commun_code, leader, url, *, providebw=None, keys=None):
             'url': url
         }, providebw=providebw, keys=keys)
 
-def voteLeader(commun_code, voter, leader, *, providebw=None, keys=None):
+def voteLeader(commun_code, voter, leader, pct, *, providebw=None, keys=None):
     return pushAction('comn.ctrl', 'voteleader', voter, {
             'commun_code': commun_code,
             'voter': voter,
-            'leader': leader
+            'leader': leader,
+            'pct': pct
         }, providebw=providebw, keys=keys)
 
 
