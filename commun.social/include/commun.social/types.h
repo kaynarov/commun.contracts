@@ -12,16 +12,20 @@ namespace eosio { namespace testing {
     using std::optional;
 #endif
 
+/**
+    \brief Action parameter type contains a kit of fields of account profile.
+    \ingroup social_class
+*/
 struct accountmeta {
     accountmeta() = default;
 
-    optional<std::string> avatar_url;
-    optional<std::string> cover_url;
-    optional<std::string> biography;
-    optional<std::string> facebook;
-    optional<std::string> telegram;
-    optional<std::string> whatsapp;
-    optional<std::string> wechat;
+    optional<std::string> avatar_url; /**< User's avatar image. */
+    optional<std::string> cover_url; /**< User's profile cover image. */
+    optional<std::string> biography; /**< Biography of the user. */
+    optional<std::string> facebook; /**< User's Facebook account. */
+    optional<std::string> telegram; /**< User's Telegram account. */
+    optional<std::string> whatsapp; /**< User's WhatsApp account. */
+    optional<std::string> wechat; /**< User's WeChat account. */
 
 #ifndef UNIT_TEST_ENV
     EOSLIB_SERIALIZE(accountmeta,
