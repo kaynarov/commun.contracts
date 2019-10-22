@@ -36,7 +36,8 @@
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "voter"},
-                {"type": "name", "name": "leader"}
+                {"type": "name", "name": "leader"},
+                {"type": "uint16?", "name": "pct"}
             ]
         }, {
             "name": "unvotelead",
@@ -67,8 +68,10 @@
             "name": "leader_voter",
             "base": "",
             "fields": [
-                {"type": "name", "name": "voter"},
-                {"type": "name[]", "name": "leaders"}
+                {"type": "uint64", "name": "id"},
+                {"type": "name",   "name": "voter"},
+                {"type": "name",   "name": "leader"},
+                {"type": "uint16", "name": "pct"}
             ]
         }, {
             "name": "multisig_acc",
@@ -455,11 +458,11 @@
             "name": "leadervote",
             "type": "leader_voter",
             "scope_type": "symbol_code",
-            "indexes" : [{
-                "name": "primary",
-                "unique": true,
-                "orders": [{"field": "voter", "order": "asc"}]
-            }]
+            "indexes" : [                
+                { "name": "primary", "unique": "true", "orders": [ {"field": "id", "order": "asc"} ] },
+                { "name": "byvoter", "unique": "true", "orders": [ {"field": "voter", "order": "asc"}, {"field": "leader", "order": "asc"} ] },
+                { "name": "byleader", "unique": "true", "orders": [ {"field": "leader", "order": "asc"}, {"field": "voter", "order": "asc"} ] }
+            ]
         },
         {
             "name": "approvals",

@@ -47,15 +47,22 @@ using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx
   \ingroup control_tables
  */
 struct [[eosio::table]] leader_voter {
+    uint64_t id;
     name voter; /**< a voter name*/
-    std::vector<name> leaders; /** leaders the voter has voted for*/
+    name leader; /**< a leader name*/
+    uint16_t pct; /**< percentage of voter power cast for the leader*/
 
-    uint64_t primary_key() const {
-        return voter.value;
-    }
+    uint64_t primary_key() const { return id; }
+    using key_t = std::tuple<name, name>;
+    key_t by_voter()const { return std::make_tuple(voter, leader); }
+    key_t by_leader()const { return std::make_tuple(leader, voter); }
 };
 
-using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter>;
+using leadervote_id_idx = eosio::indexed_by<"leadervoteid"_n, eosio::const_mem_fun<leader_voter, uint64_t, &leader_voter::primary_key> >;
+using leadervote_byvoter_idx = eosio::indexed_by<"byvoter"_n, eosio::const_mem_fun<leader_voter, leader_voter::key_t, &leader_voter::by_voter> >;
+using leadervote_byleader_idx = eosio::indexed_by<"byleader"_n, eosio::const_mem_fun<leader_voter, leader_voter::key_t, &leader_voter::by_leader> >;
+
+using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leadervote_id_idx, leadervote_byvoter_idx, leadervote_byleader_idx>;
 
 /**
   \brief struct represents proposal record in a db table
@@ -178,6 +185,7 @@ public:
         \param commun_code a point symbol of the community
         \param voter an account name that is voting for the leader candidate
         \param leader a name of the leader candidate for whom the vote is cast
+        \param pct percentage of voter power cast for the leader; all unused power if pct is empty
 
         Doing the action requires signing by the voter account.
 
@@ -186,9 +194,8 @@ public:
             - total number of votes cast by the voter account for all candidates should not exceed the max_votes community parameter value;
             - it is not allowed to vote for a leader candidate whose activity is suspended (after the candidate has completed the
             stopleader action).
-
     */
-    [[eosio::action]] void voteleader(symbol_code commun_code, name voter, name leader);
+    [[eosio::action]] void voteleader(symbol_code commun_code, name voter, name leader, std::optional<uint16_t> pct);
 
     /**
         \brief The action unvotelead is used to withdraw a previously cast vote for a leader candidate
@@ -243,11 +250,9 @@ private:
     std::vector<name> top_leaders(symbol_code commun_code);
     std::vector<leader_info> top_leader_info(symbol_code commun_code);
 
-    void change_voter_points(symbol_code commun_code, name voter, share_type diff);
-    void apply_vote_weight(symbol_code commun_code, name voter, name leader, bool add);
-    void update_leaders_weights(symbol_code commun_code, std::vector<name> leaders, share_type diff);
     void send_leader_event(symbol_code commun_code, const leader_info& wi);
     void active_leader(symbol_code commun_code, name leader, bool flag);
+    int64_t get_power(symbol_code commun_code, name voter, uint16_t pct);
 
 public:
     static inline bool in_the_top(name ctrl_contract_account, symbol_code commun_code, name account) {

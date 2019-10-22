@@ -72,6 +72,9 @@ public:
         
     }
     struct errors : contract_error_messages {
+        const string no_community = amsg("community not exists");
+        const string no_balance = amsg("balance does not exist");
+        
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
         const string approved = amsg("already approved");
         const string authorization_failed = amsg("transaction authorization failed");
@@ -83,7 +86,15 @@ public:
         const string threshold_greater = amsg("required threshold can't be greater than leaders num");
         const string nothing_to_claim = amsg("nothing to claim");
         const string leader_not_found = amsg("leader not found");
+        const string leader_not_active = amsg("leader not active");
+        const string voted = amsg("already voted");
         
+        const string pct_0 = amsg("pct can't be 0");
+        const string pct_greater_100 = amsg("pct can't be greater than 100%");
+        const string incorrect_pct = amsg("incorrect pct");
+        const string votes_casted = amsg("all allowed votes already casted");
+        const string power_casted = amsg("all power already casted");
+        const string votes_greater_100 = amsg("all votes exceed 100%");
     } err;
     
     transaction get_point_create_trx(const vector<permission_level>& auths, name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
@@ -122,16 +133,18 @@ BOOST_AUTO_TEST_SUITE(ctrl_tests)
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_ctrl_tester) try {
     BOOST_TEST_MESSAGE("basic_tests");
     
-    BOOST_CHECK_EQUAL(success(), token.create(_golos, asset(42, token._symbol)));
-    BOOST_CHECK_EQUAL(success(), token.issue(_golos, _bob, asset(42, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), token.create(_golos, asset(999999, token._symbol)));
     
     BOOST_CHECK_EQUAL(success(), community.setappparams(community.args()
         ("permission", config::active_name)("required_threshold", 11)));
     
-    BOOST_CHECK_EQUAL(success(), point.open(_bob));
-    BOOST_CHECK_EQUAL(success(), token.transfer(_bob, cfg::point_name, asset(42, token._symbol), ""));
-    
-    dapp_ctrl.prepare(leaders, _bob);
+    for (auto l : leaders) {
+        BOOST_CHECK_EQUAL(success(), point.open(l));
+        BOOST_CHECK_EQUAL(success(), token.issue(_golos, l, asset(42, token._symbol), ""));
+        BOOST_CHECK_EQUAL(success(), token.transfer(l, cfg::point_name, asset(42, token._symbol), ""));
+        BOOST_CHECK_EQUAL(base_tester::success(), dapp_ctrl.reg_leader(l, "localhost"));
+        BOOST_CHECK_EQUAL(base_tester::success(), dapp_ctrl.vote_leader(l, l));
+    }
     set_authority(cfg::dapp_name, cfg::active_name, create_code_authority({cfg::control_name}), "owner");
     set_authority(cfg::point_name, cfg::active_name,
                   authority (1, {}, {{.permission = {cfg::dapp_name, config::active_name}, .weight = 1}}), "owner");
@@ -204,6 +217,46 @@ BOOST_FIXTURE_TEST_CASE(control_param_test, commun_ctrl_tester) try {
         
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(voteleader_test, commun_ctrl_tester) try {
+    BOOST_TEST_MESSAGE("voteleader_test");
+    BOOST_CHECK_EQUAL(success(), token.create(cfg::dapp_name, asset(9999999, token._symbol)));
+    BOOST_CHECK_EQUAL(success(), token.issue(cfg::dapp_name, _golos, asset(9999999, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(9999999, point._symbol), 10000, 1));
+    BOOST_CHECK_EQUAL(err.no_community, comm_ctrl.vote_leader(_carol, _alice));
+    BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "GOLOS"));
+    BOOST_CHECK_EQUAL(success(), community.setparams(_golos, point_code, community.args()("max_votes", 3)));
+    BOOST_CHECK_EQUAL(err.leader_not_found, comm_ctrl.vote_leader(_carol, _alice));
+    BOOST_CHECK_EQUAL(base_tester::success(), comm_ctrl.reg_leader(_alice, "localhost"));
+    
+    BOOST_CHECK_EQUAL(err.pct_0, comm_ctrl.vote_leader(_carol, _alice, 0));
+    BOOST_CHECK_EQUAL(err.pct_greater_100, comm_ctrl.vote_leader(_carol, _alice, 110 * cfg::_1percent));
+    BOOST_CHECK_EQUAL(err.incorrect_pct, comm_ctrl.vote_leader(_carol, _alice, 99 * cfg::_1percent));
+    
+    BOOST_CHECK_EQUAL(err.no_balance, comm_ctrl.vote_leader(_carol, _alice));
+    BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _alice));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.voted, comm_ctrl.vote_leader(_carol, _alice));
+    
+    BOOST_CHECK_EQUAL(base_tester::success(), comm_ctrl.reg_leader(_bob, "localhost"));
+    BOOST_CHECK_EQUAL(err.power_casted, comm_ctrl.vote_leader(_carol, _bob, 10 * cfg::_1percent));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.unvote_leader(_carol, _alice));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _alice, 50  * cfg::_1percent));
+    BOOST_CHECK_EQUAL(err.votes_greater_100, comm_ctrl.vote_leader(_carol, _bob, 60 * cfg::_1percent));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _bob, 50  * cfg::_1percent));
+    produce_block();
+    
+    BOOST_CHECK_EQUAL(base_tester::success(), comm_ctrl.reg_leader(_carol, "localhost"));
+    BOOST_CHECK_EQUAL(err.power_casted, comm_ctrl.vote_leader(_carol, _carol, 10 * cfg::_1percent));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.unvote_leader(_carol, _alice));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _alice, 10  * cfg::_1percent));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _carol, 10  * cfg::_1percent));
+    
+    BOOST_CHECK_EQUAL(base_tester::success(), comm_ctrl.reg_leader(_golos, "localhost"));
+    BOOST_CHECK_EQUAL(err.votes_casted, comm_ctrl.vote_leader(_carol, _golos, 10  * cfg::_1percent));
+    
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     BOOST_TEST_MESSAGE("leaders_reward_test");
     
@@ -256,16 +309,17 @@ BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     produce_block(fc::seconds(cfg::def_reward_leaders_period - 3 * block_interval));
     BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code));
     BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code));
-    comm_ctrl.prepare(std::vector<account_name>(leaders.begin(), leaders.begin() + cfg::def_comm_leaders_num), _alice);
-    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, leaders[0]));
+    comm_ctrl.prepare(std::vector<account_name>(leaders.begin(), leaders.begin() + cfg::def_comm_leaders_num), _alice, 
+        cfg::def_comm_leaders_num * 10 * cfg::_1percent);
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, leaders[0], 10 * cfg::_1percent));
     produce_block();
-    auto to_transfer = asset(point.get_amount(_bob) / 3 + 1, point._symbol);
+    auto to_transfer = asset(point.get_amount(_bob) / 3 + 10, point._symbol);
     BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _alice, to_transfer));
     BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _carol, to_transfer));
     for (size_t i = 0; i < cfg::def_comm_leaders_num; i++) {
         BOOST_CHECK_EQUAL(err.nothing_to_claim, comm_ctrl.claim(leaders[i]));
     }
-    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_bob, _bob));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_bob, _bob, 10 * cfg::_1percent));
     emitted = point.get_supply() - supply;
     int64_t reward_sum = 0;
     for (size_t i = 0; i < cfg::def_comm_leaders_num; i++) {
