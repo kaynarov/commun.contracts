@@ -140,6 +140,17 @@ public:
     [[eosio::action]] void regleader(symbol_code commun_code, name leader, std::string url);
 
     /**
+        \brief The action clearvotes is used to remove votes cast for a given leader
+
+        \param commun_code a point symbol used by the community
+        \param leader a name of the leader candidate
+        \param count maximum number of votes to remove
+
+        Doing the clearvotes action requires signing the leader account.
+    */
+    [[eosio::action]] void clearvotes(symbol_code commun_code, name leader, std::optional<uint16_t> count);
+
+    /**
         \brief The unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of the specified community
 
         \param commun_code a point symbol of the community

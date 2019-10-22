@@ -4,6 +4,7 @@
 #include "commun.list_test_api.hpp"
 #include "commun.emit_test_api.hpp"
 #include "../commun.emit/include/commun.emit/config.hpp"
+#include "../commun.ctrl/include/commun.ctrl/config.hpp"
 #include "contracts.hpp"
 
 namespace cfg = commun::config;
@@ -79,7 +80,7 @@ public:
         const string approved = amsg("already approved");
         const string authorization_failed = amsg("transaction authorization failed");
         const string no_leaders = amsg("leaders num must be positive");
-        const string no_votes = amsg("max votes must be positive");
+        const string votes_must_be_positive = amsg("max votes must be positive");
         const string inconsistent_threshold = amsg("inconsistent set of threshold parameters");
         const string no_threshold = amsg("required threshold must be positive");
         const string leaders_less = amsg("leaders num can't be less than required threshold");
@@ -95,6 +96,12 @@ public:
         const string votes_casted = amsg("all allowed votes already casted");
         const string power_casted = amsg("all power already casted");
         const string votes_greater_100 = amsg("all votes exceed 100%");
+        
+        const string must_be_deactivated = amsg("leader must be deactivated");
+        const string no_votes = amsg("no votes");
+        const string incorrect_count = amsg("incorrect count");
+        
+        const string there_are_votes = amsg("not possible to remove leader as there are votes");
     } err;
     
     transaction get_point_create_trx(const vector<permission_level>& auths, name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
@@ -186,7 +193,7 @@ BOOST_FIXTURE_TEST_CASE(control_param_test, commun_ctrl_tester) try {
     
     BOOST_CHECK_EQUAL(err.no_leaders, community.setappparams(community.args()
         ("leaders_num", 0)));
-    BOOST_CHECK_EQUAL(err.no_votes, community.setappparams(community.args()
+    BOOST_CHECK_EQUAL(err.votes_must_be_positive, community.setappparams(community.args()
         ("max_votes", 0)));
     BOOST_CHECK_EQUAL(err.inconsistent_threshold, community.setappparams(community.args()
         ("permission", config::active_name)));
@@ -254,6 +261,47 @@ BOOST_FIXTURE_TEST_CASE(voteleader_test, commun_ctrl_tester) try {
     
     BOOST_CHECK_EQUAL(base_tester::success(), comm_ctrl.reg_leader(_golos, "localhost"));
     BOOST_CHECK_EQUAL(err.votes_casted, comm_ctrl.vote_leader(_carol, _golos, 10  * cfg::_1percent));
+    
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(clearvotes_test, commun_ctrl_tester) try {
+    BOOST_TEST_MESSAGE("clearvotes_test");
+    BOOST_CHECK_EQUAL(success(), token.create(cfg::dapp_name, asset(9999999, token._symbol)));
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(9999999, point._symbol), 10000, 1));
+    BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "GOLOS"));
+    BOOST_CHECK_EQUAL(success(), token.issue(cfg::dapp_name, _golos, asset(9999999, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::point_name, asset(9999999, token._symbol), cfg::restock_prefix + point_code_str));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice));
+    BOOST_CHECK_EQUAL(err.leader_not_found, comm_ctrl.clear_votes(_alice));
+    BOOST_CHECK_EQUAL(base_tester::success(), comm_ctrl.reg_leader(_alice, "localhost"));
+    
+    auto votes_num = cfg::max_clearvotes_count + cfg::max_clearvotes_count / 2 + 1;
+    for (size_t u = 0; u < votes_num; u++) {
+        auto user = user_name(u);
+        create_accounts({user});
+        BOOST_CHECK_EQUAL(success(), point.open(user));
+        BOOST_CHECK_EQUAL(success(), point.issue(_golos, user, asset(42, point._symbol), ""));
+        BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(user, _alice));
+        produce_block();
+    }
+    
+    BOOST_CHECK_EQUAL(votes_num, comm_ctrl.get_leader(_alice)["counter_votes"].as<uint64_t>());
+    BOOST_CHECK_EQUAL(votes_num * 42, comm_ctrl.get_leader(_alice)["total_weight"].as<uint64_t>());
+    
+    BOOST_CHECK_EQUAL(err.must_be_deactivated, comm_ctrl.clear_votes(_alice, cfg::max_clearvotes_count / 2));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.stop_leader(_alice));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.clear_votes(_alice, cfg::max_clearvotes_count / 2));
+    BOOST_CHECK_EQUAL(votes_num - cfg::max_clearvotes_count / 2, comm_ctrl.get_leader(_alice)["counter_votes"].as<uint64_t>());
+    BOOST_CHECK_EQUAL((votes_num - cfg::max_clearvotes_count / 2) * 42, comm_ctrl.get_leader(_alice)["total_weight"].as<uint64_t>());
+    
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.clear_votes(_alice));
+    BOOST_CHECK_EQUAL(1, comm_ctrl.get_leader(_alice)["counter_votes"].as<uint64_t>());
+    BOOST_CHECK_EQUAL(42, comm_ctrl.get_leader(_alice)["total_weight"].as<uint64_t>());
+    produce_block();
+    
+    BOOST_CHECK_EQUAL(err.there_are_votes, comm_ctrl.unreg_leader(_alice));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.clear_votes(_alice));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.unreg_leader(_alice));
     
 } FC_LOG_AND_RETHROW()
 

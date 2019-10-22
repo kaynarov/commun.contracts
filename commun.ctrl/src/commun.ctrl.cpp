@@ -83,7 +83,33 @@ void control::regleader(symbol_code commun_code, name leader, string url) {
     });
 }
 
-// TODO: special action to free memory?
+void control::clearvotes(symbol_code commun_code, name leader, std::optional<uint16_t> count) {
+    check_started(commun_code);
+    require_auth(leader);
+    leader_tbl leader_table(_self, commun_code.raw());
+    auto leader_it = leader_table.find(leader.value);
+    eosio::check(leader_it != leader_table.end(), "leader not found");
+    eosio::check(!leader_it->active, "leader must be deactivated");
+    eosio::check(leader_it->counter_votes, "no votes");
+    eosio::check(!count.has_value() || *count <= config::max_clearvotes_count, "incorrect count");
+    uint16_t actual_count = count.value_or(config::max_clearvotes_count);
+    
+    int64_t diff_weight = 0;
+    leader_vote_tbl tbl(_self, commun_code.raw());
+    auto idx = tbl.get_index<"byleader"_n>();
+    uint16_t i = 0;
+    for (auto itr = idx.lower_bound(std::make_tuple(leader, name())); itr != idx.end() && itr->leader == leader && i < actual_count;) {
+        diff_weight += get_power(commun_code, itr->voter, itr->pct);
+        itr = idx.erase(itr);
+        i++;
+    }
+    leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
+        w.counter_votes -= i;
+        w.total_weight -= diff_weight;
+        send_leader_event(commun_code, w);
+    });
+}
+
 void control::unregleader(symbol_code commun_code, name leader) {
     check_started(commun_code);
     require_auth(leader);
@@ -92,8 +118,6 @@ void control::unregleader(symbol_code commun_code, name leader) {
     auto it = leader_table.find(leader.value);
     eosio::check(!it->counter_votes, "not possible to remove leader as there are votes");
     leader_table.erase(*it);
-
-    //TODO remove votes for leader
 }
 
 void control::stopleader(symbol_code commun_code, name leader) {
@@ -466,6 +490,7 @@ DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_tr
     (regleader)(unregleader)
     (startleader)(stopleader)
     (voteleader)(unvotelead)
+    (clearvotes)
     (claim)(changepoints)
     (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
     )

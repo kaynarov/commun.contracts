@@ -31,9 +31,20 @@ struct commun_ctrl_api: base_contract_api {
             ("url", url)
         );
     }
+    
+    action_result clear_votes(name leader, std::optional<uint16_t> count = std::optional<uint16_t>()) {
+        auto a = args()
+            ("commun_code", commun_code)
+            ("leader", leader);
+        if (count.has_value()) {
+            a("count", *count);
+        }
+        return push(N(clearvotes), leader, a);
+    }
 
     action_result unreg_leader(name leader) {
         return push(N(unregleader), leader, args()
+            ("commun_code", commun_code)
             ("leader", leader)
         );
     }
