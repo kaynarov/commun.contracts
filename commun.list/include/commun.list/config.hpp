@@ -40,7 +40,10 @@ static constexpr uint8_t def_rewarded_mosaic_num = 10;
 static constexpr int64_t def_min_lead_rating = advice_weight[0] + 1;
 
 static constexpr uint16_t def_emission_rate = _1percent * 20;
-static constexpr uint16_t def_leaders_percent = _1percent * 10;
+static constexpr uint16_t def_leaders_percent = _1percent * 3;
+
+static constexpr int64_t def_reward_mosaics_period = 60 * 60;
+static constexpr int64_t def_reward_leaders_period = 24 * 60 * 60;
 
 #ifndef UNIT_TEST_ENV
 static constexpr auto post_opus_name = eosio::name("post");

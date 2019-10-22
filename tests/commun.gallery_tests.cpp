@@ -126,12 +126,12 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, 1, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
     
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(point.get_amount(_carol), point._symbol), false, _carol));
 
     produce_block();
-    produce_block(fc::seconds(cfg::def_moderation_period - cfg::reward_mosaics_period - block_interval));
+    produce_block(fc::seconds(cfg::def_moderation_period - cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(errgallery.moderation_period, gallery.claim(1, _alice));
     
     produce_blocks(1);
@@ -161,17 +161,17 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 1, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount / 2)}));
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(0, point._symbol), false, _bob, {std::make_pair(_alice, init_amount / 2)}));
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     
     //while creating this mosaic - the previous one receives a reward
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
     
     produce_block();
-    produce_block(fc::seconds(cfg::def_active_period - (2 * cfg::reward_mosaics_period) - block_interval));
+    produce_block(fc::seconds(cfg::def_active_period - (2 * cfg::def_reward_mosaics_period) - block_interval));
 
     BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
     produce_block();
@@ -182,10 +182,10 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("--- reward = " << reward);
     BOOST_CHECK_EQUAL((point.get_amount(_alice) - init_amount), reward / 2); // fee == 50%
     
-    produce_block(fc::seconds(cfg::forced_chopping_delay + cfg::reward_mosaics_period - block_interval));
+    produce_block(fc::seconds(cfg::forced_chopping_delay + cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(gallery.get_frozen(_carol), init_amount);
     
-    produce_block(fc::seconds(cfg::reward_mosaics_period));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period));
     
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 4, gallery.default_opus.name, asset(reward / 2, point._symbol), royalty));
     BOOST_CHECK(point.get_amount(_bob) > reward / 2);
@@ -229,11 +229,11 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("--- points_sum" << points_sum);
     
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(min_gem_points, point._symbol), false, _bob));
     
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - block_interval));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(min_gem_points, point._symbol), false, _bob));
     

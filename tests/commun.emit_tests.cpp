@@ -118,26 +118,26 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_emit_tester) try {
 
 BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("issuereward tests");
-    BOOST_CHECK_EQUAL(err.no_emitter, emit.issuereward(point_code, false));
+    BOOST_CHECK_EQUAL(err.no_emitter, emit.issuereward(point_code, cfg::gallery_name));
     init();
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, point_code, community.args()
         ("emission_rate", cfg::_1percent * 50)
         ("leaders_percent", cfg::_1percent * 10)));
 
-    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, false));
-    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, true));
+    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::gallery_name));
+    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::control_name));
 
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::reward_mosaics_period));
-    BOOST_CHECK_EQUAL(err.no_account(cfg::gallery_name), emit.issuereward(point_code, false));
+    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_mosaics_period));
+    BOOST_CHECK_EQUAL(err.no_account(cfg::gallery_name), emit.issuereward(point_code, cfg::gallery_name));
     create_accounts({cfg::gallery_name});
-    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, false));
-    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, true));
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
+    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::control_name));
 
     BOOST_TEST_MESSAGE("-- waiting for leaders reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::reward_leaders_period - cfg::reward_mosaics_period));
-    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, true));
+    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_leaders_period - cfg::def_reward_mosaics_period));
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::control_name));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
@@ -155,11 +155,11 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point_code, cfg::gallery_name));
 
     int64_t cont_emission = supply * int64_t(std::log(1.0 + annual_rate) * cfg::_100percent) / cfg::_100percent;
-    int64_t period_amount = cont_emission * cfg::reward_mosaics_period / seconds_per_year;
+    int64_t period_amount = cont_emission * cfg::def_reward_mosaics_period / seconds_per_year;
     int64_t mosaic_amount = period_amount * (1.0 - leaders_rate);
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::reward_mosaics_period));
-    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, false));
+    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_mosaics_period));
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
     BOOST_CHECK_EQUAL(mosaic_amount, point.get_amount(cfg::gallery_name));
 } FC_LOG_AND_RETHROW()
 
