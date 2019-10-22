@@ -612,7 +612,7 @@ private:
         claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.moderation_end, community.commun_symbol};
         check(!ret.premature || eager, "moderation period isn't over yet");
         
-        emit::maybe_issue_reward(config::emit_name, commun_code, false);
+        emit::maybe_issue_reward(commun_code, _self);
         
         return ret;
     }
@@ -796,7 +796,7 @@ protected:
         eosio::check(op.min_mosaic_inclusion <= points_sum, "points are not enough for mosaic inclusion");
         eosio::check((providers.size() + 1) * op.min_gem_inclusion <= points_sum, "points are not enough for gem inclusion");
         
-        emit::maybe_issue_reward(config::emit_name, commun_code, false);
+        emit::maybe_issue_reward(commun_code, _self);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "mosaic already exists");
@@ -834,7 +834,7 @@ protected:
         check(!mosaic->banned, "mosaic banned");
         check(mosaic->active, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
         
-        emit::maybe_issue_reward(config::emit_name, commun_code, false);
+        emit::maybe_issue_reward(commun_code, _self);
         
         auto points_sum = get_points_sum(quantity.amount, providers);
         eosio::check((providers.size() + 1) * community.get_opus(mosaic->opus).min_gem_inclusion <= points_sum, 

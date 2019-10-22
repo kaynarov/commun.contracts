@@ -37,6 +37,15 @@
             ]
         },
         {
+            "name": "emission_receiver",
+            "base": "",
+            "fields": [
+                { "type": "name",   "name": "contract" },
+                { "type": "int64",  "name": "period" },
+                { "type": "uint16", "name": "percent" }
+            ]
+        },
+        {
             "name": "community",
             "base": "",
             "fields": [
@@ -57,8 +66,8 @@
                     "type": "uint16"
                 },
                 {
-                    "name": "leaders_percent",
-                    "type": "uint16"
+                    "name": "emission_receivers",
+                    "type": "emission_receiver[]"
                 },
                 {
                     "name": "author_percent",

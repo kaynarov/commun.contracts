@@ -140,7 +140,7 @@ void control::voteleader(symbol_code commun_code, name voter, name leader) {
     }
     apply_vote_weight(commun_code, voter, leader, true);
     if (commun_code) {
-        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+        emit::maybe_issue_reward(commun_code, _self);
     }
 }
 
@@ -169,7 +169,7 @@ void control::unvotelead(symbol_code commun_code, name voter, name leader) {
     });
     apply_vote_weight(commun_code, voter, leader, false);
     if (commun_code) {
-        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+        emit::maybe_issue_reward(commun_code, _self);
     }
 }
 

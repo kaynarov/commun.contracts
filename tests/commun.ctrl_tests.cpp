@@ -228,7 +228,7 @@ BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     BOOST_CHECK_EQUAL(comm_ctrl.get_all_leaders().size(), 1);
     
     produce_block();
-    produce_block(fc::seconds(cfg::reward_leaders_period - 3 * block_interval));
+    produce_block(fc::seconds(cfg::def_reward_leaders_period - 3 * block_interval));
     BOOST_CHECK_EQUAL(success(), comm_ctrl.unvote_leader(_bob, _bob));
     BOOST_CHECK_EQUAL(supply, point.get_supply());
     produce_block();
@@ -253,7 +253,7 @@ BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     supply += emitted;
     BOOST_CHECK_EQUAL(success(), comm_ctrl.unvote_leader(_bob, _bob));
     produce_block();
-    produce_block(fc::seconds(cfg::reward_leaders_period - 3 * block_interval));
+    produce_block(fc::seconds(cfg::def_reward_leaders_period - 3 * block_interval));
     BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code));
     BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code));
     comm_ctrl.prepare(std::vector<account_name>(leaders.begin(), leaders.begin() + cfg::def_comm_leaders_num), _alice);
