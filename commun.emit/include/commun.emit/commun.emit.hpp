@@ -65,13 +65,25 @@ struct structures {
 
 public:
     using contract::contract;
+
+    /**
+     * \brief Action is used by commun.list contract to initialize emission for community with specified point symbol.
+     *
+     * \param commun_code a point symbol of the community
+     *
+     * The action is unavailable for user, can be callen only internally.
+     */
     [[eosio::action]] void init(symbol_code commun_code);
 
     /**
-     * \brief action is used by other contracts to emit POINTs
+     * \brief Action is used by other contracts to emit POINTs to them. It checks if it is time to reward, and if yes, transfers the points to contract.
      *
      * \param commun_code symbol of POINT to emit.
      * \param to_contract name of contract, which should receive emitted POINTs
+     *
+     * Action can be called by contracts on frequent user actions to reward if it is time to it..
+     *
+     * The action is unavailable for user, can be callen only internally by contracts to which commun.emit contract permits it.
      */
     [[eosio::action]] void issuereward(symbol_code commun_code, name to_contract);
 
