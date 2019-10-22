@@ -174,12 +174,12 @@ namespace gallery_types {
     
 namespace events {
     
-    struct mosaic_key {
+    struct mosaic_chop {
         symbol_code commun_code;
         uint64_t tracery;
     };
     
-    struct mosaic {
+    struct mosaic_state {
         uint64_t tracery;
         name creator;
         uint16_t gem_count;
@@ -189,7 +189,7 @@ namespace events {
         bool banned;
     };
     
-    struct gem {
+    struct gem_state {
         uint64_t tracery;
         name owner;
         name creator;
@@ -199,14 +199,14 @@ namespace events {
         int64_t shares;
     };
     
-    struct chop {
+    struct gem_chop {
         uint64_t tracery;
         name owner;
         name creator;
         asset reward;
     };
     
-    struct top {
+    struct mosaic_top {
         symbol_code commun_code;
         uint64_t tracery;
         uint16_t place;
@@ -221,7 +221,7 @@ namespace events {
 template<typename T>
 class gallery_base {
     void send_mosaic_event(name _self, symbol commun_symbol, const gallery_types::mosaic& mosaic) {
-        gallery_types::events::mosaic data {
+        gallery_types::events::mosaic_state data {
             .tracery = mosaic.tracery,
             .creator = mosaic.creator,
             .gem_count = mosaic.gem_count,
@@ -233,16 +233,16 @@ class gallery_base {
         eosio::event(_self, "mosaicstate"_n, data).send();
     }
     
-    void send_mosaic_erase_event(name _self, symbol_code commun_code, uint64_t tracery) {
-        gallery_types::events::mosaic_key data {
+    void send_mosaic_chop_event(name _self, symbol_code commun_code, uint64_t tracery) {
+        gallery_types::events::mosaic_chop data {
             .commun_code = commun_code,
             .tracery = tracery
         };
-        eosio::event(_self, "mosaicerase"_n, data).send();
+        eosio::event(_self, "mosaicchop"_n, data).send();
     }
     
     void send_gem_event(name _self, symbol commun_symbol, const gallery_types::gem& gem) {
-        gallery_types::events::gem data {
+        gallery_types::events::gem_state data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
@@ -255,24 +255,24 @@ class gallery_base {
     }
     
     void send_chop_event(name _self, const gallery_types::gem& gem, asset reward) {
-        gallery_types::events::chop data {
+        gallery_types::events::gem_chop data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
             .reward = reward
         };
-        eosio::event(_self, "chopevent"_n, data).send();
+        eosio::event(_self, "gemchop"_n, data).send();
     }
     
     void send_top_event(name _self, symbol_code commun_code, const gallery_types::mosaic& mosaic, uint16_t place) {
-        gallery_types::events::top data {
+        gallery_types::events::mosaic_top data {
             .commun_code = commun_code,
             .tracery = mosaic.tracery,
             .place = place,
             .comm_rating = mosaic.comm_rating,
             .lead_rating = mosaic.lead_rating
         };
-        eosio::event(_self, "topstate"_n, data).send();
+        eosio::event(_self, "mosaictop"_n, data).send();
     }
     
 private:
@@ -402,7 +402,7 @@ private:
             if (mosaic->active) {
                 T::deactivate(_self, commun_code, *mosaic);
             }
-            send_mosaic_erase_event(_self, commun_code, mosaic->tracery);
+            send_mosaic_chop_event(_self, commun_code, mosaic->tracery);
             mosaics_table.erase(mosaic);
         }
         return true;
