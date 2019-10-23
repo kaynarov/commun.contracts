@@ -110,16 +110,16 @@ struct community {
     std::vector<emission_receiver> emission_receivers;   //!< List of emission receivers
 
     // publish
-    uint16_t author_percent = config::def_author_percent;
-    int64_t collection_period = config::def_collection_period;
-    int64_t moderation_period = config::def_moderation_period;
+    uint16_t author_percent = config::def_author_percent; //!< percent of author reward in post reward
+    int64_t collection_period = config::def_collection_period; //!< mosaic collection period in seconds
+    int64_t moderation_period = config::def_moderation_period; //!< mosaic moderation period in seconds
     int64_t active_period = config::def_active_period;
     int64_t lock_period = 0; // TODO
-    uint16_t gems_per_day = 10;
-    uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num;
-    int64_t min_lead_rating = config::def_min_lead_rating;
+    uint16_t gems_per_day = 10; //!< count of gems user can freeze per day
+    uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num; //!< count of mosaics receiving reward
+    int64_t min_lead_rating = config::def_min_lead_rating; //!< minimal leader rating of mosaic to receive reward
 
-    std::set<opus_info> opuses = config::def_opuses;
+    std::set<opus_info> opuses = config::def_opuses; //!< opuses with pledges
 
     uint64_t primary_key() const {
         return commun_symbol.code().raw();
