@@ -43,7 +43,7 @@ namespace gallery_types {
         uint16_t royalty;
 
         time_point lock_date = time_point();
-        time_point close_date;
+        time_point collection_end_date;
         uint16_t gem_count;
         
         int64_t points;
@@ -85,8 +85,8 @@ namespace gallery_types {
         by_rating_t by_comm_rating()const { return std::make_tuple(active, comm_rating, lead_rating); }
         using by_lead_rating_t = std::tuple<bool, bool, int64_t, int64_t>;
         by_lead_rating_t by_lead_rating()const { return std::make_tuple(banned, locked, lead_rating, comm_rating); }
-        using by_close_t = std::tuple<uint8_t, time_point>;
-        by_close_t by_close()const { return std::make_tuple(active, close_date); }
+        using by_date_t = std::tuple<uint8_t, time_point>;
+        by_date_t by_date()const { return std::make_tuple(active, collection_end_date); }
     };
     
     struct gem {
@@ -152,8 +152,8 @@ namespace gallery_types {
     using mosaic_id_index = eosio::indexed_by<"mosaicid"_n, eosio::const_mem_fun<gallery_types::mosaic, uint64_t, &gallery_types::mosaic::primary_key> >;
     using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_comm_rating> >;
     using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_lead_rating_t, &gallery_types::mosaic::by_lead_rating> >;
-    using mosaic_close_index = eosio::indexed_by<"byclose"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_close_t, &gallery_types::mosaic::by_close> >;
-    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_close_index>;
+    using mosaic_coll_end_index = eosio::indexed_by<"bydate"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_date_t, &gallery_types::mosaic::by_date> >;
+    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_coll_end_index>;
     
     using gem_id_index = eosio::indexed_by<"gemid"_n, eosio::const_mem_fun<gallery_types::gem, uint64_t, &gallery_types::gem::primary_key> >;
     using gem_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::key_t, &gallery_types::gem::by_key> >;
@@ -337,14 +337,14 @@ private:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(gem.tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
-        bool ready_to_claim = (mosaic->close_date + eosio::seconds(community.moderation_period + community.active_period)) <= eosio::current_time_point();
+        bool ready_to_claim = (mosaic->collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period)) <= eosio::current_time_point();
         ready_to_claim = ready_to_claim && (gem.claim_date != config::eternity);
         if (by_user) {
             eosio::check(ready_to_claim || has_auth(gem.owner) 
                 || (has_auth(gem.creator) && !has_reward && gem.claim_date != config::eternity), "lack of necessary authority");
         } else if (!ready_to_claim) {
             gem_idx.modify(gem_itr, eosio::same_payer, [&](auto& item) {
-                item.claim_date = mosaic->close_date;
+                item.claim_date = mosaic->collection_end_date;
             });
             return false;
         }
@@ -441,7 +441,7 @@ private:
             auto& community = commun_list::get_community(config::list_name, commun_code);
 
             uint8_t gem_num = 0;
-            auto max_claim_date = eosio::current_time_point() - eosio::seconds(community.moderation_period + community.active_period);
+            auto max_claim_date = eosio::current_time_point() - eosio::seconds(community.moderation_period + community.extra_reward_period);
             auto claim_idx = gems_table.get_index<"byclaim"_n>();
             auto chop_gem_of = [&](name account) {
                 auto gem_itr = claim_idx.lower_bound(std::make_tuple(account, time_point()));
@@ -621,7 +621,7 @@ private:
 
         auto& community = commun_list::get_community(config::list_name, commun_code);
         
-        claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.close_date + eosio::seconds(community.moderation_period + community.active_period), community.commun_symbol};
+        claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period), community.commun_symbol};
         check(!ret.premature || eager, "moderation period isn't over yet");
         
         emit::maybe_issue_reward(commun_code, _self);
@@ -658,14 +658,14 @@ private:
         auto community = commun_list::get_community(config::list_name, commun_code);
 
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-        auto mosaics_idx = mosaics_table.get_index<"byclose"_n>();
+        auto mosaics_idx = mosaics_table.get_index<"bydate"_n>();
         
         auto now = eosio::current_time_point();
-        auto max_close_date = now - (eosio::seconds(community.moderation_period) + eosio::seconds(community.active_period));
+        auto max_collection_end_date = now - (eosio::seconds(community.moderation_period) + eosio::seconds(community.extra_reward_period));
         
         for (size_t i = 0; i < config::auto_archives_num; i++) {
             auto mosaic = mosaics_idx.lower_bound(std::make_tuple(true, time_point()));
-            if ((mosaic == mosaics_idx.end()) || (mosaic->close_date > max_close_date)) {
+            if ((mosaic == mosaics_idx.end()) || (mosaic->collection_end_date > max_collection_end_date)) {
                 break;
             }
             mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.active = false; });
@@ -803,14 +803,14 @@ protected:
         eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "mosaic already exists");
         
         auto now = eosio::current_time_point();
-        auto claim_date = now + eosio::seconds(community.collection_period);
+        auto claim_date = now + eosio::seconds(community.collection_period); //TODO: fix it
         
         mosaics_table.emplace(creator, [&]( auto &item ) { item = gallery_types::mosaic {
             .tracery = tracery,
             .creator = creator,
             .opus = opus,
             .royalty = royalty,
-            .close_date = claim_date,
+            .collection_end_date = claim_date,
             .gem_count = 0,
             .points = 0,
             .shares = 0
@@ -829,7 +829,7 @@ protected:
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
 
         auto community = commun_list::get_community(config::list_name, commun_symbol);
-        check(eosio::current_time_point() <= mosaic->close_date, "collection period is over");
+        check(eosio::current_time_point() <= mosaic->collection_end_date, "collection period is over");
         check(!mosaic->banned, "mosaic banned");
         check(mosaic->active, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
         
@@ -847,7 +847,7 @@ protected:
             shares_abs -= pay_royalties(_self, commun_symbol, tracery, mosaic->creator, safe_pct(mosaic->royalty, shares_abs));
         }
 
-        freeze_in_gems(_self, false, tracery, mosaic->close_date, gem_creator, quantity, providers, damn, points_sum, shares_abs, 0);
+        freeze_in_gems(_self, false, tracery, mosaic->collection_end_date, gem_creator, quantity, providers, damn, points_sum, shares_abs, 0);
     }
     
     void hold_gem(name _self, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator) {
@@ -996,10 +996,10 @@ protected:
         check(!mosaic.banned, "mosaic banned");
         auto now = eosio::current_time_point();
         auto& community = commun_list::get_community(config::list_name, commun_code);
-        eosio::check(now <= mosaic.close_date + eosio::seconds(community.moderation_period), "cannot unlock mosaic after moderation period");
+        eosio::check(now <= mosaic.collection_end_date + eosio::seconds(community.moderation_period), "cannot unlock mosaic after moderation period");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
             m.unlock();
-            m.close_date += (now - mosaic.lock_date);
+            m.collection_end_date += (now - mosaic.lock_date);
         });
     }
 

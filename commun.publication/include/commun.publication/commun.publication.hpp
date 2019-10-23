@@ -24,7 +24,7 @@ public:
 
         auto& community = commun_list::get_community(config::list_name, commun_code);
         eosio::check(vertex->childcount == 0
-            || now > mosaic.close_date + eosio::seconds(community.moderation_period + community.active_period), "comment with child comments can't be removed during the active period");
+            || now > mosaic.collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period), "comment with child comments can't be removed during the active period");
 
         if (vertex->parent_tracery) {
             auto parent_vertex = vertices_table.find(vertex->parent_tracery);

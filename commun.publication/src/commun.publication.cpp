@@ -174,12 +174,12 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         check_auth("Mosaic is inactive.", voter);
         return;
     }
-    if (eosio::current_time_point() > mosaic->close_date) {
+    if (eosio::current_time_point() > mosaic->collection_end_date) {
         check_auth("collection period is over", voter);
         return;
     }
     
-    auto gems_per_period = get_gems_per_period(commun_code, mosaic->close_date.sec_since_epoch() + community.moderation_period);
+    auto gems_per_period = get_gems_per_period(commun_code, mosaic->collection_end_date.sec_since_epoch() + community.moderation_period);
 
     asset quantity(
         get_amount_to_freeze(

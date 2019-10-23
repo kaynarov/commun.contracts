@@ -16,7 +16,7 @@
                 { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
                 { "type": "time_point",    "name": "lock_date" },
-                { "type": "time_point",    "name": "close_date" },
+                { "type": "time_point",    "name": "collection_end_date" },
                 { "type": "uint16",        "name": "gem_count" },
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
@@ -306,8 +306,8 @@
                     {"field": "active", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
                     {"field": "banned", "order": "desc"}, {"field": "locked", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
-                { "name": "byclose", "unique": "false", "orders": [
-                    {"field": "active", "order": "asc"}, {"field": "close_date", "order": "asc"} ] }
+                { "name": "bydate", "unique": "false", "orders": [
+                    {"field": "active", "order": "asc"}, {"field": "collection_end_date", "order": "asc"} ] }
             ]
         },{
             "name": "gem",

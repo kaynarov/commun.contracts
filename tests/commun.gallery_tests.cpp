@@ -171,7 +171,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
     
     produce_block();
-    auto archive_date = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_active_period;
+    auto archive_date = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period;
     produce_block(fc::seconds(archive_date - (2 * cfg::def_reward_mosaics_period) - block_interval));
 
     BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
@@ -414,7 +414,7 @@ BOOST_FIXTURE_TEST_CASE(lock_tests, commun_gallery_tester) try {
         ++ballast_tracery;
     };
     auto before_chop = get_gem(_code, _point, tracery, _alice)["claim_date"];
-    produce_block(fc::seconds(cfg::def_collection_period + cfg::def_moderation_period + cfg::def_active_period) - lock_period);
+    produce_block(fc::seconds(cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period) - lock_period);
     call_auto_chop();
     BOOST_CHECK(!get_mosaic(_code, _point, tracery).is_null());
     BOOST_CHECK_NE(before_chop, get_gem(_code, _point, tracery, _alice)["claim_date"]);
