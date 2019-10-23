@@ -443,14 +443,11 @@ private:
             auto claim_idx = gems_table.get_index<"byclaim"_n>();
             auto chop_gem_of = [&](name account) {
                 auto gem_itr = claim_idx.lower_bound(std::make_tuple(account, time_point()));
-                while ((gem_itr != claim_idx.end()) && (gem_itr->owner == account) && (gem_itr->claim_date < max_claim_date)) {
-                    if (!chop_gem(_self, commun_symbol, claim_idx, gem_itr, false, true)) {
-                        ++gem_itr;
-                        continue;
+                if ((gem_itr != claim_idx.end()) && (gem_itr->owner == account) && (gem_itr->claim_date < max_claim_date)) {
+                    if (chop_gem(_self, commun_symbol, claim_idx, gem_itr, false, true)) {
+                        claim_idx.erase(gem_itr);
                     }
-                    claim_idx.erase(gem_itr);
                     ++gem_num;
-                    break;
                 }
             };
             chop_gem_of(owner);
@@ -462,11 +459,12 @@ private:
             auto gem_itr = joint_idx.begin();
             
             while ((gem_itr != joint_idx.end()) && (gem_itr->claim_date < max_claim_date) && (gem_num < config::auto_claim_num)) {
-                if (!chop_gem(_self, commun_symbol, joint_idx, gem_itr, false, true, true)) {
-                    ++gem_itr;
-                    continue;
+                if (chop_gem(_self, commun_symbol, joint_idx, gem_itr, false, true, true)) {
+                    gem_itr = joint_idx.erase(gem_itr);
                 }
-                gem_itr = joint_idx.erase(gem_itr);
+                else {
+                    ++gem_itr;
+                }
                 ++gem_num;
             }
             
