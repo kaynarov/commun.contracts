@@ -37,6 +37,7 @@ struct permission {
 };
 
 struct contract_error_messages {
+    string missing_auth(name arg) { return "missing authority of " + arg.to_string(); };
 protected:
     const string amsg(const string& x) { return base_tester::wasm_assert_msg(x); }
 };

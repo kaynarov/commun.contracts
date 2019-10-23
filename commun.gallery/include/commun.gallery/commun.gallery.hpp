@@ -964,10 +964,10 @@ protected:
         }
     }
 
-    void update_mosaic(name _self, symbol_code commun_code, name creator, uint64_t tracery) {
-        require_auth(creator);
+    void update_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
+        require_auth(mosaic.creator);
         eosio::check(mosaic.active, "mosaic is inactive");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
             m.lock_date = time_point();
@@ -1051,8 +1051,8 @@ public:
     
     //TODO: [[eosio::action]] void checkadvice (symbol_code commun_code, name leader);
 
-    [[eosio::action]] void update(symbol_code commun_code, name creator, uint64_t tracery) {
-        update_mosaic(_self, commun_code, creator, tracery);
+    [[eosio::action]] void update(symbol_code commun_code, uint64_t tracery) {
+        update_mosaic(_self, commun_code, tracery);
     }
 
     [[eosio::action]] void lock(symbol_code commun_code, name leader, uint64_t tracery, string reason) {

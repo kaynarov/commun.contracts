@@ -398,6 +398,7 @@ BOOST_FIXTURE_TEST_CASE(lock_tests, commun_gallery_tester) try {
 
     BOOST_TEST_MESSAGE("-- locking again");
     BOOST_CHECK_EQUAL(errgallery.lock_without_modify, gallery.lock(_bob, tracery, "the reason"));
+    BOOST_CHECK_EQUAL(errgallery.missing_auth(_alice), gallery.update(_bob, tracery));
     BOOST_CHECK_EQUAL(success(), gallery.update(_alice, tracery));
     BOOST_CHECK_EQUAL(success(), gallery.lock(_bob, tracery, "the reason"));
 
