@@ -101,13 +101,41 @@ public:
         return push(N(advise), leader, args()
             ("commun_code", _symbol.to_symbol_code())
             ("leader", leader)
-            ("favorites", favorites));
+            ("favorites", favorites)
+        );
     }
-    
+
+    action_result update(account_name creator, uint64_t tracery) {
+        return push(N(update), creator, args()
+            ("commun_code", _symbol.to_symbol_code())
+            ("creator", creator)
+            ("tracery", tracery)
+        );
+    }
+
+    action_result lock(account_name leader, uint64_t tracery, const std::string& reason) {
+        return push(N(lock), leader, args()
+            ("commun_code", _symbol.to_symbol_code())
+            ("leader", leader)
+            ("tracery", tracery)
+            ("reason", reason)
+        );
+    }
+
+    action_result unlock(account_name leader, uint64_t tracery, const std::string& reason) {
+        return push(N(unlock), leader, args()
+            ("commun_code", _symbol.to_symbol_code())
+            ("leader", leader)
+            ("tracery", tracery)
+            ("reason", reason)
+        );
+    }
+
     action_result ban(account_name issuer, uint64_t tracery) {
         return push(N(ban), issuer, args()
             ("commun_code", _symbol.to_symbol_code())
-            ("tracery", tracery));
+            ("tracery", tracery)
+        );
     }
     
     int64_t get_frozen(account_name acc) {
