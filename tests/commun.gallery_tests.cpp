@@ -354,4 +354,72 @@ BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
 
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(lock_tests, commun_gallery_tester) try {
+    BOOST_TEST_MESSAGE("Lock mosaic by leader testing");
+    uint64_t tracery = 1;
+    int64_t supply  = 5000000000000;
+    init();
+    int64_t init_amount = supply / 2;
+    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
+    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(init_amount, point._symbol)));
+    ctrl.prepare({_bob}, _alice);
+    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, tracery, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
+    produce_block();
+
+    BOOST_TEST_MESSAGE("-- locking");
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, gallery.lock(_bob, tracery, ""));
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_alice), gallery.lock(_alice, tracery, "the reason"));
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.lock(_bob, 2, "the reason"));
+    BOOST_CHECK_EQUAL(success(), gallery.lock(_bob, tracery, "the reason"));
+    produce_block();
+    CHECK_MATCHING_OBJECT(get_mosaic(_code, _point, tracery), mvo()
+        ("locked", true)
+        ("active", false)
+        ("meritorious", false)
+    );
+    BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, gallery.lock(_bob, tracery, "the reason"));
+
+    BOOST_TEST_MESSAGE("-- waiting some time");
+    auto lock_period = fc::days(2);
+    produce_block(lock_period);
+
+    BOOST_TEST_MESSAGE("-- unlocking");
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, gallery.unlock(_bob, tracery, ""));
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_alice), gallery.unlock(_alice, tracery, "the reason"));
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.unlock(_bob, 2, "the reason"));
+    BOOST_CHECK_EQUAL(success(), gallery.unlock(_bob, tracery, "the reason"));
+    produce_block();
+    CHECK_MATCHING_OBJECT(get_mosaic(_code, _point, tracery), mvo()
+        ("locked", false)
+        ("active", true)
+        ("meritorious", true)
+    );
+    BOOST_CHECK_EQUAL(errgallery.mosaic_not_locked, gallery.unlock(_bob, tracery, "the reason"));
+
+    BOOST_TEST_MESSAGE("-- locking again");
+    BOOST_CHECK_EQUAL(errgallery.lock_without_modify, gallery.lock(_bob, tracery, "the reason"));
+    BOOST_CHECK_EQUAL(success(), gallery.update(_alice, tracery));
+    BOOST_CHECK_EQUAL(success(), gallery.lock(_bob, tracery, "the reason"));
+
+    BOOST_TEST_MESSAGE("-- unlocking without waiting");
+    BOOST_CHECK_EQUAL(success(), gallery.unlock(_bob, tracery, "the reason"));
+    produce_block();
+
+    BOOST_TEST_MESSAGE("-- testing auto-chop");
+    int ballast_tracery = tracery+1;
+    auto call_auto_chop = [&]() {
+        BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, ballast_tracery, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
+        produce_block();
+        ++ballast_tracery;
+    };
+    auto before_chop = get_gem(_code, _point, tracery, _alice)["claim_date"];
+    produce_block(fc::seconds(cfg::def_collection_period + cfg::def_moderation_period + cfg::def_active_period) - lock_period);
+    call_auto_chop();
+    BOOST_CHECK(!get_mosaic(_code, _point, tracery).is_null());
+    BOOST_CHECK_NE(before_chop, get_gem(_code, _point, tracery, _alice)["claim_date"]);
+    produce_block(lock_period);
+    call_auto_chop();
+    BOOST_CHECK(get_mosaic(_code, _point, tracery).is_null());
+} FC_LOG_AND_RETHROW()
+
 BOOST_AUTO_TEST_SUITE_END()

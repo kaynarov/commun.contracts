@@ -508,6 +508,13 @@ BOOST_FIXTURE_TEST_CASE(advise_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(get_mosaic(_code, _point, msg.tracery())["lead_rating"], cfg::advice_weight[0]);
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(lock_message, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Lock message by leader testing.");
+    mssgid msg = {N(brucelee), "permlink"};
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, post.lock(N(jackiechan), msg, ""));
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, post.unlock(N(jackiechan), msg, ""));
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Reward for downvote testing.");
     init();

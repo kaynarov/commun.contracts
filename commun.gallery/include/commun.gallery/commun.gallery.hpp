@@ -979,7 +979,7 @@ protected:
         check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
-        check(mosaic.active, "Mosaic is not active.");
+        check(mosaic.active, "mosaic is inactive");
         check(mosaic.lock_date == time_point(), "Mosaic should be modified to lock again.");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
             m.lock();
@@ -992,7 +992,7 @@ protected:
         check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
-        check(mosaic.locked, "Mosaic not locked.");
+        check(mosaic.locked, "mosaic not locked");
         check(!mosaic.banned, "mosaic banned");
         auto now = eosio::current_time_point();
         auto& community = commun_list::get_community(config::list_name, commun_code);
