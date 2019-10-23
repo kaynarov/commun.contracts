@@ -461,14 +461,14 @@
                 { "type": "mssgid",                 "name": "message_id" }
             ]
         },{
-            "name": "mosaic_key",
+            "name": "mosaic_chop_event",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "uint64",                 "name": "tracery" }
             ]
         },{
-            "name": "event_mosaic",
+            "name": "mosaic_state_event",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
@@ -480,7 +480,7 @@
                 { "type": "bool",                   "name": "banned" }
             ]
         },{
-            "name": "event_gem",
+            "name": "gem_state_event",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
@@ -492,7 +492,7 @@
                 { "type": "int64",                  "name": "shares" }
             ]
         },{
-            "name": "event_chop",
+            "name": "gem_chop_event",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
@@ -501,7 +501,7 @@
                 { "type": "asset",                  "name": "reward" }
             ]
         },{
-            "name": "event_top",
+            "name": "mosaic_top_event",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
@@ -513,11 +513,11 @@
         }
   ],
   "events": [
-        { "name": "mosaicerase", "type": "mosaic_key" },
-        { "name": "mosaicstate", "type": "event_mosaic" },
-        { "name": "gemstate",    "type": "event_gem" },
-        { "name": "chopevent",   "type": "event_chop" },
-        { "name": "topstate",   "type": "event_top" }
+        { "name": "mosaicstate", "type": "mosaic_state_event" },
+        { "name": "mosaicchop",  "type": "mosaic_chop_event" },
+        { "name": "gemstate",    "type": "gem_state_event" },
+        { "name": "gemchop",     "type": "gem_chop_event" },
+        { "name": "mosaictop",   "type": "mosaic_top_event" }
     ],
   "actions": [
   {
