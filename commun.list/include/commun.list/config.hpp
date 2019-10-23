@@ -2,7 +2,12 @@
 #include <commun/config.hpp>
 
 namespace commun { namespace structures {
-
+/**
+ * \brief struct represents an opus in opuses set in the community in the db
+ * \ingroup list_tables
+ *
+ * Defines pledges for creating mosaic and gem with specified opus (type of content)
+ */
 struct opus_info {
 #ifndef UNIT_TEST_ENV
     eosio::name name;
@@ -10,9 +15,9 @@ struct opus_info {
     eosio::chain::name name;
 #endif
 
-    int64_t mosaic_pledge = 0;
-    int64_t min_mosaic_inclusion = 0; 
-    int64_t min_gem_inclusion = 0;
+    int64_t mosaic_pledge = 0; //!< pledge for mosaic creating
+    int64_t min_mosaic_inclusion = 0; //!< inclusion for mosaic creating
+    int64_t min_gem_inclusion = 0; //!< inclusion for gem creating
 
     // for set
     friend bool operator<(const opus_info& a, const opus_info& b) {
