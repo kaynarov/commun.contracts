@@ -108,7 +108,6 @@ public:
     action_result update(account_name creator, uint64_t tracery) {
         return push(N(update), creator, args()
             ("commun_code", _symbol.to_symbol_code())
-            ("creator", creator)
             ("tracery", tracery)
         );
     }

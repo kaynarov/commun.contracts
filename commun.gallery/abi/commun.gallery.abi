@@ -146,7 +146,6 @@
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
-                { "type": "name",                   "name": "creator" },
                 { "type": "uint64",                 "name": "tracery" }
             ]
         },{

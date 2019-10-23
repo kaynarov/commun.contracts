@@ -82,7 +82,7 @@ void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
     if (check_mssg_exists(commun_code, message_id, message_id.author)) {
-        update_mosaic(_self, commun_code, message_id.author, message_id.tracery());
+        update_mosaic(_self, commun_code, message_id.tracery());
     }
 }
 
