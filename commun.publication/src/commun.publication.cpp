@@ -200,6 +200,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
 
 void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {
     require_auth(rebloger);
+    require_auth(_self); // functionality of a client
 
     eosio::check(rebloger != message_id.author, "You cannot reblog your own content.");
     eosio::check(header.length() < config::max_length, "Title length is more than 256.");
@@ -207,14 +208,12 @@ void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t messag
         !header.length() || (header.length() && body.length()),
         "Body must be set if title is set."
     );
-
-    check_mssg_exists(commun_code, message_id);
 }
 
 void publication::erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id) {
     require_auth(rebloger);
+    require_auth(_self); // functionality of a client
     eosio::check(rebloger != message_id.author, "You cannot erase reblog your own content.");
-    check_mssg_exists(commun_code, message_id);
 }
 
 bool publication::validate_permlink(std::string permlink) {
