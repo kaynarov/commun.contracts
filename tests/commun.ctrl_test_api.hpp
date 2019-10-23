@@ -31,9 +31,20 @@ struct commun_ctrl_api: base_contract_api {
             ("url", url)
         );
     }
+    
+    action_result clear_votes(name leader, std::optional<uint16_t> count = std::optional<uint16_t>()) {
+        auto a = args()
+            ("commun_code", commun_code)
+            ("leader", leader);
+        if (count.has_value()) {
+            a("count", *count);
+        }
+        return push(N(clearvotes), leader, a);
+    }
 
     action_result unreg_leader(name leader) {
         return push(N(unregleader), leader, args()
+            ("commun_code", commun_code)
             ("leader", leader)
         );
     }
@@ -51,12 +62,15 @@ struct commun_ctrl_api: base_contract_api {
         );
     }
 
-    action_result vote_leader(name voter, name leader) {
-        return push(N(voteleader), voter, args()
+    action_result vote_leader(name voter, name leader, std::optional<uint16_t> pct = std::optional<uint16_t>()) {
+        auto a = args()
             ("commun_code", commun_code)
             ("voter", voter)
-            ("leader", leader)
-        );
+            ("leader", leader);
+        if (pct.has_value()) {
+            a("pct", *pct);
+        }
+        return push(N(voteleader), voter, a);
     }
     action_result unvote_leader(name voter, name leader) {
         return push(N(unvotelead), voter, args()
@@ -137,10 +151,12 @@ struct commun_ctrl_api: base_contract_api {
         return get_struct(commun_code.value, N(stat), commun_code.value, "stat")["retained"].as<int64_t>();
     }
     
-    void prepare(const std::vector<name>& leaders, name voter) {
+    void prepare(const std::vector<name>& leaders, name voter, uint16_t pct_sum = cfg::_100percent) {
         for (int i = 0; i < leaders.size(); i++) {
             BOOST_CHECK_EQUAL(base_tester::success(), reg_leader(leaders[i], "localhost"));
-            BOOST_CHECK_EQUAL(base_tester::success(), vote_leader(voter, leaders[i]));
+            uint16_t pct = pct_sum / leaders.size();
+            pct = (pct / (10 * cfg::_1percent)) * (10 * cfg::_1percent);
+            BOOST_CHECK_EQUAL(base_tester::success(), vote_leader(voter, leaders[i], pct));
         }
     }
 
