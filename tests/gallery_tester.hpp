@@ -40,7 +40,6 @@ public:
         const string reason_empty         = amsg("Reason cannot be empty.");
         const string lock_without_modify  = amsg("Mosaic should be modified to lock again.");
 
-        string missing_auth(name arg) { return "missing authority of " + arg.to_string(); };
         const string not_a_leader(account_name leader) { return amsg((leader.to_string() + " is not a leader")); }
 
         const string no_community = amsg("community not exists");
