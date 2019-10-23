@@ -372,11 +372,7 @@ BOOST_FIXTURE_TEST_CASE(lock_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.lock(_bob, 2, "the reason"));
     BOOST_CHECK_EQUAL(success(), gallery.lock(_bob, tracery, "the reason"));
     produce_block();
-    CHECK_MATCHING_OBJECT(get_mosaic(_code, _point, tracery), mvo()
-        ("locked", true)
-        ("active", false)
-        ("meritorious", false)
-    );
+    BOOST_CHECK_EQUAL(uint8_t(LOCKED), get_mosaic(_code, _point, tracery)["status"].as<uint8_t>());
     BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, gallery.lock(_bob, tracery, "the reason"));
 
     BOOST_TEST_MESSAGE("-- waiting some time");
@@ -389,11 +385,7 @@ BOOST_FIXTURE_TEST_CASE(lock_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.unlock(_bob, 2, "the reason"));
     BOOST_CHECK_EQUAL(success(), gallery.unlock(_bob, tracery, "the reason"));
     produce_block();
-    CHECK_MATCHING_OBJECT(get_mosaic(_code, _point, tracery), mvo()
-        ("locked", false)
-        ("active", true)
-        ("meritorious", true)
-    );
+    BOOST_CHECK_EQUAL(get_mosaic(_code, _point, tracery)["status"].as<uint8_t>(), uint8_t(ACTIVE));
     BOOST_CHECK_EQUAL(errgallery.mosaic_not_locked, gallery.unlock(_bob, tracery, "the reason"));
 
     BOOST_TEST_MESSAGE("-- locking again");

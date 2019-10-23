@@ -34,7 +34,7 @@ namespace gallery_types {
      * Contains information about a mosaic
      */
     struct mosaic {
-   
+
         mosaic() = default;
         uint64_t tracery; //!< the mosaic tracery, used as primary key
         name creator;     //!< the mosaic creator
@@ -56,37 +56,34 @@ namespace gallery_types {
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
         
+        enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED };
+        uint8_t status = ACTIVE;
         bool meritorious = false;
-        bool active = true;
-        bool banned = false;
-        bool locked = false;
+        
+        bool banned()const {return status == BANNED; }
 
         void lock() {
-            locked = true;
-            active = false;
-            meritorious = false;
+            check(status == ACTIVE, "mosaic is inactive");
+            check(lock_date == time_point(), "Mosaic should be modified to lock again.");
+            status = LOCKED;
+            lock_date = eosio::current_time_point();
         }
 
-        void unlock() {
-            locked = false;
-            active = true;
-            meritorious = true;
+        void unlock(int64_t moderation_period) {
+            check(status == LOCKED, "mosaic not locked");
+            auto now = eosio::current_time_point();
+            eosio::check(now <= collection_end_date + eosio::seconds(moderation_period), "cannot unlock mosaic after moderation period");
+            status = ACTIVE;
+            collection_end_date += now - lock_date;
         }
 
-        void ban() {
-            banned = true;
-            locked = false;
-            active = false;
-            meritorious = false;
-        };
-       
         uint64_t primary_key() const { return tracery; }
-        using by_rating_t = std::tuple<bool, int64_t, int64_t>;
-        by_rating_t by_comm_rating()const { return std::make_tuple(active, comm_rating, lead_rating); }
-        using by_lead_rating_t = std::tuple<bool, bool, int64_t, int64_t>;
-        by_lead_rating_t by_lead_rating()const { return std::make_tuple(banned, locked, lead_rating, comm_rating); }
+        using by_comm_rating_t = std::tuple<uint8_t, int64_t, int64_t>;
+        by_comm_rating_t by_comm_rating()const { return std::make_tuple(status, comm_rating, lead_rating); }
+        using by_lead_rating_t = std::tuple<int64_t, int64_t>;
+        by_lead_rating_t by_lead_rating()const { return std::make_tuple(lead_rating, comm_rating); }
         using by_date_t = std::tuple<uint8_t, time_point>;
-        by_date_t by_date()const { return std::make_tuple(active, collection_end_date); }
+        by_date_t by_date()const { return std::make_tuple(status, collection_end_date); }
     };
     
     struct gem {
@@ -150,7 +147,7 @@ namespace gallery_types {
     };
     
     using mosaic_id_index = eosio::indexed_by<"mosaicid"_n, eosio::const_mem_fun<gallery_types::mosaic, uint64_t, &gallery_types::mosaic::primary_key> >;
-    using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_rating_t, &gallery_types::mosaic::by_comm_rating> >;
+    using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_comm_rating_t, &gallery_types::mosaic::by_comm_rating> >;
     using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_lead_rating_t, &gallery_types::mosaic::by_lead_rating> >;
     using mosaic_coll_end_index = eosio::indexed_by<"bydate"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_date_t, &gallery_types::mosaic::by_date> >;
     using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_coll_end_index>;
@@ -228,7 +225,7 @@ class gallery_base {
             .shares = mosaic.shares,
             .damn_shares = mosaic.damn_shares,
             .reward = asset(mosaic.reward, commun_symbol),
-            .banned = mosaic.banned
+            .banned = mosaic.banned()
         };
         eosio::event(_self, "mosaicstate"_n, data).send();
     }
@@ -351,7 +348,7 @@ private:
 
         int64_t reward = 0;
         bool damn = gem.shares < 0;
-        if (!no_rewards && damn == mosaic->banned) {
+        if (!no_rewards && damn == mosaic->banned()) {
             reward = damn ? 
                 safe_prop(mosaic->reward, -gem.shares, mosaic->damn_shares) :
                 safe_prop(mosaic->reward,  gem.shares, mosaic->shares);
@@ -399,7 +396,8 @@ private:
             gallery_types::stats stats_table(_self, commun_code.raw());
             const auto stat = get_stat(_self, stats_table, commun_code);
             stats_table.modify(stat, name(), [&]( auto& s) { s.unclaimed += mosaic->reward - reward; });
-            if (mosaic->active) {
+            if (mosaic->status != gallery_types::mosaic::BANNED && mosaic->status != gallery_types::mosaic::ARCHIVED) {
+                //banned mosaics are deactivated in deactivate_old_mosaics
                 T::deactivate(_self, commun_code, *mosaic);
             }
             send_mosaic_chop_event(_self, commun_code, mosaic->tracery);
@@ -603,7 +601,7 @@ private:
         auto mosaic = mosaics_table.find(tracery);
         send_mosaic_event(_self, commun_symbol, *mosaic);
 
-        archive_old_mosaics(_self, commun_code);
+        deactivate_old_mosaics(_self, commun_code);
     }
     
     struct claim_info_t {
@@ -654,7 +652,7 @@ private:
         });
     }
     
-    void archive_old_mosaics(name _self, symbol_code commun_code) {
+    void deactivate_old_mosaics(name _self, symbol_code commun_code) {
         auto community = commun_list::get_community(config::list_name, commun_code);
 
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -663,12 +661,19 @@ private:
         auto now = eosio::current_time_point();
         auto max_collection_end_date = now - (eosio::seconds(community.moderation_period) + eosio::seconds(community.extra_reward_period));
         
-        for (size_t i = 0; i < config::auto_archives_num; i++) {
-            auto mosaic = mosaics_idx.lower_bound(std::make_tuple(true, time_point()));
-            if ((mosaic == mosaics_idx.end()) || (mosaic->collection_end_date > max_collection_end_date)) {
+        for (size_t i = 0; i < config::active_auto_deactivate_num; i++) {
+            auto mosaic = mosaics_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic::ACTIVE), time_point()));
+            if ((mosaic == mosaics_idx.end()) || (mosaic->collection_end_date >= max_collection_end_date)) {
                 break;
             }
-            mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.active = false; });
+            mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.status = gallery_types::mosaic::ARCHIVED; });
+            T::deactivate(_self, commun_code, *mosaic);
+        }
+        for (size_t i = 0; i < config::banned_auto_deactivate_num; i++) {
+            auto mosaic = mosaics_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic::BANNED), time_point()));
+            if ((mosaic == mosaics_idx.end()) || (mosaic->collection_end_date >= max_collection_end_date)) {
+                break;
+            }
             T::deactivate(_self, commun_code, *mosaic);
         }
     }
@@ -711,19 +716,21 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto by_comm_idx = mosaics_table.get_index<"bycommrating"_n>();
         
-        auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(true, MAXINT64, MAXINT64));
+        auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic::ACTIVE), MAXINT64, MAXINT64));
         auto by_comm_max = config::default_comm_grades.size();
         auto mosaic_num = 0;
         auto points_sum = 0;
         for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
-                                                   (by_comm_itr != by_comm_idx.end()) && 
+                                                   (by_comm_itr != by_comm_idx.end()) &&
+                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
                                                    (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
             points_sum += by_comm_itr->comm_rating;
         }
         std::map<uint64_t, int64_t> ranked_mosaics;
         mosaic_num = 0;
         for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
-                                                   (by_comm_itr != by_comm_idx.end()) && 
+                                                   (by_comm_itr != by_comm_idx.end()) &&
+                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
                                                    (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
 
             ranked_mosaics[by_comm_itr->tracery] = config::default_comm_grades[mosaic_num] + 
@@ -733,9 +740,9 @@ protected:
         
         auto by_lead_max = config::default_lead_grades.size();
         mosaic_num = 0;
-        for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(false, MAXINT64, MAXINT64)); 
+        for (auto by_lead_itr = by_lead_idx.lower_bound(std::make_tuple(MAXINT64, MAXINT64)); 
                                                    (mosaic_num < by_lead_max) &&
-                                                   (by_lead_itr != by_lead_idx.end()) && 
+                                                   (by_lead_itr != by_lead_idx.end()) &&
                                                    (by_lead_itr->lead_rating >= community.min_lead_rating); by_lead_itr++, mosaic_num++) {
 
             ranked_mosaics[by_lead_itr->tracery] += config::default_lead_grades[mosaic_num];
@@ -830,8 +837,8 @@ protected:
 
         auto community = commun_list::get_community(config::list_name, commun_symbol);
         check(eosio::current_time_point() <= mosaic->collection_end_date, "collection period is over");
-        check(!mosaic->banned, "mosaic banned");
-        check(mosaic->active, "mosaic is archival, probably collection_period or mosaic_active_period is incorrect");
+        check(!mosaic->banned(), "mosaic banned");
+        check(mosaic->status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
         
         emit::maybe_issue_reward(commun_code, _self);
         
@@ -968,39 +975,34 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         require_auth(mosaic.creator);
-        eosio::check(mosaic.active, "mosaic is inactive");
+        eosio::check(mosaic.status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
             m.lock_date = time_point();
         });
     }
-
-    void lock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
+    
+    void set_lock_status(name _self, symbol_code commun_code, name leader, uint64_t tracery, bool lock) {
         require_auth(leader);
         check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
-        check(mosaic.active, "mosaic is inactive");
-        check(mosaic.lock_date == time_point(), "Mosaic should be modified to lock again.");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
-            m.lock();
-            m.lock_date = eosio::current_time_point();
+            if (lock) { 
+                m.lock();
+            }
+            else {
+                m.unlock(commun_list::get_community(config::list_name, commun_code).moderation_period);
+            }
         });
     }
 
+    void lock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
+        set_lock_status(_self, commun_code, leader, tracery, true);
+        
+    }
+
     void unlock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
-        require_auth(leader);
-        check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
-        gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-        auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
-        check(mosaic.locked, "mosaic not locked");
-        check(!mosaic.banned, "mosaic banned");
-        auto now = eosio::current_time_point();
-        auto& community = commun_list::get_community(config::list_name, commun_code);
-        eosio::check(now <= mosaic.collection_end_date + eosio::seconds(community.moderation_period), "cannot unlock mosaic after moderation period");
-        mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
-            m.unlock();
-            m.collection_end_date += (now - mosaic.lock_date);
-        });
+        set_lock_status(_self, commun_code, leader, tracery, false);
     }
 
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
@@ -1009,9 +1011,9 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
-        eosio::check(mosaic->active, "mosaic is inactive");
-        mosaics_table.modify(mosaic, name(), [&](auto& item) { item.ban(); });
-        T::deactivate(_self, commun_code, *mosaic);
+        eosio::check(mosaic->status != gallery_types::mosaic::BANNED, "mosaic is already banned");
+        eosio::check(mosaic->status != gallery_types::mosaic::ARCHIVED, "mosaic is archived");
+        mosaics_table.modify(mosaic, name(), [&](auto& item) { item.status = gallery_types::mosaic::BANNED; });
     }
 };
 

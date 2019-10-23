@@ -170,7 +170,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         check_auth("Message does not exist.", voter);
         return;
     }
-    if (!mosaic->active) {
+    if (mosaic->status != gallery_types::mosaic::ACTIVE) {
         check_auth("Mosaic is inactive.", voter);
         return;
     }

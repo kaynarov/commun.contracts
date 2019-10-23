@@ -594,15 +594,11 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), ctrl.exec(N(brucelee), N(bandirt), N(brucelee)));
     BOOST_CHECK_EQUAL(err.authorization_failed, ctrl.exec(N(brucelee), N(banthirdone), N(brucelee)));
 
-    BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["banned"].as<bool>());
-    BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["banned"].as<bool>());
-    BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["banned"].as<bool>());
+    BOOST_CHECK_EQUAL(uint8_t(BANNED), get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(BANNED), get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(ACTIVE), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["status"].as<uint8_t>());
 
-    BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["meritorious"].as<bool>());
-    BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["meritorious"].as<bool>());
-    BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["meritorious"].as<bool>());
-
-    BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, post.ban(_golos, {N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(errgallery.mosaic_already_banned, post.ban(_golos, {N(alice), "facelift"}));
     BOOST_CHECK_EQUAL(err.inactive, post.downvote(N(chucknorris), {N(alice), "dirt"}, weight));
 
     produce_block();
@@ -642,7 +638,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     //therefore, jackie will not be able to create a second comment
     BOOST_CHECK_EQUAL(err.parent_no_message, post.create({N(jackiechan), "hm"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));
 
-    BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, post.ban(_golos, {N(brucelee), "what-are-you-waiting-for-jackie"}));
+    BOOST_CHECK_EQUAL(errgallery.mosaic_archived, post.ban(_golos, {N(brucelee), "what-are-you-waiting-for-jackie"}));
 
     BOOST_CHECK_EQUAL(success(), post.claim({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
 } FC_LOG_AND_RETHROW()
