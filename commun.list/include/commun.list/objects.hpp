@@ -115,7 +115,7 @@ struct community {
     int64_t moderation_period = config::def_moderation_period; //!< mosaic moderation period in seconds
     int64_t extra_reward_period = config::def_extra_reward_period;
     int64_t lock_period = 0; // TODO
-    uint16_t gems_per_day = 10; //!< count of gems user can freeze per day
+    uint16_t gems_per_day = config::def_gems_per_day; //!< count of gems user can freeze per day
     uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num; //!< count of mosaics receiving reward
     int64_t min_lead_rating = config::def_min_lead_rating; //!< minimal leader rating of mosaic to receive reward
 

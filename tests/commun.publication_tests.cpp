@@ -643,4 +643,36 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.claim({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
 } FC_LOG_AND_RETHROW()
 
+
+BOOST_FIXTURE_TEST_CASE(gem_num_limit, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Gem num limit testing");
+    init();
+    static std::set<commun::structures::opus_info> new_opuses = {{
+        commun::structures::opus_info{ cfg::post_opus_name, 1, 1, 1 },
+        commun::structures::opus_info{ cfg::comment_opus_name }
+    }};
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("opuses", new_opuses )));
+    size_t posts_num = 1000;
+    for (size_t i = 0; i < posts_num; i++) {
+        if (i % 100 == 0) { BOOST_TEST_MESSAGE("--- i = " << i); }
+        mssgid id{N(alice), "alice-in-blockchains-" + std::to_string(i)};
+        BOOST_CHECK_EQUAL(success(), post.create(id, {N(), "p"}, "h", "b", {"t"}, "m", 1));
+        BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), id));
+        produce_block();
+        produce_block(fc::seconds(60 * 60 * 24 / cfg::def_gems_per_day));
+    }
+    
+    int64_t seconds_per_day = 24 * 60 * 60;
+    int64_t mosaic_active_period = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period;
+    int gems_per_period = cfg::def_gems_per_day * mosaic_active_period / seconds_per_day;
+    
+    for (size_t i = 0; i <= gems_per_period; i++) {
+        mssgid id{N(alice), "alice-in-blockchains--" + std::to_string(i)};
+        BOOST_CHECK_EQUAL(success(), post.create(id, {N(), "p"}, "h", "b", {"t"}, "m", 1));
+        BOOST_CHECK_EQUAL(i == gems_per_period ? err.not_enough_for_gem : success(), post.upvote(N(jackiechan), id));
+        produce_block();
+        produce_block(fc::seconds(60 * 60 * 24 / (cfg::def_gems_per_day * 2)));
+    }
+} FC_LOG_AND_RETHROW()
+
 BOOST_AUTO_TEST_SUITE_END()

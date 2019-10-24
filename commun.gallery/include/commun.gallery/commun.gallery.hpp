@@ -550,7 +550,7 @@ private:
         return ret;
     }
 
-    void freeze_in_gems(name _self, bool creating, uint64_t tracery, time_point claim_date, name creator, 
+    void freeze_in_gems(name _self, bool creating, uint64_t tracery, time_point claim_date, name creator,
                         asset quantity, gallery_types::providers_t providers, bool damn, 
                         int64_t points_sum, int64_t shares_abs, int64_t pledge_points) {
 
@@ -651,7 +651,7 @@ private:
     }
     
     void deactivate_old_mosaics(name _self, symbol_code commun_code) {
-        auto community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(config::list_name, commun_code);
 
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"bydate"_n>();
@@ -833,7 +833,7 @@ protected:
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
 
-        auto community = commun_list::get_community(config::list_name, commun_symbol);
+        auto& community = commun_list::get_community(config::list_name, commun_symbol);
         check(eosio::current_time_point() <= mosaic->collection_end_date, "collection period is over");
         check(!mosaic->banned(), "mosaic banned");
         check(mosaic->status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
@@ -891,6 +891,18 @@ protected:
             gem = gems_idx.erase(gem);
         }
         
+    }
+    
+    void maybe_claim_old_gem(name _self, symbol commun_symbol, name gem_owner) {
+        auto commun_code = commun_symbol.code();
+        gallery_types::gems gems_table(_self, commun_code.raw());
+        auto claim_idx = gems_table.get_index<"byclaim"_n>();
+        auto gem_itr = claim_idx.lower_bound(std::make_tuple(gem_owner, time_point()));
+        if ((gem_itr != claim_idx.end()) && (gem_itr->owner == gem_owner) && 
+            (gem_itr->claim_date < eosio::current_time_point()) && chop_gem(_self, commun_symbol, claim_idx, gem_itr, false, true)) {
+                
+            claim_idx.erase(gem_itr);
+        }
     }
     
     void provide_points(name _self, name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
