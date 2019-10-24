@@ -47,6 +47,15 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
     community_tbl.emplace(_self, [&](auto& item) {
         item.commun_symbol = commun_symbol;
         item.community_name = community_name;
+        item.emission_receivers.reserve(2);
+        item.emission_receivers.push_back({
+            config::control_name,
+            config::def_reward_leaders_period,
+            config::def_leaders_percent});
+        item.emission_receivers.push_back({
+            config::gallery_name,
+            config::def_reward_mosaics_period,
+            config::_100percent - config::def_leaders_percent});
     });
     
     auto send_init_action = [commun_code](name contract_name) {
@@ -119,8 +128,17 @@ void commun_list::setparams(symbol_code commun_code,
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
         bool _empty = !c.control_param.update(permission, required_threshold, leaders_num, max_votes, false);
         SET_PARAM(emission_rate);
-        SET_PARAM(leaders_percent);
         SET_PARAM(author_percent);
+        if (leaders_percent) for (auto& receiver: c.emission_receivers) {
+            _empty = false;
+            if (receiver.contract == config::control_name) {
+                receiver.percent = *leaders_percent;
+            } else if (receiver.contract == config::gallery_name) {
+                receiver.percent = config::_100percent - *leaders_percent;
+            } else {
+                eosio::check(false, "unknown contract in emission receivers");
+            }
+        }
         eosio::check(!_empty, "No params changed");
     });
 }

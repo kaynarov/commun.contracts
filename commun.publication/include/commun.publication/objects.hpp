@@ -41,13 +41,13 @@ struct mssgid_t {
  * \brief struct represents a vertex table in a db
  * \ingroup publish_tables
  *
- * Contains information about posts/comment hierarchy
+ * Contains information about posts/comments hierarchy
  */
 struct vertex_t {
-    uint64_t tracery;  //!< the tracery of mosaic, used as primary key
-    uint64_t parent_tracery;
-    uint16_t level;
-    uint32_t childcount;
+    uint64_t tracery;  //!< the tracery of mosaic of the comment/post, used as primary key
+    uint64_t parent_tracery;  //!< the tracery of mosaic of the parent comment/post
+    uint16_t level; //!< the nesting level (0 for posts, from 1 for comments)
+    uint32_t childcount; //!< count of comments under comment/posts (on one level)
 
     uint64_t primary_key() const { return tracery; }
 };

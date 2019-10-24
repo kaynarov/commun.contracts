@@ -82,32 +82,44 @@ struct dapp {
 };
 
 /**
- * \brief struct represents a community table in a db
+ * \brief struct is part of community configuration in the db
  * \ingroup list_tables
  *
- * Contains information about configuration of a community
+ * Struct represents an emission receiver in the community
+ */
+struct emission_receiver {
+    name     contract; //!< Emission receiver
+    uint64_t period;   //!< Period of reward
+    uint16_t percent;  //!< Percent of emission
+};
+
+/**
+ * \brief struct represents a community table in the db
+ * \ingroup list_tables
+ *
+ * Contains information about configuration of the community
  */
 struct community {
     symbol commun_symbol; //!< symbol code of the community POINT
-    std::string community_name;
+    std::string community_name; //!< readable name of the community
 
     control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };
 
     // emit
-    uint16_t emission_rate = config::def_emission_rate;
-    uint16_t leaders_percent = config::def_leaders_percent;
+    uint16_t emission_rate = config::def_emission_rate;  //!< Emission rate of community POINTs
+    std::vector<emission_receiver> emission_receivers;   //!< List of emission receivers
 
     // publish
-    uint16_t author_percent = config::def_author_percent;
-    int64_t collection_period = config::def_collection_period;
-    int64_t moderation_period = config::def_moderation_period;
+    uint16_t author_percent = config::def_author_percent; //!< percent of author reward in post reward
+    int64_t collection_period = config::def_collection_period; //!< mosaic collection period in seconds
+    int64_t moderation_period = config::def_moderation_period; //!< mosaic moderation period in seconds
     int64_t active_period = config::def_active_period;
     int64_t lock_period = 0; // TODO
-    uint16_t gems_per_day = 10;
-    uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num;
-    int64_t min_lead_rating = config::def_min_lead_rating;
+    uint16_t gems_per_day = 10; //!< count of gems user can freeze per day
+    uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num; //!< count of mosaics receiving reward
+    int64_t min_lead_rating = config::def_min_lead_rating; //!< minimal leader rating of mosaic to receive reward
 
-    std::set<opus_info> opuses = config::def_opuses;
+    std::set<opus_info> opuses = config::def_opuses; //!< opuses with pledges
 
     uint64_t primary_key() const {
         return commun_symbol.code().raw();
@@ -117,6 +129,24 @@ struct community {
         auto opus_itr = opuses.find(opus_info{opus});
         check(opus_itr != opuses.end(), s);
         return *opus_itr;
+    }
+
+    const emission_receiver& get_emission_receiver(name to_contract) const {
+        return get_emission_receiver<const emission_receiver>(emission_receivers, to_contract);
+    }
+
+    emission_receiver& get_emission_receiver(name to_contract) {
+        return get_emission_receiver<emission_receiver>(emission_receivers, to_contract);
+    }
+
+private:
+    template <typename Result, typename List>
+    Result& get_emission_receiver(List& list, name to_contract) const {
+        auto itr = std::find_if(list.begin(), list.end(), [&](auto& reciever) {
+            return reciever.contract == to_contract;
+        });
+        eosio::check(itr != list.end(), to_contract.to_string() + " wasn't initialized for reward period");
+        return *itr;
     }
 };
 

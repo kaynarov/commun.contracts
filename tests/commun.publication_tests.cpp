@@ -479,7 +479,8 @@ BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.hold({N(alice), "alice-in-blockchains"}, N(alice)));
 
     produce_block();
-    produce_block(fc::seconds(cfg::def_active_period - cfg::block_interval_ms / 1000));
+    auto archive_date = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_active_period;
+    produce_block(fc::seconds(archive_date - cfg::block_interval_ms / 1000));
 
     //a third party can claim it because the active period has expired
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(chucknorris)));
@@ -505,6 +506,13 @@ BOOST_FIXTURE_TEST_CASE(advise_message, commun_publication_tester) try {
     duplicated.push_back(msg);
     BOOST_CHECK_EQUAL(success(), post.advise(N(jackiechan), duplicated));
     BOOST_CHECK_EQUAL(get_mosaic(_code, _point, msg.tracery())["lead_rating"], cfg::advice_weight[0]);
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(lock_message, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Lock message by leader testing.");
+    mssgid msg = {N(brucelee), "permlink"};
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, post.lock(N(jackiechan), msg, ""));
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, post.unlock(N(jackiechan), msg, ""));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
@@ -538,7 +546,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), ctrl.approve(N(brucelee), N(banthirdone), N(brucelee)));
 
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - (cfg::block_interval_ms / 1000)));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - (cfg::block_interval_ms / 1000)));
 
     //chucknorris will receive a reward as "facelift" will be in the top and will be banned (*1)
     BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(alice), "facelift"}, weight - 1));
@@ -554,7 +562,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.downvote(N(brucelee), {N(alice), "alice-in-blockchains"}, weight - 1));
 
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - (cfg::block_interval_ms / 1000)));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - (cfg::block_interval_ms / 1000)));
 
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "what-are-you-waiting-for-jackie"}));
     BOOST_CHECK_EQUAL(success(), post.hold({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
@@ -578,7 +586,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.inactive, post.downvote(N(chucknorris), {N(alice), "dirt"}, weight));
 
     produce_block();
-    produce_block(fc::seconds(cfg::def_moderation_period - cfg::reward_mosaics_period));
+    produce_block(fc::seconds((cfg::def_collection_period + cfg::def_moderation_period) - cfg::def_reward_mosaics_period));
 
     auto amount_alice0 = point.get_amount(N(alice));
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(alice)));
@@ -607,8 +615,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
 
     //at the end of this story, let's verify that we cannot ban the archive mosaic
     produce_block();
-    produce_block(fc::seconds(cfg::def_active_period - 
-                             (cfg::def_moderation_period - cfg::reward_mosaics_period + (cfg::block_interval_ms / 1000))));
+    produce_block(fc::seconds(cfg::def_active_period + cfg::def_reward_mosaics_period - (cfg::block_interval_ms / 1000)));
     //curious case: first, the existence of the parent permlink is checked, 
     //then the parent mosaic is archived and the parent permlink is destroyed
     BOOST_CHECK_EQUAL(success(), post.create({N(jackiechan), "what"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));

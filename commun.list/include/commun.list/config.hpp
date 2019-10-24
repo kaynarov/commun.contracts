@@ -2,7 +2,12 @@
 #include <commun/config.hpp>
 
 namespace commun { namespace structures {
-
+/**
+ * \brief struct represents an opus in opuses set in the community in the db
+ * \ingroup list_tables
+ *
+ * Defines pledges for creating mosaic and gem with specified opus (type of content)
+ */
 struct opus_info {
 #ifndef UNIT_TEST_ENV
     eosio::name name;
@@ -10,9 +15,9 @@ struct opus_info {
     eosio::chain::name name;
 #endif
 
-    int64_t mosaic_pledge = 0;
-    int64_t min_mosaic_inclusion = 0; 
-    int64_t min_gem_inclusion = 0;
+    int64_t mosaic_pledge = 0; //!< pledge for mosaic creating
+    int64_t min_mosaic_inclusion = 0; //!< inclusion for mosaic creating
+    int64_t min_gem_inclusion = 0; //!< inclusion for gem creating
 
     // for set
     friend bool operator<(const opus_info& a, const opus_info& b) {
@@ -29,9 +34,9 @@ namespace commun { namespace config {
 static constexpr std::array<int64_t, 10>  advice_weight = 
     {{10000, 7071, 5774, 5000, 4472, 4082, 3780, 3536, 3333, 3162}}; //sqrt(100000000/k)
 
-static constexpr int64_t def_collection_period =  7 * 24 * 60 * 60;
-static constexpr int64_t def_moderation_period = 10 * 24 * 60 * 60;
-static constexpr int64_t def_active_period     = 14 * 24 * 60 * 60;
+static constexpr int64_t def_collection_period = 7 * 24 * 60 * 60;
+static constexpr int64_t def_moderation_period = 3 * 24 * 60 * 60;
+static constexpr int64_t def_active_period     = 0;
 
 static constexpr uint16_t def_author_percent = 50 * _1percent;
 
@@ -40,7 +45,10 @@ static constexpr uint8_t def_rewarded_mosaic_num = 10;
 static constexpr int64_t def_min_lead_rating = advice_weight[0] + 1;
 
 static constexpr uint16_t def_emission_rate = _1percent * 20;
-static constexpr uint16_t def_leaders_percent = _1percent * 10;
+static constexpr uint16_t def_leaders_percent = _1percent * 3;
+
+static constexpr int64_t def_reward_mosaics_period = 60 * 60;
+static constexpr int64_t def_reward_leaders_period = 24 * 60 * 60;
 
 #ifndef UNIT_TEST_ENV
 static constexpr auto post_opus_name = eosio::name("post");

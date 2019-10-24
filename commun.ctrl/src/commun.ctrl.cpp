@@ -83,7 +83,33 @@ void control::regleader(symbol_code commun_code, name leader, string url) {
     });
 }
 
-// TODO: special action to free memory?
+void control::clearvotes(symbol_code commun_code, name leader, std::optional<uint16_t> count) {
+    check_started(commun_code);
+    require_auth(leader);
+    leader_tbl leader_table(_self, commun_code.raw());
+    auto leader_it = leader_table.find(leader.value);
+    eosio::check(leader_it != leader_table.end(), "leader not found");
+    eosio::check(!leader_it->active, "leader must be deactivated");
+    eosio::check(leader_it->counter_votes, "no votes");
+    eosio::check(!count.has_value() || *count <= config::max_clearvotes_count, "incorrect count");
+    uint16_t actual_count = count.value_or(config::max_clearvotes_count);
+    
+    int64_t diff_weight = 0;
+    leader_vote_tbl tbl(_self, commun_code.raw());
+    auto idx = tbl.get_index<"byleader"_n>();
+    uint16_t i = 0;
+    for (auto itr = idx.lower_bound(std::make_tuple(leader, name())); itr != idx.end() && itr->leader == leader && i < actual_count;) {
+        diff_weight += get_power(commun_code, itr->voter, itr->pct);
+        itr = idx.erase(itr);
+        i++;
+    }
+    leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
+        w.counter_votes -= i;
+        w.total_weight -= diff_weight;
+        send_leader_event(commun_code, w);
+    });
+}
+
 void control::unregleader(symbol_code commun_code, name leader) {
     check_started(commun_code);
     require_auth(leader);
@@ -92,8 +118,6 @@ void control::unregleader(symbol_code commun_code, name leader) {
     auto it = leader_table.find(leader.value);
     eosio::check(!it->counter_votes, "not possible to remove leader as there are votes");
     leader_table.erase(*it);
-
-    //TODO remove votes for leader
 }
 
 void control::stopleader(symbol_code commun_code, name leader) {
@@ -108,39 +132,50 @@ void control::startleader(symbol_code commun_code, name leader) {
     active_leader(commun_code, leader, true);
 }
 
-// Note: if not weighted, it's possible to pass all leaders in vector like in BP actions
-void control::voteleader(symbol_code commun_code, name voter, name leader) {
+void control::voteleader(symbol_code commun_code, name voter, name leader, std::optional<uint16_t> pct) {
     check_started(commun_code);
     require_auth(voter);
+    eosio::check(!pct.has_value() || *pct, "pct can't be 0");
+    eosio::check(!pct.has_value() || *pct <= config::_100percent, "pct can't be greater than 100%");
+    eosio::check(!pct.has_value() || *pct % (10 * config::_1percent) == 0, "incorrect pct");
 
     leader_tbl leader_table(_self, commun_code.raw());
     auto leader_it = leader_table.find(leader.value);
     eosio::check(leader_it != leader_table.end(), "leader not found");
     eosio::check(leader_it->active, "leader not active");
+    
+    uint16_t prev_votes_sum = 0;
+    uint8_t votes_num = 0;
+    leader_vote_tbl tbl(_self, commun_code.raw());
+    auto idx = tbl.get_index<"byvoter"_n>();
+    for (auto itr = idx.lower_bound(std::make_tuple(voter, name())); itr != idx.end() && itr->voter == voter; itr++) {
+        eosio::check(itr->leader != leader, "already voted");
+        prev_votes_sum += itr->pct;
+        votes_num++;
+    }
+    
+    eosio::check(votes_num < commun_list::get_control_param(config::list_name, commun_code).max_votes, "all allowed votes already casted");
+    eosio::check(prev_votes_sum <= config::_100percent, "SYSTEM: incorrect prev_votes_sum");
+    eosio::check(prev_votes_sum < config::_100percent, "all power already casted");
+    eosio::check(!pct.has_value() || prev_votes_sum + *pct <= config::_100percent, "all votes exceed 100%");
+    
+    uint16_t actual_pct = pct.has_value() ? *pct : config::_100percent - prev_votes_sum;
+    
+    tbl.emplace(voter, [&](auto& v) { v = {
+        .id = tbl.available_primary_key(),
+        .voter = voter,
+        .leader = leader,
+        .pct = actual_pct
+    };});
+    
     leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
         ++w.counter_votes;
+        w.total_weight += get_power(commun_code, voter, actual_pct);
+        send_leader_event(commun_code, w);
     });
-
-    leader_vote_tbl tbl(_self, commun_code.raw());
-    auto itr = tbl.find(voter.value);
-    bool exists = itr != tbl.end();
-
-    auto update = [&](auto& v) {
-        v.voter = voter;
-        v.leaders.emplace_back(leader);
-    };
-    if (exists) {
-        auto& w = itr->leaders;
-        auto el = std::find(w.begin(), w.end(), leader);
-        eosio::check(el == w.end(), "already voted");
-        eosio::check(w.size() < commun_list::get_control_param(config::list_name, commun_code).max_votes, "all allowed votes already casted");
-        tbl.modify(itr, voter, update);
-    } else {
-        tbl.emplace(voter, update);
-    }
-    apply_vote_weight(commun_code, voter, leader, true);
+    
     if (commun_code) {
-        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+        emit::maybe_issue_reward(commun_code, _self);
     }
 }
 
@@ -151,25 +186,22 @@ void control::unvotelead(symbol_code commun_code, name voter, name leader) {
     leader_tbl leader_table(_self, commun_code.raw());
     auto leader_it = leader_table.find(leader.value);
     eosio::check(leader_it != leader_table.end(), "leader not found");
-    leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
-        --w.counter_votes;
-    });
 
     leader_vote_tbl tbl(_self, commun_code.raw());
-    auto itr = tbl.find(voter.value);
-    bool exists = itr != tbl.end();
-    eosio::check(exists, "there are no votes");
-
-    auto w = itr->leaders;
-    auto el = std::find(w.begin(), w.end(), leader);
-    eosio::check(el != w.end(), "there is no vote for this leader");
-    w.erase(el);
-    tbl.modify(itr, eosio::same_payer, [&](auto& v) {
-        v.leaders = w;
+    auto idx = tbl.get_index<"byvoter"_n>();
+    auto itr = idx.find(std::make_tuple(voter, leader));
+    eosio::check(itr != idx.end(), "there is no vote for this leader");
+    
+    leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
+        --w.counter_votes;
+        w.total_weight -= get_power(commun_code, voter, itr->pct);
+        send_leader_event(commun_code, w);
     });
-    apply_vote_weight(commun_code, voter, leader, false);
+    
+    idx.erase(itr);
+    
     if (commun_code) {
-        emit::maybe_issue_reward(config::emit_name, commun_code, true);
+        emit::maybe_issue_reward(commun_code, _self);
     }
 }
 
@@ -191,47 +223,29 @@ void control::claim(symbol_code commun_code, name leader) {
     });
 }
 
+int64_t control::get_power(symbol_code commun_code, name voter, uint16_t pct = config::_100percent) {
+    return safe_pct(pct, commun_code ? 
+        point::get_balance(config::point_name, voter, commun_code).amount : 
+        point::get_assigned_reserve_amount(config::point_name, voter));
+}
+
 void control::changepoints(name who, asset diff) {
     symbol_code commun_code = diff.symbol.code();
     require_auth(_self);
     eosio::check(diff.amount != 0, "diff is 0. something broken");          // in normal conditions sender must guarantee it
-    change_voter_points(commun_code, who, diff.amount);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void control::change_voter_points(symbol_code commun_code, name voter, share_type diff) {
-    if (!diff) return;
+    leader_tbl leader_table(_self, commun_code.raw());
+    auto total_power = get_power(commun_code, who);
+    
     leader_vote_tbl tbl(_self, commun_code.raw());
-    auto itr = tbl.find(voter.value);
-    bool exists = itr != tbl.end();
-    if (exists && itr->leaders.size()) {
-        update_leaders_weights(commun_code, itr->leaders, diff);
-    }
-}
-
-void control::apply_vote_weight(symbol_code commun_code, name voter, name leader, bool add) {
-    const auto power = commun_code ? 
-        point::get_balance(config::point_name, voter, commun_code).amount : 
-        point::get_assigned_reserve_amount(config::point_name, voter);
-    if (power > 0) {
-        update_leaders_weights(commun_code, {leader}, add ? power : -power);
-    }
-}
-
-void control::update_leaders_weights(symbol_code commun_code, vector<name> leaders, share_type diff) {
-    leader_tbl wtbl(_self, commun_code.raw());
-    for (const auto& leader : leaders) {
-        auto w = wtbl.find(leader.value);
-        if (w != wtbl.end()) {
-            wtbl.modify(w, eosio::same_payer, [&](auto& wi) {
-                wi.total_weight += diff;            // TODO: additional checks of overflow? (not possible normally)
-            });
-            send_leader_event(commun_code, *w);
-        } else {
-            // just skip unregistered leaders (incl. non existing accs) for now
-            print("apply_vote_weight: leader not found\n");
-        }
+    auto idx = tbl.get_index<"byvoter"_n>();
+    for (auto itr = idx.lower_bound(std::make_tuple(who, name())); itr != idx.end() && itr->voter == who; itr++) {
+        auto diff_weight = safe_pct(itr->pct, total_power) - safe_pct(itr->pct, total_power - diff.amount);
+        auto leader_it = leader_table.find(itr->leader.value);
+        eosio::check(leader_it != leader_table.end(), "SYSTEM: leader not found: " + itr->leader.to_string());
+        leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
+            w.total_weight += diff_weight;
+            send_leader_event(commun_code, w);
+        });
     }
 }
 
@@ -452,7 +466,6 @@ void control::exec(name proposer, name proposal_name, name executer) {
     proptable.erase(prop);
 }
 
-
 void control::invalidate(name account) {
     require_auth(account);
     invalidations inv_table(_self, _self.value);
@@ -477,6 +490,7 @@ DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_tr
     (regleader)(unregleader)
     (startleader)(stopleader)
     (voteleader)(unvotelead)
+    (clearvotes)
     (claim)(changepoints)
     (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
     )

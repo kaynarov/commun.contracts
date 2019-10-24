@@ -33,9 +33,7 @@
                 { "type": "name",          "name": "creator" },
                 { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
-                { "type": "time_point",    "name": "created" },
                 { "type": "time_point",    "name": "lock_date" },
-                { "type": "time_point",    "name": "moderation_end" },
                 { "type": "time_point",    "name": "close_date" },
                 { "type": "uint16",        "name": "gem_count" },
                 { "type": "int64",         "name": "points" },
@@ -463,14 +461,14 @@
                 { "type": "mssgid",                 "name": "message_id" }
             ]
         },{
-            "name": "mosaic_key",
+            "name": "mosaic_chop_event",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "uint64",                 "name": "tracery" }
             ]
         },{
-            "name": "event_mosaic",
+            "name": "mosaic_state_event",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
@@ -482,7 +480,7 @@
                 { "type": "bool",                   "name": "banned" }
             ]
         },{
-            "name": "event_gem",
+            "name": "gem_state_event",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
@@ -494,7 +492,7 @@
                 { "type": "int64",                  "name": "shares" }
             ]
         },{
-            "name": "event_chop",
+            "name": "gem_chop_event",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
@@ -503,7 +501,7 @@
                 { "type": "asset",                  "name": "reward" }
             ]
         },{
-            "name": "event_top",
+            "name": "mosaic_top_event",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
@@ -515,11 +513,11 @@
         }
   ],
   "events": [
-        { "name": "mosaicerase", "type": "mosaic_key" },
-        { "name": "mosaicstate", "type": "event_mosaic" },
-        { "name": "gemstate",    "type": "event_gem" },
-        { "name": "chopevent",   "type": "event_chop" },
-        { "name": "topstate",   "type": "event_top" }
+        { "name": "mosaicstate", "type": "mosaic_state_event" },
+        { "name": "mosaicchop",  "type": "mosaic_chop_event" },
+        { "name": "gemstate",    "type": "gem_state_event" },
+        { "name": "gemchop",     "type": "gem_chop_event" },
+        { "name": "mosaictop",   "type": "mosaic_top_event" }
     ],
   "actions": [
   {
@@ -636,9 +634,7 @@
                 { "name": "byleadrating", "unique": "false", "orders": [
                     {"field": "banned", "order": "desc"}, {"field": "locked", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
                 { "name": "byclose", "unique": "false", "orders": [
-                    {"field": "active", "order": "asc"}, {"field": "close_date", "order": "asc"} ] },
-                { "name": "bymoderend", "unique": "false", "orders": [
-                    {"field": "locked", "order": "asc"}, {"field": "moderation_end", "order": "asc"} ] }
+                    {"field": "active", "order": "asc"}, {"field": "close_date", "order": "asc"} ] }
             ]
         },{
             "name": "gem",
