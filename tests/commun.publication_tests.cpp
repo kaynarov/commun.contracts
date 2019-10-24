@@ -172,6 +172,10 @@ public:
         const string tags_are_same         = amsg("No changes in tags.");
         const string reason_empty          = amsg("Reason cannot be empty.");
 
+        const string simple_no_message     = amsg("Message does not exist.");
+        const string simple_inactive       = amsg("Message is inactive.");
+        const string already_locked        = amsg("Message has already been locked");
+
         const string vote_weight_0         = amsg(auth_self + "weight can't be 0.");
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
 
@@ -317,14 +321,25 @@ BOOST_FIXTURE_TEST_CASE(remove_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Report message testing.");
     init();
+    ctrl.prepare({N(jackiechan)}, N(brucelee));
+
     mssgid msg = {N(brucelee), "permlink"};
     BOOST_CHECK_EQUAL(success(), post.create(msg));
 
-    BOOST_CHECK_EQUAL(err.no_message, post.report(N(jackiechan), {N(brucelee), "notexist"}, "the reason"));
-    BOOST_CHECK_EQUAL(success(), post.report(N(jackiechan), {N(brucelee), "notexist"}, "the reason", _client));
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason"));
+    BOOST_CHECK_EQUAL(err.simple_no_message, post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason", _client));
 
-    BOOST_CHECK_EQUAL(success(), post.report(N(jackiechan), msg, "the reason"));
-    BOOST_CHECK_EQUAL(err.reason_empty, post.report(N(jackiechan), msg, ""));
+    BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
+    BOOST_CHECK_EQUAL(err.reason_empty, post.report(N(chucknorris), msg, "", _client));
+
+    BOOST_CHECK_EQUAL(success(), post.lock(N(jackiechan), msg, "the reason"));
+    BOOST_CHECK_EQUAL(err.simple_inactive, post.report(N(chucknorris), msg, "the reason", _client));
+    BOOST_CHECK_EQUAL(success(), post.unlock(N(jackiechan), msg, "the reason"));
+    BOOST_CHECK_EQUAL(err.already_locked, post.report(N(chucknorris), msg, "the reason", _client));
+
+    BOOST_CHECK_EQUAL(success(), post.update(msg, "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
+    BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
+
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
@@ -335,39 +350,44 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
 
-    BOOST_CHECK_EQUAL(err.own_reblog, post.reblog(N(brucelee), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.reblog(N(chucknorris), account_name(), {N(brucelee), "permlink"},
         "header",
         "body"));
-    BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog(N(chucknorris), {N(brucelee), "permlink"},
+
+    BOOST_CHECK_EQUAL(err.own_reblog, post.reblog(N(brucelee), _client, {N(brucelee), "permlink"},
+        "header",
+        "body"));
+    BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
         str256,
         "body"));
-    BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog(N(chucknorris), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
         "header",
         ""));
-    BOOST_CHECK_EQUAL(err.no_message, post.reblog(N(chucknorris), {N(brucelee), "test"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
         "header",
         "body"));
-    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), {N(brucelee), "test"},
-        "header",
-        "body",
-        _client));
-    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
         "header",
         "body"));
-    BOOST_CHECK_EQUAL(success(), post.reblog(N(jackiechan), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
+        "header",
+        "body"));
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(jackiechan), _client, {N(brucelee), "permlink"},
         "",
         ""));
-    BOOST_CHECK_EQUAL(success(), post.reblog(_golos, {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(_golos, _client, {N(brucelee), "permlink"},
         "",
         "body"));
 
-    BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog(N(brucelee),
-        {N(brucelee), "permlink"}));
-    BOOST_CHECK_EQUAL(err.no_message, post.erase_reblog(N(chucknorris),
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.erase_reblog(N(chucknorris), account_name(),
         {N(brucelee), "notexist"}));
-    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris),
-        {N(brucelee), "notexist"}, _client));
-    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris),
+    BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog(N(brucelee), _client,
+        {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
+        {N(brucelee), "notexist"}));
+    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
+        {N(brucelee), "notexist"}));
+    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
         {N(brucelee), "permlink"}));
 } FC_LOG_AND_RETHROW()
 
