@@ -250,7 +250,8 @@ void control::changepoints(name who, asset diff) {
 }
 
 void control::send_leader_event(symbol_code commun_code, const leader_info& wi) {
-    eosio::event(_self, "leaderstate"_n, std::make_tuple(commun_code, wi.name, wi.total_weight, wi.active)).send();
+    leaderstate_event data{commun_code, wi.name, wi.total_weight, wi.active};
+    eosio::event(_self, "leaderstate"_n, data).send();
 }
 
 void control::active_leader(symbol_code commun_code, name leader, bool flag) {
