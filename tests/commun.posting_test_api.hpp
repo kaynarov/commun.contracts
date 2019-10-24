@@ -118,10 +118,10 @@ struct commun_posting_api: base_contract_api {
 
     action_result reblog(
         account_name rebloger,
+        account_name client,
         mssgid message_id,
         std::string title = "header",
-        std::string body = "body",
-        account_name client = account_name()
+        std::string body = "body"
     ) {
         auto a = args()
             ("commun_code", commun_code)
@@ -134,8 +134,8 @@ struct commun_posting_api: base_contract_api {
 
     action_result erase_reblog(
         account_name rebloger,
-        mssgid message_id,
-        account_name client = account_name()
+        account_name client,
+        mssgid message_id
     ) {
         auto a = args()
             ("commun_code", commun_code)
