@@ -334,14 +334,14 @@ private:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(gem.tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
-        bool ready_to_claim = (mosaic->collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period)) <= eosio::current_time_point();
-        ready_to_claim = ready_to_claim && (gem.claim_date != config::eternity);
+        auto claim_date = mosaic->collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period);
+        bool ready_to_claim = claim_date <= eosio::current_time_point() && gem.claim_date != config::eternity;
         if (by_user) {
             eosio::check(ready_to_claim || has_auth(gem.owner) 
                 || (has_auth(gem.creator) && !has_reward && gem.claim_date != config::eternity), "lack of necessary authority");
         } else if (!ready_to_claim) {
             gem_idx.modify(gem_itr, eosio::same_payer, [&](auto& item) {
-                item.claim_date = mosaic->collection_end_date;
+                item.claim_date = claim_date;
             });
             return false;
         }
@@ -439,7 +439,7 @@ private:
             auto& community = commun_list::get_community(config::list_name, commun_code);
 
             uint8_t gem_num = 0;
-            auto max_claim_date = eosio::current_time_point() - eosio::seconds(community.moderation_period + community.extra_reward_period);
+            auto max_claim_date = eosio::current_time_point();
             auto claim_idx = gems_table.get_index<"byclaim"_n>();
             auto chop_gem_of = [&](name account) {
                 auto gem_itr = claim_idx.lower_bound(std::make_tuple(account, time_point()));
@@ -808,19 +808,19 @@ protected:
         eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "mosaic already exists");
         
         auto now = eosio::current_time_point();
-        auto claim_date = now + eosio::seconds(community.collection_period); //TODO: fix it
         
         mosaics_table.emplace(creator, [&]( auto &item ) { item = gallery_types::mosaic {
             .tracery = tracery,
             .creator = creator,
             .opus = opus,
             .royalty = royalty,
-            .collection_end_date = claim_date,
+            .collection_end_date = now + eosio::seconds(community.collection_period),
             .gem_count = 0,
             .points = 0,
             .shares = 0
         };});
 
+        auto claim_date = now + eosio::seconds(community.collection_period + community.moderation_period + community.extra_reward_period);
         freeze_in_gems(_self, true, tracery, claim_date, creator, quantity, providers, false, points_sum, points_sum, op.mosaic_pledge);
     }
 
@@ -852,7 +852,8 @@ protected:
             shares_abs -= pay_royalties(_self, commun_symbol, tracery, mosaic->creator, safe_pct(mosaic->royalty, shares_abs));
         }
 
-        freeze_in_gems(_self, false, tracery, mosaic->collection_end_date, gem_creator, quantity, providers, damn, points_sum, shares_abs, 0);
+        auto claim_date = mosaic->collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period);
+        freeze_in_gems(_self, false, tracery, claim_date, gem_creator, quantity, providers, damn, points_sum, shares_abs, 0);
     }
     
     void hold_gem(name _self, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator) {
