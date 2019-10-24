@@ -23,6 +23,11 @@ void point::send_balance_event(name acc, const structures::account& accinfo) {
     eosio::event(_self, "balance"_n, data).send();
 }
 
+void point::send_exchange_event(const asset& amount) {
+    exchange_event data{amount};
+    eosio::event(_self, "exchange"_n, data).send();
+}
+
 static eosio::asset vague_asset(int64_t amount) { //bypass non-zero symbol restriction
     eosio::asset ret;
     ret.amount = amount;
@@ -171,6 +176,7 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
             check(add_tokens.amount <= param.max_supply.amount - stat.supply.amount, "quantity exceeds available supply");
             check(balance_exists(_self, from, commun_code), "balance of from not opened");
             add_balance(from, add_tokens, from);
+            send_exchange_event(add_tokens);
         }
 
         stats_table.modify(stat, same_payer, [&](auto& s) {
@@ -312,6 +318,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
             {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
         notify_balance_change(param.issuer, vague_asset(-quantity.amount));
+        send_exchange_event(sub_reserve);
     }
 }
 

@@ -304,8 +304,14 @@ struct structures {
         asset   balance;
     };
 
+    struct exchange_event {
+        asset   amount;
+    };
+
     void send_currency_event(const structures::stat& st, const structures::param& par);
 
     void send_balance_event(name acc, const structures::account& accinfo);
+
+    void send_exchange_event(const asset& amount);
 };
 } /// namespace commun
