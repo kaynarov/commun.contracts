@@ -18,18 +18,18 @@ using namespace eosio;
 using share_type = int64_t;
 
 /**
-  \brief a struct represents leader record in a db table
+  \brief DB record for leader with his votes from users.
 
   \ingroup control_tables
 */
 struct [[eosio::table]] leader_info {
-    name name;       /**< a leader name*/
-    bool active;     /**< true if the leader is active*/            // can check key instead or even remove record
+    name name;       //!< a leader name
+    bool active;     //!< true if the leader is active            // can check key instead or even remove record
 
-    uint64_t total_weight;
-    uint64_t counter_votes;
+    uint64_t total_weight;  //!< total weight of leader obtained from votes
+    uint64_t counter_votes; //!< counter of votes for the leader
     
-    int64_t unclaimed_points = 0;
+    int64_t unclaimed_points = 0; //!< points accumulated from emission and not yet unclaimed by leader with \ref control::claim
 
     uint64_t primary_key() const {
         return name.value;
@@ -43,14 +43,14 @@ using leader_weight_idx = indexed_by<"byweight"_n, const_mem_fun<leader_info, ui
 using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx>;
 
 /**
-  \brief struct represents voter record in a db table
+  \brief DB record for voter contains leader vote made by him/her.
   \ingroup control_tables
  */
 struct [[eosio::table]] leader_voter {
     uint64_t id;
-    name voter; /**< a voter name*/
-    name leader; /**< a leader name*/
-    uint16_t pct; /**< percentage of voter power cast for the leader*/
+    name voter; //!< a voter name
+    name leader; //!< a leader name
+    uint16_t pct; //!< percentage of voter power cast for the leader
 
     uint64_t primary_key() const { return id; }
     using key_t = std::tuple<name, name>;
@@ -65,7 +65,7 @@ using leadervote_byleader_idx = eosio::indexed_by<"byleader"_n, eosio::const_mem
 using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leadervote_id_idx, leadervote_byvoter_idx, leadervote_byleader_idx>;
 
 /**
-  \brief struct represents DB record for transaction proposed and should be approved by leaders
+  \brief DB record for transaction proposed and should be approved by leaders.
   \ingroup control_tables
  */
 struct [[eosio::table]] proposal {
@@ -79,28 +79,34 @@ struct [[eosio::table]] proposal {
 
 using proposals = eosio::multi_index< "proposal"_n, proposal>;
 
+/**
+  \brief Struct represents each of approvals stored in approvals_info.
+  \ingroup control_tables
+ */
 struct approval {
-    name approver;
-    time_point time;
+    name approver; //!< name of approved leader
+    time_point time; //!< time of approve
 };
 
 /**
+  \brief DB record for approvals list for proposed multi-signature transaction.
   \ingroup control_tables
-*/
+ */
 struct [[eosio::table]] approvals_info {
-    name proposal_name;
-    std::vector<approval> provided_approvals; 
+    name proposal_name; //!< name of proposed transaction
+    std::vector<approval> provided_approvals; //!< list of approves by leaders
     uint64_t primary_key()const { return proposal_name.value; }
 };
 
 using approvals = eosio::multi_index< "approvals"_n, approvals_info>;
 
 /**
+  \brief DB record for invalidation of the leader approved the proposed multi-signature transaction.
   \ingroup control_tables
-*/
+ */
 struct [[eosio::table]] invalidation {
-    name account;
-    time_point last_invalidation_time;
+    name account; //!< name of leader account
+    time_point last_invalidation_time; //!< last time of invalidation
 
     uint64_t primary_key() const { return account.value; }
 };
@@ -213,6 +219,10 @@ public:
         \param pct percentage of voter power cast for the leader; all unused power if pct is empty
 
         Sends leaderstate_event.
+
+        Sum of percentages of all leaders by single voter cannot exceed 100%. If pct is not set, percentage will be (100% - sum of percentages of another leader votes).
+
+        After vote, leader total weight will be voter_balance * pct / 100%. On changing balance, it will update (see \ref changepoints).
 
         Doing the action requires signing by the voter account.
 
@@ -335,6 +345,8 @@ public:
         \brief The invalidate action is used to revoke all permissions previously issued by the account for performing multi-signature transactions
 
         \param account name of account who revokes permissions
+
+        To exclude approved when calling \ref exec, the invalidate must be called after an approve.
 
         Performing the action checks a signature of the account.
     */
