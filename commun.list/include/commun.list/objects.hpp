@@ -101,7 +101,7 @@ struct emission_receiver {
  */
 struct community {
     symbol commun_symbol; //!< symbol code of the community POINT
-    std::string community_name; //!< readable name of the community
+    uint64_t community_hash; //!< hash of the community name for uniques
 
     control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };
 
@@ -155,8 +155,8 @@ private:
 namespace commun::tables {
     using namespace eosio;
 
-    using comn_name_index = eosio::indexed_by<"byname"_n, eosio::member<structures::community, std::string, &structures::community::community_name>>;
+    using comn_name_index = eosio::indexed_by<"byhash"_n, eosio::member<structures::community, uint64_t, &structures::community::community_hash>>;
     using community = eosio::multi_index<"community"_n, structures::community, comn_name_index>;
-    
+
     using dapp = eosio::multi_index<"dapp"_n, structures::dapp>;
 }

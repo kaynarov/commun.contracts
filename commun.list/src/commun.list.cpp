@@ -2,6 +2,7 @@
 #include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
 #include <commun.emit/commun.emit.hpp>
+#include <eosio/crypto.hpp>
 #include <commun/config.hpp>
 
 using namespace commun;
@@ -41,12 +42,14 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 
     check(community_tbl.find(commun_code.raw()) == community_tbl.end(), "community token exists");
 
-    auto community_index = community_tbl.get_index<"byname"_n>();
-    check(community_index.find(community_name) == community_index.end(), "community exists");
+    auto community_hash256 = eosio::sha256(community_name.c_str(), community_name.size());
+    auto community_hash = *(reinterpret_cast<const uint64_t *>(community_hash256.extract_as_byte_array().data()));
+    auto community_index = community_tbl.get_index<"byhash"_n>();
+    check(community_index.find(community_hash) == community_index.end(), "community exists");
 
     community_tbl.emplace(_self, [&](auto& item) {
         item.commun_symbol = commun_symbol;
-        item.community_name = community_name;
+        item.community_hash = community_hash;
         item.emission_receivers.reserve(2);
         item.emission_receivers.push_back({
             config::control_name,
@@ -146,8 +149,10 @@ void commun_list::setparams(symbol_code commun_code,
 #undef SET_PARAM
 #undef PERC
 
-void commun_list::setinfo(symbol_code commun_code, std::string description,
-        std::string language, std::string rules, std::string avatar_image, std::string cover_image) {
+void commun_list::setinfo(symbol_code commun_code,
+    optional<std::string> description, optional<std::string> language, optional<std::string> rules,
+    optional<std::string> avatar_image, optional<std::string> cover_image
+) {
     require_auth(point::get_issuer(config::point_name, commun_code));
     check_community_exists(_self, commun_code);
 }
