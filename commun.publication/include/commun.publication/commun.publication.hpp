@@ -24,7 +24,7 @@ public:
 
         auto& community = commun_list::get_community(config::list_name, commun_code);
         eosio::check(vertex->childcount == 0
-            || now > mosaic.close_date + eosio::seconds(community.moderation_period + community.active_period), "comment with child comments can't be removed during the active period");
+            || now > mosaic.collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period), "comment with child comments can't be removed during the active period");
 
         if (vertex->parent_tracery) {
             auto parent_vertex = vertices_table.find(vertex->parent_tracery);
@@ -246,7 +246,7 @@ public:
 private:
     gallery_types::providers_t get_providers(symbol_code commun_code, name account, uint16_t gems_per_period, std::optional<uint16_t> weight);
     accparams::const_iterator get_acc_param(accparams& accparams_table, symbol_code commun_code, name account);
-    uint16_t get_gems_per_period(symbol_code commun_code, int64_t mosaic_period = 0);
+    uint16_t get_gems_per_period(symbol_code commun_code);
     static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight);
     void set_vote(symbol_code commun_code, name voter, const mssgid_t &message_id, std::optional<uint16_t> weight, bool damn);
     bool validate_permlink(std::string permlink);

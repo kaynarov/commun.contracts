@@ -110,7 +110,7 @@ void publication::report(symbol_code commun_code, name reporter, mssgid_t messag
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto& mosaic = mosaics_table.get(message_id.tracery(), "Message does not exist.");
-    eosio::check(mosaic.active, "Message is inactive.");
+    eosio::check(mosaic.status == gallery_types::mosaic::ACTIVE, "Message is inactive.");
     eosio::check(mosaic.lock_date == time_point(), "Message has already been locked");
 }
 
@@ -170,17 +170,17 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         check_auth("Message does not exist.", voter);
         return;
     }
-    if (!mosaic->active) {
+    if (mosaic->status != gallery_types::mosaic::ACTIVE) {
         check_auth("Mosaic is inactive.", voter);
         return;
     }
-    if (eosio::current_time_point() > mosaic->close_date) {
+    if (eosio::current_time_point() > mosaic->collection_end_date) {
         check_auth("collection period is over", voter);
         return;
     }
-    
-    auto gems_per_period = get_gems_per_period(commun_code, mosaic->close_date.sec_since_epoch() + community.moderation_period);
+    auto gems_per_period = get_gems_per_period(commun_code);
 
+    maybe_claim_old_gem(_self, community.commun_symbol, voter);
     asset quantity(
         get_amount_to_freeze(
             point::get_balance(config::point_name, voter, commun_code).amount, 
@@ -252,13 +252,12 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
     return ret;
 }
 
-uint16_t publication::get_gems_per_period(symbol_code commun_code, int64_t mosaic_period) {
+uint16_t publication::get_gems_per_period(symbol_code commun_code) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
     auto& community = commun_list::get_community(config::list_name, commun_code);
-    if (mosaic_period == 0)
-        mosaic_period = community.collection_period + community.moderation_period;
+    int64_t mosaic_active_period = community.collection_period + community.moderation_period + community.extra_reward_period;
     uint16_t gems_per_day = community.gems_per_day;
-    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_period, seconds_per_day), 1);
+    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
 }
 
 int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight) {

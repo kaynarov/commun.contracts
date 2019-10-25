@@ -36,11 +36,11 @@ static constexpr std::array<int64_t, 10>  advice_weight =
 
 static constexpr int64_t def_collection_period = 7 * 24 * 60 * 60;
 static constexpr int64_t def_moderation_period = 3 * 24 * 60 * 60;
-static constexpr int64_t def_active_period     = 0;
+static constexpr int64_t def_extra_reward_period     = 0;
 
 static constexpr uint16_t def_author_percent = 50 * _1percent;
 
-static constexpr uint16_t def_gems_per_day = 40;
+static constexpr uint16_t def_gems_per_day = 10;
 static constexpr uint8_t def_rewarded_mosaic_num = 10;
 static constexpr int64_t def_min_lead_rating = advice_weight[0] + 1;
 

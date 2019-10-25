@@ -16,7 +16,7 @@
                 { "type": "name",          "name": "opus" },
                 { "type": "uint16",        "name": "royalty" },
                 { "type": "time_point",    "name": "lock_date" },
-                { "type": "time_point",    "name": "close_date" },
+                { "type": "time_point",    "name": "collection_end_date" },
                 { "type": "uint16",        "name": "gem_count" },
                 { "type": "int64",         "name": "points" },
                 { "type": "int64",         "name": "shares" },
@@ -25,10 +25,8 @@
                 { "type": "int64",         "name": "reward" },
                 { "type": "int64",         "name": "comm_rating" },
                 { "type": "int64",         "name": "lead_rating" },
-                { "type": "bool",          "name": "meritorious" },
-                { "type": "bool",          "name": "active" },
-                { "type": "bool",          "name": "banned" },
-                { "type": "bool",          "name": "locked" }
+                { "type": "uint8",         "name": "status" },
+                { "type": "bool",          "name": "meritorious" }
             ]
         },{
             "name": "gem_struct",
@@ -303,11 +301,11 @@
             "indexes": [
                 { "name": "primary", "unique": "true", "orders": [ {"field": "tracery", "order": "asc"} ] },
                 { "name": "bycommrating", "unique": "false", "orders": [
-                    {"field": "active", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
+                    {"field": "status", "order": "asc"}, {"field": "comm_rating", "order": "desc"}, {"field": "lead_rating", "order": "desc"} ] },
                 { "name": "byleadrating", "unique": "false", "orders": [
-                    {"field": "banned", "order": "desc"}, {"field": "locked", "order": "desc"}, {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
-                { "name": "byclose", "unique": "false", "orders": [
-                    {"field": "active", "order": "asc"}, {"field": "close_date", "order": "asc"} ] }
+                    {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
+                { "name": "bydate", "unique": "false", "orders": [
+                    {"field": "status", "order": "asc"}, {"field": "collection_end_date", "order": "asc"} ] }
             ]
         },{
             "name": "gem",

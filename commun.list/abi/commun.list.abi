@@ -82,7 +82,7 @@
                     "type": "int64"
                 },
                 {
-                    "name": "active_period",
+                    "name": "extra_reward_period",
                     "type": "int64"
                 },
                 {
