@@ -125,6 +125,14 @@ public:
         : contract(self, code, ds)
     {
     }
+
+    /**
+     * \brief Action is used by commun.list contract to initialize leaders for community with specified point symbol.
+     *
+     * \param commun_code a point symbol of the community
+     *
+     * The action is unavailable for user, can be callen only internally.
+     */
     [[eosio::action]] void init(symbol_code commun_code);
 
     /**
