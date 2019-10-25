@@ -137,7 +137,9 @@ void publication::downvote(symbol_code commun_code, name voter, mssgid_t message
 void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_id) {
     if (check_mssg_exists(commun_code, message_id, voter)) {
         eosio::check(voter != message_id.author, "author can't unvote");
-        claim_gems_by_creator(_self, message_id.tracery(), commun_code, voter, true);
+        if (!claim_gems_by_creator(_self, message_id.tracery(), commun_code, voter, true, false)) {
+            check_auth("vote doesn't exist", voter);
+        }
     }
 }
 

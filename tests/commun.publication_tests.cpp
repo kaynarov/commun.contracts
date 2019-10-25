@@ -164,6 +164,7 @@ public:
         const string no_message            = amsg(auth_self + "Message does not exist.");
         const string inactive              = amsg(auth_self + "Mosaic is inactive.");
         const string not_enough_for_gem    = amsg(auth_self + "points are not enough for gem inclusion");
+        const string no_vote               = amsg(auth_self + "vote doesn't exist");
 
         const string wrong_prmlnk_length   = amsg("Permlink length is empty or more than 256.");
         const string wrong_prmlnk          = amsg("Permlink contains wrong symbol.");
@@ -475,6 +476,8 @@ BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.not_enough_for_gem, post.downvote(N(noob), {N(brucelee), "permlink1"}));
     BOOST_CHECK_EQUAL(success(), post.downvote(N(noob), {N(brucelee), "permlink1"}, std::optional<uint16_t>(), _client));
     BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink1"}.tracery(), N(noob)).is_null());
+    BOOST_CHECK_EQUAL(err.no_vote, post.unvote(N(noob), {N(brucelee), "permlink1"}));
+    BOOST_CHECK_EQUAL(success(), post.unvote(N(noob), {N(brucelee), "permlink1"}, _client));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setproviders, commun_publication_tester) try {

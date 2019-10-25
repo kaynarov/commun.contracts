@@ -877,20 +877,21 @@ protected:
         gems_idx.erase(gem);
     }
     
-    void claim_gems_by_creator(name _self, uint64_t tracery, symbol_code commun_code, name gem_creator, bool eager) {
+    bool claim_gems_by_creator(name _self, uint64_t tracery, symbol_code commun_code, name gem_creator, bool eager, bool strict = true) {
         auto now = eosio::current_time_point();
         auto claim_info = get_claim_info(_self, tracery, commun_code, eager);
         
         gallery_types::gems gems_table(_self, commun_code.raw());
         auto gems_idx = gems_table.get_index<"bycreator"_n>();
         auto gem = gems_idx.lower_bound(std::make_tuple(claim_info.tracery, gem_creator, name()));
-        eosio::check((gem != gems_idx.end()) && (gem->tracery == claim_info.tracery) && (gem->creator == gem_creator), "nothing to claim");
+        auto gem_found = (gem != gems_idx.end()) && (gem->tracery == claim_info.tracery) && (gem->creator == gem_creator);
+        eosio::check(gem_found || !strict, "nothing to claim");
         
         while ((gem != gems_idx.end()) && (gem->tracery == claim_info.tracery) && (gem->creator == gem_creator)) {
             chop_gem(_self, claim_info.commun_symbol, gems_idx, gem, true, claim_info.has_reward, claim_info.premature);
             gem = gems_idx.erase(gem);
         }
-        
+        return gem_found;
     }
     
     void maybe_claim_old_gem(name _self, symbol commun_symbol, name gem_owner) {
