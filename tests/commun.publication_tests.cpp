@@ -448,7 +448,6 @@ BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     
 } FC_LOG_AND_RETHROW()
 
-
 BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Empty votes testing.");
     init();
@@ -647,6 +646,23 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.claim({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(ban_post_with_comment, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Ban post with comment testing.");
+    init();
+    ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
+    set_authority(_golos, cfg::minority_name, create_code_authority({cfg::control_name}), "active");
+    link_authority(_golos, cfg::publish_name, cfg::minority_name, N(ban));
+    
+    BOOST_CHECK_EQUAL(success(), post.create({N(alice), "alice-in-blockchains"}, {N(), "p"}));
+    BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "i-do-not-like-it"}, {N(alice), "alice-in-blockchains"}));
+
+    BOOST_CHECK_EQUAL(success(), ctrl.propose(N(brucelee), N(banpost), cfg::minority_name, 
+        get_ban_mosaic_trx({permission_level{_golos, cfg::minority_name}}, {N(alice), "alice-in-blockchains"})));
+    
+    BOOST_CHECK_EQUAL(success(), ctrl.approve(N(brucelee), N(banpost), N(brucelee)));
+    BOOST_CHECK_EQUAL(success(), ctrl.approve(N(brucelee), N(banpost), N(jackiechan))); 
+    BOOST_CHECK_EQUAL(success(), ctrl.exec(N(brucelee), N(banpost), N(brucelee)));
+} FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(gem_num_limit, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Gem num limit testing");
