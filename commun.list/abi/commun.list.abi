@@ -54,8 +54,8 @@
                     "type": "symbol"
                 },
                 {
-                    "name": "community_name",
-                    "type": "string"
+                    "name": "community_hash",
+                    "type": "uint64"
                 },
                 {
                     "name": "control_param",
@@ -337,10 +337,10 @@
                     ]
                 },
                 {
-                    "name" : "byname",
+                    "name" : "byhash",
                     "unique": "true",
                     "orders": [
-                        {"field": "community_name", "order": "asc"}
+                        {"field": "community_hash", "order": "asc"}
                     ]
                 }
             ]
