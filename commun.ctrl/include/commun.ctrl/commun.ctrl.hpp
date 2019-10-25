@@ -22,6 +22,7 @@ using share_type = int64_t;
 
   \ingroup control_tables
 */
+// DOCS_TABLE: leader_info
 struct [[eosio::table]] leader_info {
     name name;       //!< a leader name
     bool active;     //!< true if the leader is active            // can check key instead or even remove record
@@ -46,6 +47,7 @@ using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx
   \brief DB record for voter contains leader vote made by him/her.
   \ingroup control_tables
  */
+// DOCS_TABLE: leader_voter
 struct [[eosio::table]] leader_voter {
     uint64_t id;
     name voter; //!< a voter name
@@ -68,6 +70,7 @@ using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leaderv
   \brief DB record for transaction proposed and should be approved by leaders.
   \ingroup control_tables
  */
+// DOCS_TABLE: proposal
 struct [[eosio::table]] proposal {
     name proposal_name; //!< name of proposed transaction. A primary key
     symbol_code commun_code; //!< symbol of community (of leaders which should sign transaction)
@@ -92,6 +95,7 @@ struct approval {
   \brief DB record for approvals list for proposed multi-signature transaction.
   \ingroup control_tables
  */
+// DOCS_TABLE: proposal
 struct [[eosio::table]] approvals_info {
     name proposal_name; //!< name of proposed transaction
     std::vector<approval> provided_approvals; //!< list of approves by leaders
@@ -104,6 +108,7 @@ using approvals = eosio::multi_index< "approvals"_n, approvals_info>;
   \brief DB record for invalidation of the leader approved the proposed multi-signature transaction.
   \ingroup control_tables
  */
+// DOCS_TABLE: invalidation
 struct [[eosio::table]] invalidation {
     name account; //!< name of leader account
     time_point last_invalidation_time; //!< last time of invalidation
@@ -118,6 +123,7 @@ using invalidations = eosio::multi_index< "invals"_n, invalidation>;
  * \ingroup control_class
  */
 class control: public contract {
+    // DOCS_TABLE: stat
     struct [[eosio::table]] stat {
         uint64_t id;
         int64_t retained = 0;
