@@ -20,6 +20,7 @@ public:
         const string collect_period = amsg("collection period is over");
         const string no_points_provided = amsg("no points provided");
         const string not_enough_provided = amsg("not enough provided points");
+        const string refill = amsg("can't refill the gem");
         const string gallery_exists = amsg("the gallery with this symbol already exists");
         const string symbol_precision = amsg("symbol precision mismatch");
         const string wrong_royalty = amsg("incorrect royalty");

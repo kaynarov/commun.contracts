@@ -415,6 +415,7 @@ private:
         }
         
         auto commun_code = commun_symbol.code();
+        auto& community = commun_list::get_community(config::list_name, commun_code);
         
         gallery_types::gems gems_table(_self, commun_code.raw());
         
@@ -425,6 +426,7 @@ private:
             auto gem = gems_idx.find(std::make_tuple(tracery, owner, creator));
             if (gem != gems_idx.end()) {
                 eosio::check((shares < 0) == (gem->shares < 0), "gem type mismatch");
+                eosio::check(community.refill_gem_enabled, "can't refill the gem");
                 eosio::check(!pledge_points, "SYSTEM: pledge_points must be zero");
                 gems_idx.modify(gem, name(), [&](auto& item) {
                     item.points += points;
@@ -436,8 +438,7 @@ private:
         }
         
         if (!refilled) {
-            auto& community = commun_list::get_community(config::list_name, commun_code);
-
+            
             uint8_t gem_num = 0;
             auto max_claim_date = eosio::current_time_point();
             auto claim_idx = gems_table.get_index<"byclaim"_n>();

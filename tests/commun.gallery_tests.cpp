@@ -147,6 +147,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
 BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("Provide test");
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
     int64_t init_amount = supply / 2;
     uint16_t fee = 5000;
     
@@ -199,6 +200,7 @@ BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
 BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("Reward the top");
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
     BOOST_CHECK_EQUAL(success(), community.setsysparams(point_code, community.sysparams()
         ("min_lead_rating", 1)));
     int mosaics_num = 50;

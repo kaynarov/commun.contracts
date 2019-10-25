@@ -398,6 +398,7 @@ BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     auto vote_brucelee = [&](auto weight){ return post.upvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
     BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
@@ -412,6 +413,7 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     auto vote_brucelee = [&](auto weight){ return post.downvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
     BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
@@ -421,6 +423,17 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     BOOST_CHECK(!gem.is_null());
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(second_vote, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Second vote testing.");
+    init();
+    BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+    produce_block();
+    BOOST_CHECK_EQUAL(errgallery.refill, post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Unvote testing.");
     init();
@@ -428,7 +441,7 @@ BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.unvote(N(chucknorris), {N(brucelee), "permlink"}, _client));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.author_cannot_unvote, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
-    BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(err.no_vote, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(brucelee), "permlink"}, 123));
     produce_block();
     BOOST_CHECK(!get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(chucknorris)).is_null());
