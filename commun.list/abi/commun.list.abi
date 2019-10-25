@@ -241,23 +241,23 @@
                 },
                 {
                     "name": "description",
-                    "type": "string"
+                    "type": "string?"
                 },
                 {
                     "name": "language",
-                    "type": "string"
+                    "type": "string?"
                 },
                 {
                     "name": "rules",
-                    "type": "string"
+                    "type": "string?"
                 },
                 {
                     "name": "avatar_image",
-                    "type": "string"
+                    "type": "string?"
                 },
                 {
                     "name": "cover_image",
-                    "type": "string"
+                    "type": "string?"
                 }
             ]
         },

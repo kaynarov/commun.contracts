@@ -146,8 +146,10 @@ void commun_list::setparams(symbol_code commun_code,
 #undef SET_PARAM
 #undef PERC
 
-void commun_list::setinfo(symbol_code commun_code, std::string description,
-        std::string language, std::string rules, std::string avatar_image, std::string cover_image) {
+void commun_list::setinfo(symbol_code commun_code,
+    optional<std::string> description, optional<std::string> language, optional<std::string> rules,
+    optional<std::string> avatar_image, optional<std::string> cover_image
+) {
     require_auth(point::get_issuer(config::point_name, commun_code));
     check_community_exists(_self, commun_code);
 }

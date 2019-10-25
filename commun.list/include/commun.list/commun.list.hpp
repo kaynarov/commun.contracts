@@ -98,8 +98,9 @@ public:
 
         Performing the action requires the community leaders signature.
     */
-    [[eosio::action]] void setinfo(symbol_code commun_code, std::string description,
-        std::string language, std::string rules, std::string avatar_image, std::string cover_image);
+    [[eosio::action]] void setinfo(symbol_code commun_code,
+        optional<std::string> description, optional<std::string> language, optional<std::string> rules,
+        optional<std::string> avatar_image, optional<std::string> cover_image);
 
     /**
         \brief The follow action allows user to follow the community posts.
