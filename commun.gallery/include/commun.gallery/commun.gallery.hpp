@@ -350,7 +350,7 @@ private:
         bool damn = gem.shares < 0;
         if (!no_rewards && damn == mosaic->banned()) {
             reward = damn ? 
-                safe_prop(mosaic->reward, -gem.shares, mosaic->damn_shares) :
+                (community.damned_gem_reward_enabled ? safe_prop(mosaic->reward, -gem.shares, mosaic->damn_shares) : 0) :
                 safe_prop(mosaic->reward,  gem.shares, mosaic->shares);
         }
         asset frozen_points(gem.points + gem.pledge_points, commun_symbol);

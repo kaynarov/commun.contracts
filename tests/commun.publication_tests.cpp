@@ -538,6 +538,7 @@ BOOST_FIXTURE_TEST_CASE(lock_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Reward for downvote testing.");
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("damned_gem_reward_enabled", true)));
     uint16_t weight = 100;
     ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
     
