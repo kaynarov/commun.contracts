@@ -20,17 +20,17 @@ inline eosio::chain::name operator ""_n() {
 namespace commun { namespace config {
 
 // contracts
-static const auto dapp_name = "comn"_n;
-static const auto list_name = "comn.list"_n;
-static const auto emit_name = "comn.emit"_n;
-static const auto control_name = "comn.ctrl"_n;
-static const auto gallery_name = "comn.gallery"_n;
-static const auto social_name = "comn.social"_n;
+static const auto dapp_name = N(c);
+static const auto list_name = "c.list"_n;
+static const auto emit_name = "c.emit"_n;
+static const auto control_name = "c.ctrl"_n;
+static const auto gallery_name = "c.gallery"_n;
+static const auto social_name = "c.social"_n;
 static const auto publish_name = gallery_name;
 
 static const auto internal_name = "cyber"_n;
 static const auto token_name = "cyber.token"_n;
-static const auto point_name = "comn.point"_n;
+static const auto point_name = "c.point"_n;
 
 // permissions
 static const auto code_name = "cyber.code"_n;
