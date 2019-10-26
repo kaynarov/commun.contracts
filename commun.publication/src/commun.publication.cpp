@@ -67,7 +67,7 @@ void publication::create(
         amount_to_freeze = std::max(op.mosaic_pledge, std::max(op.min_mosaic_inclusion, op.min_gem_inclusion));
     }
     else {
-        amount_to_freeze = get_amount_to_freeze(point::get_balance(config::point_name, message_id.author, commun_code).amount, 
+        amount_to_freeze = get_amount_to_freeze(point::get_balance(message_id.author, commun_code).amount,
             get_frozen_amount(_self, message_id.author, commun_code), community.gems_per_day, weight);
     }
     asset quantity(amount_to_freeze, community.commun_symbol);
@@ -185,7 +185,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     maybe_claim_old_gem(_self, community.commun_symbol, voter);
     asset quantity(
         get_amount_to_freeze(
-            point::get_balance(config::point_name, voter, commun_code).amount, 
+            point::get_balance(voter, commun_code).amount,
             get_frozen_amount(_self, voter, commun_code),
             gems_per_period,
             weight), 
@@ -281,9 +281,9 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
     for (size_t n = 0; n < acc_param->providers.size(); n++) {
         auto prov_name = acc_param->providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, account));
-        if (prov_itr != provs_index.end() && point::balance_exists(config::point_name, prov_name, commun_code)) {
+        if (prov_itr != provs_index.end() && point::balance_exists(prov_name, commun_code)) {
             auto actual_limit = std::max<int64_t>(
-                0, point::get_balance(config::point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code));
+                0, point::get_balance(prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code));
             auto amount = std::min(get_amount_to_freeze(prov_itr->total, prov_itr->frozen, gems_per_period, weight), actual_limit);
             if (amount) {
                 ret.emplace_back(std::make_pair(prov_name, amount));
@@ -310,7 +310,7 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
     for (size_t n = 0; n < providers.size(); n++) {
         auto prov_name = providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, recipient));
-        if (prov_itr == provs_index.end() || !point::balance_exists(config::point_name, prov_name, commun_code)) {
+        if (prov_itr == provs_index.end() || !point::balance_exists(prov_name, commun_code)) {
             providers[n] = name();
         }
     }

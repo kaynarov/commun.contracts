@@ -36,7 +36,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 
     init_dapp(tables::dapp(_self, _self.value));
 
-    auto commun_symbol = point::get_supply(config::point_name, commun_code).symbol;
+    auto commun_symbol = point::get_supply(commun_code).symbol;
 
     tables::community community_tbl(_self, _self.value);
 
@@ -115,7 +115,7 @@ void commun_list::setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
         optional<name> permission, optional<uint8_t> required_threshold, 
         optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent) {
-    require_auth(point::get_issuer(config::point_name, commun_code));
+    require_auth(point::get_issuer(commun_code));
 
     // <> Place for checks
     eosio::check(!emission_rate.has_value() || *emission_rate == PERC(1) ||
@@ -160,7 +160,7 @@ void commun_list::setinfo(symbol_code commun_code,
         description || language || rules || avatar_image || cover_image,
         "No params changed");
 
-    require_auth(point::get_issuer(config::point_name, commun_code));
+    require_auth(point::get_issuer(commun_code));
     check_community_exists(commun_code);
 }
 

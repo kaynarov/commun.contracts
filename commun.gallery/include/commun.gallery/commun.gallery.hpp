@@ -274,7 +274,7 @@ class gallery_base {
     
 private:
     bool send_points(name from, name to, const asset &quantity) {
-        if (to && !point::balance_exists(config::point_name, to, quantity.symbol.code())) {
+        if (to && !point::balance_exists(to, quantity.symbol.code())) {
             return false;
         }
         
@@ -295,10 +295,10 @@ private:
             return;
         }
         auto commun_code = quantity.symbol.code();
-        auto balance_exists = point::balance_exists(config::point_name, account, commun_code);
+        auto balance_exists = point::balance_exists(account, commun_code);
         eosio::check(balance_exists, quantity.amount > 0 ? "balance doesn't exist" : "SYSTEM: points are frozen while balance doesn't exist");
 
-        auto balance_amount = point::get_balance(config::point_name, account, commun_code).amount;
+        auto balance_amount = point::get_balance(account, commun_code).amount;
         
         gallery_types::inclusions inclusions_table(_self, account.value);
         auto incl = inclusions_table.find(quantity.symbol.code().raw());
@@ -322,7 +322,7 @@ private:
     }
     
     static inline int64_t get_reserve_amount(asset quantity) {
-        return point::get_reserve_quantity(config::point_name, quantity, false).amount;
+        return point::get_reserve_quantity(quantity, false).amount;
     }
     
     template<typename GemIndex, typename GemItr>
@@ -372,7 +372,7 @@ private:
             }
         }
         if (!send_points(_self, gem.owner, reward_points)) {
-            eosio::check(send_points(_self, point::get_issuer(config::point_name, commun_code), reward_points), "the issuer's balance doesn't exist");
+            eosio::check(send_points(_self, point::get_issuer(commun_code), reward_points), "the issuer's balance doesn't exist");
         }
         
         if (mosaic->gem_count > 1 || mosaic->lead_rating) {
@@ -1019,7 +1019,7 @@ protected:
     }
 
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
-        require_auth(point::get_issuer(config::point_name, commun_code));
+        require_auth(point::get_issuer(commun_code));
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);

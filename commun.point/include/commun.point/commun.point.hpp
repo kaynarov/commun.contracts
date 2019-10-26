@@ -135,66 +135,66 @@ public:
     [[eosio::action]]
     void withdraw(name owner, asset quantity);
 
-    static inline bool exist(name token_contract_account, symbol_code commun_code) {
-        stats stats_table(token_contract_account, commun_code.raw());
+    static inline bool exist(symbol_code commun_code) {
+        stats stats_table(config::point_name, commun_code.raw());
         return stats_table.find(commun_code.raw()) != stats_table.end();
     }
 
-    static inline asset get_supply(name token_contract_account, symbol_code commun_code) {
-        stats stats_table(token_contract_account, commun_code.raw());
+    static inline asset get_supply(symbol_code commun_code) {
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
         return st.supply;
     }
     
-    static inline asset get_reserve(name token_contract_account, symbol_code commun_code) {
-        stats stats_table(token_contract_account, commun_code.raw());
+    static inline asset get_reserve(symbol_code commun_code) {
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
         return st.reserve;
     }
 
-    static inline asset get_balance(name token_contract_account, name owner, symbol_code commun_code) {
-        accounts accountstable(token_contract_account, owner.value);
+    static inline asset get_balance(name owner, symbol_code commun_code) {
+        accounts accountstable(config::point_name, owner.value);
         const auto& ac = accountstable.get(commun_code.raw(), "balance does not exist");
         return ac.balance;
     }
 
-    static inline name get_issuer(name token_contract_account, symbol_code commun_code) {
-        params params_table(token_contract_account, token_contract_account.value);
+    static inline name get_issuer(symbol_code commun_code) {
+        params params_table(config::point_name, config::point_name.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
         return param.issuer;
     }
     
-    static inline int64_t get_assigned_reserve_amount(name token_contract_account, name owner) {
-        params params_table(token_contract_account, token_contract_account.value);
+    static inline int64_t get_assigned_reserve_amount(name owner) {
+        params params_table(config::point_name, config::point_name.value);
         auto params_idx = params_table.get_index<"byissuer"_n>();
-        accounts accounts_table(token_contract_account, owner.value);
+        accounts accounts_table(config::point_name, owner.value);
         auto param = params_idx.find(owner);
         
         auto ac = accounts_table.find(symbol_code().raw());
         eosio::check(param != params_idx.end() || ac != accounts_table.end(), "no assigned reserve");
-        return (param != params_idx.end()  ? get_reserve(token_contract_account, param->max_supply.symbol.code()).amount : 0) + 
+        return (param != params_idx.end()  ? get_reserve(param->max_supply.symbol.code()).amount : 0) +
                (ac != accounts_table.end() ? ac->balance.amount : 0);
     }
 
-    static inline asset get_reserve_quantity(name token_contract_account, asset token_quantity, bool apply_fee = true) {
+    static inline asset get_reserve_quantity(asset token_quantity, bool apply_fee = true) {
         auto commun_code = token_quantity.symbol.code();
-        params params_table(token_contract_account, token_contract_account.value);
+        params params_table(config::point_name, config::point_name.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
-        stats stats_table(token_contract_account, commun_code.raw());
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw());
         return calc_reserve_quantity(param, st, token_quantity, apply_fee);
     }
 
-    static inline asset get_token_quantity(name token_contract_account, symbol_code commun_code, asset reserve_quantity) {
-        params params_table(token_contract_account, token_contract_account.value);
+    static inline asset get_token_quantity(symbol_code commun_code, asset reserve_quantity) {
+        params params_table(config::point_name, config::point_name.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
-        stats stats_table(token_contract_account, commun_code.raw());
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw());
         return calc_token_quantity(param, st, reserve_quantity);
     }
 
-    static bool balance_exists(name token_contract_account, name owner, symbol_code commun_code) {
-        accounts accountstable(token_contract_account, owner.value);
+    static bool balance_exists(name owner, symbol_code commun_code) {
+        accounts accountstable(config::point_name, owner.value);
         return accountstable.find(commun_code.raw()) != accountstable.end();
     }
 

@@ -9,7 +9,7 @@ namespace commun {
 
 void emit::init(symbol_code commun_code) {
     require_auth(_self);
-    check(point::exist(config::point_name, commun_code), "point with symbol does not exist");
+    check(point::exist(commun_code), "point with symbol does not exist");
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
@@ -44,7 +44,7 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
 
     eosio::check(is_account(to_contract), to_contract.to_string() + " contract does not exists");
 
-    auto supply = point::get_supply(config::point_name, commun_code);
+    auto supply = point::get_supply(commun_code);
     auto cont_emission = safe_pct(supply.amount, get_continuous_rate(community.emission_rate));
 
     static constexpr int64_t seconds_per_year = int64_t(365)*24*60*60;
@@ -52,7 +52,7 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
     auto amount = safe_pct(period_emission, community.get_emission_receiver(to_contract).percent);
 
     if (amount) {
-        auto issuer = point::get_issuer(config::point_name, commun_code);
+        auto issuer = point::get_issuer(commun_code);
         asset quantity(amount, supply.symbol);
 
         action(
