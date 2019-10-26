@@ -157,8 +157,8 @@ private:
 namespace commun::tables {
     using namespace eosio;
 
-    using comn_name_index = eosio::indexed_by<"byhash"_n, eosio::member<structures::community, uint64_t, &structures::community::community_hash>>;
-    using community = eosio::multi_index<"community"_n, structures::community, comn_name_index>;
+    using comn_hash_index = eosio::indexed_by<"byhash"_n, eosio::member<structures::community, uint64_t, &structures::community::community_hash>>;
+    using community = eosio::multi_index<"community"_n, structures::community, comn_hash_index>;
 
     using dapp = eosio::multi_index<"dapp"_n, structures::dapp>;
 }

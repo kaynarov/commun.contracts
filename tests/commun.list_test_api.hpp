@@ -22,6 +22,10 @@ struct commun_list_api: base_contract_api {
             ("opuses", std::set<opus_info>())
             ("remove_opuses", std::set<name>());
     }
+
+    mvo info() {
+        return args();
+    }
     
     action_result setappparams(mvo params) {
         return push(N(setappparams), _code, params);
@@ -39,16 +43,9 @@ struct commun_list_api: base_contract_api {
         );
     }
 
-    action_result setinfo(name signer, symbol_code commun_code, std::string description = "description",
-            std::string language = "language", std::string rules = "rules",
-            std::string avatar_image = "avatar_image", std::string cover_image = "cover_image") {
-        return push(N(setinfo), signer, args()
+    action_result setinfo(name signer, symbol_code commun_code, mvo params) {
+        return push(N(setinfo), signer, params
             ("commun_code", commun_code)
-            ("description", description)
-            ("language", language)
-            ("rules", rules)
-            ("avatar_image", avatar_image)
-            ("cover_image", cover_image)
         );
     }
 

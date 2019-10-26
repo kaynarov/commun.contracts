@@ -156,6 +156,10 @@ void commun_list::setinfo(symbol_code commun_code,
     optional<std::string> description, optional<std::string> language, optional<std::string> rules,
     optional<std::string> avatar_image, optional<std::string> cover_image
 ) {
+    eosio::check(
+        description || language || rules || avatar_image || cover_image,
+        "No params changed");
+
     require_auth(point::get_issuer(config::point_name, commun_code));
     check_community_exists(_self, commun_code);
 }
