@@ -179,31 +179,31 @@ public:
     */
     [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
 
-    static auto& get_community(name list_contract_account, symbol_code commun_code) {
-        static tables::community community_tbl(list_contract_account, list_contract_account.value);
+    static auto& get_community(symbol_code commun_code) {
+        static tables::community community_tbl(config::list_name, config::list_name.value);
         return community_tbl.get(commun_code.raw(), "community not exists");
     }
 
-    static inline auto& get_community(name list_contract_account, symbol commun_symbol) {
-        auto& community = get_community(list_contract_account, commun_symbol.code());
+    static inline auto& get_community(symbol commun_symbol) {
+        auto& community = get_community(commun_symbol.code());
         eosio::check(community.commun_symbol == commun_symbol, "symbol precision mismatch");
         return community;
     }
 
-    static inline void check_community_exists(name list_contract_account, symbol_code commun_code) {
-        get_community(list_contract_account, commun_code);
+    static inline void check_community_exists(symbol_code commun_code) {
+        get_community(commun_code);
     }
 
-    static inline void check_community_exists(name list_contract_account, symbol commun_symbol) {
-        get_community(list_contract_account, commun_symbol);
+    static inline void check_community_exists(symbol commun_symbol) {
+        get_community(commun_symbol);
     }
 
-    static const structures::control_param_t& get_control_param(name list_contract_account, symbol_code commun_code) {
+    static const structures::control_param_t& get_control_param(symbol_code commun_code) {
         if (commun_code) {
-            return get_community(list_contract_account, commun_code).control_param;
+            return get_community(commun_code).control_param;
         }
         else {
-            static tables::dapp dapp_tbl(list_contract_account, list_contract_account.value);
+            static tables::dapp dapp_tbl(config::list_name, config::list_name.value);
             auto& d = dapp_tbl.get(structures::dapp::primary_key(), "not initialized");
             return d.control_param;
         }

@@ -274,7 +274,7 @@ class gallery_base {
     
 private:
     bool send_points(name from, name to, const asset &quantity) {
-        if (to && !point::balance_exists(config::point_name, to, quantity.symbol.code())) {
+        if (to && !point::balance_exists(to, quantity.symbol.code())) {
             return false;
         }
         
@@ -295,10 +295,10 @@ private:
             return;
         }
         auto commun_code = quantity.symbol.code();
-        auto balance_exists = point::balance_exists(config::point_name, account, commun_code);
+        auto balance_exists = point::balance_exists(account, commun_code);
         eosio::check(balance_exists, quantity.amount > 0 ? "balance doesn't exist" : "SYSTEM: points are frozen while balance doesn't exist");
 
-        auto balance_amount = point::get_balance(config::point_name, account, commun_code).amount;
+        auto balance_amount = point::get_balance(account, commun_code).amount;
         
         gallery_types::inclusions inclusions_table(_self, account.value);
         auto incl = inclusions_table.find(quantity.symbol.code().raw());
@@ -322,14 +322,14 @@ private:
     }
     
     static inline int64_t get_reserve_amount(asset quantity) {
-        return point::get_reserve_quantity(config::point_name, quantity, false).amount;
+        return point::get_reserve_quantity(quantity, false).amount;
     }
     
     template<typename GemIndex, typename GemItr>
     bool chop_gem(name _self, symbol commun_symbol, GemIndex& gem_idx, GemItr& gem_itr, bool by_user, bool has_reward, bool no_rewards = false) {
         const auto& gem = *gem_itr;
         auto commun_code = commun_symbol.code();
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
 
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(gem.tracery);
@@ -372,7 +372,7 @@ private:
             }
         }
         if (!send_points(_self, gem.owner, reward_points)) {
-            eosio::check(send_points(_self, point::get_issuer(config::point_name, commun_code), reward_points), "the issuer's balance doesn't exist");
+            eosio::check(send_points(_self, point::get_issuer(commun_code), reward_points), "the issuer's balance doesn't exist");
         }
         
         if (mosaic->gem_count > 1 || mosaic->lead_rating) {
@@ -415,7 +415,7 @@ private:
         }
         
         auto commun_code = commun_symbol.code();
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
         
         gallery_types::gems gems_table(_self, commun_code.raw());
         
@@ -616,7 +616,7 @@ private:
         
         auto now = eosio::current_time_point();
 
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
         
         claim_info_t ret{mosaic.tracery, mosaic.reward != 0, now <= mosaic.collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period), community.commun_symbol};
         check(!ret.premature || eager, "moderation period isn't over yet");
@@ -628,7 +628,7 @@ private:
     
     void set_gem_holder(name _self, uint64_t tracery, symbol_code commun_code, name gem_owner, name gem_creator, name holder) {
         require_auth(gem_owner);
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         const auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
@@ -652,7 +652,7 @@ private:
     }
     
     void deactivate_old_mosaics(name _self, symbol_code commun_code) {
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
 
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaics_idx = mosaics_table.get_index<"bydate"_n>();
@@ -710,7 +710,7 @@ protected:
         if (_self != to) { return; }
 
         auto commun_code = quantity.symbol.code();            
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto by_comm_idx = mosaics_table.get_index<"bycommrating"_n>();
@@ -792,7 +792,7 @@ protected:
         auto commun_symbol = quantity.symbol;
         auto commun_code   = commun_symbol.code();
 
-        auto& community = commun_list::get_community(config::list_name, commun_symbol);
+        auto& community = commun_list::get_community(commun_symbol);
         check(royalty <= community.author_percent, "incorrect royalty");
         check(providers.size() <= config::max_providers_num, "too many providers");
         
@@ -834,7 +834,7 @@ protected:
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
 
-        auto& community = commun_list::get_community(config::list_name, commun_symbol);
+        auto& community = commun_list::get_community(commun_symbol);
         check(eosio::current_time_point() <= mosaic->collection_end_date, "collection period is over");
         check(!mosaic->banned(), "mosaic banned");
         check(mosaic->status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
@@ -909,7 +909,7 @@ protected:
     
     void provide_points(name _self, name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
         require_auth(grantor);
-        commun_list::check_community_exists(config::list_name, quantity.symbol);
+        commun_list::check_community_exists(quantity.symbol);
         
         eosio::check(grantor != recipient, "grantor == recipient");
         gallery_types::provs provs_table(_self, quantity.symbol.code().raw());
@@ -945,8 +945,8 @@ protected:
     
     void advise_mosaics(name _self, symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
         require_auth(leader);
-        commun_list::check_community_exists(config::list_name, commun_code);
-        eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        commun_list::check_community_exists(commun_code);
+        eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         eosio::check(favorites.size() <= config::advice_weight.size(), "a surfeit of advice");
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -996,7 +996,7 @@ protected:
     
     void set_lock_status(name _self, symbol_code commun_code, name leader, uint64_t tracery, bool lock) {
         require_auth(leader);
-        check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
@@ -1004,7 +1004,7 @@ protected:
                 m.lock();
             }
             else {
-                m.unlock(commun_list::get_community(config::list_name, commun_code).moderation_period);
+                m.unlock(commun_list::get_community(commun_code).moderation_period);
             }
         });
     }
@@ -1019,7 +1019,7 @@ protected:
     }
 
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
-        require_auth(point::get_issuer(config::point_name, commun_code));
+        require_auth(point::get_issuer(commun_code));
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);

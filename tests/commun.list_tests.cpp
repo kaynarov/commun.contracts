@@ -119,11 +119,18 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
     create_token(_golos, _token);
 
     BOOST_TEST_MESSAGE("--- checking community for existence");
-    BOOST_CHECK_EQUAL(err.no_community, community.setinfo(_golos, _token_code));
+    BOOST_CHECK_EQUAL(err.no_community, community.setinfo(_golos, _token_code, community.info()
+        ("description", "description")));
 
     BOOST_TEST_MESSAGE("--- checking that info was added successfully");
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community_name"));
-    BOOST_CHECK_EQUAL(success(), community.setinfo(_golos, _token_code));
+    BOOST_CHECK_EQUAL(err.no_changes, community.setinfo(_golos, _token_code, community.info()));
+    BOOST_CHECK_EQUAL(success(), community.setinfo(_golos, _token_code, community.info()
+        ("description", "description")
+        ("language", "language")
+        ("rules", "rules")
+        ("avatar_image", "avatar_image")
+        ("cover_image", "cover_image")));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {

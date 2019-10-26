@@ -381,9 +381,9 @@ private:
     int64_t get_power(symbol_code commun_code, name voter, uint16_t pct);
 
 public:
-    static inline bool in_the_top(name ctrl_contract_account, symbol_code commun_code, name account) {
-        const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
-        leader_tbl leader(ctrl_contract_account, commun_code.raw());
+    static inline bool in_the_top(symbol_code commun_code, name account) {
+        const auto l = commun_list::get_control_param(commun_code).leaders_num;
+        leader_tbl leader(config::control_name, commun_code.raw());
         auto idx = leader.get_index<"byweight"_n>();    // this index ordered descending
         size_t i = 0;
         for (auto itr = idx.begin(); itr != idx.end() && i < l; ++itr) {

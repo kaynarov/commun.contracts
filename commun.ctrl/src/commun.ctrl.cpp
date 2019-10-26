@@ -19,12 +19,12 @@ using std::string;
 
 /// control
 void control::check_started(symbol_code commun_code) {
-    commun_list::get_control_param(config::list_name, commun_code);
+    commun_list::get_control_param(commun_code);
 }
 
 void control::init(symbol_code commun_code) {
     require_auth(_self);
-    check(point::exist(config::point_name, commun_code), "point with symbol does not exist");
+    check(point::exist(commun_code), "point with symbol does not exist");
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
@@ -37,7 +37,7 @@ void control::on_points_transfer(name from, name to, asset quantity, std::string
     if (_self != to) { return; }
     
     auto commun_code = quantity.symbol.code();
-    const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
+    const auto l = commun_list::get_control_param(commun_code).leaders_num;
     leader_tbl leader_table(_self, commun_code.raw());
     auto idx = leader_table.get_index<"byweight"_n>();
     
@@ -154,7 +154,7 @@ void control::voteleader(symbol_code commun_code, name voter, name leader, std::
         votes_num++;
     }
     
-    eosio::check(votes_num < commun_list::get_control_param(config::list_name, commun_code).max_votes, "all allowed votes already casted");
+    eosio::check(votes_num < commun_list::get_control_param(commun_code).max_votes, "all allowed votes already casted");
     eosio::check(prev_votes_sum <= config::_100percent, "SYSTEM: incorrect prev_votes_sum");
     eosio::check(prev_votes_sum < config::_100percent, "all power already casted");
     eosio::check(!pct.has_value() || prev_votes_sum + *pct <= config::_100percent, "all votes exceed 100%");
@@ -216,7 +216,7 @@ void control::claim(symbol_code commun_code, name leader) {
     eosio::check(leader_it->unclaimed_points, "nothing to claim");
     
     INLINE_ACTION_SENDER(point, transfer)(config::point_name, {_self, config::active_name},
-        {_self, leader, asset(leader_it->unclaimed_points, point::get_supply(config::point_name, commun_code).symbol), "claimed points"});
+        {_self, leader, asset(leader_it->unclaimed_points, point::get_supply(commun_code).symbol), "claimed points"});
     
     leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
         w.unclaimed_points = 0;
@@ -225,8 +225,8 @@ void control::claim(symbol_code commun_code, name leader) {
 
 int64_t control::get_power(symbol_code commun_code, name voter, uint16_t pct = config::_100percent) {
     return safe_pct(pct, commun_code ? 
-        point::get_balance(config::point_name, voter, commun_code).amount : 
-        point::get_assigned_reserve_amount(config::point_name, voter));
+        point::get_balance(voter, commun_code).amount :
+        point::get_assigned_reserve_amount(voter));
 }
 
 void control::changepoints(name who, asset diff) {
@@ -269,7 +269,7 @@ void control::active_leader(symbol_code commun_code, name leader, bool flag) {
 
 vector<leader_info> control::top_leader_info(symbol_code commun_code) {
     vector<leader_info> top;
-    const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
+    const auto l = commun_list::get_control_param(commun_code).leaders_num;
     top.reserve(l);
     leader_tbl leader(_self, commun_code.raw());
     auto idx = leader.get_index<"byweight"_n>();    // this index ordered descending
@@ -298,7 +298,7 @@ constexpr uint8_t calc_req(uint8_t top, uint8_t num, uint8_t denom) {
 uint8_t control::get_required(symbol_code commun_code, name permission) {
     eosio::check(!commun_code || permission != config::active_name, "permission not available");
     
-    auto control_param = commun_list::get_control_param(config::list_name, commun_code);
+    auto control_param = commun_list::get_control_param(commun_code);
     auto custom_thr = std::find_if(control_param.custom_thresholds.begin(), control_param.custom_thresholds.end(), 
         [&](const structures::threshold& t) { return t.permission == permission; });
     if (custom_thr != control_param.custom_thresholds.end()) {
@@ -333,9 +333,9 @@ void control::propose(ignore<symbol_code> commun_code,
     _ds >> _trx_header;
     
     require_auth(_proposer);
-    eosio::check(in_the_top(_self, _commun_code, _proposer), _proposer.to_string() + " is not a leader");
+    eosio::check(in_the_top(_commun_code, _proposer), _proposer.to_string() + " is not a leader");
     
-    auto governance = _commun_code ? point::get_issuer(config::point_name, _commun_code) : config::dapp_name;
+    auto governance = _commun_code ? point::get_issuer(_commun_code) : config::dapp_name;
     
     eosio::check(_trx_header.expiration >= eosio::current_time_point(), "transaction expired");
 
@@ -371,7 +371,7 @@ void control::approve(name proposer, name proposal_name, name approver, const eo
     proposals proptable(_self, proposer.value);
     auto& prop = proptable.get(proposal_name.value, "proposal not found");
     
-    eosio::check(in_the_top(_self, prop.commun_code, approver), approver.to_string() + " is not a leader");
+    eosio::check(in_the_top(prop.commun_code, approver), approver.to_string() + " is not a leader");
 
     if(proposal_hash) {
         assert_sha256(prop.packed_transaction.data(), prop.packed_transaction.size(), *proposal_hash);
@@ -424,7 +424,7 @@ void control::exec(name proposer, name proposal_name, name executer) {
     ds >> trx;
     eosio::check(trx.expiration >= current_time_point(), "transaction expired");
     
-    auto governance = prop.commun_code ? point::get_issuer(config::point_name, prop.commun_code) : config::dapp_name;
+    auto governance = prop.commun_code ? point::get_issuer(prop.commun_code) : config::dapp_name;
     
     auto packed_requested = pack(std::vector<permission_level>{{governance, prop.permission}});
     auto res = eosio::check_transaction_authorization(prop.packed_transaction.data(), prop.packed_transaction.size(),

@@ -36,7 +36,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 
     init_dapp(tables::dapp(_self, _self.value));
 
-    auto commun_symbol = point::get_supply(config::point_name, commun_code).symbol;
+    auto commun_symbol = point::get_supply(commun_code).symbol;
 
     tables::community community_tbl(_self, _self.value);
 
@@ -115,7 +115,7 @@ void commun_list::setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
         optional<name> permission, optional<uint8_t> required_threshold, 
         optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent) {
-    require_auth(point::get_issuer(config::point_name, commun_code));
+    require_auth(point::get_issuer(commun_code));
 
     // <> Place for checks
     eosio::check(!emission_rate.has_value() || *emission_rate == PERC(1) ||
@@ -156,44 +156,48 @@ void commun_list::setinfo(symbol_code commun_code,
     optional<std::string> description, optional<std::string> language, optional<std::string> rules,
     optional<std::string> avatar_image, optional<std::string> cover_image
 ) {
-    require_auth(point::get_issuer(config::point_name, commun_code));
-    check_community_exists(_self, commun_code);
+    eosio::check(
+        description || language || rules || avatar_image || cover_image,
+        "No params changed");
+
+    require_auth(point::get_issuer(commun_code));
+    check_community_exists(commun_code);
 }
 
 void commun_list::follow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::unfollow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::hide(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::unhide(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::ban(symbol_code commun_code, name leader, name account, std::string reason) {
     require_auth(leader);
-    eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::unban(symbol_code commun_code, name leader, name account, std::string reason) {
     require_auth(leader);
-    eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 EOSIO_DISPATCH(commun::commun_list, (create)(setappparams)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(hide)(unhide)(ban)(unban))

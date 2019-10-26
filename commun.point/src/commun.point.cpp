@@ -174,7 +174,7 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
             add_tokens = calc_token_quantity(param, stat, quantity);
             check(add_tokens.amount > 0, "these tokens cost zero points");
             check(add_tokens.amount <= param.max_supply.amount - stat.supply.amount, "quantity exceeds available supply");
-            check(balance_exists(_self, from, commun_code), "balance of from not opened");
+            check(balance_exists(from, commun_code), "balance of from not opened");
             add_balance(from, add_tokens, from);
             send_exchange_event(add_tokens);
         }
@@ -188,7 +188,7 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
         notify_balance_change(param.issuer, vague_asset(quantity.amount));
     }
     else {
-        check(balance_exists(_self, from, symbol_code()), "balance of from not opened");
+        check(balance_exists(from, symbol_code()), "balance of from not opened");
         add_balance(from, vague_asset(quantity.amount), from);
     }
 }

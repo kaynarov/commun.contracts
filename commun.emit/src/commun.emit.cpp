@@ -9,12 +9,12 @@ namespace commun {
 
 void emit::init(symbol_code commun_code) {
     require_auth(_self);
-    check(point::exist(config::point_name, commun_code), "point with symbol does not exist");
+    check(point::exist(commun_code), "point with symbol does not exist");
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
 
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
 
     auto now = eosio::current_time_point();
     stats_table.emplace(_self, [&](auto& s) {
@@ -39,12 +39,12 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
     const auto& stat = stats_table.get(commun_code.raw(), "emitter does not exists, create it before issue");
     auto passed_seconds = stat.last_reward_passed_seconds(to_contract);
 
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
     eosio::check(is_it_time_to_reward(community, to_contract, passed_seconds), "SYSTEM: untimely claim reward");
 
     eosio::check(is_account(to_contract), to_contract.to_string() + " contract does not exists");
 
-    auto supply = point::get_supply(config::point_name, commun_code);
+    auto supply = point::get_supply(commun_code);
     auto cont_emission = safe_pct(supply.amount, get_continuous_rate(community.emission_rate));
 
     static constexpr int64_t seconds_per_year = int64_t(365)*24*60*60;
@@ -52,7 +52,7 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
     auto amount = safe_pct(period_emission, community.get_emission_receiver(to_contract).percent);
 
     if (amount) {
-        auto issuer = point::get_issuer(config::point_name, commun_code);
+        auto issuer = point::get_issuer(commun_code);
         asset quantity(amount, supply.symbol);
 
         action(
