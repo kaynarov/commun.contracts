@@ -333,7 +333,7 @@ void control::propose(ignore<symbol_code> commun_code,
     _ds >> _trx_header;
     
     require_auth(_proposer);
-    eosio::check(in_the_top(_self, _commun_code, _proposer), _proposer.to_string() + " is not a leader");
+    eosio::check(in_the_top(_commun_code, _proposer), _proposer.to_string() + " is not a leader");
     
     auto governance = _commun_code ? point::get_issuer(config::point_name, _commun_code) : config::dapp_name;
     
@@ -371,7 +371,7 @@ void control::approve(name proposer, name proposal_name, name approver, const eo
     proposals proptable(_self, proposer.value);
     auto& prop = proptable.get(proposal_name.value, "proposal not found");
     
-    eosio::check(in_the_top(_self, prop.commun_code, approver), approver.to_string() + " is not a leader");
+    eosio::check(in_the_top(prop.commun_code, approver), approver.to_string() + " is not a leader");
 
     if(proposal_hash) {
         assert_sha256(prop.packed_transaction.data(), prop.packed_transaction.size(), *proposal_hash);

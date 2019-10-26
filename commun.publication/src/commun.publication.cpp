@@ -90,7 +90,7 @@ void publication::settags(symbol_code commun_code, name leader, mssgid_t message
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason) {
     require_auth(leader);
     eosio::check(!add_tags.empty() || !remove_tags.empty(), "No changes in tags.");
-    eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     check_mssg_exists(commun_code, message_id);
 }
 

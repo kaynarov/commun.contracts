@@ -946,7 +946,7 @@ protected:
     void advise_mosaics(name _self, symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
         require_auth(leader);
         commun_list::check_community_exists(commun_code);
-        eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         eosio::check(favorites.size() <= config::advice_weight.size(), "a surfeit of advice");
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -996,7 +996,7 @@ protected:
     
     void set_lock_status(name _self, symbol_code commun_code, name leader, uint64_t tracery, bool lock) {
         require_auth(leader);
-        check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+        check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
