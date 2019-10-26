@@ -120,6 +120,8 @@ struct community {
     int64_t min_lead_rating = config::def_min_lead_rating; //!< minimal leader rating of mosaic to receive reward
 
     std::set<opus_info> opuses = config::def_opuses; //!< opuses with pledges
+    bool damned_gem_reward_enabled = config::def_damned_gem_reward_enabled; //!< flag for enabling damned gem reward
+    bool refill_gem_enabled = config::def_refill_gem_enabled; //!< flag for enabling refill of the gem
 
     uint64_t primary_key() const {
         return commun_symbol.code().raw();

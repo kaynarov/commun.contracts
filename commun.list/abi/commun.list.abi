@@ -104,6 +104,14 @@
                 {
                     "name": "opuses",
                     "type": "opus_info[]"
+                },
+                {
+                    "name": "damned_gem_reward_enabled",
+                    "type": "bool"
+                },
+                {
+                    "name": "refill_gem_enabled",
+                    "type": "bool"
                 }
             ]
         },
@@ -190,6 +198,14 @@
                 {
                     "name": "min_lead_rating",
                     "type": "int64?"
+                },
+                {
+                    "name": "damned_gem_reward_enabled",
+                    "type": "bool?"
+                },
+                {
+                    "name": "refill_gem_enabled",
+                    "type": "bool?"
                 }
             ]
         },
