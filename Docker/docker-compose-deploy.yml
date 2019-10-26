@@ -15,13 +15,22 @@ services:
     ports:
       - 127.0.0.1:27018:27017
 
+  notifier:
+    container_name: notifier
+    image: cyberway/commun.contracts:$BUILDTYPE
+    restart: always
+    command: "/usr/bin/socat -u UNIX-CONNECT:/queue/msg.sock CREATE:/ee-data/events.dump"
+    volumes:
+      - cyberway-queue:/queue:ro
+      - ${PWD}/ee-data:/ee-data
+
   nodeosd:
     container_name: nodeosd
     image: cyberway/cyberway:${BUILDTYPE}
     depends_on:
       mongo:
         condition: service_healthy
-    command: /opt/cyberway/bin/nodeosd.sh --data-dir /opt/cyberway/bin/data-dir -e --http-alias=nodeosd:8888 --http-alias=127.0.0.1:8888 --http-alias=localhost:8888 --genesis-json /opt/cyberway/bin/genesis-data/genesis.json --genesis-data /opt/cyberway/bin/genesis-data/genesis.dat
+    command: /opt/cyberway/bin/nodeosd.sh --data-dir /opt/cyberway/bin/data-dir -e --http-alias=nodeosd:8888 --http-alias=127.0.0.1:8888 --http-alias=localhost:8888 --plugin eosio::event_engine_plugin --event-engine-unix-socket /queue/msg.sock --genesis-json /opt/cyberway/bin/genesis-data/genesis.json --genesis-data /opt/cyberway/bin/genesis-data/genesis.dat
     hostname: nodeosd
     ports:
       - 8888:8888
@@ -32,6 +41,7 @@ services:
       - cyberway-nodeos-data:/opt/cyberway/bin/data-dir
       - ${PWD}/config.ini:/opt/cyberway/bin/data-dir/config.ini
       - ${PWD}/genesis-data:/opt/cyberway/bin/genesis-data
+      - cyberway-queue:/queue
     cap_add:
       - IPC_LOCK
     stop_grace_period: 10m
@@ -40,6 +50,8 @@ volumes:
  cyberway-mongodb-data:
    external: true
  cyberway-nodeos-data:
+   external: true
+ cyberway-queue:
    external: true
 
 networks:

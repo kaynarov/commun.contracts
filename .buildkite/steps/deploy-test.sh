@@ -13,11 +13,13 @@ fi
 
 export BUILDTYPE
 
-docker stop mongo nodeosd || true
-docker rm mongo nodeosd || true
-docker volume rm cyberway-mongodb-data cyberway-nodeos-data || true
+docker stop mongo nodeosd notifier || true
+docker rm mongo nodeosd notifier || true
+docker volume rm cyberway-mongodb-data cyberway-nodeos-data cyberway-queue || true
 docker volume create --name=cyberway-mongodb-data
 docker volume create --name=cyberway-nodeos-data
+docker volume create --name=cyberway-queue
+rm -fR ee-data
 
 cd Docker
 
@@ -41,7 +43,7 @@ docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c 
 docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c \
     '/opt/commun.contracts/scripts/boot-sequence.py'
 
-docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c \
-    'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888 MONGODB=mongodb://mongo:27017; /opt/commun.contracts/scripts/deploy-tests.py'
+docker run --rm --network commun-deploy_test-net -v `readlink -f ee-data/events.dump`:/events.dump -ti $COMMUN_IMAGE \
+    /bin/bash -c 'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888 MONGODB=mongodb://mongo:27017; python3 -m unittest discover -v --start-directory /opt/commun.contracts/scripts/'
 
 exit 0
