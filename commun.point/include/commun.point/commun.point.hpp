@@ -23,7 +23,7 @@ using namespace eosio;
 * \brief This class implements comn.point contract behaviour
 * \ingroup point_class
 */
-class [[eosio::contract("comn.point")]] point : public contract {
+class [[eosio::contract]] point : public contract {
 public:
     using contract::contract;
 

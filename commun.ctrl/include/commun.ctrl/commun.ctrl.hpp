@@ -18,18 +18,19 @@ using namespace eosio;
 using share_type = int64_t;
 
 /**
-  \brief a struct represents leader record in a db table
+  \brief DB record for leader with his votes from users.
 
   \ingroup control_tables
 */
+// DOCS_TABLE: leader_info
 struct [[eosio::table]] leader_info {
-    name name;       /**< a leader name*/
-    bool active;     /**< true if the leader is active*/            // can check key instead or even remove record
+    name name;       //!< a leader name
+    bool active;     //!< true if the leader is active            // can check key instead or even remove record
 
-    uint64_t total_weight;
-    uint64_t counter_votes;
+    uint64_t total_weight;  //!< total weight of leader obtained from votes
+    uint64_t counter_votes; //!< counter of votes for the leader
     
-    int64_t unclaimed_points = 0;
+    int64_t unclaimed_points = 0; //!< points accumulated from emission and not yet unclaimed by leader with \ref control::claim
 
     uint64_t primary_key() const {
         return name.value;
@@ -43,14 +44,15 @@ using leader_weight_idx = indexed_by<"byweight"_n, const_mem_fun<leader_info, ui
 using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx>;
 
 /**
-  \brief struct represents voter record in a db table
+  \brief DB record for voter contains leader vote made by him/her.
   \ingroup control_tables
  */
+// DOCS_TABLE: leader_voter
 struct [[eosio::table]] leader_voter {
     uint64_t id;
-    name voter; /**< a voter name*/
-    name leader; /**< a leader name*/
-    uint16_t pct; /**< percentage of voter power cast for the leader*/
+    name voter; //!< a voter name
+    name leader; //!< a leader name
+    uint16_t pct; //!< percentage of voter power cast for the leader
 
     uint64_t primary_key() const { return id; }
     using key_t = std::tuple<name, name>;
@@ -65,42 +67,51 @@ using leadervote_byleader_idx = eosio::indexed_by<"byleader"_n, eosio::const_mem
 using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leadervote_id_idx, leadervote_byvoter_idx, leadervote_byleader_idx>;
 
 /**
-  \brief struct represents proposal record in a db table
+  \brief DB record for transaction proposed and should be approved by leaders.
   \ingroup control_tables
  */
+// DOCS_TABLE: proposal
 struct [[eosio::table]] proposal {
-    name proposal_name;
-    symbol_code commun_code;
-    name permission;
-    std::vector<char> packed_transaction;
+    name proposal_name; //!< name of proposed transaction. A primary key
+    symbol_code commun_code; //!< symbol of community (of leaders which should sign transaction)
+    name permission; //!< name of leader permission which is need for transaction
+    std::vector<char> packed_transaction; //!< transaction
 
     uint64_t primary_key()const { return proposal_name.value; }
 };
 
 using proposals = eosio::multi_index< "proposal"_n, proposal>;
 
+/**
+  \brief Struct represents each of approvals stored in approvals_info.
+  \ingroup control_tables
+ */
 struct approval {
-    name approver;
-    time_point time;
+    name approver; //!< name of approved leader
+    time_point time; //!< time of approve
 };
 
 /**
+  \brief DB record for approvals list for proposed multi-signature transaction.
   \ingroup control_tables
-*/
+ */
+// DOCS_TABLE: proposal
 struct [[eosio::table]] approvals_info {
-    name proposal_name;
-    std::vector<approval> provided_approvals; 
+    name proposal_name; //!< name of proposed transaction
+    std::vector<approval> provided_approvals; //!< list of approves by leaders
     uint64_t primary_key()const { return proposal_name.value; }
 };
 
 using approvals = eosio::multi_index< "approvals"_n, approvals_info>;
 
 /**
+  \brief DB record for invalidation of the leader approved the proposed multi-signature transaction.
   \ingroup control_tables
-*/
+ */
+// DOCS_TABLE: invalidation
 struct [[eosio::table]] invalidation {
-    name account;
-    time_point last_invalidation_time;
+    name account; //!< name of leader account
+    time_point last_invalidation_time; //!< last time of invalidation
 
     uint64_t primary_key() const { return account.value; }
 };
@@ -112,6 +123,7 @@ using invalidations = eosio::multi_index< "invals"_n, invalidation>;
  * \ingroup control_class
  */
 class control: public contract {
+    // DOCS_TABLE: stat
     struct [[eosio::table]] stat {
         uint64_t id;
         int64_t retained = 0;
@@ -125,6 +137,14 @@ public:
         : contract(self, code, ds)
     {
     }
+
+    /**
+     * \brief Action is used by commun.list contract to initialize leaders for community with specified point symbol.
+     *
+     * \param commun_code a point symbol of the community
+     *
+     * The action is unavailable for user, can be callen only internally.
+     */
     [[eosio::action]] void init(symbol_code commun_code);
 
     /**
@@ -145,6 +165,8 @@ public:
         \param commun_code a point symbol used by the community
         \param leader a name of the leader candidate
         \param count maximum number of votes to remove
+
+        Sends leaderstate_event.
 
         Doing the clearvotes action requires signing the leader account.
     */
@@ -171,6 +193,8 @@ public:
         \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is temporarily suspended
 
+        Sends leaderstate_event.
+
         Conditions for performing the action:
             - the leader account should be active;
             - a transaction must be signed by the leader account.
@@ -183,6 +207,8 @@ public:
 
         \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate), whose activity is resumed
+
+        Sends leaderstate_event.
 
         Conditions for performing the action:
             - the leader account activity should be suspended, that is, the operation stopleader should be performed previously;
@@ -197,6 +223,12 @@ public:
         \param voter an account name that is voting for the leader candidate
         \param leader a name of the leader candidate for whom the vote is cast
         \param pct percentage of voter power cast for the leader; all unused power if pct is empty
+
+        Sends leaderstate_event.
+
+        Sum of percentages of all leaders by single voter cannot exceed 100%. If pct is not set, percentage will be (100% - sum of percentages of another leader votes).
+
+        After vote, leader total weight will be voter_balance * pct / 100%. On changing balance, it will update (see \ref changepoints).
 
         Doing the action requires signing by the voter account.
 
@@ -214,6 +246,8 @@ public:
         \param commun_code a point symbol of the community
         \param voter an account name that intends to withdraw her/his vote which was previously cast for the leader candidate
         \param leader the leader candidate name from whom the vote is withdrawn
+
+        Sends leaderstate_event.
 
         It is allowed to withdraw a vote cast for a leader candidate whose activity is suspended (after the candidate has completed
         the stopleader action).
@@ -238,6 +272,8 @@ public:
         \param who an account name whose points amount has been changed.
         \param diff a relative change of points amount.
 
+        Sends leaderstate_event.
+
         Calling this action for a leader voter causes updating weights of leaders, voted by this voter.
 
         The action is called automatically each time in case the points amount is changed on a user's balance.
@@ -245,13 +281,81 @@ public:
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_points_transfer(name from, name to, asset quantity, std::string memo);
 
+    /**
+        \brief The propose action is used to create a multi-signature transaction offer (proposed transaction), which requires permission from leader accounts.
+
+        \param commun_code a point symbol of the community
+        \param proposer author of transaction
+        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
+        \param permission name of permission to sign transaction
+        \param trx proposed transaction
+
+        The pair of proposer and proposal_name is used in another actions to identify created proposed transaction.
+
+        Performing the action requires a signature of the proposer.
+    */
     [[eosio::action]] void propose(ignore<symbol_code> commun_code, ignore<name> proposer, ignore<name> proposal_name,
                 ignore<name> permission, ignore<eosio::transaction> trx);
+
+    /**
+        \brief The approve action used by each approver of multi-sig transaction to mark that he/she approves it.
+
+        \param proposer author of transaction
+        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
+        \param approver name of account who approves transaction
+        \param proposal_hash hash to check if transaction is not substituted (optional)
+
+        Performing the action checks a signature of the approver, and adds approver to list of approvers of the transaction.
+    */
     [[eosio::action]] void approve(name proposer, name proposal_name, name approver, 
                 const eosio::binary_extension<eosio::checksum256>& proposal_hash);
+
+    /**
+        \brief The unapprove action used by approver of multi-sig transaction to undo his/her approve.
+
+        \param proposer author of transaction
+        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
+        \param approver name of account who undoes approve from transaction
+
+        Performing the action checks a signature of the approver, and removes approver from list of approvers of the transaction.
+    */
     [[eosio::action]] void unapprove(name proposer, name proposal_name, name approver);
+
+    /**
+        \brief The cancel action used to free memory by clearing proposed multi-sig transaction, which was not yet executed.
+
+        \param proposer author of transaction
+        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
+        \param canceler name of account who cancels transaction
+
+        If canceler is not proposer, only expired transaction can be canceled.
+
+        Performing the action checks a signature of the canceler.
+    */
     [[eosio::action]] void cancel(name proposer, name proposal_name, name canceler);
+
+    /**
+        \brief The exec action used to execute proposed multi-sig transaction.
+
+        \param proposer author of transaction
+        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
+        \param executer name of account who executes transaction
+
+        Action checks that transaction is not expired, that approvers on transaction are enough for threshold (considering only top leaders, excluding invalidated), sends all actions and erases transaction in DB.
+
+        Performing the action checks a signature of the executer.
+    */
     [[eosio::action]] void exec(name proposer, name proposal_name, name executer);
+
+    /**
+        \brief The invalidate action is used to revoke all permissions previously issued by the account for performing multi-signature transactions
+
+        \param account name of account who revokes permissions
+
+        To exclude approved when calling \ref exec, the invalidate must be called after an approve.
+
+        Performing the action checks a signature of the account.
+    */
     [[eosio::action]] void invalidate(name account);
 
 private:
@@ -260,6 +364,17 @@ private:
 
     std::vector<name> top_leaders(symbol_code commun_code);
     std::vector<leader_info> top_leader_info(symbol_code commun_code);
+
+    /**
+      \brief A struct represents event about leader state update (sending from \ref changepoints, \ref clearvotes, \ref voteleader, \ref unvotelead, \ref startleader, \ref stopleader)
+      \ingroup control_events
+    */
+    struct leaderstate_event {
+        symbol_code commun_code; //!< point symbol of community to which leader belongs
+        name name; //!< a leader name
+        uint64_t total_weight; //!< total weight of leader
+        bool active; //!< true if the leader is active
+    };
 
     void send_leader_event(symbol_code commun_code, const leader_info& wi);
     void active_leader(symbol_code commun_code, name leader, bool flag);
