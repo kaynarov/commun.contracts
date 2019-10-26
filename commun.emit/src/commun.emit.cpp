@@ -14,7 +14,7 @@ void emit::init(symbol_code commun_code) {
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
 
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
 
     auto now = eosio::current_time_point();
     stats_table.emplace(_self, [&](auto& s) {
@@ -39,7 +39,7 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
     const auto& stat = stats_table.get(commun_code.raw(), "emitter does not exists, create it before issue");
     auto passed_seconds = stat.last_reward_passed_seconds(to_contract);
 
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
     eosio::check(is_it_time_to_reward(community, to_contract, passed_seconds), "SYSTEM: untimely claim reward");
 
     eosio::check(is_account(to_contract), to_contract.to_string() + " contract does not exists");

@@ -161,27 +161,27 @@ void commun_list::setinfo(symbol_code commun_code,
         "No params changed");
 
     require_auth(point::get_issuer(config::point_name, commun_code));
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::follow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::unfollow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::hide(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::unhide(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::ban(symbol_code commun_code, name leader, name account, std::string reason) {
@@ -189,7 +189,7 @@ void commun_list::ban(symbol_code commun_code, name leader, name account, std::s
     eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::unban(symbol_code commun_code, name leader, name account, std::string reason) {
@@ -197,7 +197,7 @@ void commun_list::unban(symbol_code commun_code, name leader, name account, std:
     eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 EOSIO_DISPATCH(commun::commun_list, (create)(setappparams)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(hide)(unhide)(ban)(unban))

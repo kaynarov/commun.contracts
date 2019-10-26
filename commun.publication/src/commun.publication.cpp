@@ -57,7 +57,7 @@ void publication::create(
         item.childcount = 0;
     });
 
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
     auto gems_per_period = get_gems_per_period(commun_code);
 
     int64_t amount_to_freeze = 0;
@@ -164,7 +164,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         return; 
     }
     
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaic = mosaics_table.find(message_id.tracery());
@@ -256,7 +256,7 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
 
 uint16_t publication::get_gems_per_period(symbol_code commun_code) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
     int64_t mosaic_active_period = community.collection_period + community.moderation_period + community.extra_reward_period;
     uint16_t gems_per_day = community.gems_per_day;
     return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
@@ -303,7 +303,7 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
 
 void publication::setproviders(symbol_code commun_code, name recipient, std::vector<name> providers) {
     require_auth(recipient);
-    commun_list::check_community_exists(config::list_name, commun_code);
+    commun_list::check_community_exists(commun_code);
 
     gallery_types::provs provs_table(_self, commun_code.raw());
     auto provs_index = provs_table.get_index<"bykey"_n>();

@@ -19,7 +19,7 @@ using std::string;
 
 /// control
 void control::check_started(symbol_code commun_code) {
-    commun_list::get_control_param(config::list_name, commun_code);
+    commun_list::get_control_param(commun_code);
 }
 
 void control::init(symbol_code commun_code) {
@@ -37,7 +37,7 @@ void control::on_points_transfer(name from, name to, asset quantity, std::string
     if (_self != to) { return; }
     
     auto commun_code = quantity.symbol.code();
-    const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
+    const auto l = commun_list::get_control_param(commun_code).leaders_num;
     leader_tbl leader_table(_self, commun_code.raw());
     auto idx = leader_table.get_index<"byweight"_n>();
     
@@ -154,7 +154,7 @@ void control::voteleader(symbol_code commun_code, name voter, name leader, std::
         votes_num++;
     }
     
-    eosio::check(votes_num < commun_list::get_control_param(config::list_name, commun_code).max_votes, "all allowed votes already casted");
+    eosio::check(votes_num < commun_list::get_control_param(commun_code).max_votes, "all allowed votes already casted");
     eosio::check(prev_votes_sum <= config::_100percent, "SYSTEM: incorrect prev_votes_sum");
     eosio::check(prev_votes_sum < config::_100percent, "all power already casted");
     eosio::check(!pct.has_value() || prev_votes_sum + *pct <= config::_100percent, "all votes exceed 100%");
@@ -269,7 +269,7 @@ void control::active_leader(symbol_code commun_code, name leader, bool flag) {
 
 vector<leader_info> control::top_leader_info(symbol_code commun_code) {
     vector<leader_info> top;
-    const auto l = commun_list::get_control_param(config::list_name, commun_code).leaders_num;
+    const auto l = commun_list::get_control_param(commun_code).leaders_num;
     top.reserve(l);
     leader_tbl leader(_self, commun_code.raw());
     auto idx = leader.get_index<"byweight"_n>();    // this index ordered descending
@@ -298,7 +298,7 @@ constexpr uint8_t calc_req(uint8_t top, uint8_t num, uint8_t denom) {
 uint8_t control::get_required(symbol_code commun_code, name permission) {
     eosio::check(!commun_code || permission != config::active_name, "permission not available");
     
-    auto control_param = commun_list::get_control_param(config::list_name, commun_code);
+    auto control_param = commun_list::get_control_param(commun_code);
     auto custom_thr = std::find_if(control_param.custom_thresholds.begin(), control_param.custom_thresholds.end(), 
         [&](const structures::threshold& t) { return t.permission == permission; });
     if (custom_thr != control_param.custom_thresholds.end()) {

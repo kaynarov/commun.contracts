@@ -22,7 +22,7 @@ public:
 
         auto now = eosio::current_time_point();
 
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
         eosio::check(vertex->childcount == 0
             || now > mosaic.collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period), "comment with child comments can't be removed during the active period");
 
