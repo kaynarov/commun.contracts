@@ -18,11 +18,9 @@ services:
   notifier:
     container_name: notifier
     image: ${COMMUN_IMAGE}
-    restart: always
-    command: "/usr/bin/socat -u UNIX-CONNECT:/queue/msg.sock CREATE:/ee-data/events.dump"
+    command: bash -c "until [ -S /queue/msg.sock ]; do sleep 1; done; exec /usr/bin/socat -u UNIX-CONNECT:/queue/msg.sock STDIO"
     volumes:
       - cyberway-queue:/queue:ro
-      - ${PWD}/ee-data:/ee-data
 
   nodeosd:
     container_name: nodeosd
@@ -30,6 +28,8 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+      notifier:
+        condition: service_started
     command: /opt/cyberway/bin/nodeosd.sh --data-dir /opt/cyberway/bin/data-dir -e --http-alias=nodeosd:8888 --http-alias=127.0.0.1:8888 --http-alias=localhost:8888 --plugin eosio::event_engine_plugin --event-engine-unix-socket /queue/msg.sock --genesis-json /opt/cyberway/bin/genesis-data/genesis.json --genesis-data /opt/cyberway/bin/genesis-data/genesis.dat
     hostname: nodeosd
     ports:

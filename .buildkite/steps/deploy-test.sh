@@ -20,7 +20,6 @@ docker volume rm cyberway-mongodb-data cyberway-nodeos-data cyberway-queue || tr
 docker volume create --name=cyberway-mongodb-data
 docker volume create --name=cyberway-nodeos-data
 docker volume create --name=cyberway-queue
-rm -fR ee-data
 
 cd Docker
 
@@ -33,10 +32,11 @@ docker-compose -f docker-compose-deploy.yml up -d
 function cleanup_docker {
     echo "Cleanup docker-compose..."
     docker-compose -f docker-compose-deploy.yml down
-    rm -fR ee-data
     echo "Cleanup docker-compose done."
 }
 trap cleanup_docker EXIT
+
+docker logs -f notifier >notifier.log &
 
 # Run unit-tests
 docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c \
@@ -45,7 +45,7 @@ docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c 
 docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c \
     '/opt/commun.contracts/scripts/boot-sequence.py'
 
-docker run --rm --network commun-deploy_test-net -v `readlink -f ee-data/events.dump`:/events.dump -ti $COMMUN_IMAGE \
+docker run --rm --network commun-deploy_test-net -v `readlink -f notifier.log`:/events.dump -ti $COMMUN_IMAGE \
     /bin/bash -c 'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888 MONGODB=mongodb://mongo:27017; python3 -m unittest discover -v --start-directory /opt/commun.contracts/scripts/'
 
 exit 0
