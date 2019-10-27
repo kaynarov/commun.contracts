@@ -12,6 +12,7 @@ else
 fi
 
 export BUILDTYPE
+export COMMUN_IMAGE
 
 docker stop mongo nodeosd notifier || true
 docker rm mongo nodeosd notifier || true

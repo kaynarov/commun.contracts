@@ -17,7 +17,7 @@ services:
 
   notifier:
     container_name: notifier
-    image: cyberway/commun.contracts:$BUILDTYPE
+    image: ${COMMUN_IMAGE}
     restart: always
     command: "/usr/bin/socat -u UNIX-CONNECT:/queue/msg.sock CREATE:/ee-data/events.dump"
     volumes:
