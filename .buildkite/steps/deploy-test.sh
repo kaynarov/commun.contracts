@@ -33,6 +33,7 @@ docker-compose -f docker-compose-deploy.yml up -d
 function cleanup_docker {
     echo "Cleanup docker-compose..."
     docker-compose -f docker-compose-deploy.yml down
+    rm -fR ee-data
     echo "Cleanup docker-compose done."
 }
 trap cleanup_docker EXIT
