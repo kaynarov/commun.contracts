@@ -9,7 +9,7 @@ import json
 
 techKey    ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
 clientKey  ='5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN'
-client     ='comn.com@comn.com'
+client     ='c.com@c.com'
 
 class DeployTests(unittest.TestCase):
 
@@ -36,9 +36,9 @@ class DeployTests(unittest.TestCase):
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
         body = testnet.randomText(1024)
-        community.createPost('CATS', author, permlink, 'cats', header, body, providebw=author+'/comn@providebw', keys=[private, clientKey])
+        community.createPost('CATS', author, permlink, 'cats', header, body, providebw=author+'/c@providebw', keys=[private, clientKey])
 
-        community.upvotePost('CATS', voter, author, permlink, 10000, providebw=voter+'/comn@providebw', keys=[private2, clientKey])
+        community.upvotePost('CATS', voter, author, permlink, 10000, providebw=voter+'/c@providebw', keys=[private2, clientKey])
 
 
     def test_glsProvideBW(self):
@@ -49,7 +49,7 @@ appLeadersCount = 5
 class CommunLeaderTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        leaderDb = testnet.mongoClient["_CYBERWAY_comn_ctrl"]["leader"]
+        leaderDb = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"]
         leadCursor = leaderDb.find_one({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)])
         min_quantity = leadCursor["total_weight"].to_decimal() if leadCursor else 0
         quantity = '%.4f COMMUN'%(random.randint(min_quantity+1, min_quantity+100)/10000)
@@ -77,15 +77,15 @@ class CommunLeaderTests(unittest.TestCase):
         self.minor_approvers = approvers[:int(appLeadersCount*1/3+1)]
 
     def printTopLeaders(self):
-        leaderDb = testnet.mongoClient["_CYBERWAY_comn_ctrl"]["leader"]
+        leaderDb = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"]
         leadCursor = leaderDb.find({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)]).limit(appLeadersCount+1)
         for leader in leadCursor:
             print("{leader} {weight}".format(leader=leader['name'], weight=leader['total_weight']))
 
     def test_canUseActiveAuthority(self):
         trx = testnet.Trx()
-        trx.addAction('cyber.token', 'issue', 'comn@active', {
-                'to': 'comn',
+        trx.addAction('cyber.token', 'issue', 'c@active', {
+                'to': 'c',
                 'quantity': '0.0001 COMMUN',
                 'memo': ''
             })
@@ -106,16 +106,16 @@ class CommunLeaderTests(unittest.TestCase):
                 clientKey=clientKey)
 
     def test_canIssueCommunityPoints(self):
-        issuer = testnet.mongoClient["_CYBERWAY_comn_point"]["param"].find_one({"max_supply._sym":"CATS"})["issuer"]
+        issuer = testnet.mongoClient["_CYBERWAY_c_point"]["param"].find_one({"max_supply._sym":"CATS"})["issuer"]
         trx = testnet.Trx()
-        trx.addAction('comn.point', 'issue', issuer+'@owner', {
+        trx.addAction('c.point', 'issue', issuer+'@owner', {
                 'to': issuer,
                 'quantity': '0.001 CATS',
                 'memo': 'issue by app leaders'
             })
-        trx.addAction('comn.point', 'transfer', issuer+'@owner', {
+        trx.addAction('c.point', 'transfer', issuer+'@owner', {
                 'from': issuer,
-                'to': 'comn',
+                'to': 'c',
                 'quantity': '0.001 CATS',
                 'memo': 'issue by app leaders'
             })
@@ -126,14 +126,14 @@ class CommunLeaderTests(unittest.TestCase):
                 trx=trx,
                 leaders=self.smajor_approvers,
                 clientKey=clientKey,
-                providebw=issuer+'/comn@providebw')
+                providebw=issuer+'/c@providebw')
 
 class CommunityLeaderTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
 #        while True:
 #            point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6)) 
-#            owner = 'comn..' + point.lower()
+#            owner = 'c..' + point.lower()
 #            try:
 #                getAccount(owner)
 #            except:
@@ -185,7 +185,7 @@ class CommunityLeaderTests(unittest.TestCase):
 
     def test_setParams(self):
         trx = testnet.Trx()
-        trx.addAction('comn.list', 'setparams', self.owner+'@active', {
+        trx.addAction('c.list', 'setparams', self.owner+'@active', {
                 'commun_code': self.point,
                 'author_percent': 5000
             })
@@ -200,7 +200,7 @@ class CommunityLeaderTests(unittest.TestCase):
 
     def test_setInfo(self):
         trx = testnet.Trx()
-        trx.addAction('comn.list', 'setinfo', self.owner+'@active', {
+        trx.addAction('c.list', 'setinfo', self.owner+'@active', {
                 'commun_code': self.point,
                 'description': 'Community description',
                 'language': 'ru',
@@ -226,10 +226,10 @@ class CommunityLeaderTests(unittest.TestCase):
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
         body = testnet.randomText(1024)
-        community.createPost(self.point, author, permlink, 'cats', header, body, providebw=author+'/comn@providebw', keys=[private, clientKey])
+        community.createPost(self.point, author, permlink, 'cats', header, body, providebw=author+'/c@providebw', keys=[private, clientKey])
 
         trx = testnet.Trx()
-        trx.addAction('comn.gallery', 'ban', self.owner+'@lead.minor', {
+        trx.addAction('c.gallery', 'ban', self.owner+'@lead.minor', {
                 'commun_code': self.point,
                 'message_id': {'author': author, 'permlink': permlink}})
 
@@ -243,7 +243,7 @@ class CommunityLeaderTests(unittest.TestCase):
 
     def test_voteAppLeader(self):
         trx = testnet.Trx()
-        trx.addAction('comn.ctrl', 'voteleader', self.owner+'@active', {
+        trx.addAction('c.ctrl', 'voteleader', self.owner+'@active', {
                 'commun_code': '',
                 'voter': self.owner,
                 'leader': self.appLeader
@@ -255,10 +255,10 @@ class CommunityLeaderTests(unittest.TestCase):
                 trx=trx,
                 leaders=self.smajor_approvers,
                 clientKey=clientKey,
-                providebw=self.owner+'/comn@providebw')
+                providebw=self.owner+'/c@providebw')
 
         trx = testnet.Trx()
-        trx.addAction('comn.ctrl', 'unvotelead', self.owner+'@active', {
+        trx.addAction('c.ctrl', 'unvotelead', self.owner+'@active', {
                 'commun_code': '',
                 'voter': self.owner,
                 'leader': self.appLeader
@@ -270,7 +270,7 @@ class CommunityLeaderTests(unittest.TestCase):
                 trx=trx,
                 leaders=self.smajor_approvers,
                 clientKey=clientKey,
-                providebw=self.owner+'/comn@providebw')
+                providebw=self.owner+'/c@providebw')
 
 
 if __name__ == '__main__':

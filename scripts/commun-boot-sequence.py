@@ -18,40 +18,40 @@ unlockTimeout = 999999999
 
 _communAccounts = [
     # name           contract                warmup_code     permissions (name, keys, accounts, links)
-    #('comn',        None),    # comn - owner for COMMUN. Must be created outside of this script!
+    #('c',        None),    # c - owner for COMMUN. Must be created outside of this script!
     # Account for commun.com site
-    ('comn.com',     None,                   None, [
-            ("comn.com",     ["GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62"], [], ['cyber:newaccount'])
+    ('c.com',     None,                   None, [
+            ("c.com",     ["GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62"], [], ['cyber:newaccount'])
         ]),
 
-    ('comn',         None,                   None, [
-            ('lead.smajor',  [], ['comn.ctrl@cyber.code'], []),
-            ('lead.major',   [], ['comn.ctrl@cyber.code'], []),
-            ('lead.minor',   [], ['comn.ctrl@cyber.code'], []),
-            ('clients',      [], ['comn.com@comn.com'], []),
-            ('providebw',    [], ['comn@clients'], ['cyber:providebw', 'comn.point:open']),
-            ('issue',        [], ['comn@clients'], ['cyber.token:issue', 'cyber.token:transfer']),    # Only for testnet purposes
+    ('c',         None,                   None, [
+            ('lead.smajor',  [], ['c.ctrl@cyber.code'], []),
+            ('lead.major',   [], ['c.ctrl@cyber.code'], []),
+            ('lead.minor',   [], ['c.ctrl@cyber.code'], []),
+            ('clients',      [], ['c.com@c.com'], []),
+            ('providebw',    [], ['c@clients'], ['cyber:providebw', 'c.point:open']),
+            ('issue',        [], ['c@clients'], ['cyber.token:issue', 'cyber.token:transfer']),    # Only for testnet purposes
         ]),
 
-    ('comn.point',   'commun.point',         None, [
-            ("active",       [], ["comn@active", "comn.point@cyber.code"], []),
-            ("issueperm",    [], ["comn.emit@cyber.code"], ["comn.point:issue"]),
-            ("transferperm", [], ["comn.emit@cyber.code"], ["comn.point:transfer"]),
-            ("clients",      [], ["comn@clients"], ["comn.point:create"])
+    ('c.point',   'commun.point',         None, [
+            ("active",       [], ["c@active", "c.point@cyber.code"], []),
+            ("issueperm",    [], ["c.emit@cyber.code"], ["c.point:issue"]),
+            ("transferperm", [], ["c.emit@cyber.code"], ["c.point:transfer"]),
+            ("clients",      [], ["c@clients"], ["c.point:create"])
         ]),
-    ('comn.ctrl',    'commun.ctrl',          None, [
-            ("changepoints", [], ["comn.point@cyber.code"], ["comn.ctrl:changepoints"]),
-            ("init",         [], ["comn.list@cyber.code"], ["comn.ctrl:init"])
+    ('c.ctrl',    'commun.ctrl',          None, [
+            ("changepoints", [], ["c.point@cyber.code"], ["c.ctrl:changepoints"]),
+            ("init",         [], ["c.list@cyber.code"], ["c.ctrl:init"])
         ]),
-    ('comn.emit',    'commun.emit',          None, [
-            ("rewardperm",   [], ["comn.ctrl@cyber.code", "comn.gallery@cyber.code"], ["comn.emit:issuereward"]),
-            ("init",       [], ["comn.list@cyber.code"], ["comn.emit:init"])
+    ('c.emit',    'commun.emit',          None, [
+            ("rewardperm",   [], ["c.ctrl@cyber.code", "c.gallery@cyber.code"], ["c.emit:issuereward"]),
+            ("init",       [], ["c.list@cyber.code"], ["c.emit:init"])
         ]),
-    ('comn.list',    'commun.list',          None,                [
-            ("clients",      [], ["comn@clients"], ["comn.list:create"])
+    ('c.list',    'commun.list',          None,                [
+            ("clients",      [], ["c@clients"], ["c.list:create"])
         ]),
-    ('comn.gallery', 'commun.publication',   ['commun.gallery'],  []),
-    ('comn.social',  'commun.social',        None,                []),
+    ('c.gallery', 'commun.publication',   ['commun.gallery'],  []),
+    ('c.social',  'commun.social',        None,                []),
 ]
 
 communAccounts = []
@@ -131,11 +131,11 @@ def importKeys():
 
 def createCommunAccounts():
     for acc in communAccounts:
-        if acc.name != 'comn':
-            createAccount('comn', acc.name, 'comn@owner', 'comn@active')
+        if acc.name != 'c':
+            createAccount('c', acc.name, 'c@owner', 'c@active')
 
     for acc in communAccounts:
-        providebw = acc.name+'/comn' if acc.name!='comn' else ''
+        providebw = acc.name+'/c' if acc.name!='c' else ''
         for perm in acc.permissions:
             updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, providebw=providebw)
             for link in perm.links:
@@ -145,16 +145,16 @@ def createCommunAccounts():
 def installContracts():
     for acc in communAccounts:
         if (acc.contract != None):
-            loadContract(acc.name, acc.contract, providebw=acc.name+'/comn', retry=3, contracts_dir=args.contracts_dir, warmup_code=acc.warmup_code)
+            loadContract(acc.name, acc.contract, providebw=acc.name+'/c', retry=3, contracts_dir=args.contracts_dir, warmup_code=acc.warmup_code)
 
 def configureCommun():
     # Only for testnet purposes
-    pushAction('comn.list', 'setappparams', 'comn.list', {
+    pushAction('c.list', 'setappparams', 'c.list', {
             "leaders_num":5
-        }, providebw='comn.list/comn')
+        }, providebw='c.list/c')
 
-    comn = getAccount('comn')
-    updateAuth('comn', 'active', 'owner', [], ['comn@lead.smajor'])
+    c = getAccount('c')
+    updateAuth('c', 'active', 'owner', [], ['c@lead.smajor'])
 
 # -------------------- Argument parser ----------------------------------------
 # Command Line Arguments
