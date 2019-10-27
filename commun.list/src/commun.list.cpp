@@ -166,21 +166,25 @@ void commun_list::setinfo(symbol_code commun_code,
 
 void commun_list::follow(symbol_code commun_code, name follower) {
     require_auth(follower);
+    require_auth(_self); // functionality of a client
     check_community_exists(commun_code);
 }
 
 void commun_list::unfollow(symbol_code commun_code, name follower) {
     require_auth(follower);
+    require_auth(_self); // functionality of a client
     check_community_exists(commun_code);
 }
 
 void commun_list::hide(symbol_code commun_code, name follower) {
     require_auth(follower);
+    require_auth(_self); // functionality of a client
     check_community_exists(commun_code);
 }
 
 void commun_list::unhide(symbol_code commun_code, name follower) {
     require_auth(follower);
+    require_auth(_self); // functionality of a client
     check_community_exists(commun_code);
 }
 
