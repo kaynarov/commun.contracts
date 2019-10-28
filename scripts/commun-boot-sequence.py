@@ -21,37 +21,41 @@ _communAccounts = [
     #('c',        None),    # c - owner for COMMUN. Must be created outside of this script!
     # Account for commun.com site
     ('c.com',     None,                   None, [
-            ("c.com",     ["GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62"], [], ['cyber:newaccount'])
+            ('c.com',     ['GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62'], [], ['cyber:newaccount'])
         ]),
 
     ('c',         None,                   None, [
             ('lead.smajor',  [], ['c.ctrl@cyber.code'], []),
             ('lead.major',   [], ['c.ctrl@cyber.code'], []),
             ('lead.minor',   [], ['c.ctrl@cyber.code'], []),
-            ('clients',      [], ['c.com@c.com'], []),
+            ('clients',      [], ['c.com@c.com'], ['cyber.domain:newusername']),
             ('providebw',    [], ['c@clients'], ['cyber:providebw', 'c.point:open']),
             ('issue',        [], ['c@clients'], ['cyber.token:issue', 'cyber.token:transfer']),    # Only for testnet purposes
         ]),
 
     ('c.point',   'commun.point',         None, [
-            ("active",       [], ["c@active", "c.point@cyber.code"], []),
-            ("issueperm",    [], ["c.emit@cyber.code"], ["c.point:issue"]),
-            ("transferperm", [], ["c.emit@cyber.code"], ["c.point:transfer"]),
-            ("clients",      [], ["c@clients"], ["c.point:create"])
+            ('active',       [], ['c@active', 'c.point@cyber.code'], []),
+            ('issueperm',    [], ['c.emit@cyber.code'], [':issue']),
+            ('transferperm', [], ['c.emit@cyber.code'], [':transfer']),
+            ('clients',      [], ['c@clients'], [':create']),
         ]),
     ('c.ctrl',    'commun.ctrl',          None, [
-            ("changepoints", [], ["c.point@cyber.code"], ["c.ctrl:changepoints"]),
-            ("init",         [], ["c.list@cyber.code"], ["c.ctrl:init"])
+            ('changepoints', [], ['c.point@cyber.code'], [':changepoints']),
+            ('init',         [], ['c.list@cyber.code'], [':init']),
         ]),
     ('c.emit',    'commun.emit',          None, [
-            ("rewardperm",   [], ["c.ctrl@cyber.code", "c.gallery@cyber.code"], ["c.emit:issuereward"]),
-            ("init",       [], ["c.list@cyber.code"], ["c.emit:init"])
+            ('rewardperm',   [], ['c.ctrl@cyber.code', 'c.gallery@cyber.code'], [':issuereward']),
+            ('init',       [], ['c.list@cyber.code'], [':init']),
         ]),
     ('c.list',    'commun.list',          None,                [
-            ("clients",      [], ["c@clients"], ["c.list:create"])
+            ('clients',      [], ['c@clients'], [':create',':setsysparams',':follow',':unfollow',':hide',':unhide']),
         ]),
-    ('c.gallery', 'commun.publication',   ['commun.gallery'],  []),
-    ('c.social',  'commun.social',        None,                []),
+    ('c.gallery', 'commun.publication',   ['commun.gallery'],  [
+            ('clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog']),
+        ]),
+    ('c.social',  'commun.social',        None,                [
+            ('clients',      [], ['c@clients'], [':pin',':unpin',':block',':unblock',':updatemeta',':deletemeta']),
+        ]),
 ]
 
 communAccounts = []
@@ -140,7 +144,7 @@ def createCommunAccounts():
             updateAuth(acc.name, perm.name, perm.parent, perm.keys, perm.accounts, providebw=providebw)
             for link in perm.links:
                 (code, action) = link.split(':',2)
-                linkAuth(acc.name, code, action, perm.name, providebw=providebw)
+                linkAuth(acc.name, code if code else acc.name, action, perm.name, providebw=providebw)
 
 def installContracts():
     for acc in communAccounts:

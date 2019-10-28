@@ -51,8 +51,8 @@ class CommunLeaderTests(unittest.TestCase):
     def setUpClass(self):
         leaderDb = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"]
         leadCursor = leaderDb.find_one({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)])
-        min_quantity = leadCursor["total_weight"].to_decimal() if leadCursor else 0
-        quantity = '%.4f COMMUN'%(random.randint(min_quantity+1, min_quantity+100)/10000)
+        min_quantity = 10*leadCursor["total_weight"].to_decimal() if leadCursor else 0
+        quantity = '%.4f COMMUN'%(random.randint(min_quantity+10, min_quantity+100)/10000)
 
         (voterPrivate, voterPublic) = testnet.createKey()
         voter = testnet.createRandomAccount(voterPublic, keys=techKey)
@@ -66,7 +66,7 @@ class CommunLeaderTests(unittest.TestCase):
             community.openBalance(leader, '', 'tech', keys=techKey)
             community.regLeader(commun_code='', leader=leader, url=testnet.randomText(16),
                     providebw=leader+'/tech', keys=[techKey, private])
-            community.voteLeader(commun_code='', voter=voter, leader=leader, pct = 1000,
+            community.voteLeader(commun_code='', voter=voter, leader=leader, pct=1000,
                     providebw=voter+'/tech', keys=[voterPrivate,techKey])
             leaders[leader] = private
 

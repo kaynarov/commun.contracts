@@ -143,7 +143,11 @@
 # NOTE: Technical account to start testnet and tests (remove from mainnet)
         {
             "name": "tech",
-            "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
+            "permissions": [
+                {"name": "owner", "key": "INITIAL"},
+                {"name": "active", "key": "INITIAL"},
+                {"name": "providebw", "accounts": ["@active"]}
+            ],
 #            "sys_balance": "100000.0000 CYBER",
 #            "sys_staked": "100000.0000 CYBER",
         },
@@ -179,6 +183,7 @@
         {"permission": "cyber.token@prods",       "links": ["cyber:setcode", "cyber:setabi", "cyber.token:create"]},
 
         {"permission": "gls@providebw",           "links": ["cyber:providebw"]},
+        {"permission": "tech@providebw",          "links": ["cyber:providebw"]},
     ],
     "tables": [
         {
