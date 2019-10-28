@@ -19,3 +19,9 @@
  * \defgroup point_tables DB Stored structures
  * \ingroup point
  */
+
+/**
+ * \details Events being sent by commun.point into Event-Engine
+ * \defgroup point_events Events
+ * \ingroup point
+ */
