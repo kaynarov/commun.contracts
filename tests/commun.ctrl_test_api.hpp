@@ -51,6 +51,7 @@ struct commun_ctrl_api: base_contract_api {
 
     action_result start_leader(name leader) {
         return push(N(startleader), leader, args()
+            ("commun_code", commun_code)
             ("leader", leader)
         );
     }
@@ -80,17 +81,18 @@ struct commun_ctrl_api: base_contract_api {
         );
     }
 
-    action_result change_vests(name who, asset diff) {
-        return push(N(changevest), who, args()
-            ("commun_code", commun_code)
+    action_result change_points(name who, asset diff) {
+        return push(N(changepoints), who, args()
             ("who", who)
-            ("diff", diff));
+            ("diff", diff)
+        );
     }
     
     action_result claim(name leader) {
         return push(N(claim), leader, args()
             ("commun_code", commun_code)
-            ("leader", leader));
+            ("leader", leader)
+        );
     }
     
     action_result propose(name proposer, name proposal_name, name permission, transaction trx) {
@@ -99,40 +101,49 @@ struct commun_ctrl_api: base_contract_api {
             ("proposer", proposer)
             ("proposal_name", proposal_name)
             ("permission", permission)
-            ("trx", trx));
+            ("trx", trx)
+        );
     }
     
-    action_result approve(name proposer, name proposal_name, name approver) { // TODO: proposal_hash
-        return push(N(approve), approver, args()
+    action_result approve(name proposer, name proposal_name, name approver, std::optional<checksum256_type> proposal_hash = std::optional<checksum256_type>()) {
+        auto a = args()
             ("proposer", proposer)
             ("proposal_name", proposal_name)
-            ("approver", approver));
+            ("approver", approver);
+        if (proposal_hash.has_value()) {
+            a("proposal_hash", *proposal_hash);
+        }
+        return push(N(approve), approver, a);
     }
     
     action_result unapprove(name proposer, name proposal_name, name approver) {
         return push(N(unapprove), approver, args()
             ("proposer", proposer)
             ("proposal_name", proposal_name)
-            ("approver", approver));
+            ("approver", approver)
+        );
     }
     
     action_result cancel(name proposer, name proposal_name, name canceler) {
         return push(N(cancel), canceler, args()
             ("proposer", proposer)
             ("proposal_name", proposal_name)
-            ("canceler", canceler));
+            ("canceler", canceler)
+        );
     }
     
     action_result exec(name proposer, name proposal_name, name executer) {
         return push(N(exec), executer, args()
             ("proposer", proposer)
             ("proposal_name", proposal_name)
-            ("executer", executer));
+            ("executer", executer)
+        );
     }
     
     action_result invalidate(name account) {
         return push(N(invalidate), account, args()
-            ("account", account));
+            ("account", account)
+        );
     }
 
     variant get_leader(name leader) const {
