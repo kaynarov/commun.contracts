@@ -16,6 +16,8 @@ static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 static const auto point_code = _point.to_symbol_code();
 
+static const int64_t block_interval = cfg::block_interval_ms / 1000;
+
 class commun_emit_tester : public golos_tester {
 protected:
     cyber_token_api token;
@@ -129,14 +131,16 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
     BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::control_name));
 
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_mosaics_period));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(err.no_account(cfg::gallery_name), emit.issuereward(point_code, cfg::gallery_name));
     create_accounts({cfg::gallery_name});
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
     BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::control_name));
 
     BOOST_TEST_MESSAGE("-- waiting for leaders reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_leaders_period - cfg::def_reward_mosaics_period));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_leaders_period - cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::control_name));
 } FC_LOG_AND_RETHROW()
 
@@ -158,7 +162,8 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     int64_t period_amount = cont_emission * cfg::def_reward_mosaics_period / seconds_per_year;
     int64_t mosaic_amount = period_amount * (1.0 - leaders_rate);
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_mosaics_period));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
     BOOST_CHECK_EQUAL(mosaic_amount, point.get_amount(cfg::gallery_name));
 } FC_LOG_AND_RETHROW()
