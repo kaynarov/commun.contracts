@@ -95,7 +95,7 @@ public:
     static inline bool is_it_time_to_reward(symbol_code commun_code, name to_contract) {
         stats stats_table(config::emit_name, commun_code.raw());
         auto& stat = stats_table.get(commun_code.raw(), "emitter does not exists");
-        auto& community = commun_list::get_community(config::list_name, commun_code);
+        auto& community = commun_list::get_community(commun_code);
 
         return is_it_time_to_reward(community, to_contract, stat.last_reward_passed_seconds(to_contract));
     }

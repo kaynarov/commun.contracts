@@ -57,7 +57,7 @@ void publication::create(
         item.childcount = 0;
     });
 
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
     auto gems_per_period = get_gems_per_period(commun_code);
 
     int64_t amount_to_freeze = 0;
@@ -67,7 +67,7 @@ void publication::create(
         amount_to_freeze = std::max(op.mosaic_pledge, std::max(op.min_mosaic_inclusion, op.min_gem_inclusion));
     }
     else {
-        amount_to_freeze = get_amount_to_freeze(point::get_balance(config::point_name, message_id.author, commun_code).amount, 
+        amount_to_freeze = get_amount_to_freeze(point::get_balance(message_id.author, commun_code).amount,
             get_frozen_amount(_self, message_id.author, commun_code), community.gems_per_day, weight);
     }
     asset quantity(amount_to_freeze, community.commun_symbol);
@@ -90,7 +90,7 @@ void publication::settags(symbol_code commun_code, name leader, mssgid_t message
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason) {
     require_auth(leader);
     eosio::check(!add_tags.empty() || !remove_tags.empty(), "No changes in tags.");
-    eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     check_mssg_exists(commun_code, message_id);
 }
 
@@ -110,7 +110,7 @@ void publication::report(symbol_code commun_code, name reporter, mssgid_t messag
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto& mosaic = mosaics_table.get(message_id.tracery(), "Message does not exist.");
-    eosio::check(mosaic.active, "Message is inactive.");
+    eosio::check(mosaic.status == gallery_types::mosaic::ACTIVE, "Message is inactive.");
     eosio::check(mosaic.lock_date == time_point(), "Message has already been locked");
 }
 
@@ -137,7 +137,9 @@ void publication::downvote(symbol_code commun_code, name voter, mssgid_t message
 void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_id) {
     if (check_mssg_exists(commun_code, message_id, voter)) {
         eosio::check(voter != message_id.author, "author can't unvote");
-        claim_gems_by_creator(_self, message_id.tracery(), commun_code, voter, true);
+        if (!claim_gems_by_creator(_self, message_id.tracery(), commun_code, voter, true, false)) {
+            check_auth("vote doesn't exist", voter);
+        }
     }
 }
 
@@ -162,7 +164,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         return; 
     }
     
-    auto& community = commun_list::get_community(config::list_name, commun_code);
+    auto& community = commun_list::get_community(commun_code);
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaic = mosaics_table.find(message_id.tracery());
@@ -170,20 +172,20 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         check_auth("Message does not exist.", voter);
         return;
     }
-    if (!mosaic->active) {
+    if (mosaic->status != gallery_types::mosaic::ACTIVE) {
         check_auth("Mosaic is inactive.", voter);
         return;
     }
-    if (eosio::current_time_point() > mosaic->close_date) {
+    if (eosio::current_time_point() > mosaic->collection_end_date) {
         check_auth("collection period is over", voter);
         return;
     }
-    
-    auto gems_per_period = get_gems_per_period(commun_code, mosaic->close_date.sec_since_epoch() + community.moderation_period);
+    auto gems_per_period = get_gems_per_period(commun_code);
 
+    maybe_claim_old_gem(_self, community.commun_symbol, voter);
     asset quantity(
         get_amount_to_freeze(
-            point::get_balance(config::point_name, voter, commun_code).amount, 
+            point::get_balance(voter, commun_code).amount,
             get_frozen_amount(_self, voter, commun_code),
             gems_per_period,
             weight), 
@@ -252,13 +254,12 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
     return ret;
 }
 
-uint16_t publication::get_gems_per_period(symbol_code commun_code, int64_t mosaic_period) {
+uint16_t publication::get_gems_per_period(symbol_code commun_code) {
     static const int64_t seconds_per_day = 24 * 60 * 60;
-    auto& community = commun_list::get_community(config::list_name, commun_code);
-    if (mosaic_period == 0)
-        mosaic_period = community.collection_period + community.moderation_period;
+    auto& community = commun_list::get_community(commun_code);
+    int64_t mosaic_active_period = community.collection_period + community.moderation_period + community.extra_reward_period;
     uint16_t gems_per_day = community.gems_per_day;
-    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_period, seconds_per_day), 1);
+    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
 }
 
 int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight) {
@@ -280,9 +281,9 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
     for (size_t n = 0; n < acc_param->providers.size(); n++) {
         auto prov_name = acc_param->providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, account));
-        if (prov_itr != provs_index.end() && point::balance_exists(config::point_name, prov_name, commun_code)) {
+        if (prov_itr != provs_index.end() && point::balance_exists(prov_name, commun_code)) {
             auto actual_limit = std::max<int64_t>(
-                0, point::get_balance(config::point_name, prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code));
+                0, point::get_balance(prov_name, commun_code).amount - get_frozen_amount(_self, prov_name, commun_code));
             auto amount = std::min(get_amount_to_freeze(prov_itr->total, prov_itr->frozen, gems_per_period, weight), actual_limit);
             if (amount) {
                 ret.emplace_back(std::make_pair(prov_name, amount));
@@ -302,14 +303,14 @@ gallery_types::providers_t publication::get_providers(symbol_code commun_code, n
 
 void publication::setproviders(symbol_code commun_code, name recipient, std::vector<name> providers) {
     require_auth(recipient);
-    commun_list::check_community_exists(config::list_name, commun_code);
+    commun_list::check_community_exists(commun_code);
 
     gallery_types::provs provs_table(_self, commun_code.raw());
     auto provs_index = provs_table.get_index<"bykey"_n>();
     for (size_t n = 0; n < providers.size(); n++) {
         auto prov_name = providers[n];
         auto prov_itr = provs_index.find(std::make_tuple(prov_name, recipient));
-        if (prov_itr == provs_index.end() || !point::balance_exists(config::point_name, prov_name, commun_code)) {
+        if (prov_itr == provs_index.end() || !point::balance_exists(prov_name, commun_code)) {
             providers[n] = name();
         }
     }

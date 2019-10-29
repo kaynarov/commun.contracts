@@ -45,6 +45,7 @@ using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx
 
 /**
   \brief For each user who voted for a leader, a separate record is created in the database containing their names and strength of the vote. 
+  
   \ingroup control_tables
  */
 // DOCS_TABLE: leader_voter
