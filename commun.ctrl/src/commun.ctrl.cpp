@@ -116,6 +116,7 @@ void control::unregleader(symbol_code commun_code, name leader) {
 
     leader_tbl leader_table(_self, commun_code.raw());
     auto it = leader_table.find(leader.value);
+    eosio::check(it != leader_table.end(), "leader not found");
     eosio::check(!it->counter_votes, "not possible to remove leader as there are votes");
     leader_table.erase(*it);
 }
