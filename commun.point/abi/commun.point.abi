@@ -21,7 +21,9 @@
                 { "type": "asset",        "name": "max_supply" },
                 { "type": "int16",        "name": "cw" },
                 { "type": "int16",        "name": "fee" },
-                { "type": "name",         "name": "issuer" }
+                { "type": "name",         "name": "issuer" },
+                { "type": "uint16",       "name": "transfer_fee" },
+                { "type": "int64",        "name": "min_transfer_fee_points" }
             ]
         },{
             "name": "globalparam_struct",
@@ -44,6 +46,14 @@
                 { "type": "asset",        "name": "maximum_supply" },
                 { "type": "int16",        "name": "cw" },
                 { "type": "int16",        "name": "fee" }
+            ]
+        },{
+            "name": "setparams_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",  "name": "commun_code" },
+                { "type": "uint16",       "name": "transfer_fee" },
+                { "type": "int64",        "name": "min_transfer_fee_points" }
             ]
         },{
             "name": "issue_args",
@@ -101,7 +111,9 @@
                 { "type": "asset",        "name": "max_supply" },
                 { "type": "int16",        "name": "cw" },
                 { "type": "int16",        "name": "fee" },
-                { "type": "name",         "name": "issuer" }
+                { "type": "name",         "name": "issuer" },
+                { "type": "uint16",       "name": "transfer_fee" },
+                { "type": "int64",        "name": "min_transfer_fee_points" }
             ]
         },
         {
@@ -128,6 +140,9 @@
         },{
             "name": "create",
             "type": "create_args"
+        },{
+            "name": "setparams",
+            "type": "setparams_args"
         },{
             "name": "setfreezer",
             "type": "setfreezer_args"
