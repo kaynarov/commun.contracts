@@ -56,11 +56,12 @@ namespace gallery_types {
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
         
-        enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED };
+        enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED, BANNED_AND_DEACTIVATED };
         uint8_t status = ACTIVE;
         bool meritorious = false;
         
-        bool banned()const {return status == BANNED; }
+        bool banned()const {return status == BANNED || status == BANNED_AND_DEACTIVATED; }
+        bool deactivated()const {return status == ARCHIVED || status == BANNED_AND_DEACTIVATED; }
 
         void lock() {
             check(status == ACTIVE, "mosaic is inactive");
@@ -396,8 +397,7 @@ private:
             gallery_types::stats stats_table(_self, commun_code.raw());
             const auto stat = get_stat(_self, stats_table, commun_code);
             stats_table.modify(stat, name(), [&]( auto& s) { s.unclaimed += mosaic->reward - reward; });
-            if (mosaic->status != gallery_types::mosaic::BANNED && mosaic->status != gallery_types::mosaic::ARCHIVED) {
-                //banned mosaics are deactivated in deactivate_old_mosaics
+            if (!mosaic->deactivated()) {
                 T::deactivate(_self, commun_code, *mosaic);
             }
             send_mosaic_chop_event(_self, commun_code, mosaic->tracery);
@@ -673,6 +673,7 @@ private:
             if ((mosaic == mosaics_idx.end()) || (mosaic->collection_end_date >= max_collection_end_date)) {
                 break;
             }
+            mosaics_idx.modify(mosaic, name(), [&](auto& item) { item.status = gallery_types::mosaic::BANNED_AND_DEACTIVATED; });
             T::deactivate(_self, commun_code, *mosaic);
         }
     }
@@ -1024,7 +1025,7 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
-        eosio::check(mosaic->status != gallery_types::mosaic::BANNED, "mosaic is already banned");
+        eosio::check(!mosaic->banned(), "mosaic is already banned");
         eosio::check(mosaic->status != gallery_types::mosaic::ARCHIVED, "mosaic is archived");
         mosaics_table.modify(mosaic, name(), [&](auto& item) { item.status = gallery_types::mosaic::BANNED; });
     }
