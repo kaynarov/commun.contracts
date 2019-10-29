@@ -190,7 +190,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
             gems_per_period,
             weight), 
         community.commun_symbol);
-    auto providers = get_providers(commun_code, message_id.author, gems_per_period, weight);
+    auto providers = get_providers(commun_code, voter, gems_per_period, weight);
     
     if ((providers.size() + 1) * community.get_opus(mosaic->opus).min_gem_inclusion > get_points_sum(quantity.amount, providers)) {
         check_auth("points are not enough for gem inclusion", voter);
