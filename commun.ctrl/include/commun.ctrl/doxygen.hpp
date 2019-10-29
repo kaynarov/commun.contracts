@@ -11,7 +11,13 @@
  */
 
 /**
- * \details This structs implements comn.control contract data structures stored in a db
+ * \details commun.ctrl contract data structures stored in a db
  * \defgroup control_tables DB Stored structures
+ * \ingroup control
+ */
+
+/**
+ * \details Events being sent by commun.ctrl into Event-Engine
+ * \defgroup control_events Events
  * \ingroup control
  */

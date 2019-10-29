@@ -164,6 +164,7 @@ public:
         const string no_message            = amsg(auth_self + "Message does not exist.");
         const string inactive              = amsg(auth_self + "Mosaic is inactive.");
         const string not_enough_for_gem    = amsg(auth_self + "points are not enough for gem inclusion");
+        const string no_vote               = amsg(auth_self + "vote doesn't exist");
 
         const string wrong_prmlnk_length   = amsg("Permlink length is empty or more than 256.");
         const string wrong_prmlnk          = amsg("Permlink contains wrong symbol.");
@@ -171,6 +172,10 @@ public:
         const string wrong_body_length     = amsg("Body is empty.");
         const string tags_are_same         = amsg("No changes in tags.");
         const string reason_empty          = amsg("Reason cannot be empty.");
+
+        const string simple_no_message     = amsg("Message does not exist.");
+        const string simple_inactive       = amsg("Message is inactive.");
+        const string already_locked        = amsg("Message has already been locked");
 
         const string vote_weight_0         = amsg(auth_self + "weight can't be 0.");
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
@@ -317,14 +322,25 @@ BOOST_FIXTURE_TEST_CASE(remove_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Report message testing.");
     init();
+    ctrl.prepare({N(jackiechan)}, N(brucelee));
+
     mssgid msg = {N(brucelee), "permlink"};
     BOOST_CHECK_EQUAL(success(), post.create(msg));
 
-    BOOST_CHECK_EQUAL(err.no_message, post.report(N(jackiechan), {N(brucelee), "notexist"}, "the reason"));
-    BOOST_CHECK_EQUAL(success(), post.report(N(jackiechan), {N(brucelee), "notexist"}, "the reason", _client));
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason"));
+    BOOST_CHECK_EQUAL(err.simple_no_message, post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason", _client));
 
-    BOOST_CHECK_EQUAL(success(), post.report(N(jackiechan), msg, "the reason"));
-    BOOST_CHECK_EQUAL(err.reason_empty, post.report(N(jackiechan), msg, ""));
+    BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
+    BOOST_CHECK_EQUAL(err.reason_empty, post.report(N(chucknorris), msg, "", _client));
+
+    BOOST_CHECK_EQUAL(success(), post.lock(N(jackiechan), msg, "the reason"));
+    BOOST_CHECK_EQUAL(err.simple_inactive, post.report(N(chucknorris), msg, "the reason", _client));
+    BOOST_CHECK_EQUAL(success(), post.unlock(N(jackiechan), msg, "the reason"));
+    BOOST_CHECK_EQUAL(err.already_locked, post.report(N(chucknorris), msg, "the reason", _client));
+
+    BOOST_CHECK_EQUAL(success(), post.update(msg, "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
+    BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
+
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
@@ -335,39 +351,44 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
 
-    BOOST_CHECK_EQUAL(err.own_reblog, post.reblog(N(brucelee), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.reblog(N(chucknorris), account_name(), {N(brucelee), "permlink"},
         "header",
         "body"));
-    BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog(N(chucknorris), {N(brucelee), "permlink"},
+
+    BOOST_CHECK_EQUAL(err.own_reblog, post.reblog(N(brucelee), _client, {N(brucelee), "permlink"},
+        "header",
+        "body"));
+    BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
         str256,
         "body"));
-    BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog(N(chucknorris), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
         "header",
         ""));
-    BOOST_CHECK_EQUAL(err.no_message, post.reblog(N(chucknorris), {N(brucelee), "test"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
         "header",
         "body"));
-    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), {N(brucelee), "test"},
-        "header",
-        "body",
-        _client));
-    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
         "header",
         "body"));
-    BOOST_CHECK_EQUAL(success(), post.reblog(N(jackiechan), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
+        "header",
+        "body"));
+    BOOST_CHECK_EQUAL(success(), post.reblog(N(jackiechan), _client, {N(brucelee), "permlink"},
         "",
         ""));
-    BOOST_CHECK_EQUAL(success(), post.reblog(_golos, {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(success(), post.reblog(_golos, _client, {N(brucelee), "permlink"},
         "",
         "body"));
 
-    BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog(N(brucelee),
-        {N(brucelee), "permlink"}));
-    BOOST_CHECK_EQUAL(err.no_message, post.erase_reblog(N(chucknorris),
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.erase_reblog(N(chucknorris), account_name(),
         {N(brucelee), "notexist"}));
-    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris),
-        {N(brucelee), "notexist"}, _client));
-    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris),
+    BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog(N(brucelee), _client,
+        {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
+        {N(brucelee), "notexist"}));
+    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
+        {N(brucelee), "notexist"}));
+    BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
         {N(brucelee), "permlink"}));
 } FC_LOG_AND_RETHROW()
 
@@ -377,6 +398,7 @@ BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     auto vote_brucelee = [&](auto weight){ return post.upvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
     BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
@@ -391,6 +413,7 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     auto vote_brucelee = [&](auto weight){ return post.downvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
     BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
@@ -400,6 +423,17 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     BOOST_CHECK(!gem.is_null());
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(second_vote, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Second vote testing.");
+    init();
+    BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+    produce_block();
+    BOOST_CHECK_EQUAL(errgallery.refill, post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Unvote testing.");
     init();
@@ -407,7 +441,7 @@ BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.unvote(N(chucknorris), {N(brucelee), "permlink"}, _client));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.author_cannot_unvote, post.unvote(N(brucelee), {N(brucelee), "permlink"}));
-    BOOST_CHECK_EQUAL(errgallery.nothing_to_claim, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(err.no_vote, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(brucelee), "permlink"}, 123));
     produce_block();
     BOOST_CHECK(!get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(chucknorris)).is_null());
@@ -426,7 +460,6 @@ BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.downvote(N(jackiechan), {N(brucelee), "permlink"}, 100));
     
 } FC_LOG_AND_RETHROW()
-
 
 BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Empty votes testing.");
@@ -455,6 +488,8 @@ BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.not_enough_for_gem, post.downvote(N(noob), {N(brucelee), "permlink1"}));
     BOOST_CHECK_EQUAL(success(), post.downvote(N(noob), {N(brucelee), "permlink1"}, std::optional<uint16_t>(), _client));
     BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink1"}.tracery(), N(noob)).is_null());
+    BOOST_CHECK_EQUAL(err.no_vote, post.unvote(N(noob), {N(brucelee), "permlink1"}));
+    BOOST_CHECK_EQUAL(success(), post.unvote(N(noob), {N(brucelee), "permlink1"}, _client));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setproviders, commun_publication_tester) try {
@@ -479,7 +514,8 @@ BOOST_FIXTURE_TEST_CASE(set_gem_holders, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.hold({N(alice), "alice-in-blockchains"}, N(alice)));
 
     produce_block();
-    produce_block(fc::seconds(cfg::def_active_period - cfg::block_interval_ms / 1000));
+    auto archive_date = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period;
+    produce_block(fc::seconds(archive_date - cfg::block_interval_ms / 1000));
 
     //a third party can claim it because the active period has expired
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(chucknorris)));
@@ -507,9 +543,17 @@ BOOST_FIXTURE_TEST_CASE(advise_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(get_mosaic(_code, _point, msg.tracery())["lead_rating"], cfg::advice_weight[0]);
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(lock_message, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Lock message by leader testing.");
+    mssgid msg = {N(brucelee), "permlink"};
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, post.lock(N(jackiechan), msg, ""));
+    BOOST_CHECK_EQUAL(errgallery.reason_empty, post.unlock(N(jackiechan), msg, ""));
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Reward for downvote testing.");
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("damned_gem_reward_enabled", true)));
     uint16_t weight = 100;
     ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
     
@@ -538,7 +582,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), ctrl.approve(N(brucelee), N(banthirdone), N(brucelee)));
 
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - (cfg::block_interval_ms / 1000)));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - (cfg::block_interval_ms / 1000)));
 
     //chucknorris will receive a reward as "facelift" will be in the top and will be banned (*1)
     BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(alice), "facelift"}, weight - 1));
@@ -554,7 +598,7 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.downvote(N(brucelee), {N(alice), "alice-in-blockchains"}, weight - 1));
 
     produce_block();
-    produce_block(fc::seconds(cfg::reward_mosaics_period - (cfg::block_interval_ms / 1000)));
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - (cfg::block_interval_ms / 1000)));
 
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "what-are-you-waiting-for-jackie"}));
     BOOST_CHECK_EQUAL(success(), post.hold({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
@@ -566,19 +610,15 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), ctrl.exec(N(brucelee), N(bandirt), N(brucelee)));
     BOOST_CHECK_EQUAL(err.authorization_failed, ctrl.exec(N(brucelee), N(banthirdone), N(brucelee)));
 
-    BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["banned"].as<bool>());
-    BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["banned"].as<bool>());
-    BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["banned"].as<bool>());
+    BOOST_CHECK_EQUAL(uint8_t(BANNED), get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(BANNED), get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(ACTIVE), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["status"].as<uint8_t>());
 
-    BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["meritorious"].as<bool>());
-    BOOST_CHECK(!get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["meritorious"].as<bool>());
-    BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["meritorious"].as<bool>());
-
-    BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, post.ban(_golos, {N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(errgallery.mosaic_already_banned, post.ban(_golos, {N(alice), "facelift"}));
     BOOST_CHECK_EQUAL(err.inactive, post.downvote(N(chucknorris), {N(alice), "dirt"}, weight));
 
     produce_block();
-    produce_block(fc::seconds(cfg::def_moderation_period - cfg::reward_mosaics_period));
+    produce_block(fc::seconds((cfg::def_collection_period + cfg::def_moderation_period) - cfg::def_reward_mosaics_period));
 
     auto amount_alice0 = point.get_amount(N(alice));
     BOOST_CHECK_EQUAL(success(), post.claim({N(alice), "facelift"}, N(alice), N(alice), false, N(alice)));
@@ -607,17 +647,65 @@ BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
 
     //at the end of this story, let's verify that we cannot ban the archive mosaic
     produce_block();
-    produce_block(fc::seconds(cfg::def_active_period - 
-                             (cfg::def_moderation_period - cfg::reward_mosaics_period + (cfg::block_interval_ms / 1000))));
+    produce_block(fc::seconds(cfg::def_extra_reward_period + cfg::def_reward_mosaics_period - (cfg::block_interval_ms / 1000)));
     //curious case: first, the existence of the parent permlink is checked, 
     //then the parent mosaic is archived and the parent permlink is destroyed
     BOOST_CHECK_EQUAL(success(), post.create({N(jackiechan), "what"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));
     //therefore, jackie will not be able to create a second comment
     BOOST_CHECK_EQUAL(err.parent_no_message, post.create({N(jackiechan), "hm"}, {N(brucelee), "what-are-you-waiting-for-jackie"}));
 
-    BOOST_CHECK_EQUAL(errgallery.mosaic_is_inactive, post.ban(_golos, {N(brucelee), "what-are-you-waiting-for-jackie"}));
+    BOOST_CHECK_EQUAL(errgallery.mosaic_archived, post.ban(_golos, {N(brucelee), "what-are-you-waiting-for-jackie"}));
 
     BOOST_CHECK_EQUAL(success(), post.claim({N(brucelee), "what-are-you-waiting-for-jackie"}, N(brucelee)));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(ban_post_with_comment, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Ban post with comment testing.");
+    init();
+    ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
+    set_authority(_golos, cfg::minority_name, create_code_authority({cfg::control_name}), "active");
+    link_authority(_golos, cfg::publish_name, cfg::minority_name, N(ban));
+    
+    BOOST_CHECK_EQUAL(success(), post.create({N(alice), "alice-in-blockchains"}, {N(), "p"}));
+    BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "i-do-not-like-it"}, {N(alice), "alice-in-blockchains"}));
+
+    BOOST_CHECK_EQUAL(success(), ctrl.propose(N(brucelee), N(banpost), cfg::minority_name, 
+        get_ban_mosaic_trx({permission_level{_golos, cfg::minority_name}}, {N(alice), "alice-in-blockchains"})));
+    
+    BOOST_CHECK_EQUAL(success(), ctrl.approve(N(brucelee), N(banpost), N(brucelee)));
+    BOOST_CHECK_EQUAL(success(), ctrl.approve(N(brucelee), N(banpost), N(jackiechan))); 
+    BOOST_CHECK_EQUAL(success(), ctrl.exec(N(brucelee), N(banpost), N(brucelee)));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(gem_num_limit, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Gem num limit testing");
+    init();
+    static std::set<commun::structures::opus_info> new_opuses = {{
+        commun::structures::opus_info{ cfg::post_opus_name, 1, 1, 1 },
+        commun::structures::opus_info{ cfg::comment_opus_name }
+    }};
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("opuses", new_opuses )));
+    size_t posts_num = 1000;
+    for (size_t i = 0; i < posts_num; i++) {
+        if (i % 100 == 0) { BOOST_TEST_MESSAGE("--- i = " << i); }
+        mssgid id{N(alice), "alice-in-blockchains-" + std::to_string(i)};
+        BOOST_CHECK_EQUAL(success(), post.create(id, {N(), "p"}, "h", "b", {"t"}, "m", 1));
+        BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), id));
+        produce_block();
+        produce_block(fc::seconds(60 * 60 * 24 / cfg::def_gems_per_day));
+    }
+    
+    int64_t seconds_per_day = 24 * 60 * 60;
+    int64_t mosaic_active_period = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period;
+    int gems_per_period = cfg::def_gems_per_day * mosaic_active_period / seconds_per_day;
+    
+    for (size_t i = 0; i <= gems_per_period; i++) {
+        mssgid id{N(alice), "alice-in-blockchains--" + std::to_string(i)};
+        BOOST_CHECK_EQUAL(success(), post.create(id, {N(), "p"}, "h", "b", {"t"}, "m", 1));
+        BOOST_CHECK_EQUAL(i == gems_per_period ? err.not_enough_for_gem : success(), post.upvote(N(jackiechan), id));
+        produce_block();
+        produce_block(fc::seconds(60 * 60 * 24 / (cfg::def_gems_per_day * 2)));
+    }
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

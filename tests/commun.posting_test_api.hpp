@@ -118,10 +118,10 @@ struct commun_posting_api: base_contract_api {
 
     action_result reblog(
         account_name rebloger,
+        account_name client,
         mssgid message_id,
         std::string title = "header",
-        std::string body = "body",
-        account_name client = account_name()
+        std::string body = "body"
     ) {
         auto a = args()
             ("commun_code", commun_code)
@@ -134,8 +134,8 @@ struct commun_posting_api: base_contract_api {
 
     action_result erase_reblog(
         account_name rebloger,
-        mssgid message_id,
-        account_name client = account_name()
+        account_name client,
+        mssgid message_id
     ) {
         auto a = args()
             ("commun_code", commun_code)
@@ -232,13 +232,33 @@ struct commun_posting_api: base_contract_api {
         return push(N(advise), leader, args()
             ("commun_code", commun_code)
             ("leader", leader)
-            ("favorites", favorites));
+            ("favorites", favorites)
+        );
+    }
+
+    action_result lock(account_name leader, mssgid message_id, const std::string& reason) {
+        return push(N(lock), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader)
+            ("message_id", message_id)
+            ("reason", reason)
+        );
+    }
+
+    action_result unlock(account_name leader, mssgid message_id, const std::string& reason) {
+        return push(N(unlock), leader, args()
+            ("commun_code", commun_code)
+            ("leader", leader)
+            ("message_id", message_id)
+            ("reason", reason)
+        );
     }
 
     action_result ban(account_name issuer, mssgid message_id) {
         return push(N(ban), issuer, args()
             ("commun_code", commun_code)
-            ("message_id", message_id));
+            ("message_id", message_id)
+        );
     }
 
     variant get_vertex(mssgid message_id) {

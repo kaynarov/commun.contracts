@@ -63,6 +63,7 @@ public:
         const string no_auth = amsg("missing required signature");
         const string no_reserve = amsg("no reserve");
         const string no_balance = amsg("no balance object found");
+        const string balance_of_from_not_opened = amsg("balance of from not opened");
         const string overdrawn_balance = amsg("overdrawn balance");
         const string tokens_cost_zero_points = amsg("these tokens cost zero points");
         const string invalid_quantity = amsg("invalid quantity");
@@ -266,6 +267,14 @@ BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(err.freezer_not_exists, point.setfreezer(N(notexist)));
     BOOST_CHECK_EQUAL(success(), point.setfreezer(cfg::gallery_name));
     BOOST_CHECK_EQUAL(point.get_global_params()["point_freezer"], cfg::gallery_name.to_string());
+
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(2000, token._symbol), ""));
+    BOOST_CHECK_EQUAL(err.balance_of_from_not_opened, token.transfer(_carol, _code, asset(1000, token._symbol), point_code_str));
+    BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code, _carol));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1000, token._symbol), point_code_str));
+    BOOST_CHECK_EQUAL(err.balance_of_from_not_opened, token.transfer(_carol, _code, asset(1000, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.open(_carol, symbol_code(), _carol));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1000, token._symbol), ""));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(transfer_buy_tokens_no_supply, commun_point_tester) try {

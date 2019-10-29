@@ -12,6 +12,7 @@ static const auto _token = symbol(3, token_code_str);
 static const auto _token_e = symbol(3, "SLG");
 static const auto _token_code = _token.to_symbol_code();
 static const auto _token_e_code = _token_e.to_symbol_code();
+static const account_name _client = N(communcom);
 
 class commun_list_tester : public golos_tester {
 protected:
@@ -24,7 +25,7 @@ public:
         , point({this, cfg::point_name, _token})
         , community({this, cfg::list_name})
     {
-        create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas,
+        create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas, _client,
             cfg::control_name, cfg::point_name, cfg::list_name, cfg::emit_name});
         produce_block();
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
@@ -35,6 +36,13 @@ public:
         
         set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
+
+        set_authority(cfg::list_name, cfg::client_permission_name,
+            authority (1, {}, {{.permission = {_client, cfg::active_name}, .weight = 1}}), "owner");
+        link_authority(cfg::list_name, cfg::list_name, cfg::client_permission_name, N(follow));
+        link_authority(cfg::list_name, cfg::list_name, cfg::client_permission_name, N(unfollow));
+        link_authority(cfg::list_name, cfg::list_name, cfg::client_permission_name, N(hide));
+        link_authority(cfg::list_name, cfg::list_name, cfg::client_permission_name, N(unhide));
     }
 
     const account_name _commun = cfg::dapp_name;
@@ -119,11 +127,18 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
     create_token(_golos, _token);
 
     BOOST_TEST_MESSAGE("--- checking community for existence");
-    BOOST_CHECK_EQUAL(err.no_community, community.setinfo(_golos, _token_code));
+    BOOST_CHECK_EQUAL(err.no_community, community.setinfo(_golos, _token_code, community.info()
+        ("description", "description")));
 
     BOOST_TEST_MESSAGE("--- checking that info was added successfully");
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community_name"));
-    BOOST_CHECK_EQUAL(success(), community.setinfo(_golos, _token_code));
+    BOOST_CHECK_EQUAL(err.no_changes, community.setinfo(_golos, _token_code, community.info()));
+    BOOST_CHECK_EQUAL(success(), community.setinfo(_golos, _token_code, community.info()
+        ("description", "description")
+        ("language", "language")
+        ("rules", "rules")
+        ("avatar_image", "avatar_image")
+        ("cover_image", "cover_image")));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {
@@ -153,15 +168,19 @@ BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {
 BOOST_FIXTURE_TEST_CASE(follow_hide_test, commun_list_tester) try {
     BOOST_TEST_MESSAGE("follow and hide test");
     create_token(_golos, _token);
-    BOOST_CHECK_EQUAL(err.no_community, community.follow(_token_code, _alice));
-    BOOST_CHECK_EQUAL(err.no_community, community.unfollow(_token_code, _alice));
-    BOOST_CHECK_EQUAL(err.no_community, community.hide(_token_code, _alice));
-    BOOST_CHECK_EQUAL(err.no_community, community.unhide(_token_code, _alice));
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), community.follow(_token_code, _alice, account_name()));
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), community.unfollow(_token_code, _alice, account_name()));
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), community.hide(_token_code, _alice, account_name()));
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), community.unhide(_token_code, _alice, account_name()));
+    BOOST_CHECK_EQUAL(err.no_community, community.follow(_token_code, _alice, _client));
+    BOOST_CHECK_EQUAL(err.no_community, community.unfollow(_token_code, _alice, _client));
+    BOOST_CHECK_EQUAL(err.no_community, community.hide(_token_code, _alice, _client));
+    BOOST_CHECK_EQUAL(err.no_community, community.unhide(_token_code, _alice, _client));
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community_name"));
-    BOOST_CHECK_EQUAL(success(), community.follow(_token_code, _alice));
-    BOOST_CHECK_EQUAL(success(), community.unfollow(_token_code, _alice));
-    BOOST_CHECK_EQUAL(success(), community.hide(_token_code, _alice));
-    BOOST_CHECK_EQUAL(success(), community.unhide(_token_code, _alice));
+    BOOST_CHECK_EQUAL(success(), community.follow(_token_code, _alice, _client));
+    BOOST_CHECK_EQUAL(success(), community.unfollow(_token_code, _alice, _client));
+    BOOST_CHECK_EQUAL(success(), community.hide(_token_code, _alice, _client));
+    BOOST_CHECK_EQUAL(success(), community.unhide(_token_code, _alice, _client));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

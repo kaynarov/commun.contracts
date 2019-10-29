@@ -13,10 +13,10 @@ struct commun_emit_api: base_contract_api {
         );
     }
 
-    action_result issuereward(symbol_code commun_code, bool for_leaders) {
+    action_result issuereward(symbol_code commun_code, name to_contract) {
         return push(N(issuereward), _code, args()
             ("commun_code", commun_code)
-            ("for_leaders", for_leaders)
+            ("to_contract", to_contract)
         );
     }
 };

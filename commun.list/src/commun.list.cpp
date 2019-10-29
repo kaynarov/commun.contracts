@@ -2,6 +2,7 @@
 #include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
 #include <commun.emit/commun.emit.hpp>
+#include <eosio/crypto.hpp>
 #include <commun/config.hpp>
 
 using namespace commun;
@@ -35,18 +36,29 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 
     init_dapp(tables::dapp(_self, _self.value));
 
-    auto commun_symbol = point::get_supply(config::point_name, commun_code).symbol;
+    auto commun_symbol = point::get_supply(commun_code).symbol;
 
     tables::community community_tbl(_self, _self.value);
 
     check(community_tbl.find(commun_code.raw()) == community_tbl.end(), "community token exists");
 
-    auto community_index = community_tbl.get_index<"byname"_n>();
-    check(community_index.find(community_name) == community_index.end(), "community exists");
+    auto community_hash256 = eosio::sha256(community_name.c_str(), community_name.size());
+    auto community_hash = *(reinterpret_cast<const uint64_t *>(community_hash256.extract_as_byte_array().data()));
+    auto community_index = community_tbl.get_index<"byhash"_n>();
+    check(community_index.find(community_hash) == community_index.end(), "community exists");
 
     community_tbl.emplace(_self, [&](auto& item) {
         item.commun_symbol = commun_symbol;
-        item.community_name = community_name;
+        item.community_hash = community_hash;
+        item.emission_receivers.reserve(2);
+        item.emission_receivers.push_back({
+            config::control_name,
+            config::def_reward_leaders_period,
+            config::def_leaders_percent});
+        item.emission_receivers.push_back({
+            config::gallery_name,
+            config::def_reward_mosaics_period,
+            config::_100percent - config::def_leaders_percent});
     });
     
     auto send_init_action = [commun_code](name contract_name) {
@@ -64,7 +76,8 @@ void commun_list::setsysparams(symbol_code commun_code,
         optional<name> permission, optional<uint8_t> required_threshold, 
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
-        std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating) {
+        std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating,
+        optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled) {
 
     require_auth(_self);
 
@@ -80,6 +93,8 @@ void commun_list::setsysparams(symbol_code commun_code,
         SET_PARAM(lock_period);
         SET_PARAM(gems_per_day);
         SET_PARAM(rewarded_mosaic_num);
+        SET_PARAM(damned_gem_reward_enabled);
+        SET_PARAM(refill_gem_enabled);
         if (!opuses.empty()) {
             c.opuses = opuses;
             _empty = false;
@@ -100,7 +115,7 @@ void commun_list::setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
         optional<name> permission, optional<uint8_t> required_threshold, 
         optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent) {
-    require_auth(point::get_issuer(config::point_name, commun_code));
+    require_auth(point::get_issuer(commun_code));
 
     // <> Place for checks
     eosio::check(!emission_rate.has_value() || *emission_rate == PERC(1) ||
@@ -119,8 +134,17 @@ void commun_list::setparams(symbol_code commun_code,
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
         bool _empty = !c.control_param.update(permission, required_threshold, leaders_num, max_votes, false);
         SET_PARAM(emission_rate);
-        SET_PARAM(leaders_percent);
         SET_PARAM(author_percent);
+        if (leaders_percent) for (auto& receiver: c.emission_receivers) {
+            _empty = false;
+            if (receiver.contract == config::control_name) {
+                receiver.percent = *leaders_percent;
+            } else if (receiver.contract == config::gallery_name) {
+                receiver.percent = config::_100percent - *leaders_percent;
+            } else {
+                eosio::check(false, "unknown contract in emission receivers");
+            }
+        }
         eosio::check(!_empty, "No params changed");
     });
 }
@@ -128,46 +152,56 @@ void commun_list::setparams(symbol_code commun_code,
 #undef SET_PARAM
 #undef PERC
 
-void commun_list::setinfo(symbol_code commun_code, std::string description,
-        std::string language, std::string rules, std::string avatar_image, std::string cover_image) {
-    require_auth(point::get_issuer(config::point_name, commun_code));
-    check_community_exists(_self, commun_code);
+void commun_list::setinfo(symbol_code commun_code,
+    optional<std::string> description, optional<std::string> language, optional<std::string> rules,
+    optional<std::string> avatar_image, optional<std::string> cover_image
+) {
+    eosio::check(
+        description || language || rules || avatar_image || cover_image,
+        "No params changed");
+
+    require_auth(point::get_issuer(commun_code));
+    check_community_exists(commun_code);
 }
 
 void commun_list::follow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    require_auth(_self); // functionality of a client
+    check_community_exists(commun_code);
 }
 
 void commun_list::unfollow(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    require_auth(_self); // functionality of a client
+    check_community_exists(commun_code);
 }
 
 void commun_list::hide(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    require_auth(_self); // functionality of a client
+    check_community_exists(commun_code);
 }
 
 void commun_list::unhide(symbol_code commun_code, name follower) {
     require_auth(follower);
-    check_community_exists(_self, commun_code);
+    require_auth(_self); // functionality of a client
+    check_community_exists(commun_code);
 }
 
 void commun_list::ban(symbol_code commun_code, name leader, name account, std::string reason) {
     require_auth(leader);
-    eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 void commun_list::unban(symbol_code commun_code, name leader, name account, std::string reason) {
     require_auth(leader);
-    eosio::check(control::in_the_top(config::control_name, commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    check_community_exists(_self, commun_code);
+    check_community_exists(commun_code);
 }
 
 EOSIO_DISPATCH(commun::commun_list, (create)(setappparams)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(hide)(unhide)(ban)(unban))
