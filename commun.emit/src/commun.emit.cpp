@@ -19,9 +19,9 @@ void emit::init(symbol_code commun_code) {
     auto now = eosio::current_time_point();
     stats_table.emplace(_self, [&](auto& s) {
         s.id = commun_code.raw();
-        s.reward_recievers.reserve(community.emission_receivers.size());
+        s.reward_receivers.reserve(community.emission_receivers.size());
         for (auto& receiver: community.emission_receivers) {
-            s.reward_recievers.push_back({receiver.contract, now});
+            s.reward_receivers.push_back({receiver.contract, now});
         }
     });
 }

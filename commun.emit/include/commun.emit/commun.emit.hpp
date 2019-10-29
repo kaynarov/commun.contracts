@@ -32,14 +32,14 @@ struct structures {
      */
     struct [[eosio::table]] stat {
         uint64_t id;  //!< An unique primary key
-        std::vector<reward_receiver> reward_recievers; //!< List of rewards receiver
+        std::vector<reward_receiver> reward_receivers; //!< List of rewards receiver
 
         const reward_receiver& get_reward_receiver(name to_contract) const {
-            return get_reward_receiver<const reward_receiver>(reward_recievers, to_contract);
+            return get_reward_receiver<const reward_receiver>(reward_receivers, to_contract);
         }
 
         reward_receiver& get_reward_receiver(name to_contract) {
-            return get_reward_receiver<reward_receiver>(reward_recievers, to_contract);
+            return get_reward_receiver<reward_receiver>(reward_receivers, to_contract);
         }
 
         int64_t last_reward_passed_seconds(name to_contract) const {

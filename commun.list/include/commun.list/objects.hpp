@@ -144,8 +144,8 @@ struct community {
 private:
     template <typename Result, typename List>
     Result& get_emission_receiver(List& list, name to_contract) const {
-        auto itr = std::find_if(list.begin(), list.end(), [&](auto& reciever) {
-            return reciever.contract == to_contract;
+        auto itr = std::find_if(list.begin(), list.end(), [&](auto& receiver) {
+            return receiver.contract == to_contract;
         });
         eosio::check(itr != list.end(), to_contract.to_string() + " wasn't initialized for reward period");
         return *itr;
