@@ -18,19 +18,19 @@ using namespace eosio;
 using share_type = int64_t;
 
 /**
-  \brief DB record for leader with his votes from users.
+  \brief For each leader, a separate record is created in the database, containing the name and «weight» of the leader. Such record appears in DB after each calling send_leader_event().
 
   \ingroup control_tables
 */
 // DOCS_TABLE: leader_info
 struct [[eosio::table]] leader_info {
     name name;       //!< a leader name
-    bool active;     //!< true if the leader is active            // can check key instead or even remove record
+    bool active;     //!< "true" if the leader is active. Default is "true"
 
-    uint64_t total_weight;  //!< total weight of leader obtained from votes
-    uint64_t counter_votes; //!< counter of votes for the leader
+    uint64_t total_weight;  //!< total «weight» of the leader taking into account the votes cast for him/her
+    uint64_t counter_votes; //!< counter of votes cast for the leader
     
-    int64_t unclaimed_points = 0; //!< points accumulated from emission and not yet unclaimed by leader with \ref control::claim
+    int64_t unclaimed_points = 0; //!< the points accumulated from emission and not yet claimed by leader via \ref control::claim
 
     uint64_t primary_key() const {
         return name.value;
@@ -44,7 +44,8 @@ using leader_weight_idx = indexed_by<"byweight"_n, const_mem_fun<leader_info, ui
 using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx>;
 
 /**
-  \brief DB record for voter contains leader vote made by him/her.
+  \brief For each user who voted for a leader, a separate record is created in the database containing their names and strength of the vote. 
+  
   \ingroup control_tables
  */
 // DOCS_TABLE: leader_voter
@@ -52,7 +53,7 @@ struct [[eosio::table]] leader_voter {
     uint64_t id;
     name voter; //!< a voter name
     name leader; //!< a leader name
-    uint16_t pct; //!< percentage of voter power cast for the leader
+    uint16_t pct; //!< share (in percent) of strength of the vote cast for the leader
 
     uint64_t primary_key() const { return id; }
     using key_t = std::tuple<name, name>;
