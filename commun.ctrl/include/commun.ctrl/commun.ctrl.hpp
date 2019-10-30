@@ -68,7 +68,7 @@ using leadervote_byleader_idx = eosio::indexed_by<"byleader"_n, eosio::const_mem
 using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leadervote_id_idx, leadervote_byvoter_idx, leadervote_byleader_idx>;
 
 /**
-  \brief DB record containing information about a proposed transaction which needs to be signed by the account specified in this transaction.
+  \brief DB record containing information about a proposed transaction which needs to be signed by the accounts specified in this transaction.
   \ingroup control_tables
  */
 // DOCS_TABLE: proposal
@@ -192,16 +192,17 @@ public:
     [[eosio::action]] void unregleader(symbol_code commun_code, name leader);
 
     /**
-        \brief The stopleader action is used to temporarily suspend active actions of a leader (or a leader candidate) of the specified community
+        \brief The stopleader action is used to temporarily suspend activity of a leader (or a leader candidate) of the specified community
 
-        \param commun_code a point symbol of the community
+        \param commun_code a point symbol of a community
         \param leader account name of a leader (or a leader candidate) whose activity is temporarily suspended
 
         Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
         Conditions for performing the action:
             - the leader account should be active;
-            - a transaction must be signed by the leader account.
+            - a transaction must be signed by the leader whose activity is to be suspended.
+		
         The leader account activity can be continued in case it has performed the startleader action.
     */
     [[eosio::action]] void stopleader(symbol_code commun_code, name leader);
@@ -209,53 +210,52 @@ public:
     /**
         \brief The startleader action is used to resume suspended leader activity (or a leader candidate activity)
 
-        \param commun_code a point symbol of the community
-        \param leader account name of a leader (or a leader candidate), whose activity is resumed
+        \param commun_code a point symbol of a community
+        \param leader account name of a leader (or a leader candidate) whose activity is resumed
 
-        Sends leaderstate_event.
+        Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
         Conditions for performing the action:
             - the leader account activity should be suspended, that is, the operation stopleader should be performed previously;
-            - a transaction must be signed by the leader account
+            - a transaction must be signed by the leader whose activity is to be resumed.
      */
     [[eosio::action]] void startleader(symbol_code commun_code, name leader);
 
     /**
         \brief The voteleader action is used to vote for a leader candidate
 
-        \param commun_code a point symbol of the community
-        \param voter an account name that is voting for the leader candidate
+        \param commun_code a point symbol of a community
+        \param voter a user voting for the leader candidate
         \param leader a name of the leader candidate for whom the vote is cast
-        \param pct percentage of voter power cast for the leader; all unused power if pct is empty
+        \param pct a share (in percent) of voter power cast for the leader. If pct is empty, the leader is given all unused voter power
 
-        Sends leaderstate_event.
+        Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
-        Sum of percentages of all leaders by single voter cannot exceed 100%. If pct is not set, percentage will be (100% - sum of percentages of another leader votes).
+        Total amount of all shares that voter distributes among the leaders can not exceed 100 %. If pct is not set, then the percentage allocated to the leader is calculated as follows:
+		pct = (100 - «sum of shares allocated to another leaders»)%
 
-        After vote, leader total weight will be voter_balance * pct / 100%. On changing balance, it will update (see \ref changepoints).
+        After voting, the leader’s total weight will be equal to 
+		(voter_balance × pct/100)%
+		This weight will be updated each time after changing the balance (see \ref changepoints).
 
-        Doing the action requires signing by the voter account.
+        This action requires a signature of the user voting for the leader candidate.
 
         <b>Restrictions:</b>
             - the leader candidate name must first be registered through a call to regleader;
-            - total number of votes cast by the voter account for all candidates should not exceed the max_votes community parameter value;
-            - it is not allowed to vote for a leader candidate whose activity is suspended (after the candidate has completed the
-            stopleader action).
+            - total number of votes cast by the voter account for all candidates should not exceed the max_votes community parameter value.
     */
     [[eosio::action]] void voteleader(symbol_code commun_code, name voter, name leader, std::optional<uint16_t> pct);
 
     /**
         \brief The action unvotelead is used to withdraw a previously cast vote for a leader candidate
 
-        \param commun_code a point symbol of the community
-        \param voter an account name that intends to withdraw her/his vote which was previously cast for the leader candidate
+        \param commun_code a point symbol of a community
+        \param voter a user who intends to withdraw her/his vote which was previously cast for the leader candidate
         \param leader the leader candidate name from whom the vote is withdrawn
 
-        Sends leaderstate_event.
+        Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
-        It is allowed to withdraw a vote cast for a leader candidate whose activity is suspended (after the candidate has completed
-        the stopleader action).
-        Doing the action requires signing by the voter account.
+        This action requires a signature of the user who withdraws a vote.
     */
     [[eosio::action]] void unvotelead(symbol_code commun_code, name voter, name leader);
 
@@ -276,7 +276,7 @@ public:
         \param who an account name whose points amount has been changed.
         \param diff a relative change of points amount.
 
-        Sends leaderstate_event.
+        Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
         Calling this action for a leader voter causes updating weights of leaders, voted by this voter.
 
