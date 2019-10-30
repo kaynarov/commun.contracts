@@ -42,6 +42,10 @@ void publication::create(
                 ++item.childcount;
             });
             level = 1 + parent_vertex->level;
+            
+            gallery_types::mosaics mosaics_table(_self, commun_code.raw());
+            const auto& mosaic = mosaics_table.get(parent_tracery, "SYSTEM: parent mosaic doesn't exist");
+            eosio::check(!mosaic.hidden(), "Parent message removed.");
         }
         else {
             check_auth("Parent message doesn't exist");
@@ -97,9 +101,20 @@ void publication::settags(symbol_code commun_code, name leader, mssgid_t message
 void publication::remove(symbol_code commun_code, mssgid_t message_id) {
     if (check_mssg_exists(commun_code, message_id, message_id.author)) {
         auto tracery = message_id.tracery();
-        claim_gems_by_creator(_self, tracery, commun_code, message_id.author, true);
+        
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-        eosio::check(mosaics_table.find(tracery) == mosaics_table.end(), "Unable to remove comment with votes.");
+        auto mosaic = mosaics_table.find(tracery);
+        eosio::check(mosaic == mosaics_table.end() || !mosaic->hidden(), "Message already removed.");
+        
+        vertices vertices_table(_self, commun_code.raw());
+        bool removed = false;
+        if (can_remove_vertex(vertices_table.get(tracery), mosaics_table.get(tracery), commun_list::get_community(commun_code))) {
+            claim_gems_by_creator(_self, tracery, commun_code, message_id.author, true);
+            removed = mosaics_table.find(tracery) == mosaics_table.end();
+        }
+        if (!removed) {
+            hide_mosaic(_self, commun_code, tracery);
+        }
     }
 }
 
@@ -190,13 +205,13 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
             gems_per_period,
             weight), 
         community.commun_symbol);
-    auto providers = get_providers(commun_code, message_id.author, gems_per_period, weight);
+    auto providers = get_providers(commun_code, voter, gems_per_period, weight);
     
     if ((providers.size() + 1) * community.get_opus(mosaic->opus).min_gem_inclusion > get_points_sum(quantity.amount, providers)) {
         check_auth("points are not enough for gem inclusion", voter);
         return;
     }
-
+    
     add_to_mosaic(_self, message_id.tracery(), quantity, damn, voter, providers);
 }
 

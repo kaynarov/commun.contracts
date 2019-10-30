@@ -18,8 +18,7 @@ static constexpr uint16_t max_providers_num = 7;
 static constexpr int64_t forced_chopping_delay = 30 * 24 * 60 * 60;
 
 static constexpr uint8_t auto_claim_num = 3;
-static constexpr uint8_t active_auto_deactivate_num = 2;
-static constexpr uint8_t banned_auto_deactivate_num = 2;
+static constexpr uint8_t auto_deactivate_num = 3;
 
 #ifndef UNIT_TEST_ENV
     static const eosio::time_point eternity(eosio::days(365 * 8000));
