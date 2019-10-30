@@ -101,7 +101,7 @@ struct emission_receiver {
  */
 struct community {
     symbol commun_symbol; //!< symbol code of the community POINT
-    std::string community_name; //!< readable name of the community
+    uint64_t community_hash; //!< hash of the community name for uniques
 
     control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };
 
@@ -113,13 +113,15 @@ struct community {
     uint16_t author_percent = config::def_author_percent; //!< percent of author reward in post reward
     int64_t collection_period = config::def_collection_period; //!< mosaic collection period in seconds
     int64_t moderation_period = config::def_moderation_period; //!< mosaic moderation period in seconds
-    int64_t active_period = config::def_active_period;
+    int64_t extra_reward_period = config::def_extra_reward_period;
     int64_t lock_period = 0; // TODO
-    uint16_t gems_per_day = 10; //!< count of gems user can freeze per day
+    uint16_t gems_per_day = config::def_gems_per_day; //!< count of gems user can freeze per day
     uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num; //!< count of mosaics receiving reward
     int64_t min_lead_rating = config::def_min_lead_rating; //!< minimal leader rating of mosaic to receive reward
 
     std::set<opus_info> opuses = config::def_opuses; //!< opuses with pledges
+    bool damned_gem_reward_enabled = config::def_damned_gem_reward_enabled; //!< flag for enabling damned gem reward
+    bool refill_gem_enabled = config::def_refill_gem_enabled; //!< flag for enabling refill of the gem
 
     uint64_t primary_key() const {
         return commun_symbol.code().raw();
@@ -155,8 +157,8 @@ private:
 namespace commun::tables {
     using namespace eosio;
 
-    using comn_name_index = eosio::indexed_by<"byname"_n, eosio::member<structures::community, std::string, &structures::community::community_name>>;
-    using community = eosio::multi_index<"community"_n, structures::community, comn_name_index>;
-    
+    using comn_hash_index = eosio::indexed_by<"byhash"_n, eosio::member<structures::community, uint64_t, &structures::community::community_hash>>;
+    using community = eosio::multi_index<"community"_n, structures::community, comn_hash_index>;
+
     using dapp = eosio::multi_index<"dapp"_n, structures::dapp>;
 }

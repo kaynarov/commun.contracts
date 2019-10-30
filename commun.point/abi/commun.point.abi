@@ -111,6 +111,13 @@
                 { "name": "account", "type": "name" },
                 { "name": "balance", "type": "asset" }
             ]
+        },
+        {
+            "name": "exchange_event",
+            "base": "",
+            "fields": [
+                { "name": "amount", "type": "asset" }
+            ]
         }
     ],
     "types": [],
@@ -202,7 +209,8 @@
     ],
     "events": [
         {"name": "currency", "type": "currency_event"},
-        {"name": "balance", "type": "balance_event"}
+        {"name": "balance", "type": "balance_event"},
+        {"name": "exchange", "type": "exchange_event"}
     ],
     "variants": [],
     "abi_extensions": []

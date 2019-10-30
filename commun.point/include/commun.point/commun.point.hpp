@@ -23,7 +23,7 @@ using namespace eosio;
 * \brief This class implements comn.point contract behaviour
 * \ingroup point_class
 */
-class [[eosio::contract("comn.point")]] point : public contract {
+class [[eosio::contract]] point : public contract {
 public:
     using contract::contract;
 
@@ -38,6 +38,8 @@ public:
                    + field that specifies a token cost accuracy in the form of decimal places number.
         \param cw connector weight of creating token to the system token
         \param fee fee charging from account when it selling point tokens for system tokens
+
+        Sends \ref currency event.
 
         Performing the action requires a validators signature.
     */
@@ -67,6 +69,8 @@ public:
                     + the field that specifies a token cost accuracy in the form of decimal places number.
         \param memo memo text that clarifies a meaning (necessity) of the token emission in the system. Should not exceed 256 symbols including blanks.
 
+        Sends \ref currency event, \ref balance event.
+
         Performing the action requires a signature of token issuer, or of the validators.
     */
     [[eosio::action]]
@@ -79,6 +83,7 @@ public:
         \param quantity number of retiring tokens
         \param memo a memo text clarifying a purpose of retiring tokens. Should not exceed 256 symbols including blanks.
 
+        Sends \ref currency event, \ref balance event.
 
         Use of the bandwidth resources (RAM) is charged to the from account. The number of tokens withdrawn from circulation is also removed from from account balance, so this account can not withdraw tokens more than he/she has them on own balance.
         To perform this action, the from account authorization is required.
@@ -93,6 +98,8 @@ public:
         \param to recipient account to balance of which the tokens are transferred, or equals to point contract name if selling point tokens
         \param quantity amount of tokens to be transferred. This value should be greater than zero
         \param memo a memo text that clarifies a meaning of the tokens transfer. Should not exceed 256 symbols including blanks.
+
+        Sends \ref balance event. Can send \ref currency event, \ref exchange event.
 
         Performing the action requires a signature of the from account, or of the validators.
     */
@@ -130,71 +137,73 @@ public:
         \param owner account name to which the tokens withdrawing
         \param quantity amount of withdrawing tokens
 
+        Sends \ref balance event.
+
         Performing the action requires a signature of the owner account.
      */
     [[eosio::action]]
     void withdraw(name owner, asset quantity);
 
-    static inline bool exist(name token_contract_account, symbol_code commun_code) {
-        stats stats_table(token_contract_account, commun_code.raw());
+    static inline bool exist(symbol_code commun_code) {
+        stats stats_table(config::point_name, commun_code.raw());
         return stats_table.find(commun_code.raw()) != stats_table.end();
     }
 
-    static inline asset get_supply(name token_contract_account, symbol_code commun_code) {
-        stats stats_table(token_contract_account, commun_code.raw());
+    static inline asset get_supply(symbol_code commun_code) {
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
         return st.supply;
     }
     
-    static inline asset get_reserve(name token_contract_account, symbol_code commun_code) {
-        stats stats_table(token_contract_account, commun_code.raw());
+    static inline asset get_reserve(symbol_code commun_code) {
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
         return st.reserve;
     }
 
-    static inline asset get_balance(name token_contract_account, name owner, symbol_code commun_code) {
-        accounts accountstable(token_contract_account, owner.value);
+    static inline asset get_balance(name owner, symbol_code commun_code) {
+        accounts accountstable(config::point_name, owner.value);
         const auto& ac = accountstable.get(commun_code.raw(), "balance does not exist");
         return ac.balance;
     }
 
-    static inline name get_issuer(name token_contract_account, symbol_code commun_code) {
-        params params_table(token_contract_account, token_contract_account.value);
+    static inline name get_issuer(symbol_code commun_code) {
+        params params_table(config::point_name, config::point_name.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
         return param.issuer;
     }
     
-    static inline int64_t get_assigned_reserve_amount(name token_contract_account, name owner) {
-        params params_table(token_contract_account, token_contract_account.value);
+    static inline int64_t get_assigned_reserve_amount(name owner) {
+        params params_table(config::point_name, config::point_name.value);
         auto params_idx = params_table.get_index<"byissuer"_n>();
-        accounts accounts_table(token_contract_account, owner.value);
+        accounts accounts_table(config::point_name, owner.value);
         auto param = params_idx.find(owner);
         
         auto ac = accounts_table.find(symbol_code().raw());
         eosio::check(param != params_idx.end() || ac != accounts_table.end(), "no assigned reserve");
-        return (param != params_idx.end()  ? get_reserve(token_contract_account, param->max_supply.symbol.code()).amount : 0) + 
+        return (param != params_idx.end()  ? get_reserve(param->max_supply.symbol.code()).amount : 0) +
                (ac != accounts_table.end() ? ac->balance.amount : 0);
     }
 
-    static inline asset get_reserve_quantity(name token_contract_account, asset token_quantity, bool apply_fee = true) {
+    static inline asset get_reserve_quantity(asset token_quantity, bool apply_fee = true) {
         auto commun_code = token_quantity.symbol.code();
-        params params_table(token_contract_account, token_contract_account.value);
+        params params_table(config::point_name, config::point_name.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
-        stats stats_table(token_contract_account, commun_code.raw());
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw());
         return calc_reserve_quantity(param, st, token_quantity, apply_fee);
     }
 
-    static inline asset get_token_quantity(name token_contract_account, symbol_code commun_code, asset reserve_quantity) {
-        params params_table(token_contract_account, token_contract_account.value);
+    static inline asset get_token_quantity(symbol_code commun_code, asset reserve_quantity) {
+        params params_table(config::point_name, config::point_name.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
-        stats stats_table(token_contract_account, commun_code.raw());
+        stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw());
         return calc_token_quantity(param, st, reserve_quantity);
     }
 
-    static bool balance_exists(name token_contract_account, name owner, symbol_code commun_code) {
-        accounts accountstable(token_contract_account, owner.value);
+    static bool balance_exists(name owner, symbol_code commun_code) {
+        accounts accountstable(config::point_name, owner.value);
         return accountstable.find(commun_code.raw()) != accountstable.end();
     }
 
@@ -204,9 +213,10 @@ struct structures {
 
     /**
 
-      \brief struct represents an account table in a db
+      \brief DB record for account balances of a token.
       \ingroup point_tables
     */
+    // DOCS_TABLE: account_struct
     struct [[eosio::table]] account {
         asset    balance; /**< amount of point or system tokens belongs to the account*/
         uint64_t primary_key()const { return balance.symbol.code().raw(); }
@@ -214,9 +224,10 @@ struct structures {
 
     /**
 
-      \brief struct represents token statistics table in a db
+      \brief DB record for statistics of a token.
       \ingroup point_tables
     */
+    // DOCS_TABLE: stat_struct
     struct [[eosio::table]] stat {
         asset    supply; /**< amount of tokens used in the system, point tokens */
         asset    reserve; /**< amount of tokens not used in the system, system tokens */
@@ -225,9 +236,10 @@ struct structures {
 
 
     /**
-      \brief struct represents params table in a db
+      \brief DB record for params of a token.
       \ingroup point_tables
     */
+    // DOCS_TABLE: param_struct
     struct [[eosio::table]] param {
         asset max_supply; /**< maximum amount of point tokens supplied*/
         int16_t  cw; /**< connector weight*/
@@ -242,6 +254,7 @@ struct structures {
       \brief struct represents global params table in a db
       \ingroup point_tables
     */
+    // DOCS_TABLE: globalparam_struct
     struct [[eosio::table]] global_param {
         name point_freezer; /**< a name of contract which can freeze tokens of accounts*/
     };
@@ -290,22 +303,40 @@ struct structures {
 
     void do_transfer(name from, name to, const asset& quantity, const string& memo); 
 
+    /**
+      \brief A struct represents event about account balance update (sending from \ref create, \ref issue, \ref retire, can be sending on transfering reserve from cyber.token and on \ref transfer).
+      \ingroup point_events
+    */
     struct currency_event {
-        asset   supply;
-        asset   reserve;
-        asset   max_supply;
-        int16_t cw; //connector weight
-        int16_t fee;
-        name    issuer;
+        asset   supply; //!< supply of points (of specific token)
+        asset   reserve; //!< reserver of system tokens
+        asset   max_supply; //!< maximum supply of points
+        int16_t cw; //!< connector weight for specific point token
+        int16_t fee; //!< fee for specific point token
+        name    issuer; //!< issuer account name for specific point token
     };
 
+    /**
+      \brief A struct represents event about account balance update (sending from \ref retire, \ref withdraw, \ref transfer, \ref issue. Can be send on transfering system tokens to point contract)
+      \ingroup point_events
+    */
     struct balance_event {
-        name    account;
-        asset   balance;
+        name    account; //!< account name
+        asset   balance; //!< balance in one of tokens for which account has opened balance
+    };
+
+    /**
+      \brief A struct represents event with amount added to tokens if selling points (sending on \ref transfer), or added to points if buying points (sending on transfering system tokens to point contract).
+      \ingroup point_events
+    */
+    struct exchange_event {
+        asset   amount; //!< amount of tokens if selling points, or amount of points if buying points
     };
 
     void send_currency_event(const structures::stat& st, const structures::param& par);
 
     void send_balance_event(name acc, const structures::account& accinfo);
+
+    void send_exchange_event(const asset& amount);
 };
 } /// namespace commun

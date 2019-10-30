@@ -143,13 +143,17 @@
 # NOTE: Technical account to start testnet and tests (remove from mainnet)
         {
             "name": "tech",
-            "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
+            "permissions": [
+                {"name": "owner", "key": "INITIAL"},
+                {"name": "active", "key": "INITIAL"},
+                {"name": "providebw", "accounts": ["@active"]}
+            ],
 #            "sys_balance": "100000.0000 CYBER",
 #            "sys_staked": "100000.0000 CYBER",
         },
 
         {
-            "name": "comn",
+            "name": "c",
             "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
 #            "sys_balance": "100000.0000 CYBER",
 #            "sys_staked": "100000.0000 CYBER",
@@ -179,6 +183,7 @@
         {"permission": "cyber.token@prods",       "links": ["cyber:setcode", "cyber:setabi", "cyber.token:create"]},
 
         {"permission": "gls@providebw",           "links": ["cyber:providebw"]},
+        {"permission": "tech@providebw",          "links": ["cyber:providebw"]},
     ],
     "tables": [
         {
@@ -202,7 +207,7 @@
                         "issuer" : "cyber"
                     }
                 }, {
-                    "scope": "COMMUN", "payer": "comn", "pk": 86128276098883,
+                    "scope": "COMMUN", "payer": "c", "pk": 86128276098883,
                     "data": {
                         "supply" : {
                             "_amount" : 0,
@@ -214,7 +219,7 @@
                             "_decs" : 4,
                             "_sym" : "COMMUN"
                         },
-                        "issuer" : "comn"
+                        "issuer" : "c"
                     }
                 }
             ]
@@ -252,7 +257,7 @@
                         }
                     }
                 }, {
-                    "scope": "comn", "payer": "comn", "pk": 353349294403,
+                    "scope": "c", "payer": "c", "pk": 353349294403,
                     "data": {
                         "balance" : {
                             "_amount" : 10000000001,
@@ -345,11 +350,11 @@
                         "received" : 0,
                     }
                 }, {
-                    "scope": "", "payer": "comn", "pk": 2,
+                    "scope": "", "payer": "c", "pk": 2,
                     "data": {
                         "id" : 2,
                         "token_code" : "CYBER",
-                        "account" : "comn",
+                        "account" : "c",
                         "proxy_level" : 4,
                         "last_proxied_update" : "2019-09-05T16:46:33.000",
                         "balance" : 10000000003,
@@ -386,11 +391,11 @@
             "abi_type": "domain_object2",
             "rows": [
                 {
-                    "scope": "", "payer": "comn", "pk": 0,
+                    "scope": "", "payer": "c", "pk": 0,
                     "data": {
                         "id": 0,
-                        "owner": "comn",
-                        "linked_to": "comn",
+                        "owner": "c",
+                        "linked_to": "c",
                         "creation_date": "2019-08-16T11:38:51.000",
                         "name": "commun"
                     }

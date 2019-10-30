@@ -14,7 +14,7 @@ args = {
     'cleos':'/opt/cyberway/bin/cleos --url=%s ' % nodeos_url,
     'public_key':'GLS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV',
     'private_key':'5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3',
-    'creator_auth':'comn.com@comn.com',
+    'creator_auth':'c.com@c.com',
     'creator_key':'5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN',
     'commun_contracts_dir': os.environ.get('COMMUN_CONTRACTS', default_contracts_dir),
 }

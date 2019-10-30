@@ -8,6 +8,7 @@ public:
     gallery_tester(name code, bool push_genesis = true)
         : golos_tester(code, push_genesis) {
     }
+    enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED };
 
     struct gallery_errors : contract_error_messages {
         const string no_balance = amsg("point balance does not exist");
@@ -19,6 +20,7 @@ public:
         const string collect_period = amsg("collection period is over");
         const string no_points_provided = amsg("no points provided");
         const string not_enough_provided = amsg("not enough provided points");
+        const string refill = amsg("can't refill the gem");
         const string gallery_exists = amsg("the gallery with this symbol already exists");
         const string symbol_precision = amsg("symbol precision mismatch");
         const string wrong_royalty = amsg("incorrect royalty");
@@ -31,6 +33,8 @@ public:
         const string already_done = amsg("already done");
         const string mosaic_is_inactive = amsg("mosaic is inactive");
         const string mosaic_banned = amsg("mosaic banned");
+        const string mosaic_already_banned = amsg("mosaic is already banned");
+        const string mosaic_archived = amsg("mosaic is archived");
         const string mosaic_not_locked = amsg("mosaic not locked");
         const string not_enough_for_pledge = amsg("points are not enough for a pledge");
         const string not_enough_for_mosaic = amsg("points are not enough for mosaic inclusion");

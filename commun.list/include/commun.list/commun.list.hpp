@@ -61,7 +61,8 @@ public:
         optional<name> permission, optional<uint8_t> required_threshold,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
-        std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating);
+        std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating,
+        optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled);
 
     /**
         \brief The setparams action is used to update parameters of community.
@@ -98,8 +99,9 @@ public:
 
         Performing the action requires the community leaders signature.
     */
-    [[eosio::action]] void setinfo(symbol_code commun_code, std::string description,
-        std::string language, std::string rules, std::string avatar_image, std::string cover_image);
+    [[eosio::action]] void setinfo(symbol_code commun_code,
+        optional<std::string> description, optional<std::string> language, optional<std::string> rules,
+        optional<std::string> avatar_image, optional<std::string> cover_image);
 
     /**
         \brief The follow action allows user to follow the community posts.
@@ -177,31 +179,31 @@ public:
     */
     [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
 
-    static auto& get_community(name list_contract_account, symbol_code commun_code) {
-        static tables::community community_tbl(list_contract_account, list_contract_account.value);
+    static auto& get_community(symbol_code commun_code) {
+        static tables::community community_tbl(config::list_name, config::list_name.value);
         return community_tbl.get(commun_code.raw(), "community not exists");
     }
 
-    static inline auto& get_community(name list_contract_account, symbol commun_symbol) {
-        auto& community = get_community(list_contract_account, commun_symbol.code());
+    static inline auto& get_community(symbol commun_symbol) {
+        auto& community = get_community(commun_symbol.code());
         eosio::check(community.commun_symbol == commun_symbol, "symbol precision mismatch");
         return community;
     }
 
-    static inline void check_community_exists(name list_contract_account, symbol_code commun_code) {
-        get_community(list_contract_account, commun_code);
+    static inline void check_community_exists(symbol_code commun_code) {
+        get_community(commun_code);
     }
 
-    static inline void check_community_exists(name list_contract_account, symbol commun_symbol) {
-        get_community(list_contract_account, commun_symbol);
+    static inline void check_community_exists(symbol commun_symbol) {
+        get_community(commun_symbol);
     }
 
-    static const structures::control_param_t& get_control_param(name list_contract_account, symbol_code commun_code) {
+    static const structures::control_param_t& get_control_param(symbol_code commun_code) {
         if (commun_code) {
-            return get_community(list_contract_account, commun_code).control_param;
+            return get_community(commun_code).control_param;
         }
         else {
-            static tables::dapp dapp_tbl(list_contract_account, list_contract_account.value);
+            static tables::dapp dapp_tbl(config::list_name, config::list_name.value);
             auto& d = dapp_tbl.get(structures::dapp::primary_key(), "not initialized");
             return d.control_param;
         }
