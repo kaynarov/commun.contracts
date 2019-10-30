@@ -75,7 +75,7 @@ using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leaderv
 struct [[eosio::table]] proposal {
     name proposal_name; //!< a name of proposed transaction. This is a primary key
     symbol_code commun_code; //!< symbol of the community whose leaders have to sign the transaction. It may be a company name whose representatives are entitled to sign the transaction
-    name permission; //!< a level of permission required to sign the transaction. A person signing the transaction should have a permission level not lower than specified
+    name permission; //!< a level of permission required to sign the transaction. A person signing the transaction should have a permission level not lower than specified one
     std::vector<char> packed_transaction; //!< the proposed transaction
 
     uint64_t primary_key()const { return proposal_name.value; }
@@ -140,44 +140,44 @@ public:
     }
 
     /**
-     * \brief The init action is used by commun.list contract to initialize leaders for community with specified point symbol.
+     * \brief The init action is used by commun.list contract to initialize leaders for a community with specified point symbol.
      *
-     * \param commun_code a point symbol of the community
+     * \param commun_code a point symbol of community
      *
      * This action is unavailable for user and can be called only internally.
-	 * It requires an account signature of the commun.ctrl contract. 
+	 * It requires signature of the commun.ctrl contract account. 
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
     /**
-        \brief The regleader action is used to register candidates for leaders of the commun application
+        \brief The regleader action is used to register candidates for leaders of community
 
-        \param commun_code a point symbol of the community
-        \param leader a name of a candidate for leaders
+        \param commun_code a point symbol of community
+        \param leader a leader candidate name 
         \param url a website address from where information about the candidate can be obtained, including the reasons
         for her/his desire to become a leader. The address string must not exceed 256 characters
 
-        Performing the action requires a signature of the leader candidate.
+        This action requires a signature of the leader candidate.
     */
     [[eosio::action]] void regleader(symbol_code commun_code, name leader, std::string url);
 
     /**
-        \brief The action clearvotes is used to remove votes cast for a given leader
+        \brief The action clearvotes is used to remove votes cast for a leader
 
-        \param commun_code a point symbol used by the community
-        \param leader a name of the leader candidate
-        \param count maximum number of votes to remove
+        \param commun_code a point symbol used by a community
+        \param leader the leader candidate name whose votes are removed
+        \param count maximum number of votes that can be removed
 
-        Sends leaderstate_event.
+        Each time this action is called, event information leaderstate_event is generated and sent to the event engine. 
 
-        Doing the clearvotes action requires signing the leader account.
+        This action requires a signature of the leader candidate.
     */
     [[eosio::action]] void clearvotes(symbol_code commun_code, name leader, std::optional<uint16_t> count);
 
     /**
-        \brief The unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of the commun application
+        \brief The unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of a community
 
-        \param commun_code a point symbol of the community
+        \param commun_code a point symbol of a community
         \param leader the user name to be removed from the list of leaders registered as candidates
 
         The action can be called either by the candidate (in case of a withdrawal) or by a leader who found a
@@ -186,6 +186,8 @@ public:
         Conditions for performing the action:
             - no votes for this leader candidate. Votes of all users who voted for this leader candidate should be removed;
             - the transaction must be signed by the leader candidate himself
+		
+		This action requires a signature of the leader candidate who is removed from the list.
      */
     [[eosio::action]] void unregleader(symbol_code commun_code, name leader);
 
@@ -195,7 +197,7 @@ public:
         \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is temporarily suspended
 
-        Sends leaderstate_event.
+        Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
         Conditions for performing the action:
             - the leader account should be active;
