@@ -196,16 +196,18 @@ void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_o
 }
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, std::optional<uint16_t> weight, bool damn) {
-    if (weight.has_value() && *weight == 0) { 
+    eosio::check(voter != message_id.author, "author can't vote");
+    if (weight.has_value() && *weight == 0) {
         require_client_auth("Weight equal to 0");   // empty votes are allowed only with a client signature
         return;                                  // custom_gem_size_enabled is not checked in this case
     }
     
+    auto tracery = message_id.tracery();
     auto& community = commun_list::get_community(commun_code);
     eosio::check(!weight.has_value() || community.custom_gem_size_enabled, "custom gem size disabled.");
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
-    auto mosaic = mosaics_table.find(message_id.tracery());
+    auto mosaic = mosaics_table.find(tracery);
     if (mosaic == mosaics_table.end()) {
         require_client_auth("Message does not exist");
         return;
@@ -235,7 +237,8 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
         return;
     }
     
-    add_to_mosaic(_self, message_id.tracery(), quantity, damn, voter, providers);
+    claim_gems_by_creator(_self, tracery, commun_code, voter, true, false, !damn);
+    add_to_mosaic(_self, tracery, quantity, damn, voter, providers);
 }
 
 void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {
