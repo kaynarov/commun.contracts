@@ -67,15 +67,15 @@ using leadervote_byleader_idx = eosio::indexed_by<"byleader"_n, eosio::const_mem
 using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leadervote_id_idx, leadervote_byvoter_idx, leadervote_byleader_idx>;
 
 /**
-  \brief DB record for transaction proposed and should be approved by leaders.
+  \brief DB record containing information about a proposed transaction which needs to be signed by the account specified in this transaction.
   \ingroup control_tables
  */
 // DOCS_TABLE: proposal
 struct [[eosio::table]] proposal {
-    name proposal_name; //!< name of proposed transaction. A primary key
-    symbol_code commun_code; //!< symbol of community (of leaders which should sign transaction)
-    name permission; //!< name of leader permission which is need for transaction
-    std::vector<char> packed_transaction; //!< transaction
+    name proposal_name; //!< a name of proposed transaction. This is a primary key
+    symbol_code commun_code; //!< symbol of the community whose leaders have to sign the transaction. It may be a company name whose representatives are entitled to sign the transaction
+    name permission; //!< a level of permission required to sign the transaction. A person signing the transaction should have a permission level not lower than specified
+    std::vector<char> packed_transaction; //!< the proposed transaction
 
     uint64_t primary_key()const { return proposal_name.value; }
 };
@@ -83,35 +83,35 @@ struct [[eosio::table]] proposal {
 using proposals = eosio::multi_index< "proposal"_n, proposal>;
 
 /**
-  \brief Struct represents each of approvals stored in approvals_info.
+  \brief The type of structure that is formed and stored in the approval_info when a leader sends an approval.
   \ingroup control_tables
  */
 struct approval {
-    name approver; //!< name of approved leader
-    time_point time; //!< time of approve
+    name approver; //!< name of the leader approving a transaction
+    time_point time; //!< time when the transaction was approved. This time should not go beyond the period set for approving the transaction
 };
 
 /**
-  \brief DB record for approvals list for proposed multi-signature transaction.
+  \brief DB record containing a list of approvals for proposed multi-signature transaction.
   \ingroup control_tables
  */
 // DOCS_TABLE: proposal
 struct [[eosio::table]] approvals_info {
-    name proposal_name; //!< name of proposed transaction
-    std::vector<approval> provided_approvals; //!< list of approves by leaders
+    name proposal_name; //!< a name of proposed multi-signature transaction
+    std::vector<approval> provided_approvals; //!< the list of approvals received from certain leaders
     uint64_t primary_key()const { return proposal_name.value; }
 };
 
 using approvals = eosio::multi_index< "approvals"_n, approvals_info>;
 
 /**
-  \brief DB record for invalidation of the leader approved the proposed multi-signature transaction.
+  \brief DB record containing the account name whose approval for performing a multi-signature transaction is to be revoked.
   \ingroup control_tables
  */
 // DOCS_TABLE: invalidation
 struct [[eosio::table]] invalidation {
-    name account; //!< name of leader account
-    time_point last_invalidation_time; //!< last time of invalidation
+    name account; //!< the account whose signature in transaction is to be invalidated
+    time_point last_invalidation_time; //!< the time when the previous signature of this account was invalidated
 
     uint64_t primary_key() const { return account.value; }
 };
@@ -119,7 +119,7 @@ struct [[eosio::table]] invalidation {
 using invalidations = eosio::multi_index< "invals"_n, invalidation>;
 
 /**
- * \brief This class implements comn.ctrl contract behaviour
+ * \brief This class implements the commun.ctrl contract functionality
  * \ingroup control_class
  */
 class control: public contract {
@@ -143,12 +143,13 @@ public:
      *
      * \param commun_code a point symbol of the community
      *
-     * The action is unavailable for user, can be callen only internally.
+     * This action is unavailable for user and can be called only internally.
+	 * It requires an account signature of the commun.ctrl contract. 
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
     /**
-        \brief The regleader action is used to register candidates for leaders of the specified community
+        \brief The regleader action is used to register candidates for leaders of the commun application
 
         \param commun_code a point symbol of the community
         \param leader a name of a candidate for leaders
@@ -173,7 +174,7 @@ public:
     [[eosio::action]] void clearvotes(symbol_code commun_code, name leader, std::optional<uint16_t> count);
 
     /**
-        \brief The unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of the specified community
+        \brief The unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of the commun application
 
         \param commun_code a point symbol of the community
         \param leader the user name to be removed from the list of leaders registered as candidates
