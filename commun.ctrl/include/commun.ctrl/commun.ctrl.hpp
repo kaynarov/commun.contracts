@@ -164,7 +164,7 @@ public:
     /**
         \brief The action clearvotes is used to remove votes cast for a leader
 
-        \param commun_code a point symbol used by a community
+        \param commun_code a point symbol used by the community
         \param leader the leader candidate name whose votes are removed
         \param count maximum number of votes that can be removed
 
@@ -177,15 +177,15 @@ public:
     /**
         \brief The unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of a community
 
-        \param commun_code a point symbol of a community
+        \param commun_code a point symbol of the community
         \param leader the user name to be removed from the list of leaders registered as candidates
 
         The action can be called either by the candidate (in case of a withdrawal) or by a leader who found a
         discrepancy of the leader capabilities to desirable leader requirements, and mismatched data published on the web
         site with her/his relevant data.
-        Conditions for performing the action:
-            - no votes for this leader candidate. Votes of all users who voted for this leader candidate should be removed;
-            - the transaction must be signed by the leader candidate himself
+		
+        Condition for performing the action:
+            - no votes for this leader candidate. Votes of all users who voted for this leader candidate should be removed.
 		
 		This action requires a signature of the leader candidate who is removed from the list.
      */
@@ -194,37 +194,39 @@ public:
     /**
         \brief The stopleader action is used to temporarily suspend activity of a leader (or a leader candidate) of the specified community
 
-        \param commun_code a point symbol of a community
+        \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is temporarily suspended
 
         Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
-        Conditions for performing the action:
-            - the leader account should be active;
-            - a transaction must be signed by the leader whose activity is to be suspended.
+        Condition for performing the action:
+            - the leader account should be active.
 		
         The leader account activity can be continued in case it has performed the startleader action.
+		
+		This action requires a signature of the leader whose activity is to be suspended.
     */
     [[eosio::action]] void stopleader(symbol_code commun_code, name leader);
 
     /**
         \brief The startleader action is used to resume suspended leader activity (or a leader candidate activity)
 
-        \param commun_code a point symbol of a community
+        \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is resumed
 
         Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
-        Conditions for performing the action:
-            - the leader account activity should be suspended, that is, the operation stopleader should be performed previously;
-            - a transaction must be signed by the leader whose activity is to be resumed.
+        Condition for performing the action:
+            - the leader account activity should be suspended, that is, the operation stopleader should be performed previously.
+
+		This action requires a signature of the leader whose activity is to be resumed.
      */
     [[eosio::action]] void startleader(symbol_code commun_code, name leader);
 
     /**
         \brief The voteleader action is used to vote for a leader candidate
 
-        \param commun_code a point symbol of a community
+        \param commun_code a point symbol of the community
         \param voter a user voting for the leader candidate
         \param leader a name of the leader candidate for whom the vote is cast
         \param pct a share (in percent) of voter power cast for the leader. If pct is empty, the leader is given all unused voter power
@@ -238,18 +240,19 @@ public:
 		(voter_balance × pct/100)%
 		This weight will be updated each time after changing the balance (see \ref changepoints).
 
-        This action requires a signature of the user voting for the leader candidate.
-
         <b>Restrictions:</b>
             - the leader candidate name must first be registered through a call to regleader;
-            - total number of votes cast by the voter account for all candidates should not exceed the max_votes community parameter value.
+            - total number of votes cast by the voter account for all candidates should not exceed the max_votes community parameter value;
+			- it is not allowed to vote for a leader candidate whose activity is suspended (after calling the stopleader action, for example).
+		
+		This action requires a signature of the user voting for the leader candidate.
     */
     [[eosio::action]] void voteleader(symbol_code commun_code, name voter, name leader, std::optional<uint16_t> pct);
 
     /**
         \brief The action unvotelead is used to withdraw a previously cast vote for a leader candidate
 
-        \param commun_code a point symbol of a community
+        \param commun_code a point symbol of the community
         \param voter a user who intends to withdraw her/his vote which was previously cast for the leader candidate
         \param leader the leader candidate name from whom the vote is withdrawn
 
@@ -260,12 +263,12 @@ public:
     [[eosio::action]] void unvotelead(symbol_code commun_code, name voter, name leader);
 
     /**
-        \brief The claim action is used to withdraw leader reward by the leader
+        \brief The claim action is used to withdraw a reward by a leader
 
         \param commun_code a point symbol of the community
-        \param leader account name of a leader
+        \param leader account name of the leader
 
-        Performing the action requires a signature of the leader.
+        This action requires a signature of the leader who withdraws the reward.
     */
     [[eosio::action]] void claim(symbol_code commun_code, name leader);
 
