@@ -140,7 +140,7 @@ public:
     }
 
     /**
-     * \brief Action is used by commun.list contract to initialize leaders for community with specified point symbol.
+     * \brief The init action is used by commun.list contract to initialize leaders for community with specified point symbol.
      *
      * \param commun_code a point symbol of the community
      *
