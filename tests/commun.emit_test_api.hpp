@@ -19,6 +19,10 @@ struct commun_emit_api: base_contract_api {
             ("to_contract", to_contract)
         );
     }
+
+    variant get_stat(symbol_code commun_code) {
+        return get_struct(commun_code.value, N(stat), commun_code.value, "stat");
+    }
 };
 
 }} // eosio::testing
