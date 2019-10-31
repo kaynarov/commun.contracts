@@ -186,6 +186,7 @@ namespace events {
     struct mosaic_state {
         uint64_t tracery;
         name creator;
+        time_point collection_end_date;
         uint16_t gem_count;
         int64_t shares;
         int64_t damn_shares;
@@ -218,6 +219,10 @@ namespace events {
         int64_t lead_rating;
     };
     
+    struct inclusion_state {
+        name account;
+        asset quantity;
+    };
 }// events
 }// gallery_types
 
@@ -228,6 +233,7 @@ class gallery_base {
         gallery_types::events::mosaic_state data {
             .tracery = mosaic.tracery,
             .creator = mosaic.creator,
+            .collection_end_date = mosaic.collection_end_date,
             .gem_count = mosaic.gem_count,
             .shares = mosaic.shares,
             .damn_shares = mosaic.damn_shares,
@@ -279,8 +285,16 @@ class gallery_base {
         eosio::event(_self, "mosaictop"_n, data).send();
     }
     
+    void send_inclusion_event(name _self, name account, asset quantity) {
+        gallery_types::events::inclusion_state data {
+            .account = account,
+            .quantity = quantity
+        };
+        eosio::event(_self, "inclstate"_n, data).send();
+    }
+    
 private:
-    bool send_points(name from, name to, const asset &quantity) {
+    bool send_reward(name from, name to, const asset &quantity, uint64_t tracery) {
         if (to && !point::balance_exists(to, quantity.symbol.code())) {
             return false;
         }
@@ -290,7 +304,7 @@ private:
                 permission_level{config::point_name, config::transfer_permission},
                 config::point_name,
                 "transfer"_n,
-                std::make_tuple(from, to, quantity, string())
+                std::make_tuple(from, to, quantity, "reward for " + std::to_string(tracery))
             ).send();
         }
         return true; 
@@ -315,6 +329,8 @@ private:
         auto new_val = (incl != inclusions_table.end()) ? quantity.amount + incl->quantity.amount : quantity.amount;
         eosio::check(new_val >= 0, "SYSTEM: impossible combination of quantity and frozen points");
         eosio::check(new_val <= balance_amount, "overdrawn balance");
+        
+        send_inclusion_event(_self, account, asset(new_val, quantity.symbol));
         if (new_val) {
             if (incl != inclusions_table.end()) {
                 inclusions_table.modify(incl, name(), [&](auto& item) { item.quantity.amount = new_val; });
@@ -378,8 +394,9 @@ private:
                 });
             }
         }
-        if (!send_points(_self, gem.owner, reward_points)) {
-            eosio::check(send_points(_self, point::get_issuer(commun_code), reward_points), "the issuer's balance doesn't exist");
+        if (!send_reward(_self, gem.owner, reward_points, gem.tracery)) {
+            //shouldn't we use a more specific memo in send_reward here?
+            eosio::check(send_reward(_self, point::get_issuer(commun_code), reward_points, gem.tracery), "the issuer's balance doesn't exist");
         }
         
         if (mosaic->gem_count > 1 || mosaic->lead_rating) {
@@ -1011,7 +1028,9 @@ protected:
                 m.lock();
             }
             else {
-                m.unlock(commun_list::get_community(commun_code).moderation_period);
+                auto& community = commun_list::get_community(commun_code);
+                m.unlock(community.moderation_period);
+                send_mosaic_event(_self, community.commun_symbol, m);
             }
         });
     }
