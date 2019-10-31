@@ -40,7 +40,9 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
     auto passed_seconds = stat.last_reward_passed_seconds(to_contract);
 
     auto& community = commun_list::get_community(commun_code);
-    eosio::check(is_it_time_to_reward(community, to_contract, passed_seconds), "SYSTEM: untimely claim reward");
+    if (!is_it_time_to_reward(community, to_contract, passed_seconds)) {
+        return; // action can be called twice before updating the date
+    }
 
     eosio::check(is_account(to_contract), to_contract.to_string() + " contract does not exists");
 
