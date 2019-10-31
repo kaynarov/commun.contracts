@@ -140,7 +140,7 @@ public:
     }
 
     /**
-     * \brief The init action is used by commun.list contract to initialize leaders for a community with specified point symbol.
+     * \brief The \ref init action is used by commun.list contract to initialize leaders for a community with specified point symbol.
      *
      * \param commun_code a point symbol of community
      *
@@ -150,7 +150,7 @@ public:
     [[eosio::action]] void init(symbol_code commun_code);
 
     /**
-        \brief The regleader action is used to register candidates for leaders of community
+        \brief The \ref regleader action is used to register candidates for leaders of community
 
         \param commun_code a point symbol of community
         \param leader a leader candidate name 
@@ -162,7 +162,7 @@ public:
     [[eosio::action]] void regleader(symbol_code commun_code, name leader, std::string url);
 
     /**
-        \brief The action clearvotes is used to remove votes cast for a leader
+        \brief The \ref clearvotes action is used to remove votes cast for a leader
 
         \param commun_code a point symbol used by the community
         \param leader the leader candidate name whose votes are removed
@@ -175,7 +175,7 @@ public:
     [[eosio::action]] void clearvotes(symbol_code commun_code, name leader, std::optional<uint16_t> count);
 
     /**
-        \brief The unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of a community
+        \brief The \ref unregleader action is used to withdraw a user's candidacy from among the registered candidates to the leaders of a community
 
         \param commun_code a point symbol of the community
         \param leader the user name to be removed from the list of leaders registered as candidates
@@ -192,7 +192,7 @@ public:
     [[eosio::action]] void unregleader(symbol_code commun_code, name leader);
 
     /**
-        \brief The stopleader action is used to temporarily suspend activity of a leader (or a leader candidate) of the specified community
+        \brief The \ref stopleader action is used to temporarily suspend activity of a leader (or a leader candidate) of the specified community
 
         \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is temporarily suspended
@@ -202,14 +202,14 @@ public:
         Condition for performing the action:
             - the leader account should be active.
 		
-        The leader account activity can be continued in case it has performed the startleader action.
+        The leader account activity can be continued in case it has performed the \ref startleader action.
 		
 		This action requires a signature of the leader whose activity is to be suspended.
     */
     [[eosio::action]] void stopleader(symbol_code commun_code, name leader);
 
     /**
-        \brief The startleader action is used to resume suspended leader activity (or a leader candidate activity)
+        \brief The \ref startleader action is used to resume suspended leader activity (or a leader candidate activity)
 
         \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is resumed
@@ -217,14 +217,14 @@ public:
         Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
 
         Condition for performing the action:
-            - the leader account activity should be suspended, that is, the operation stopleader should be performed previously.
+            - the leader account activity should be suspended, that is, the operation \ref stopleader should be performed previously.
 
 		This action requires a signature of the leader whose activity is to be resumed.
      */
     [[eosio::action]] void startleader(symbol_code commun_code, name leader);
 
     /**
-        \brief The voteleader action is used to vote for a leader candidate
+        \brief The \ref voteleader action is used to vote for a leader candidate
 
         \param commun_code a point symbol of the community
         \param voter a user voting for the leader candidate
@@ -273,95 +273,101 @@ public:
     [[eosio::action]] void claim(symbol_code commun_code, name leader);
 
     /**
-        \brief The changepoints is an internal and unavailable to the user action. It is used by commun.point smart contract to notify
-        the commun.ctrl smart contract about a change of the points amount on the user's balance.
+        \brief The \ref changepoints action is an internal and unavailable to the user. It is used by \ref commun.point to notify the \ref commun.ctrl smart contract about a change of the points amount on the user's balance. The action is called automatically after changing the points amount on a user's balance. The weights of all the leaders voted for by this user are also updated.
 
         \param who an account name whose points amount has been changed.
         \param diff a relative change of points amount.
 
-        Each time this action is called, event information leaderstate_event is generated and sent to the event engine.
+        After calling this action, event information leaderstate_event is generated and sent to the event engine.
 
-        Calling this action for a leader voter causes updating weights of leaders, voted by this voter.
-
-        The action is called automatically each time in case the points amount is changed on a user's balance.
     */
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_points_transfer(name from, name to, asset quantity, std::string memo);
 
     /**
-        \brief The propose action is used to create a multi-signature transaction offer (proposed transaction), which requires permission from leader accounts.
+        \brief The \ref propose action is used to create a multi-signature transaction offer (proposed transaction) requiring permission from the community leaders.
 
         \param commun_code a point symbol of the community
-        \param proposer author of transaction
+        \param proposer an author of multi-signature transaction
         \param proposal_name the unique name assigned to the multi-signature transaction when it is created
-        \param permission name of permission to sign transaction
-        \param trx proposed transaction
+        \param permission a name of the permission needing to sign the transaction
+        \param trx the proposed transaction
 
-        The pair of proposer and proposal_name is used in another actions to identify created proposed transaction.
+        The pair of proposer and proposal_name can be used in another actions to identify created proposed transaction.
 
-        Performing the action requires a signature of the proposer.
+        Performing the action requires a signature of the <i>proposer</i>.
     */
     [[eosio::action]] void propose(ignore<symbol_code> commun_code, ignore<name> proposer, ignore<name> proposal_name,
                 ignore<name> permission, ignore<eosio::transaction> trx);
 
     /**
-        \brief The approve action used by each approver of multi-sig transaction to mark that he/she approves it.
+        \brief The \ref approve action is used to send permission to execute a multi-signature transaction. A name of person signing the transaction is saved in the list of approvals. The multi-signature transaction will be executed only after receiving necessary number of signatures with the corresponding permissions.
+		
+        \param proposer author of the multi-signature transaction
+        \param proposal_name unique name assigned to the multi-signature transaction when it is created
+        \param approver name of account approving multi-signature transaction
+        \param proposal_hash a hash sum to check if the transaction is substituted or not (optional parameter)
 
-        \param proposer author of transaction
-        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
-        \param approver name of account who approves transaction
-        \param proposal_hash hash to check if transaction is not substituted (optional)
-
-        Performing the action checks a signature of the approver, and adds approver to list of approvers of the transaction.
+	<b>Restrictions:</b>
+		    - Only a person who has the appropriate permission can approve (can sign) the transaction.
     */
     [[eosio::action]] void approve(name proposer, name proposal_name, name approver, 
                 const eosio::binary_extension<eosio::checksum256>& proposal_hash);
 
     /**
-        \brief The unapprove action used by approver of multi-sig transaction to undo his/her approve.
+        \brief The \ref unapprove actionis is used to revoke a previously sent permission (signature) for a multi-signature transaction in case of a change in decision.
 
-        \param proposer author of transaction
-        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
-        \param approver name of account who undoes approve from transaction
+        \param proposer author of the multi-signature transaction
+        \param proposal_name unique name assigned to the multi-signature transaction when it is created
+        \param approver name of account cancelling a previously sent permission
 
-        Performing the action checks a signature of the approver, and removes approver from list of approvers of the transaction.
+        <b>Restrictions:</b>
+            - Only a person whose name is in approvals list can revoke a signature.
+
+        This action requires a signature of the <i>approver</i>.
     */
     [[eosio::action]] void unapprove(name proposer, name proposal_name, name approver);
 
     /**
-        \brief The cancel action used to free memory by clearing proposed multi-sig transaction, which was not yet executed.
+        \brief The \ref cancel action is used to free memory space via clearing proposed multi-signature transaction, that has not been executed.
 
-        \param proposer author of transaction
-        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
-        \param canceler name of account who cancels transaction
+        \param proposer author of the multi-signature transaction
+        \param proposal_name unique name assigned to the multi-signature transaction when it is created
+        \param canceler name of account cancelling the transaction
 
-        If canceler is not proposer, only expired transaction can be canceled.
+        <b>Restrictions:</b>
+            - Only expired transaction can be canceled by a person who is not a proposer.
 
-        Performing the action checks a signature of the canceler.
+        This action requires a signature of the <i>canceler</i>.
     */
     [[eosio::action]] void cancel(name proposer, name proposal_name, name canceler);
 
     /**
-        \brief The exec action used to execute proposed multi-sig transaction.
+        \brief The \ref exec action is used to execute proposed multi-signature transaction.
 
-        \param proposer author of transaction
-        \param proposal_name the unique name assigned to the multi-signature transaction when it is created
-        \param executer name of account who executes transaction
+        \param proposer author of the multi-signature transaction
+        \param proposal_name unique name assigned to the multi-signature transaction when it is created
+        \param executer name of account executing transaction
 
-        Action checks that transaction is not expired, that approvers on transaction are enough for threshold (considering only top leaders, excluding invalidated), sends all actions and erases transaction in DB.
+        Conditions for transaction execution:
+			- the time for starting should not be expired;
+			- there is a required number of signatures (only the signatures of top leaders are taken into account, excluding invalid ones);
+			- all operations contained in the transaction are feasible;
+			- the memory in the database allocated for the transaction can be erased.
 
-        Performing the action checks a signature of the executer.
+        This action requires a signature of the <i>executer</i>.
     */
     [[eosio::action]] void exec(name proposer, name proposal_name, name executer);
 
     /**
-        \brief The invalidate action is used to revoke all permissions previously issued by the account for performing multi-signature transactions
+        \brief The \ref invalidate action is used to revoke all permissions previously issued by the account for performing multi-signature transactions.
 
-        \param account name of account who revokes permissions
+        \param account name of account revoking permissions
 
-        To exclude approved when calling \ref exec, the invalidate must be called after an approve.
+		
+		\details This action revokes all permissions issued by this account for currently executing multi-signature transactions. This action does not apply to completed transactions, as well as to transactions that will be signed by this account after calling \ref invalidate. The proposed transaction can still be sent to the network if it contains the needed number of signatures, taking into account the withdrawn one.
 
-        Performing the action checks a signature of the account.
+        This action requires a signature of the account revoking permissions.
     */
     [[eosio::action]] void invalidate(name account);
 
@@ -373,14 +379,15 @@ private:
     std::vector<leader_info> top_leader_info(symbol_code commun_code);
 
     /**
-      \brief A struct represents event about leader state update (sending from \ref changepoints, \ref clearvotes, \ref voteleader, \ref unvotelead, \ref startleader, \ref stopleader)
+      \brief The struct representing an event about updating a leader state. Such event is issued each time after calling \ref changepoints, \ref clearvotes, \ref voteleader, \ref unvotelead, \ref startleader and \ref stopleader.
+
       \ingroup control_events
     */
     struct leaderstate_event {
-        symbol_code commun_code; //!< point symbol of community to which leader belongs
-        name name; //!< a leader name
-        uint64_t total_weight; //!< total weight of leader
-        bool active; //!< true if the leader is active
+        symbol_code commun_code; //!< a point symbol of the community to which the leader belongs
+        name name; //!< the leader name
+        uint64_t total_weight; //!< total «weight» of the leader
+        bool active; //!< «true» if the leader is active
     };
 
     void send_leader_event(symbol_code commun_code, const leader_info& wi);
