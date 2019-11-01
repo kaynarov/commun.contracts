@@ -18,9 +18,13 @@ public:
         \param pinner account name which is the pin-list owner and adds the name specified in the pinning field to the pin-list
         \param pinning the account name that is being added to the pin-list
 
-        Action do not stores any data in DB, it only checks pinner account authority, pinning account presence, that pinning is not the pinner.
+        Conditions for transaction execution:
+            - \a pinning account exists;
+            - \a pinner is not equal to \a pinning.
 
-        Performing the action requires the pinner account signature.
+        Action do not stores any data in DB.
+
+        Performing the action requires the \a pinner account signature and client signature.
     */
     [[eosio::action]] void pin(name pinner, name pinning);
 
@@ -30,9 +34,13 @@ public:
         \param pinner the account name that removes a name specified in the pinning field from the pin-list
         \param pinning the account name that is about to be removed from the pin-list
 
-        Action do not stores any data in DB, it only checks pinner account authority, pinning account presence, that pinning is not the pinner.
+        Conditions for transaction execution:
+            - \a pinning account exists;
+            - \a pinner is not equal to \a pinning.
 
-        Performing the action requires the pinner account signature.
+        Action do not stores any data in DB.
+
+        Performing the action requires the \a pinner account signature and client signature.
     */
     [[eosio::action]] void unpin(name pinner, name pinning);
 
@@ -42,9 +50,13 @@ public:
         \param blocker the account name which is the "black" list owner and adds the name specified in the blocking field to the "black" list
         \param blocking the account name that is being added to the "black" list
 
-        Action do not stores any data in DB, it only checks blocker account authority, blocking account presence, that blocking is not the blocker.
+        Conditions for transaction execution:
+            - \a blocker account exists;
+            - \a blocker is not equal to \a blocking.
 
-        Performing the action requires the blocker account signature.
+        Action do not stores any data in DB.
+
+        Performing the action requires the \a blocker account signature and client signature.
     */
     [[eosio::action]] void block(name blocker, name blocking);
 
@@ -54,9 +66,13 @@ public:
         \param blocker the account name which is the "black" list owner and removes the name specified in the blocking field from the "black" list
         \param blocking the account name that is about to be removed from the "black" list
 
-        Action do not stores any data in DB, it only checks blocker account authority, blocking account presence, that blocking is not the blocker.
+        Conditions for transaction execution:
+            - \a blocker account exists;
+            - \a blocker is not equal to \a blocking.
 
-        Performing the action requires the blocker account signature.
+        Action do not stores any data in DB.
+
+        Performing the action requires the \a blocker account signature and client signature.
     */
     [[eosio::action]] void unblock(name blocker, name blocking);
 
@@ -68,7 +84,7 @@ public:
 
         Action do not stores any data in DB.
 
-        Performing the action requires the account signature.
+        Performing the action requires the \a account signature and client signature.
     */
     [[eosio::action]] void updatemeta(name account, accountmeta meta);
 
@@ -79,7 +95,7 @@ public:
 
         Action do not stores any data in DB.
 
-        Performing the action requires the account signature.
+        Performing the action requires the \a account signature and client signature.
     */
     [[eosio::action]] void deletemeta(name account);
 };
