@@ -24,7 +24,7 @@ void control::check_started(symbol_code commun_code) {
 
 void control::init(symbol_code commun_code) {
     require_auth(_self);
-    check(point::exist(commun_code), "point with symbol does not exist");
+    commun_list::check_community_exists(commun_code); // stats is only for community leaders, not dApp
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");

@@ -76,7 +76,7 @@ public:
     static constexpr int64_t reserve = 100000;
 
     struct errors: contract_error_messages {
-        const string no_point = amsg("point with symbol does not exist");
+        const string no_community = amsg("community not exists");
         const string already_exists = amsg("already exists");
         const string no_emitter = amsg("emitter does not exists, create it before issue");
         const string wrong_annual_rate = amsg("incorrect emission rate");
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_SUITE(commun_emit_tests)
 BOOST_FIXTURE_TEST_CASE(init_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("init tests");
 
-    BOOST_CHECK_EQUAL(err.no_point, emit.init(point_code));
+    BOOST_CHECK_EQUAL(err.no_community, emit.init(point_code));
     init();
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
     auto now = produce_block();
