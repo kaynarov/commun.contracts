@@ -9,7 +9,6 @@ namespace commun {
 
 void emit::init(symbol_code commun_code) {
     require_auth(_self);
-    check(point::exist(commun_code), "point with symbol does not exist");
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
