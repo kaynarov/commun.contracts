@@ -6,13 +6,13 @@ def issueCommunToken(owner, quantity, clientKey):
             'to':'c.issuer',
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, keys=clientKey)
+        }, providebw='c.issuer/c@providebw', keys=clientKey)
     pushAction('cyber.token', 'transfer', 'c.issuer@issue', {
             'from':'c.issuer',
             'to':owner,
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, keys=clientKey)
+        }, providebw='c.issuer/c@providebw', keys=clientKey)
 
 def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
     issueCommunToken(owner, quantity, clientKey)
