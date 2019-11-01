@@ -6,6 +6,7 @@ import testnet
 import community
 import pymongo
 import json
+import eehelper as ee
 
 techKey    ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
 clientKey  ='5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN'
@@ -272,6 +273,87 @@ class CommunityLeaderTests(unittest.TestCase):
                 clientKey=clientKey,
                 providebw=self.owner+'/c@providebw')
 
+class PointTestCase(unittest.TestCase):
+    def setUp(self):
+        self.eeHelper = ee.EEHelper(self)
+
+    def tearDown(self):
+        self.eeHelper.tearDown()
+
+    # This test check exchange notification when user buy/sell community points
+    def test_exchangeNotification(self):
+        params = {}
+
+        (private, public) = testnet.createKey()
+        acc = testnet.createRandomAccount(public, keys=techKey)
+
+        community.issueCommunToken(acc, '1.0000 COMMUN', clientKey)
+        community.openBalance(acc, 'CATS', 'tech', keys=techKey)
+       
+        # Buy community points through transfer tokens to 'c.point' account
+        buyArgs = {'from':acc, 'to':'c.point', 'quantity':'1.0000 COMMUN', 'memo':'CATS'}
+        buyResult = testnet.pushAction('cyber.token', 'transfer', acc, buyArgs, providebw=acc+'/c@providebw', keys=[private, clientKey])
+
+        buyTrx = buyResult['transaction_id']
+        buyBlock = buyResult['processed']['block_num']
+        buyTrace = [
+            {
+                'receiver': 'c.point', 'code': 'cyber.token', 'action': 'transfer',
+                'auth': [{'actor': acc, 'permission': 'active'}],
+                'args': buyArgs,
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.point', 'event': 'balance',
+                        'args': {'account': acc, 'balance': ee.Save(params,'point-balance')}
+                    }, {
+                        'code': 'c.point', 'event': 'exchange',
+                        'args': {'amount': ee.Save(params,'exchange-points')}
+                    }, {
+                        'code': 'c.point', 'event': 'currency',
+                        # 'args' send according to commun.point logic (do not check in this test)
+                    })
+            },
+        ]
+
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':buyTrx}, {'block_num':buyBlock, 'actions':buyTrace, 'except':ee.Missing()}),
+            ], buyBlock)
+        self.assertRegex(params['exchange-points'], '[0-9]+.[0-9]{3} CATS')
+        self.assertEqual(params['point-balance'], params['exchange-points'])   # Due initial point-balance equal zero
+
+
+        # Sell community points through transfer them to 'c.point' account
+        sellArgs = {'from':acc, 'to':'c.point', 'quantity':params['point-balance'], 'memo':''}
+        sellResult = testnet.pushAction('c.point', 'transfer', acc, sellArgs, providebw=acc+'/c@providebw', keys=[private, clientKey])
+
+        sellTrx = sellResult['transaction_id']
+        sellBlock = sellResult['processed']['block_num']
+        sellTrace = [
+            {
+                'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
+                'auth': [{'actor': acc, 'permission': 'active'}],
+                'args': sellArgs,
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.point', 'event': 'balance',
+                        'args': {'account': acc, 'balance': '0.000 CATS'}
+                    }, {
+                        'code': 'c.point', 'event': 'exchange',
+                        'args': {'amount': ee.Save(params,'exchange-tokens')}
+                    }, {
+                        'code': 'c.point', 'event': 'currency',
+                    })
+            }, {
+                'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
+                'auth': [{'actor': 'c.point', 'permission': 'active'}],
+                'args': {'from':'c.point','to':acc,'quantity':ee.Load(params,'exchange-tokens'),'memo':'CATS sold'},
+                # 'events' send according to cyber.token logic (do not check in this test)
+            },
+        ]
+
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':sellTrx}, {'block_num':sellBlock, 'actions':sellTrace, 'except':ee.Missing()}),
+            ], sellBlock)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,8 +1,7 @@
 from testnet import *
 
 
-
-def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
+def issueCommunToken(owner, quantity, clientKey):
     pushAction('cyber.token', 'issue', 'c@issue', {
             'to':'c',
             'quantity':quantity,
@@ -14,6 +13,9 @@ def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
             'quantity':quantity,
             'memo':'issue for '+owner
         }, keys=clientKey)
+
+def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
+    issueCommunToken(owner, quantity, clientKey)
     pushAction('cyber.token', 'transfer', owner, {
             'from':owner,
             'to':'c.point',
