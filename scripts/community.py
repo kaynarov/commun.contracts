@@ -2,17 +2,17 @@ from testnet import *
 
 
 def issueCommunToken(owner, quantity, clientKey):
-    pushAction('cyber.token', 'issue', 'c@issue', {
-            'to':'c',
+    pushAction('cyber.token', 'issue', 'c.issuer@issue', {
+            'to':'c.issuer',
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, keys=clientKey)
-    pushAction('cyber.token', 'transfer', 'c@issue', {
-            'from':'c',
+        }, providebw='c.issuer/c@providebw', keys=clientKey)
+    pushAction('cyber.token', 'transfer', 'c.issuer@issue', {
+            'from':'c.issuer',
             'to':owner,
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, keys=clientKey)
+        }, providebw='c.issuer/c@providebw', keys=clientKey)
 
 def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
     issueCommunToken(owner, quantity, clientKey)
@@ -93,17 +93,20 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
 
     # 1. Buy some value of COMMUN tokens (for testing purposes c@issue)
     trx = Trx()
-    trx.addAction('cyber.token', 'issue', 'c@issue', {
-        'to':'c',
+    trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {
+        'to':'c.issuer',
         'quantity':reserve_amount,
         'memo':"Reserve for {c}".format(c=community_name)
     })
-    trx.addAction('cyber.token', 'transfer', 'c@issue', {
-        'from':'c',
+    trx.addAction('cyber.token', 'transfer', 'c.issuer@issue', {
+        'from':'c.issuer',
         'to':owner_account,
         'quantity':reserve_amount,
         'memo':"Reserve for {c}".format(c=community_name)
     })
+    trx.addAction('cyber', 'providebw', 'c@providebw', {
+            'provider': 'c',
+            'account': 'c.issuer'})
     pushTrx(trx, keys=creator_key)
 
     # 2. Create community points

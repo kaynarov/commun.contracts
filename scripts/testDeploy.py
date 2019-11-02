@@ -85,8 +85,8 @@ class CommunLeaderTests(unittest.TestCase):
 
     def test_canUseActiveAuthority(self):
         trx = testnet.Trx()
-        trx.addAction('cyber.token', 'issue', 'c@active', {
-                'to': 'c',
+        trx.addAction('cyber.token', 'issue', 'c.issuer@active', {
+                'to': 'c.issuer',
                 'quantity': '0.0001 COMMUN',
                 'memo': ''
             })
