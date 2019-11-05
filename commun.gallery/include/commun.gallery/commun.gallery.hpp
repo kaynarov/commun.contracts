@@ -747,8 +747,8 @@ protected:
         
         auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic::ACTIVE), MAXINT64, MAXINT64));
         auto by_comm_max = config::default_comm_grades.size();
-        auto mosaic_num = 0;
-        auto points_sum = 0;
+        size_t mosaic_num = 0;
+        int64_t points_sum = 0;
         for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
                                                    (by_comm_itr != by_comm_idx.end()) &&
                                                    (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
