@@ -471,6 +471,29 @@ BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(free_messages, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Free messages testing.");
+    init();
+    create_accounts({N(noob)});
+    BOOST_CHECK_EQUAL(success(), point.open(N(noob), point_code));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "parent"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "parent"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "child"}, {N(noob), "parent"}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "child"}, {N(noob), "parent"}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    
+    std::set<commun::structures::opus_info> new_opuses = {{
+        commun::structures::opus_info{ .name = cfg::post_opus_name,    .mosaic_pledge = 0, .min_mosaic_inclusion = 0, .min_gem_inclusion = 1 },
+        commun::structures::opus_info{ .name = cfg::comment_opus_name, .mosaic_pledge = 0, .min_mosaic_inclusion = 1, .min_gem_inclusion = 1 }
+    }};
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("opuses", new_opuses )));
+    
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "parent1"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "parent1"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "child1"}, {N(noob), "parent1"}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "child1"}, {N(noob), "parent1"}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Empty votes testing.");
     init();
@@ -483,7 +506,7 @@ BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.no_message, post.upvote(N(jackiechan), {N(brucelee), "permlink1"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink1"}, std::optional<uint16_t>(), _client));
     
-    static std::set<commun::structures::opus_info> new_opuses = {{
+    std::set<commun::structures::opus_info> new_opuses = {{
         commun::structures::opus_info{ cfg::post_opus_name, 100, 100, 100 },
         commun::structures::opus_info{ cfg::comment_opus_name }
     }};

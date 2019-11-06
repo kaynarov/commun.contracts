@@ -64,22 +64,25 @@ void publication::create(
     auto& community = commun_list::get_community(commun_code);
     auto gems_per_period = get_gems_per_period(commun_code);
 
+    auto opus_name = parent_id.author ? config::comment_opus_name : config::post_opus_name;
+    auto providers = gallery_types::providers_t(); //providers are not used for comments
     int64_t amount_to_freeze = 0;
     if (parent_id.author) {
         eosio::check(!weight.has_value(), "weight is redundant for comments");
-        const auto& op = community.get_opus(config::comment_opus_name, "unknown opus, probably comments in the community are disabled");
-        amount_to_freeze = std::max(op.mosaic_pledge, std::max(op.min_mosaic_inclusion, op.min_gem_inclusion));
     }
     else {
         amount_to_freeze = get_amount_to_freeze(point::get_balance(message_id.author, commun_code).amount,
             get_frozen_amount(_self, message_id.author, commun_code), community.gems_per_day, weight);
+        providers = get_providers(commun_code, message_id.author, gems_per_period, weight);
     }
+    const auto& op = community.get_opus(opus_name, "unknown opus");
+    int64_t min_points_sum = has_auth(_self) ?
+        op.min_mosaic_inclusion :
+        std::max(op.min_mosaic_inclusion, (providers.size() + 1) * op.min_gem_inclusion);
+    amount_to_freeze = std::max(amount_to_freeze, min_points_sum - get_points_sum(0, providers));
+    
     asset quantity(amount_to_freeze, community.commun_symbol);
-
-    //providers are not used for comments
-    create_mosaic(_self, message_id.author, tracery, parent_id.author ? config::comment_opus_name : config::post_opus_name,
-        quantity, community.author_percent,
-        parent_id.author ? gallery_types::providers_t() : get_providers(commun_code, message_id.author, gems_per_period, weight));    
+    create_mosaic(_self, message_id.author, tracery, opus_name, quantity, community.author_percent, providers);    
 }
 
 void publication::update(symbol_code commun_code, mssgid_t message_id,
