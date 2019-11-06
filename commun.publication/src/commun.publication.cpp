@@ -72,7 +72,7 @@ void publication::create(
     }
     else {
         amount_to_freeze = get_amount_to_freeze(point::get_balance(message_id.author, commun_code).amount,
-            get_frozen_amount(_self, message_id.author, commun_code), community.gems_per_day, weight);
+            get_frozen_amount(_self, message_id.author, commun_code), gems_per_period, weight);
         providers = get_providers(commun_code, message_id.author, gems_per_period, weight);
     }
     const auto& op = community.get_opus(opus_name, "unknown opus");
