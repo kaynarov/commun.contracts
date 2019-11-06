@@ -280,7 +280,7 @@ class PointTestCase(unittest.TestCase):
     def tearDown(self):
         self.eeHelper.tearDown()
 
-    # This test check exchange notification when user buy/sell community points
+    # This test checks exchange notification when user buys/sells community points
     def test_exchangeNotification(self):
         params = {}
 
@@ -340,6 +340,8 @@ class PointTestCase(unittest.TestCase):
                     }, {
                         'code': 'c.point', 'event': 'exchange',
                         'args': {'amount': ee.Save(params,'exchange-tokens')}
+                    }, {
+                        'code': 'c.point', 'event': 'fee',
                     }, {
                         'code': 'c.point', 'event': 'currency',
                     })
