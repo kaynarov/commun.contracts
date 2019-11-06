@@ -14,6 +14,7 @@
 #include <cmath>
 #include "commun.point/commun.point.hpp"
 #include <commun/bancor.hpp>
+#include <commun/util.hpp>
 
 namespace commun {
 
@@ -46,6 +47,22 @@ public:
     [[eosio::action]]
     void create(name issuer, asset maximum_supply, int16_t cw, int16_t fee);
 
+    /**
+        \brief The setparams action is used by POINT issuer to set POINT token parameters which can be updated after its creation.
+
+        \param commun_code the point symbol code
+        \param transfer_fee percent of amount to which should be added as fee to amount of POINTs when transferring. When transferring POINTs, the sum of transfer amount and fee being substracted from "from"-account balance, and fee being retired from supply
+        \param min_transfer_fee_points minimum amount of fee on POINTs transferring
+
+        <b>Restrictions:</b>
+            - Point token should be created before calling this action;
+            - min_transfer_fee_points can be 0 only if transfer_fee is 0%;
+            - No fee being charged on transfer if "from" or "to" account is POINT issuer, or is one of Commun contracts.
+
+        Performing the action requires the POINT issuer signature.
+    */
+    [[eosio::action]]
+    void setparams(symbol_code commun_code, uint16_t transfer_fee, int64_t min_transfer_fee_points);
 
     /**
         \brief Set contract account which can freeze point or system tokens from account balance.
@@ -245,6 +262,8 @@ struct structures {
         int16_t  cw; /**< connector weight*/
         int16_t fee; /**< fee */
         name     issuer; /**< an token issuer */
+        uint16_t transfer_fee = config::def_transfer_fee; //!< fee for transfer of POINTs
+        int64_t min_transfer_fee_points = config::def_min_transfer_fee_points; //!< minimum amount of POINTs which are retiring for fee on POINTs transfer
 
         uint64_t primary_key()const { return max_supply.symbol.code().raw(); }
         name by_issuer()const { return issuer; }
@@ -301,7 +320,11 @@ struct structures {
         return asset(calc_bancor_amount(stat.reserve.amount, stat.supply.amount, get_cw(param), reserve_quantity.amount), stat.supply.symbol);
     }
 
-    void do_transfer(name from, name to, const asset& quantity, const string& memo); 
+    static inline bool no_fee_transfer(name issuer, name from, name to) {
+        return from == issuer || to == issuer || get_prefix(from) == config::dapp_name || get_prefix(to) == config::dapp_name;
+    };
+
+    void do_transfer(name from, name to, const asset& quantity, const string& memo);
 
     /**
       \brief A struct represents event about account balance update (sending from \ref create, \ref issue, \ref retire, can be sending on transfering reserve from cyber.token and on \ref transfer).
@@ -314,6 +337,8 @@ struct structures {
         int16_t cw; //!< connector weight for specific point token
         int16_t fee; //!< fee for specific point token
         name    issuer; //!< issuer account name for specific point token
+        uint16_t transfer_fee = config::def_transfer_fee; //!< fee for transfer of POINTs
+        int64_t min_transfer_fee_points = config::def_min_transfer_fee_points; //!< minimum amount of POINTs which are retiring for fee on POINTs transfer
     };
 
     /**
