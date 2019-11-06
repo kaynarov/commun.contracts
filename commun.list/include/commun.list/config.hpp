@@ -60,9 +60,9 @@ static constexpr auto comment_opus_name = eosio::name("comment");
 static auto post_opus_name = eosio::chain::name("post");
 static auto comment_opus_name = eosio::chain::name("comment");
 #endif
-static std::set<structures::opus_info> def_opuses = {{ \
-    structures::opus_info{ .name = post_opus_name },   \
-    structures::opus_info{ .name = comment_opus_name } \
+static std::set<structures::opus_info> def_opuses = {{                                                                         \
+    structures::opus_info{ .name = post_opus_name,    .mosaic_pledge = 0, .min_mosaic_inclusion = 0, .min_gem_inclusion = 1 }, \
+    structures::opus_info{ .name = comment_opus_name, .mosaic_pledge = 0, .min_mosaic_inclusion = 0, .min_gem_inclusion = 1 }  \
 }};
 
 static constexpr uint8_t def_comm_leaders_num = 3;

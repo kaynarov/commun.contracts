@@ -9,12 +9,11 @@
 #include <cyber.token/cyber.token.hpp>
 #include <eosio/event.hpp>
 #include <eosio/system.hpp>
-#include <commun/util.hpp>
 
 namespace commun {
 
 void point::send_currency_event(const structures::stat& st, const structures::param& par) {
-    currency_event data{st.supply, st.reserve, par.max_supply, par.cw, par.fee, par.issuer};
+    currency_event data{st.supply, st.reserve, par.max_supply, par.cw, par.fee, par.issuer, par.transfer_fee, par.min_transfer_fee_points};
     eosio::event(_self, "currency"_n, data).send();
 }
 
@@ -72,6 +71,24 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     accounts_table.emplace(_self, [&](auto& a) { a = {
         .balance = asset(0, commun_symbol)
     };});
+}
+
+void point::setparams(symbol_code commun_code, uint16_t transfer_fee, int64_t min_transfer_fee_points) {
+    params params_table(_self, _self.value);
+    const auto& param = params_table.get(commun_code.raw(), "symbol does not exist");
+    require_auth(param.issuer);
+
+    check(transfer_fee <= config::_100percent, "transfer_fee can't be greater than 100%");
+
+    check(min_transfer_fee_points >= 0, "min_transfer_fee_points cannot be negative");
+    if (transfer_fee) {
+        check(min_transfer_fee_points > 0, "min_transfer_fee_points cannot be 0 if transfer_fee set");
+    }
+
+    params_table.modify(param, eosio::same_payer, [&](auto& p) {
+        p.transfer_fee = transfer_fee;
+        p.min_transfer_fee_points = min_transfer_fee_points;
+    });
 }
 
 void point::setfreezer(name freezer) {
@@ -156,6 +173,7 @@ void point::withdraw(name owner, asset quantity) {
 void point::on_reserve_transfer(name from, name to, asset quantity, std::string memo) {
     if(_self != to)
         return;
+    check(quantity.symbol == config::reserve_token, "invalid reserve token symbol");
     const size_t memo_size = memo.size();
     if (memo_size) {
         const size_t pref_size = config::restock_prefix.size();
@@ -167,7 +185,6 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
 
         stats stats_table(_self, commun_code.raw());
         auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
-        check(quantity.symbol == stat.reserve.symbol, "invalid reserve token symbol");
 
         asset add_tokens(0, stat.supply.symbol);
         if (!restock) {
@@ -297,16 +314,31 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
     check(quantity.symbol == stat.supply.symbol, "symbol precision mismatch");
     check(memo.size() <= 256, "memo has more than 256 bytes");
 
-    sub_balance(from, quantity);
     auto payer = has_auth(to) ? to : from;
 
     if (to != _self) {
         require_recipient(from);
         require_recipient(to);
 
+        auto sub_quantity = quantity;
+        if (param.transfer_fee && !no_fee_transfer(param.issuer, from, to)) {
+            auto fee_points = asset(
+                std::max(safe_pct(quantity.amount, param.transfer_fee), param.min_transfer_fee_points),
+                quantity.symbol);
+            sub_quantity += fee_points;
+
+            stats_table.modify(stat, same_payer, [&](auto& s) {
+                s.supply -= fee_points;
+                send_currency_event(s, param);
+            });
+        }
+        sub_balance(from, sub_quantity);
+
         add_balance(to, quantity, payer);
     }
     else {
+        sub_balance(from, quantity);
+
         auto sub_reserve = calc_reserve_quantity(param, stat, quantity);
         check(sub_reserve.amount > 0, "these points cost zero tokens");
         stats_table.modify(stat, same_payer, [&](auto& s) {
@@ -325,5 +357,5 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
 } /// namespace commun
 
 DISPATCH_WITH_TRANSFER(commun::point, commun::config::token_name, on_reserve_transfer,
-    (create)(setfreezer)(issue)(transfer)(withdraw)(open)(close)(retire)
+    (create)(setparams)(setfreezer)(issue)(transfer)(withdraw)(open)(close)(retire)
 )

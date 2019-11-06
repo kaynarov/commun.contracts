@@ -14,17 +14,18 @@ class publication : public gallery_base<publication>, public contract {
 
 public:
     using contract::contract;
+    
+    static bool can_remove_vertex(const vertex_t& arg, const gallery_types::mosaic& mosaic, const structures::community& community) {
+        auto now = eosio::current_time_point();
+        return arg.childcount == 0
+            || now > (mosaic.collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period));
+    }
 
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {
         vertices vertices_table(self, commun_code.raw());
         auto vertex = vertices_table.find(mosaic.tracery);
         eosio::check(vertex != vertices_table.end(), "SYSTEM: Permlink doesn't exist.");
-
-        auto now = eosio::current_time_point();
-
-        auto& community = commun_list::get_community(commun_code);
-        eosio::check(vertex->childcount == 0
-            || now > mosaic.collection_end_date + eosio::seconds(community.moderation_period + community.extra_reward_period), "comment with child comments can't be removed during the active period");
+        eosio::check(can_remove_vertex(*vertex, mosaic, commun_list::get_community(commun_code)), "comment with child comments can't be removed during the active period");
 
         if (vertex->parent_tracery) {
             auto parent_vertex = vertices_table.find(vertex->parent_tracery);

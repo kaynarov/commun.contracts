@@ -59,6 +59,14 @@ public:
         );
     }
 
+    action_result setparams(account_name issuer, uint16_t transfer_fee, int64_t min_transfer_fee_points) {
+        return push(N(setparams), issuer, args()
+            ("commun_code", _symbol.to_symbol_code())
+            ("transfer_fee", transfer_fee)
+            ("min_transfer_fee_points", min_transfer_fee_points)
+        );
+    }
+
     action_result setfreezer(account_name freezer) {
         return push(N(setfreezer), _code, args()("freezer", freezer));
     }

@@ -157,7 +157,10 @@
             "permissions": [{"name": "owner", "key": "INITIAL"}, {"name": "active", "key": "INITIAL"}],
 #            "sys_balance": "100000.0000 CYBER",
 #            "sys_staked": "100000.0000 CYBER",
-        },
+        },{
+            "name": "c.issuer",
+            "permissions": [{"name": "owner", "accounts": ["c@owner"]}, {"name": "active", "accounts": ["c@active"]}],
+        }
 
         {
             "name": "gls",
@@ -219,7 +222,7 @@
                             "_decs" : 4,
                             "_sym" : "COMMUN"
                         },
-                        "issuer" : "c"
+                        "issuer" : "c.issuer"
                     }
                 }
             ]

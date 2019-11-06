@@ -9,7 +9,6 @@ namespace commun {
 
 void emit::init(symbol_code commun_code) {
     require_auth(_self);
-    check(point::exist(commun_code), "point with symbol does not exist");
 
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
@@ -19,9 +18,9 @@ void emit::init(symbol_code commun_code) {
     auto now = eosio::current_time_point();
     stats_table.emplace(_self, [&](auto& s) {
         s.id = commun_code.raw();
-        s.reward_recievers.reserve(community.emission_receivers.size());
+        s.reward_receivers.reserve(community.emission_receivers.size());
         for (auto& receiver: community.emission_receivers) {
-            s.reward_recievers.push_back({receiver.contract, now});
+            s.reward_receivers.push_back({receiver.contract, now});
         }
     });
 }
@@ -40,7 +39,9 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
     auto passed_seconds = stat.last_reward_passed_seconds(to_contract);
 
     auto& community = commun_list::get_community(commun_code);
-    eosio::check(is_it_time_to_reward(community, to_contract, passed_seconds), "SYSTEM: untimely claim reward");
+    if (!is_it_time_to_reward(community, to_contract, passed_seconds)) {
+        return; // action can be called twice before updating the date
+    }
 
     eosio::check(is_account(to_contract), to_contract.to_string() + " contract does not exists");
 

@@ -176,7 +176,10 @@ public:
         const string simple_no_message     = amsg("Message does not exist.");
         const string simple_inactive       = amsg("Message is inactive.");
         const string already_locked        = amsg("Message has already been locked");
-
+        
+        const string already_removed       = amsg("Message already removed.");
+        const string parent_removed        = amsg("Parent message removed.");
+        
         const string vote_weight_0         = amsg(auth_self + "weight can't be 0.");
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
 
@@ -305,7 +308,11 @@ BOOST_FIXTURE_TEST_CASE(remove_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("--- fail then remove non-existing post and post with child");
     BOOST_CHECK_EQUAL(err.no_message, post.remove({N(jackiechan), "permlink1"}));
     BOOST_CHECK_EQUAL(success(), post.remove({N(jackiechan), "permlink1"}, _client));
-    BOOST_CHECK_EQUAL(err.remove_children, post.remove({N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.remove({N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(uint8_t(HIDDEN), get_mosaic(_code, _point, mssgid{N(brucelee), "permlink"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK(!post.get_vertex({N(brucelee), "permlink"}).is_null());
+    BOOST_CHECK_EQUAL(err.parent_removed, post.create({N(jackiechan), "new-child"}, {N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(err.inactive, post.upvote(N(chucknorris), {N(brucelee), "permlink"}));
 
     BOOST_CHECK_EQUAL(success(), post.remove({N(jackiechan), "child"}));
     BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(jackiechan), "child"}.tracery()).is_null());
@@ -313,10 +320,13 @@ BOOST_FIXTURE_TEST_CASE(remove_message, commun_publication_tester) try {
     CHECK_MATCHING_OBJECT(post.get_vertex({N(brucelee), "permlink"}), mvo()
        ("childcount", 0)
     );
-
-    BOOST_CHECK_EQUAL(success(), post.remove({N(brucelee), "permlink"}));
-    BOOST_CHECK(get_mosaic(_code, _point, mssgid{N(brucelee), "permlink"}.tracery()).is_null());
+    produce_block();
+    BOOST_CHECK_EQUAL(err.already_removed, post.remove({N(brucelee), "permlink"}));
+    BOOST_CHECK(!post.get_vertex({N(brucelee), "permlink"}).is_null());
+    //to completely remove the mosaic without children and votes, claim can be used
+    BOOST_CHECK_EQUAL(success(), post.claim({N(brucelee), "permlink"}, N(brucelee), account_name(), true));
     BOOST_CHECK(post.get_vertex({N(brucelee), "permlink"}).is_null());
+
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
@@ -461,6 +471,29 @@ BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(free_messages, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Free messages testing.");
+    init();
+    create_accounts({N(noob)});
+    BOOST_CHECK_EQUAL(success(), point.open(N(noob), point_code));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "parent"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "parent"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "child"}, {N(noob), "parent"}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "child"}, {N(noob), "parent"}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    
+    std::set<commun::structures::opus_info> new_opuses = {{
+        commun::structures::opus_info{ .name = cfg::post_opus_name,    .mosaic_pledge = 0, .min_mosaic_inclusion = 0, .min_gem_inclusion = 1 },
+        commun::structures::opus_info{ .name = cfg::comment_opus_name, .mosaic_pledge = 0, .min_mosaic_inclusion = 1, .min_gem_inclusion = 1 }
+    }};
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("opuses", new_opuses )));
+    
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "parent1"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "parent1"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "child1"}, {N(noob), "parent1"}, "h", "b", {"t"}, "m", std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, post.create({N(noob), "child1"}, {N(noob), "parent1"}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Empty votes testing.");
     init();
@@ -473,7 +506,7 @@ BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(err.no_message, post.upvote(N(jackiechan), {N(brucelee), "permlink1"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink1"}, std::optional<uint16_t>(), _client));
     
-    static std::set<commun::structures::opus_info> new_opuses = {{
+    std::set<commun::structures::opus_info> new_opuses = {{
         commun::structures::opus_info{ cfg::post_opus_name, 100, 100, 100 },
         commun::structures::opus_info{ cfg::comment_opus_name }
     }};

@@ -30,6 +30,8 @@ _communAccounts = [
             ('lead.minor',   [], ['c.ctrl@cyber.code'], []),
             ('clients',      [], ['c.com@c.com'], ['cyber.domain:newusername']),
             ('providebw',    [], ['c@clients'], ['cyber:providebw', 'c.point:open']),
+        ]),
+    ('c.issuer',  None,                   None, [
             ('issue',        [], ['c@clients'], ['cyber.token:issue', 'cyber.token:transfer']),    # Only for testnet purposes
         ]),
 
@@ -135,7 +137,7 @@ def importKeys():
 
 def createCommunAccounts():
     for acc in communAccounts:
-        if acc.name != 'c':
+        if not (acc.name == 'c' or acc.name == 'c.issuer'):
             createAccount('c', acc.name, 'c@owner', 'c@active')
 
     for acc in communAccounts:

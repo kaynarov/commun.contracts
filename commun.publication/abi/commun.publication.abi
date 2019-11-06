@@ -40,11 +40,13 @@
                 { "type": "int64",         "name": "shares" },
                 { "type": "int64",         "name": "damn_points" },
                 { "type": "int64",         "name": "damn_shares" },
+                { "type": "int64",         "name": "pledge_points" },
                 { "type": "int64",         "name": "reward" },
                 { "type": "int64",         "name": "comm_rating" },
                 { "type": "int64",         "name": "lead_rating" },
                 { "type": "uint8",         "name": "status" },
-                { "type": "bool",          "name": "meritorious" }
+                { "type": "bool",          "name": "meritorious" },
+                { "type": "bool",          "name": "deactivated_xor_locked" }
             ]
         },{
             "name": "gem_struct",
@@ -471,6 +473,7 @@
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "name",                   "name": "creator" },
+                { "type": "time_point",             "name": "collection_end_date" },
                 { "type": "uint16",                 "name": "gem_count" },
                 { "type": "int64",                  "name": "shares" },
                 { "type": "int64",                  "name": "damn_shares" },
@@ -508,6 +511,13 @@
                 { "type": "int64",                  "name": "comm_rating" },
                 { "type": "int64",                  "name": "lead_rating" }
             ]
+        },{
+            "name": "inclusion_state_event",
+            "base": "",
+            "fields": [
+                { "type": "name",                   "name": "account" },
+                { "type": "asset",                 "name": "quantity" }
+            ]
         }
   ],
   "events": [
@@ -515,7 +525,8 @@
         { "name": "mosaicchop",  "type": "mosaic_chop_event" },
         { "name": "gemstate",    "type": "gem_state_event" },
         { "name": "gemchop",     "type": "gem_chop_event" },
-        { "name": "mosaictop",   "type": "mosaic_top_event" }
+        { "name": "mosaictop",   "type": "mosaic_top_event" },
+        { "name": "inclstate",   "type": "inclusion_state_event" }
     ],
   "actions": [
   {
@@ -632,7 +643,7 @@
                 { "name": "byleadrating", "unique": "false", "orders": [
                     {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
                 { "name": "bydate", "unique": "false", "orders": [
-                    {"field": "status", "order": "asc"}, {"field": "collection_end_date", "order": "asc"} ] }
+                    {"field": "deactivated_xor_locked", "order": "desc"}, {"field": "collection_end_date", "order": "asc"} ] }
             ]
         },{
             "name": "gem",

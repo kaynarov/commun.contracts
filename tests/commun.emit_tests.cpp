@@ -7,7 +7,6 @@
 #include "../commun.point/include/commun.point/config.hpp"
 #include "../commun.emit/include/commun.emit/config.hpp"
 
-
 namespace cfg = commun::config;
 using namespace eosio::testing;
 using namespace eosio::chain;
@@ -15,6 +14,8 @@ using namespace fc;
 static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 static const auto point_code = _point.to_symbol_code();
+
+static const int64_t block_interval = cfg::block_interval_ms / 1000;
 
 class commun_emit_tester : public golos_tester {
 protected:
@@ -58,12 +59,11 @@ public:
     }
 
     void init() {
-        int64_t reserve = 100000;
-        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(999999999, point._symbol), 10000, 0));
-
-        BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
+        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 0));
+        BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(reserve * 2, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
+        BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
     }
 
     const account_name _commun = cfg::dapp_name;
@@ -72,12 +72,13 @@ public:
     const account_name _bob = N(bob);
     const account_name _carol = N(carol);
     static constexpr int64_t seconds_per_year = int64_t(365)*24*60*60;
+    static constexpr int64_t supply  = 5000000000000;
+    static constexpr int64_t reserve = 100000;
 
     struct errors: contract_error_messages {
-        const string no_point = amsg("point with symbol does not exist");
+        const string no_community = amsg("community not exists");
         const string already_exists = amsg("already exists");
         const string no_emitter = amsg("emitter does not exists, create it before issue");
-        const string too_early_emit = amsg("SYSTEM: untimely claim reward");
         const string wrong_annual_rate = amsg("incorrect emission rate");
         const string wrong_leaders_prop = amsg("incorrect leaders percent");
         const string no_account(name acc) { return amsg(acc.to_string() +  " contract does not exists"); }
@@ -86,12 +87,23 @@ public:
 
 BOOST_AUTO_TEST_SUITE(commun_emit_tests)
 
-BOOST_FIXTURE_TEST_CASE(create_tests, commun_emit_tester) try {
-    BOOST_TEST_MESSAGE("create tests");
+BOOST_FIXTURE_TEST_CASE(init_tests, commun_emit_tester) try {
+    BOOST_TEST_MESSAGE("init tests");
 
-    BOOST_CHECK_EQUAL(err.no_point, emit.init(point_code));
+    BOOST_CHECK_EQUAL(err.no_community, emit.init(point_code));
     init();
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
+    auto now = produce_block();
+    BOOST_CHECK(!emit.get_stat(point_code).is_null());
+    CHECK_MATCHING_OBJECT(emit.get_stat(point_code)["reward_receivers"][int(0)], mvo()
+        ("contract", cfg::control_name)
+        ("time", now->timestamp.to_time_point())
+    );
+    CHECK_MATCHING_OBJECT(emit.get_stat(point_code)["reward_receivers"][int(1)], mvo()
+        ("contract", cfg::gallery_name)
+        ("time", now->timestamp.to_time_point())
+    );
+
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", 0)));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", cfg::_100percent+1)));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", cfg::_1percent * 2)));
@@ -125,40 +137,55 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
         ("emission_rate", cfg::_1percent * 50)
         ("leaders_percent", cfg::_1percent * 10)));
 
-    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::gallery_name));
-    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::control_name));
+    auto init_supply = point.get_supply();
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::control_name));
+    BOOST_CHECK_EQUAL(init_supply, point.get_supply());
 
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_mosaics_period));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval * 2));
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
+    BOOST_CHECK_EQUAL(init_supply, point.get_supply());
+    produce_block();
     BOOST_CHECK_EQUAL(err.no_account(cfg::gallery_name), emit.issuereward(point_code, cfg::gallery_name));
     create_accounts({cfg::gallery_name});
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point_code, cfg::gallery_name));
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::control_name, point_code, cfg::control_name));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
-    BOOST_CHECK_EQUAL(err.too_early_emit, emit.issuereward(point_code, cfg::control_name));
+    auto new_supply = point.get_supply();
+    BOOST_CHECK(new_supply > init_supply);
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::control_name));
+    BOOST_CHECK_EQUAL(new_supply, point.get_supply());
 
     BOOST_TEST_MESSAGE("-- waiting for leaders reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_leaders_period - cfg::def_reward_mosaics_period));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_leaders_period - cfg::def_reward_mosaics_period - block_interval * 2));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::control_name));
+    BOOST_CHECK_EQUAL(new_supply, point.get_supply());
+    produce_block();
+    BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::control_name));
+    BOOST_CHECK(point.get_supply() > new_supply);
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("basic tests");
     create_accounts({cfg::gallery_name});
     init();
-    int64_t supply = 100000000;
     double annual_rate = 0.5;
     double leaders_rate = 0.1;
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "golos"));
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, point_code, community.args()
         ("emission_rate", uint16_t(annual_rate * cfg::_100percent))
         ("leaders_percent", uint16_t(leaders_rate*cfg::_100percent))));
-    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), "issue"));
     BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point_code, cfg::gallery_name));
 
     int64_t cont_emission = supply * int64_t(std::log(1.0 + annual_rate) * cfg::_100percent) / cfg::_100percent;
     int64_t period_amount = cont_emission * cfg::def_reward_mosaics_period / seconds_per_year;
     int64_t mosaic_amount = period_amount * (1.0 - leaders_rate);
     BOOST_TEST_MESSAGE("-- waiting for mosaics reward");
-    produce_blocks(commun::seconds_to_blocks(cfg::def_reward_mosaics_period));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
     BOOST_CHECK_EQUAL(mosaic_amount, point.get_amount(cfg::gallery_name));
 } FC_LOG_AND_RETHROW()
