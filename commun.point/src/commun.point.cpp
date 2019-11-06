@@ -156,6 +156,7 @@ void point::withdraw(name owner, asset quantity) {
 void point::on_reserve_transfer(name from, name to, asset quantity, std::string memo) {
     if(_self != to)
         return;
+    check(quantity.symbol == config::reserve_token, "invalid reserve token symbol");
     const size_t memo_size = memo.size();
     if (memo_size) {
         const size_t pref_size = config::restock_prefix.size();
@@ -167,7 +168,6 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
 
         stats stats_table(_self, commun_code.raw());
         auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
-        check(quantity.symbol == stat.reserve.symbol, "invalid reserve token symbol");
 
         asset add_tokens(0, stat.supply.symbol);
         if (!restock) {
