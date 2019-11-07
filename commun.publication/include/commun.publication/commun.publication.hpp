@@ -37,6 +37,16 @@ public:
     }
 
     /**
+     * \brief The \ref init action is used by commun.list contract to initialize gallery for a community with specified point symbol.
+     *
+     * \param commun_code a point symbol of community
+     *
+     * This action is unavailable for user and can be called only internally.
+     * It requires signature of the gallery contract account.
+     */
+    void init(symbol_code commun_code);
+
+    /**
         \brief The create action is used by account to create a message.
 
         \param commun_code symbol of community POINT

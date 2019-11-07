@@ -83,6 +83,12 @@
                 { "type": "int64",          "name": "second"  }
             ]
         },{
+            "name": "init_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" }
+            ]
+        },{
             "name": "createmosaic_args",
             "base": "",
             "fields": [
@@ -227,6 +233,10 @@
         { "name": "inclstate",   "type": "inclusion_state_event" }
     ],
     "actions": [
+        {
+            "name": "init",
+            "type": "init_args"
+        },
         {
             "name": "createmosaic",
             "type": "createmosaic_args"

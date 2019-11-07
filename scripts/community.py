@@ -139,7 +139,7 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
     pushAction('c.list', 'create', 'c.list@clients', {
         "commun_code": symbol.code,
         "community_name": community_name
-    }, providebw=['c.list/c@providebw', 'c.emit/c@providebw', 'c.ctrl/c@providebw'], keys=creator_key)
+    }, providebw=['c.list/c@providebw', 'c.emit/c@providebw', 'c.ctrl/c@providebw', 'c.gallery/c@providebw'], keys=creator_key)
 
     # 7. Pass account to community
     updateAuth(owner_account, 'active', 'owner', [], [owner_account+'@lead.smajor'],
