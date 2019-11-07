@@ -202,7 +202,8 @@
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "name",                   "name": "owner" },
                 { "type": "name",                   "name": "creator" },
-                { "type": "asset",                  "name": "reward" }
+                { "type": "asset",                  "name": "reward" },
+                { "type": "asset",                  "name": "unfrozen" }
             ]
         },{
             "name": "mosaic_top_event",

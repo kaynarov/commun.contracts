@@ -210,6 +210,7 @@ namespace events {
         name owner;
         name creator;
         asset reward;
+        asset unfrozen;
     };
     
     struct mosaic_top {
@@ -265,12 +266,13 @@ class gallery_base {
         eosio::event(_self, "gemstate"_n, data).send();
     }
     
-    void send_chop_event(name _self, const gallery_types::gem& gem, asset reward) {
+    void send_chop_event(name _self, const gallery_types::gem& gem, asset reward, asset unfrozen) {
         gallery_types::events::gem_chop data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
-            .reward = reward
+            .reward = reward,
+            .unfrozen = unfrozen
         };
         eosio::event(_self, "gemchop"_n, data).send();
     }
@@ -381,7 +383,7 @@ private:
         asset reward_points(reward, commun_symbol);
         
         freeze(_self, gem.owner, -frozen_points);
-        send_chop_event(_self, gem, reward_points);
+        send_chop_event(_self, gem, reward_points, frozen_points);
 
         if (gem.creator != gem.owner) {
             
