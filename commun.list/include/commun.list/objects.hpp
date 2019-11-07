@@ -9,15 +9,27 @@ namespace commun::structures {
 using namespace eosio;
 using std::optional;
 
+/**
+ * \brief Struct is a part of community or dApp configuration in the DB.
+ * \ingroup list_tables
+ *
+ * Struct represents a threshold required for specified leaders permission.
+ */
 struct threshold {
-    name permission;
-    uint8_t required;
+    name permission; //!< name of permission for what threshold is specified
+    uint8_t required; //!< threshold required for the specified permission
 };
 
+/**
+ * \brief Struct is a part of community or dApp configuration in the DB.
+ * \ingroup list_tables
+ *
+ * Struct represents parameters of leaders used by commun.control contract.
+ */
 struct control_param_t {
-    uint8_t leaders_num;
-    uint8_t max_votes;
-    std::vector<threshold> custom_thresholds;
+    uint8_t leaders_num; //!< number of leaders can be in top simultaneously
+    uint8_t max_votes; //!< number of leaders can be voted by one user simultaneously
+    std::vector<threshold> custom_thresholds; //!< custom leaders permissions which can be requested for multi-signature transactions in community or dApp (non-custom permissions are: minority, majority and super majority) 
     bool update(optional<name> permission_, optional<uint8_t> required_threshold_,
                 optional<uint8_t> leaders_num_ = optional<uint8_t>(), optional<uint8_t> max_votes_ = optional<uint8_t>(),
                 bool can_change_permissions_num = true) {
@@ -72,9 +84,17 @@ struct control_param_t {
     };
 };
 
+/**
+ * \brief Struct stores dApp configuration in the DB.
+ * \ingroup list_tables
+ *
+ * Struct record is creating (if not exist) in \ref commun_list::create and \ref commun_list::setappparams, and modifying in \ref commun_list::setappparams. It is only single in whole application.
+ *
+ */
+// DOCS_TABLE: dapp
 struct dapp {
     uint64_t pk = primary_key();
-    control_param_t control_param = control_param_t{ .leaders_num = config::def_dapp_leaders_num, .max_votes = config::def_dapp_max_votes };
+    control_param_t control_param = control_param_t{ .leaders_num = config::def_dapp_leaders_num, .max_votes = config::def_dapp_max_votes }; //!< Parameters of leadership
 
     static uint64_t primary_key() {
         return 0;
@@ -82,10 +102,10 @@ struct dapp {
 };
 
 /**
- * \brief struct is part of community configuration in the db
+ * \brief Struct is a part of community configuration in the DB.
  * \ingroup list_tables
  *
- * Struct represents an emission receiver in the community
+ * Struct represents an emission receiver in the community.
  */
 struct emission_receiver {
     name     contract; //!< Emission receiver
@@ -94,16 +114,20 @@ struct emission_receiver {
 };
 
 /**
- * \brief struct represents a community table in the db
+ * \brief struct represents a community table in the DB.
  * \ingroup list_tables
  *
- * Contains information about configuration of the community
+ * Contains information about configuration of the community.
+ *
+ * Struct record is creating in \ref commun_list::create, and modifying in \ref commun_list::setparams and \ref commun_list::setsysparams.
+ *
  */
+// DOCS_TABLE: community
 struct community {
-    symbol commun_symbol; //!< symbol code of the community POINT
+    symbol commun_symbol; //!< symbol code of the community POINT. Primary key
     uint64_t community_hash; //!< hash of the community name for uniques
 
-    control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };
+    control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };  //!< Parameters of leadership
 
     // emit
     uint16_t emission_rate = config::def_emission_rate;  //!< Emission rate of community POINTs

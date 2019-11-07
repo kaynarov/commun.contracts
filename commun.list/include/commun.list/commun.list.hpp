@@ -52,6 +52,8 @@ public:
         \param opuses opuses which should be added, or updated if already exist
         \param remove_opuses opuses which should be removed
         \param min_lead_rating minimal leader rating of mosaic to receive reward
+        \param damned_gem_reward_enabled allow gem owner got reward from gem with negative shares or not
+        \param refill_gem_enabled allow to refill gems by points and shares or not
 
         All parameters are optional. To not change parameter, do not pass it.
 
