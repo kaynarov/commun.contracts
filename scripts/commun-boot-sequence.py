@@ -47,13 +47,14 @@ _communAccounts = [
         ]),
     ('c.emit',    'commun.emit',          None, [
             ('rewardperm',   [], ['c.ctrl@cyber.code', 'c.gallery@cyber.code'], [':issuereward']),
-            ('init',       [], ['c.list@cyber.code'], [':init']),
+            ('init',         [], ['c.list@cyber.code'], [':init']),
         ]),
     ('c.list',    'commun.list',          None,                [
             ('clients',      [], ['c@clients'], [':create',':setsysparams',':follow',':unfollow',':hide',':unhide']),
         ]),
     ('c.gallery', 'commun.publication',   ['commun.gallery'],  [
             ('clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog']),
+            ('init',         [], ['c.list@cyber.code'], [':init']),
         ]),
     ('c.social',  'commun.social',        None,                [
             ('clients',      [], ['c@clients'], [':pin',':unpin',':block',':unblock',':updatemeta',':deletemeta']),

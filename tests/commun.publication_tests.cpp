@@ -65,6 +65,9 @@ public:
         set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
 
+        set_authority(cfg::publish_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::publish_name, cfg::publish_name, N(init), N(init));
+
         std::vector<account_name> transfer_perm_accs{_code, cfg::emit_name};
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");

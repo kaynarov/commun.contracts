@@ -66,7 +66,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
     };
     send_init_action(config::emit_name);
     send_init_action(config::control_name);
-    //TODO: init gallery
+    send_init_action(config::gallery_name);
 }
 
 #define SET_PARAM(PARAM) if (PARAM) { c.PARAM = *PARAM; _empty = false; }

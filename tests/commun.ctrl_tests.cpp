@@ -44,7 +44,7 @@ public:
         , emit({this, cfg::emit_name})
     {
         create_accounts({cfg::dapp_name, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::list_name, cfg::control_name, cfg::point_name, cfg::emit_name});
+            cfg::token_name, cfg::list_name, cfg::control_name, cfg::point_name, cfg::emit_name, cfg::gallery_name});
         create_accounts(leaders);
         produce_block();
         install_contract(cfg::control_name, contracts::ctrl_wasm(), contracts::ctrl_abi());
@@ -52,6 +52,7 @@ public:
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
         install_contract(cfg::emit_name, contracts::emit_wasm(), contracts::emit_abi());
+        install_contract(cfg::gallery_name, contracts::gallery_wasm(), contracts::gallery_abi());
         
         set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(changepoints), N(changepoints));
@@ -64,6 +65,9 @@ public:
         
         set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
+
+        set_authority(cfg::gallery_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::gallery_name, cfg::gallery_name, N(init), N(init));
         
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
         set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
