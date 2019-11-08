@@ -216,7 +216,7 @@ void control::claim(symbol_code commun_code, name leader) {
     eosio::check(leader_it->unclaimed_points >= 0, "SYSTEM: incorrect unclaimed_points");
     eosio::check(leader_it->unclaimed_points, "nothing to claim");
     
-    INLINE_ACTION_SENDER(point, transfer)(config::point_name, {_self, config::active_name},
+    INLINE_ACTION_SENDER(point, transfer)(config::point_name, {_self, config::transfer_permission},
         {_self, leader, asset(leader_it->unclaimed_points, point::get_supply(commun_code).symbol), "claimed points"});
     
     leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {

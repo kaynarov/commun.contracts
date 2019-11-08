@@ -71,11 +71,11 @@ public:
         std::vector<account_name> transfer_perm_accs{_code, cfg::emit_name};
         std::sort(transfer_perm_accs.begin(), transfer_perm_accs.end());
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
-        set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority(transfer_perm_accs), "active");
+        set_authority(cfg::gallery_name, cfg::transfer_permission, create_code_authority(transfer_perm_accs), "active");
         set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
 
         link_authority(cfg::point_name, cfg::point_name, cfg::issue_permission, N(issue));
-        link_authority(cfg::point_name, cfg::point_name, cfg::transfer_permission, N(transfer));
+        link_authority(cfg::gallery_name, cfg::point_name, cfg::transfer_permission, N(transfer));
         link_authority(cfg::control_name, cfg::control_name, N(changepoints), N(changepoints));
         
         set_authority(cfg::publish_name, cfg::client_permission_name,
@@ -103,7 +103,10 @@ public:
         BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(reserve, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _golos, asset(reserve, token._symbol), ""));
 
-        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
+        set_authority(_golos, cfg::transfer_permission, create_code_authority({cfg::emit_name}), cfg::active_name);
+        link_authority(_golos, cfg::point_name, cfg::transfer_permission, N(transfer));
+
+        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(supply * 2, point._symbol), 10000, 1));
         BOOST_CHECK_EQUAL(success(), point.setfreezer(commun::config::gallery_name));
 
         BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "community 1"));

@@ -109,7 +109,7 @@ class CommunLeaderTests(unittest.TestCase):
     def test_canIssueCommunityPoints(self):
         issuer = testnet.mongoClient["_CYBERWAY_c_point"]["param"].find_one({"max_supply._sym":"CATS"})["issuer"]
         trx = testnet.Trx()
-        trx.addAction('c.point', 'issue', issuer+'@owner', {
+        trx.addAction('c.point', 'issue', 'c.point', {
                 'to': issuer,
                 'quantity': '0.001 CATS',
                 'memo': 'issue by app leaders'
@@ -118,7 +118,7 @@ class CommunLeaderTests(unittest.TestCase):
                 'from': issuer,
                 'to': 'c',
                 'quantity': '0.001 CATS',
-                'memo': 'issue by app leaders'
+                'memo': 'transfer by app leaders'
             })
 
         community.createAndExecProposal(

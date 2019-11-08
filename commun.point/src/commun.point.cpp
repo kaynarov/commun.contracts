@@ -33,17 +33,21 @@ static eosio::asset vague_asset(int64_t amount) { //bypass non-zero symbol restr
     return ret;
 }
 
-void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
+void point::create(name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee) {
     require_auth(_self);
     check(is_account(issuer), "issuer account does not exist");
 
-    auto commun_symbol = maximum_supply.symbol;
-    check(commun_symbol.is_valid(), "invalid symbol name");
-    check(maximum_supply.is_valid(), "invalid supply");
-    check(maximum_supply.amount > 0, "max-supply must be positive");
+    check(maximum_supply.is_valid(), "invalid maximum_supply");
+    check(maximum_supply.amount > 0, "maximum_supply must be positive");
+
+    check(initial_supply.symbol == maximum_supply.symbol, "initial_supply and maximum_supply must have same symbol");
+    check(initial_supply.is_valid(), "invalid initial_supply");
+    check(initial_supply.amount >= 0, "initial_supply must be positive or zero");
+    check(initial_supply <= maximum_supply, "initial_supply must be less or equal maximum_supply");
+
     check(0 <  cw  && cw  <= 10000, "connector weight must be between 0.01% and 100% (1-10000)");
     check(0 <= fee && fee <= 10000, "fee must be between 0% and 100% (0-10000)");
-    symbol_code commun_code = commun_symbol.code();
+    symbol_code commun_code = maximum_supply.symbol.code();
 
     params params_table(_self, _self.value);
     eosio::check(params_table.find(commun_code.raw()) == params_table.end(), "point already exists");
@@ -61,7 +65,7 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
     stats stats_table(_self, commun_code.raw());
     eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "SYSTEM: already exists");
     auto stat = stats_table.emplace(_self, [&](auto& s) { s = {
-        .supply = asset(0, commun_symbol),
+        .supply = initial_supply,
         .reserve = asset(0, config::reserve_token)
     };});
 
@@ -69,7 +73,7 @@ void point::create(name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
 
     accounts accounts_table(_self, issuer.value);
     accounts_table.emplace(_self, [&](auto& a) { a = {
-        .balance = asset(0, commun_symbol)
+        .balance = initial_supply
     };});
 }
 
@@ -110,7 +114,7 @@ void point::issue(name to, asset quantity, string memo) {
     stats stats_table(_self, commun_code.raw());
     const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
 
-    check(has_auth(param.issuer) || has_auth(_self), "missing required signature");
+    require_auth(_self);
 
     check(stat.reserve.amount > 0, "no reserve");
     check(quantity.is_valid(), "invalid quantity");
@@ -145,7 +149,7 @@ void point::retire(name from, asset quantity, string memo) {
     stats stats_table(_self, commun_code.raw());
     const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
 
-    check(has_auth(from) || (from == param.issuer && has_auth(_self)), "missing required signature");
+    require_auth(from);
     check(quantity.is_valid(), "invalid quantity");
     check(quantity.amount > 0, "must retire positive quantity");
 
@@ -299,8 +303,8 @@ void point::close(name owner, symbol_code commun_code) {
 }
 
 void point::do_transfer(name from, name to, const asset &quantity, const string &memo) {
+    require_auth(from);
     check(from != to, "cannot transfer to self");
-    check(has_auth(from) || has_auth(_self), "missing required signature");
     check(is_account(to), "to account does not exist");
     auto commun_code = quantity.symbol.code();
 

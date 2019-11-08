@@ -57,7 +57,7 @@ public:
     const account_name _nicolas = N(nicolas);
 
     void create_token(account_name issuer, symbol symbol_token) {
-        BOOST_CHECK_EQUAL(success(), point.create(issuer, asset(1000000, symbol_token), 10000, 1));
+        BOOST_CHECK_EQUAL(success(), point.create(issuer, asset(0, symbol_token), asset(1000000, symbol_token), 10000, 1));
         produce_blocks(1);
     }
 

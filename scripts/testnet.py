@@ -117,10 +117,12 @@ def createAction(contract, action, actors, args):
     }
 
 class Trx:
-    def __init__(self, expiration=None):
+    def __init__(self, expiration=None, delay_sec=None):
         additional = '--skip-sign --dont-broadcast'
         if expiration:
             additional += ' --expiration {exp}'.format(exp=expiration)
+        if delay_sec:
+            additional += ' --delay-sec {sec}'.format(sec=delay_sec)
         self.trx = pushAction('cyber', 'checkwin', 'cyber', {}, additional=additional)
         self.trx['actions'] = []
 
