@@ -27,6 +27,11 @@ void point::send_exchange_event(const asset& amount) {
     eosio::event(_self, "exchange"_n, data).send();
 }
 
+void point::send_fee_event(const asset& amount) {
+    fee_event data{amount};
+    eosio::event(_self, "fee"_n, data).send();
+}
+
 static eosio::asset vague_asset(int64_t amount) { //bypass non-zero symbol restriction
     eosio::asset ret;
     ret.amount = amount;
@@ -326,6 +331,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
                 std::max(safe_pct(quantity.amount, param.transfer_fee), param.min_transfer_fee_points),
                 quantity.symbol);
             sub_quantity += fee_points;
+            send_fee_event(fee_points);
 
             stats_table.modify(stat, same_payer, [&](auto& s) {
                 s.supply -= fee_points;
@@ -339,7 +345,8 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
     else {
         sub_balance(from, quantity);
 
-        auto sub_reserve = calc_reserve_quantity(param, stat, quantity);
+        asset fee_quantity(0, config::reserve_token);
+        auto sub_reserve = calc_reserve_quantity(param, stat, quantity, &fee_quantity);
         check(sub_reserve.amount > 0, "these points cost zero tokens");
         stats_table.modify(stat, same_payer, [&](auto& s) {
             s.reserve -= sub_reserve;
@@ -351,6 +358,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
             {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
         notify_balance_change(param.issuer, vague_asset(-quantity.amount));
         send_exchange_event(sub_reserve);
+        send_fee_event(fee_quantity);
     }
 }
 

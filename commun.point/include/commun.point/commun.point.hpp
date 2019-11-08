@@ -202,13 +202,13 @@ public:
                (ac != accounts_table.end() ? ac->balance.amount : 0);
     }
 
-    static inline asset get_reserve_quantity(asset token_quantity, bool apply_fee = true) {
+    static inline asset get_reserve_quantity(asset token_quantity, asset* fee_quantity) {
         auto commun_code = token_quantity.symbol.code();
         params params_table(config::point_name, config::point_name.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
         stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw());
-        return calc_reserve_quantity(param, st, token_quantity, apply_fee);
+        return calc_reserve_quantity(param, st, token_quantity, fee_quantity);
     }
 
     static inline asset get_token_quantity(symbol_code commun_code, asset reserve_quantity) {
@@ -296,7 +296,7 @@ struct structures {
         return static_cast<double>(param.cw) / static_cast<double>(commun::config::_100percent);
     }
 
-    static inline asset calc_reserve_quantity(const structures::param& param, const structures::stat& stat, asset token_quantity, bool apply_fee = true) {
+    static inline asset calc_reserve_quantity(const structures::param& param, const structures::stat& stat, asset token_quantity, asset* fee_quantity) {
         check(token_quantity.amount >= 0, "can't convert negative quantity");
         check(token_quantity.amount <= stat.supply.amount, "can't convert more than supply");
         if (token_quantity.amount == 0)
@@ -305,14 +305,22 @@ struct structures {
         if (token_quantity.amount == stat.supply.amount)
             ret = stat.reserve.amount;
         else if (param.cw == commun::config::_100percent)
-            ret = static_cast<int64_t>((static_cast<int128_t>(token_quantity.amount) * stat.reserve.amount) / stat.supply.amount);
+            ret = safe_prop(token_quantity.amount, stat.reserve.amount, stat.supply.amount);
         else {
             double sell_prop = static_cast<double>(token_quantity.amount) / static_cast<double>(stat.supply.amount);
             ret = static_cast<int64_t>(static_cast<double>(stat.reserve.amount) * (1.0 - std::pow(1.0 - sell_prop, 1.0 / get_cw(param))));
         }
 
-        if (apply_fee && param.fee)
-            ret = (static_cast<int128_t>(ret) * (commun::config::_100percent - param.fee)) / commun::config::_100percent;
+        if (fee_quantity) {
+            if (param.fee) {
+                auto initial = ret;
+                ret = safe_pct(ret, config::_100percent - param.fee);
+                *fee_quantity = asset(initial - ret, stat.reserve.symbol);
+            } else {
+                *fee_quantity = asset(0, stat.reserve.symbol);
+            }
+        }
+
         return asset(ret, stat.reserve.symbol);
     }
 
@@ -358,10 +366,20 @@ struct structures {
         asset   amount; //!< amount of tokens if selling points, or amount of points if buying points
     };
 
+    /**
+      \brief A struct represents event with amount of POINTS debited as fee on POINT transfer with fee, or amount of reserve (COMMUN) tokens subtracted as fee from amount of bought COMMUN tokens when selling POINTs.  
+      \ingroup point_events
+    */
+    struct fee_event {
+        asset   amount; //!< amount of tokens debitd as fee
+    };
+
     void send_currency_event(const structures::stat& st, const structures::param& par);
 
     void send_balance_event(name acc, const structures::account& accinfo);
 
     void send_exchange_event(const asset& amount);
+
+    void send_fee_event(const asset& amount);
 };
 } /// namespace commun

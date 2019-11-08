@@ -348,7 +348,7 @@ private:
     }
     
     static inline int64_t get_reserve_amount(asset quantity) {
-        return point::get_reserve_quantity(quantity, false).amount;
+        return point::get_reserve_quantity(quantity, nullptr).amount;
     }
     
     template<typename GemIndex, typename GemItr>
