@@ -53,6 +53,8 @@ static constexpr int64_t def_reward_leaders_period = 24 * 60 * 60;
 static constexpr bool def_damned_gem_reward_enabled = false;
 static constexpr bool def_refill_gem_enabled = false;
 
+static constexpr bool def_custom_gem_size_enabled = false;
+
 #ifndef UNIT_TEST_ENV
 static constexpr auto post_opus_name = eosio::name("post");
 static constexpr auto comment_opus_name = eosio::name("comment");

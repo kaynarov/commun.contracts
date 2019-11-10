@@ -189,6 +189,7 @@ public:
         
         const string vote_weight_0         = amsg(auth_self + "weight can't be 0.");
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
+        const string custom_gem            = amsg("custom gem size disabled.");
 
         const string own_reblog               = amsg("You cannot reblog your own content.");
         const string wrong_reblog_body_length = amsg("Body must be set if title is set.");
@@ -412,13 +413,15 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Upvote testing.");
     auto permlink = "permlink";
-    auto vote_brucelee = [&](auto weight){ return post.upvote(N(brucelee), {N(brucelee), permlink}, weight); };
+    auto vote_brucelee = [&](std::optional<uint16_t> weight){ return post.upvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
-    BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(1));
+    BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(std::optional<uint16_t>()));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
+    BOOST_CHECK_EQUAL(err.custom_gem, vote_brucelee(cfg::_100percent));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("custom_gem_size_enabled", true)));
     BOOST_CHECK_EQUAL(success(), vote_brucelee(cfg::_100percent));
     auto gem = get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(brucelee));
     BOOST_CHECK(!gem.is_null());
@@ -430,7 +433,8 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     auto vote_brucelee = [&](auto weight){ return post.downvote(N(brucelee), {N(brucelee), permlink}, weight); };
     BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
     init();
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
+        ("refill_gem_enabled", true)("custom_gem_size_enabled", true)));
     BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(1));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
@@ -454,6 +458,7 @@ BOOST_FIXTURE_TEST_CASE(second_vote, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Unvote testing.");
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("custom_gem_size_enabled", true)));
     BOOST_CHECK_EQUAL(err.no_message, post.unvote(N(chucknorris), {N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.unvote(N(chucknorris), {N(brucelee), "permlink"}, _client));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
@@ -469,6 +474,7 @@ BOOST_FIXTURE_TEST_CASE(unvote, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Upvote/downvote testing.");
     init();
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("custom_gem_size_enabled", true)));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}, 100));
     BOOST_CHECK_EQUAL(success(), post.downvote(N(jackiechan), {N(brucelee), "permlink"}, 0, _client)); //empty
@@ -592,7 +598,8 @@ BOOST_FIXTURE_TEST_CASE(lock_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Reward for downvote testing.");
     init();
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("damned_gem_reward_enabled", true)));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
+        ("damned_gem_reward_enabled", true)("custom_gem_size_enabled", true)));
     uint16_t weight = 100;
     ctrl.prepare({N(jackiechan), N(brucelee)}, N(chucknorris));
     
@@ -723,7 +730,8 @@ BOOST_FIXTURE_TEST_CASE(gem_num_limit, commun_publication_tester) try {
         commun::structures::opus_info{ cfg::post_opus_name, 1, 1, 1 },
         commun::structures::opus_info{ cfg::comment_opus_name }
     }};
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("opuses", new_opuses )));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
+        ("opuses", new_opuses )("custom_gem_size_enabled", true)));
     size_t posts_num = 1000;
     for (size_t i = 0; i < posts_num; i++) {
         if (i % 100 == 0) { BOOST_TEST_MESSAGE("--- i = " << i); }
