@@ -1169,6 +1169,60 @@ BOOST_FIXTURE_TEST_CASE(resize, commun_publication_tester) try {
     
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(empty, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Empty top testing.");
+    init();
+    ctrl.prepare({N(jackiechan)}, N(brucelee));
+    
+    BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "for-claim"}));
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(jackiechan), {N(brucelee), "for-claim"}));
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(brucelee), "for-claim"}));
+    
+    BOOST_CHECK_EQUAL(success(), post.create({N(alice), "alice-in-blockchains"}));
+    BOOST_CHECK_EQUAL(success(), post.create({N(jackiechan), "it-is-a-masterpiece"}, {N(alice), "alice-in-blockchains"}));
+    BOOST_CHECK_EQUAL(success(), post.remove({N(alice), "alice-in-blockchains"}));
+    BOOST_CHECK_EQUAL(success(), post.lock(N(jackiechan), {N(jackiechan), "it-is-a-masterpiece"}, "no reason"));
+    
+    BOOST_CHECK_EQUAL(uint8_t(HIDDEN), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(LOCKED), get_mosaic(_code, _point, mssgid{N(jackiechan), "it-is-a-masterpiece"}.tracery())["status"].as<uint8_t>());
+    
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
+    BOOST_CHECK_EQUAL(success(), post.claim({N(brucelee), "for-claim"}, N(chucknorris), N(chucknorris), true, N(chucknorris)));
+    
+    BOOST_CHECK_EQUAL(get_stat(_code, _point)["retained"].as<int64_t>(), point.get_supply() - supply);
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(unlocked, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Unlocked mosaic testing.");
+    init();
+    ctrl.prepare({N(jackiechan)}, N(brucelee));
+    
+    BOOST_CHECK_EQUAL(success(), post.create({N(alice), "facelift"}));
+    BOOST_CHECK_EQUAL(success(), post.create({N(alice), "dirt"}));
+    BOOST_CHECK_EQUAL(success(), post.create({N(alice), "alice-in-blockchains"}));
+    BOOST_CHECK_EQUAL(success(), post.lock(N(jackiechan), {N(alice), "facelift"}, "no reason"));
+    BOOST_CHECK_EQUAL(success(), post.lock(N(jackiechan), {N(alice), "dirt"}, "no reason"));
+    produce_block();
+    BOOST_CHECK_EQUAL(success(), post.unlock(N(jackiechan), {N(alice), "facelift"}, "no reason"));
+    produce_block();
+    produce_block(fc::seconds(mosaic_active_period - block_interval));
+    BOOST_CHECK_EQUAL(success(), post.create({N(jackiechan), "it-is-a-masterpiece"}, {N(alice), "alice-in-blockchains"}));
+    
+    BOOST_CHECK_EQUAL(uint8_t(ACTIVE), get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(LOCKED), get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(ARCHIVED), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["status"].as<uint8_t>());
+    
+    BOOST_CHECK_EQUAL(0, get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["reward"].as<int64_t>());
+    BOOST_CHECK_EQUAL(0, get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["reward"].as<int64_t>());
+    BOOST_CHECK_EQUAL(0, get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["reward"].as<int64_t>());
+    
+    BOOST_CHECK_EQUAL(true, get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["meritorious"].as<int64_t>());
+    BOOST_CHECK_EQUAL(false, get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["meritorious"].as<int64_t>());
+    BOOST_CHECK_EQUAL(false, get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["meritorious"].as<int64_t>());
+    
+} FC_LOG_AND_RETHROW()
+
 BOOST_AUTO_TEST_SUITE_END() // reward::top
 
 BOOST_AUTO_TEST_SUITE_END() // reward
