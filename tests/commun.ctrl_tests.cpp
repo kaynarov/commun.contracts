@@ -356,8 +356,8 @@ BOOST_FIXTURE_TEST_CASE(unvotelead_test, commun_ctrl_tester) try {
     BOOST_CHECK_EQUAL(err.no_vote, comm_ctrl.unvote_leader(_carol, _alice));
 
     BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code));
-    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _bob, asset(1000, point._symbol), ""));
-    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _carol, asset(1000, point._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _bob, asset(1000, point._symbol), "issue to bob"));
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _carol, asset(1000, point._symbol), "issue to carol"));
     BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _alice));
     BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _carol, asset(700, point._symbol)));
     BOOST_CHECK_EQUAL(success(), comm_ctrl.unvote_leader(_carol, _alice));
