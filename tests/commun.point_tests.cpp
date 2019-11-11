@@ -190,9 +190,8 @@ BOOST_FIXTURE_TEST_CASE(create_tests, commun_point_tester) try {
     auto max_supply = asset(999999, point._symbol);
     auto another = symbol(3, "ANOTHER");
 
-    BOOST_CHECK_EQUAL(err.invalid_max_supply, point.create(_golos, init_supply, asset(1ll<<62, point._symbol), 5000, 0));
+    // TODO: invalid symbol and asset
     BOOST_CHECK_EQUAL(err.max_supply_not_positive, point.create(_golos, init_supply, asset(-999999, point._symbol), 5000, 0));
-    BOOST_CHECK_EQUAL(err.invalid_init_supply, point.create(_golos, asset(1ll<<62, point._symbol), max_supply, 5000, 6));
     BOOST_CHECK_EQUAL(err.init_and_max_symbols_diff, point.create(_golos, asset(0, another), asset(999999, point._symbol), 5000, 0));
     BOOST_CHECK_EQUAL(err.init_supply_not_positive, point.create(_golos, asset(-1, point._symbol), max_supply, 5000, 0));
     BOOST_CHECK_EQUAL(err.init_supply_more_then_max, point.create(_golos, asset(1000000, point._symbol), asset(999999, point._symbol), 5000, 0));
