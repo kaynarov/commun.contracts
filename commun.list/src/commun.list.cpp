@@ -42,6 +42,9 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 
     check(community_tbl.find(commun_code.raw()) == community_tbl.end(), "community token exists");
 
+    check(!community_name.empty(), "Community name should not be empty.");
+    check((community_name.front() != ' ') && (community_name.back() != ' '), "Community name should not start or end with space.");
+
     auto community_hash256 = eosio::sha256(community_name.c_str(), community_name.size());
     auto community_hash = *(reinterpret_cast<const uint64_t *>(community_hash256.extract_as_byte_array().data()));
     auto community_index = community_tbl.get_index<"byhash"_n>();
