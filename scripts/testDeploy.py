@@ -39,7 +39,7 @@ class DeployTests(unittest.TestCase):
         body = testnet.randomText(1024)
         community.createPost('CATS', author, permlink, 'cats', header, body, providebw=author+'/c@providebw', keys=[private, clientKey])
 
-        community.upvotePost('CATS', voter, author, permlink, 10000, providebw=voter+'/c@providebw', keys=[private2, clientKey])
+        community.upvotePost('CATS', voter, author, permlink, providebw=voter+'/c@providebw', keys=[private2, clientKey])
 
 
     def test_glsProvideBW(self):

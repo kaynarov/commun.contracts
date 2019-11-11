@@ -188,20 +188,18 @@ def createPost(commun_code, author, permlink, category, header, body, *, provide
             'metadata':''
         }, providebw=providebw, keys=keys)
 
-def upvotePost(commun_code, voter, author, permlink, weight, *, providebw=None, keys=None):
+def upvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):
     return pushAction('c.gallery', 'upvote', voter, {
             'commun_code':commun_code,
             'voter':voter,
-            'message_id':{'author':author, 'permlink':permlink},
-            'weight':weight
+            'message_id':{'author':author, 'permlink':permlink}
         }, providebw=providebw, keys=keys)
 
-def downvotePost(commun_code, voter, author, permlink, weight, *, providebw=None, keys=None):
+def downvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):
     return pushAction('c.gallery', 'downvote', voter, {
             'commun_code':commun_code,
             'voter':voter,
-            'message_id':{'author':author, 'permlink':permlink},
-            'weight':weight
+            'message_id':{'author':author, 'permlink':permlink}
         }, providebw=providebw, keys=keys)
 
 def unvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):

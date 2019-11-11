@@ -54,6 +54,7 @@ public:
         \param min_lead_rating minimal leader rating of mosaic to receive reward
         \param damned_gem_reward_enabled allow gem owner got reward from gem with negative shares or not
         \param refill_gem_enabled allow to refill gems by points and shares or not
+        \param custom_gem_size_enabled sets whether the custom size of the gem can be adjusted when voting and creating a post/comment
 
         All parameters are optional. To not change parameter, do not pass it.
 
@@ -64,7 +65,7 @@ public:
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating,
-        optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled);
+        optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled, optional<bool> custom_gem_size_enabled);
 
     /**
         \brief The setparams action is used to update parameters of community.

@@ -112,6 +112,10 @@
                 {
                     "name": "refill_gem_enabled",
                     "type": "bool"
+                },
+                {
+                    "name": "custom_gem_size_enabled",
+                    "type": "bool"
                 }
             ]
         },
@@ -205,6 +209,10 @@
                 },
                 {
                     "name": "refill_gem_enabled",
+                    "type": "bool?"
+                },
+                {
+                    "name": "custom_gem_size_enabled",
                     "type": "bool?"
                 }
             ]
