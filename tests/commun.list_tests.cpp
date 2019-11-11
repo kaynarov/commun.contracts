@@ -71,6 +71,8 @@ public:
         const string incorrect_author_percent = amsg("incorrect author percent");
         const string add_perm = amsg("cannot add permission");
         const string del_perm = amsg("cannot delete permission");
+        const string comn_name_empty = amsg("Community name should not be empty.");
+        const string comn_name_spaces = amsg("Community name should not start or end with space.");
     } err;
 };
 
@@ -81,6 +83,9 @@ BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
     create_token(_golos, _token);
 
     BOOST_CHECK_EQUAL(err.no_point_symbol, community.create(cfg::list_name, _token_e_code, "community 1"));
+    BOOST_CHECK_EQUAL(err.comn_name_empty, community.create(cfg::list_name, _token_code, ""));
+    BOOST_CHECK_EQUAL(err.comn_name_spaces, community.create(cfg::list_name, _token_code, " community 1"));
+    BOOST_CHECK_EQUAL(err.comn_name_spaces, community.create(cfg::list_name, _token_code, "community 1 "));
 
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community 1"));
 
