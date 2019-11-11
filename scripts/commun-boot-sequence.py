@@ -43,7 +43,7 @@ _communAccounts = [
     ('c.ctrl',    'commun.ctrl',          None, [
             ('changepoints', [], ['c.point@cyber.code'], [':changepoints']),
             ('init',         [], ['c.list@cyber.code'], [':init']),
-            ('transferperm', [], ['@cyber.code'], ['c.point:transfer']),
+            ('transferperm', [], ['c.ctrl@cyber.code'], ['c.point:transfer']),
         ]),
     ('c.emit',    'commun.emit',          None, [
             ('rewardperm',   [], ['c.ctrl@cyber.code', 'c.gallery@cyber.code'], [':issuereward']),
