@@ -57,13 +57,14 @@ public:
         link_authority(cfg::gallery_name, cfg::gallery_name, N(init), N(init));
 
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
-        set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
         link_authority(cfg::point_name, cfg::point_name, cfg::issue_permission, N(issue));
-        link_authority(cfg::point_name, cfg::point_name, cfg::transfer_permission, N(transfer));
     }
 
     void init() {
-        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 0));
+        set_authority(_golos, cfg::transfer_permission, create_code_authority({cfg::emit_name}), cfg::active_name);
+        link_authority(_golos, cfg::point_name, cfg::transfer_permission, N(transfer));
+
+        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(supply * 2, point._symbol), 10000, 0));
         BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(reserve * 2, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));

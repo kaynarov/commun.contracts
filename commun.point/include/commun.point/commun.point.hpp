@@ -32,6 +32,8 @@ public:
         \brief Create point token.
 
         \param issuer an account who issues the token
+        \param initial_supply number of firstly supplied points. These points are placed on the \a issuer's balance.
+                \a initial_supply should be not more then \a maximum_supply and have same symbol.
         \param maximum_supply a structure value containing the fields:
                 - maximum number of tokens supplied;
                 - token symbol (data type that uniquely identifies the token). This is a structure value containing fields:
@@ -42,10 +44,10 @@ public:
 
         Sends \ref currency event.
 
-        Performing the action requires a validators signature.
+        Performing the action requires a validator signature.
     */
     [[eosio::action]]
-    void create(name issuer, asset maximum_supply, int16_t cw, int16_t fee);
+    void create(name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee);
 
     /**
         \brief The setparams action is used by POINT issuer to set POINT token parameters which can be updated after its creation.

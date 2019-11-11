@@ -43,6 +43,7 @@
             "base": "",
             "fields": [
                 { "type": "name",         "name": "issuer" },
+                { "type": "asset",        "name": "initial_supply" },
                 { "type": "asset",        "name": "maximum_supply" },
                 { "type": "int16",        "name": "cw" },
                 { "type": "int16",        "name": "fee" }

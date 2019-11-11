@@ -39,10 +39,11 @@ public:
     bool _creators_added;
 
     //// token actions
-    action_result create(account_name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
+    action_result create(account_name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee) {
         if (!_creators_added)
             return push(N(create), _code, args()
                 ("issuer", issuer)
+                ("initial_supply", initial_supply)
                 ("maximum_supply", maximum_supply)
                 ("cw", cw)
                 ("fee", fee)
@@ -53,6 +54,7 @@ public:
             {{_code}}, 
             args()
                 ("issuer", issuer)
+                ("initial_supply", initial_supply)
                 ("maximum_supply", maximum_supply)
                 ("cw", cw)
                 ("fee", fee)
@@ -72,11 +74,21 @@ public:
     }
 
     action_result issue(account_name issuer, account_name to, asset quantity, string memo) {
-        return push(N(issue), issuer, args()
-            ("to", to)
+        issuer = get_issuer(quantity.get_symbol());
+        action_result result;
+        
+        result = push(N(issue), _code, args()
+            ("to", issuer)
             ("quantity", quantity)
             ("memo", memo)
         );
+        if (_tester->success() != result)
+            return result;
+
+        if (issuer == to)
+            return result;
+
+        return transfer(issuer, to, quantity, memo);
     }
 
     action_result retire(account_name from, asset quantity, string memo) {
@@ -131,6 +143,15 @@ public:
             v = o;
         }
         return v;
+    }
+
+    account_name get_issuer(symbol sym) {
+        auto sname = sym.to_symbol_code().value;
+        auto v = get_struct(_code, N(param), sname, "param");
+        if (v.is_object()) {
+            return mvo(v)["issuer"].as<account_name>();
+        }
+        return name();
     }
 
     variant get_stats() {

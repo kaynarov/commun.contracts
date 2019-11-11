@@ -84,6 +84,18 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
             'type': 'ban',
             'requirement': 'lead.minor'})
 
+    trx.addAction('cyber', 'updateauth', owner_account, {
+            'account': owner_account,
+            'permission': 'transferperm',
+            'parent': 'active',
+            'auth': createAuthority([], ['c.emit@cyber.code'])})
+
+    trx.addAction('cyber', 'linkauth', owner_account, {
+            'account': owner_account,
+            'code': 'c.point',
+            'type': 'transfer',
+            'requirement': 'transferperm'})
+
     trx.addAction('cyber', 'providebw', 'c@providebw', {
             'provider': 'c',
             'account': owner_account})
@@ -91,7 +103,7 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
     pushTrx(trx, keys=[creator_key])
 
 
-    # 1. Buy some value of COMMUN tokens (for testing purposes c@issue)
+    # 1. Buy some value of COMMUN tokens (for testing purposes c.issuer@issue)
     trx = Trx()
     trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {
         'to':'c.issuer',
@@ -112,6 +124,7 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
     # 2. Create community points
     pushAction('c.point', 'create', 'c.point@clients', {
         'issuer': owner_account,
+        'initial_supply': initial_supply,
         'maximum_supply': maximum_supply,
         'cw': cw,
         'fee': fee
@@ -121,27 +134,21 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
     transfer(owner_account, 'c.point', reserve_amount, 'restock: {code}'.format(code=symbol.code),
         providebw=owner_account+'/c@providebw', keys=creator_key)
 
-    # 4. Initial supply of community points
-    pushAction('c.point', 'issue', owner_account, {
-        'to': owner_account,
-        'quantity': initial_supply,
-        'memo': 'initial'
-    }, providebw=owner_account+'/c@providebw', keys=creator_key)
+    # 4. Open point balance for c.gallery & c.ctrl
+    for acc in ('c.gallery', 'c.ctrl'):
+        pushAction('c.point', 'open', 'c@providebw', {
+            "owner": acc,
+            "commun_code": symbol.code,
+            "ram_payer": "c"
+        }, keys=creator_key)
 
-    # 5. Open point balance for c.gallery
-    pushAction('c.point', 'open', 'c@providebw', {
-        "owner": "c.gallery",
-        "commun_code": symbol.code,
-        "ram_payer": "c"
-    }, keys=creator_key)
-
-    # 6. Register community (c.list:create)
+    # 5. Register community (c.list:create)
     pushAction('c.list', 'create', 'c.list@clients', {
         "commun_code": symbol.code,
         "community_name": community_name
     }, providebw=['c.list/c@providebw', 'c.emit/c@providebw', 'c.ctrl/c@providebw', 'c.gallery/c@providebw'], keys=creator_key)
 
-    # 7. Pass account to community
+    # 6. Pass account to community
     updateAuth(owner_account, 'active', 'owner', [], [owner_account+'@lead.smajor'],
             providebw=owner_account+'/c@providebw', keys=creator_key)
 

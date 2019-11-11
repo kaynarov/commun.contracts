@@ -66,14 +66,14 @@ public:
         set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
 
+        set_authority(cfg::control_name, cfg::transfer_permission, create_code_authority({cfg::control_name}), "active");
+        link_authority(cfg::control_name, cfg::point_name, cfg::transfer_permission, N(transfer));
+
         set_authority(cfg::gallery_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::gallery_name, cfg::gallery_name, N(init), N(init));
         
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
-        set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
-
         link_authority(cfg::point_name, cfg::point_name, cfg::issue_permission, N(issue));
-        link_authority(cfg::point_name, cfg::point_name, cfg::transfer_permission, N(transfer));
         
     }
     struct errors : contract_error_messages {
@@ -110,7 +110,7 @@ public:
         const string there_are_votes = amsg("not possible to remove leader as there are votes");
     } err;
     
-    transaction get_point_create_trx(const vector<permission_level>& auths, name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
+    transaction get_point_create_trx(const vector<permission_level>& auths, name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee) {
         fc::variants v;
         for (auto& level : auths) {
             v.push_back(fc::mutable_variant_object()("actor", level.actor)("permission", level.permission));
@@ -131,6 +131,7 @@ public:
                 ("authorization", v)
                 ("data", fc::mutable_variant_object() 
                     ("issuer", issuer)
+                    ("initial_supply", initial_supply)
                     ("maximum_supply", maximum_supply)
                     ("cw", cw)
                     ("fee", fee)
@@ -147,9 +148,12 @@ public:
         BOOST_CHECK_EQUAL(success(), token.create(cfg::dapp_name, asset(reserve, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(cfg::dapp_name, _golos, asset(reserve, token._symbol), ""));
         
-        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 1));
+        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(supply * 2, point._symbol), 10000, 1));
         BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "The community"));
         
+        set_authority(_golos, cfg::transfer_permission, create_code_authority({cfg::emit_name}), cfg::active_name);
+        link_authority(_golos, cfg::point_name, cfg::transfer_permission, N(transfer));
+
         BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
@@ -179,9 +183,10 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_ctrl_tester) try {
     
     produce_block();
     
+    asset init_supply(0, point._symbol);
     asset max_supply(999999, point._symbol);
     auto trx = get_point_create_trx({permission_level{cfg::point_name, cfg::active_name}},
-        _golos, max_supply, 5000, 0);
+        _golos, init_supply, max_supply, 5000, 0);
 
     BOOST_CHECK_EQUAL(err.not_a_leader(_alice), dapp_ctrl.propose(_alice, N(goloscreate), cfg::active_name, trx));
     BOOST_CHECK_EQUAL(success(), dapp_ctrl.propose(leaders[0], N(goloscreate), cfg::active_name, trx));
@@ -301,7 +306,7 @@ BOOST_FIXTURE_TEST_CASE(voteleader_test, commun_ctrl_tester) try {
     BOOST_TEST_MESSAGE("voteleader_test");
     BOOST_CHECK_EQUAL(success(), token.create(cfg::dapp_name, asset(9999999, token._symbol)));
     BOOST_CHECK_EQUAL(success(), token.issue(cfg::dapp_name, _golos, asset(9999999, token._symbol), ""));
-    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(9999999, point._symbol), 10000, 1));
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(9999999, point._symbol), 10000, 1));
     BOOST_CHECK_EQUAL(err.no_community, comm_ctrl.vote_leader(_carol, _alice));
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "GOLOS"));
     BOOST_CHECK_EQUAL(success(), community.setparams(_golos, point_code, community.args()("max_votes", 3)));
@@ -351,8 +356,8 @@ BOOST_FIXTURE_TEST_CASE(unvotelead_test, commun_ctrl_tester) try {
     BOOST_CHECK_EQUAL(err.no_vote, comm_ctrl.unvote_leader(_carol, _alice));
 
     BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code));
-    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _bob, asset(1000, point._symbol), ""));
-    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _carol, asset(1000, point._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _bob, asset(1000, point._symbol), "issue to bob"));
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _carol, asset(1000, point._symbol), "issue to carol"));
     BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _alice));
     BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _carol, asset(700, point._symbol)));
     BOOST_CHECK_EQUAL(success(), comm_ctrl.unvote_leader(_carol, _alice));
@@ -362,7 +367,7 @@ BOOST_FIXTURE_TEST_CASE(unvotelead_test, commun_ctrl_tester) try {
 BOOST_FIXTURE_TEST_CASE(clearvotes_test, commun_ctrl_tester) try {
     BOOST_TEST_MESSAGE("clearvotes_test");
     BOOST_CHECK_EQUAL(success(), token.create(cfg::dapp_name, asset(9999999, token._symbol)));
-    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(9999999, point._symbol), 10000, 1));
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(9999999, point._symbol), 10000, 1));
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "GOLOS"));
     BOOST_CHECK_EQUAL(success(), token.issue(cfg::dapp_name, _golos, asset(9999999, token._symbol), ""));
     BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::point_name, asset(9999999, token._symbol), cfg::restock_prefix + point_code_str));

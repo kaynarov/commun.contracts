@@ -304,7 +304,7 @@ private:
         
         if (quantity.amount) {
             action(
-                permission_level{config::point_name, config::transfer_permission},
+                permission_level{from, config::transfer_permission},
                 config::point_name,
                 "transfer"_n,
                 std::make_tuple(from, to, quantity, "reward for " + std::to_string(tracery))
