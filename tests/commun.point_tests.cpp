@@ -52,11 +52,11 @@ public:
         const string wrong_issuer = amsg("issuer account does not exist");
         const string wrong_owner = amsg("owner account does not exist");
         const string invalid_max_supply = amsg("invalid maximum_supply");
-        const string max_supply_not_positive = amsg("maxumum_supply must be positive");
+        const string max_supply_not_positive = amsg("maximum_supply must be positive");
         const string invalid_init_supply = amsg("invalid initial_supply");
-        const string init_and_max_symbols_diff = amsg("initial_supply and maxumum_supply must have same symbol");
+        const string init_and_max_symbols_diff = amsg("initial_supply and maximum_supply must have same symbol");
         const string init_supply_not_positive = amsg("initial_supply must be positive or zero");
-        const string init_supply_more_then_max = amsg("initial_supply must be less or equal maxumum_supply");
+        const string init_supply_more_then_max = amsg("initial_supply must be less or equal maximum_supply");
         const string invalid_cw = amsg("connector weight must be between 0.01% and 100% (1-10000)");
         const string invalid_fee = amsg("fee must be between 0% and 100% (0-10000)");
         const string point_already_exists = amsg("point already exists");
