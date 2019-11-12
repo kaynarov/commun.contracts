@@ -18,16 +18,16 @@ using namespace eosio;
 using share_type = int64_t;
 
 /**
-  \brief For each leader, a separate record is created in the database, containing the name and <i>weight</i> of the leader. Such record appears in DB after each calling send_leader_event().
+  \brief For each leader, a separate record is created in the database, containing the name and \a weight of the leader. Such record appears in DB after each calling send_leader_event().
 
   \ingroup control_tables
 */
 // DOCS_TABLE: leader_info
 struct [[eosio::table]] leader_info {
     name name;       //!< a leader name
-    bool active;     //!< "true" if the leader is active. Default is "true"
+    bool active;     //!< \a true if the leader is active; default is \a true
 
-    uint64_t total_weight;  //!< total <i>weight</i> of the leader taking into account the votes cast for him/her
+    uint64_t total_weight;  //!< total \a weight of the leader taking into account the votes cast for him/her
     uint64_t counter_votes; //!< counter of votes cast for the leader
     
     int64_t unclaimed_points = 0; //!< the points accumulated from emission and not yet claimed by leader via \ref control::claim
@@ -120,7 +120,7 @@ struct [[eosio::table]] invalidation {
 using invalidations = eosio::multi_index< "invals"_n, invalidation>;
 
 /**
- * \brief This class implements the commun.ctrl contract functionality.
+ * \brief This class implements the \a commun.ctrl contract functionality.
  * \ingroup control_class
  */
 class control: public contract {
@@ -140,12 +140,12 @@ public:
     }
 
     /**
-     * \brief The \ref init action is used by commun.list contract to initialize leaders for a community with specified point symbol.
+     * \brief The \ref init action is used by \a commun.list contract to initialize leaders for a community with specified point symbol.
      *
      * \param commun_code a point symbol of community
      *
      * This action is unavailable for user and can be called only internally.
-	 * It requires signature of the commun.ctrl contract account. 
+     * It requires signature of the \a commun.ctrl contract account. 
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
@@ -168,7 +168,7 @@ public:
         \param leader the leader candidate name whose votes are removed
         \param count maximum number of votes that can be removed
 
-        When this action is called, event information is stored in \p leadertate and sent to the event engine. 
+        When this action is called, event information is stored in \a leaderstate and sent to the event engine. 
 
         This action requires a signature of the leader candidate.
     */
@@ -183,11 +183,11 @@ public:
         The action can be called either by the candidate (in case of a withdrawal) or by a leader who found a
         discrepancy of the leader capabilities to desirable leader requirements, and mismatched data published on the web
         site with her/his relevant data.
-		
+
         Condition for performing the action:
             - no votes should be cast for this leader candidate. Votes of all users who voted for this leader candidate should be removed.
-		
-		This action requires a signature of the leader candidate who is removed from the list.
+
+        This action requires a signature of the leader candidate who is removed from the list.
      */
     [[eosio::action]] void unregleader(symbol_code commun_code, name leader);
 
@@ -201,10 +201,10 @@ public:
 
         Condition for performing the action:
             - the leader account should be active.
-		
+
         The leader account activity can be continued in case it has performed the \ref startleader action.
-		
-		This action requires a signature of the leader whose activity is to be suspended.
+
+        This action requires a signature of the leader whose activity is to be suspended.
     */
     [[eosio::action]] void stopleader(symbol_code commun_code, name leader);
 
@@ -214,12 +214,12 @@ public:
         \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is resumed
 
-        When this action is called, event information is stored in \p leadertate and sent to the event engine.
+        When this action is called, event information is stored in \a leaderstate and sent to the event engine.
 
         Condition for performing the action:
             - the leader account activity should be suspended, that is, the operation \ref stopleader should be performed previously.
 
-		This action requires a signature of the leader whose activity is to be resumed.
+        This action requires a signature of the leader whose activity is to be resumed.
      */
     [[eosio::action]] void startleader(symbol_code commun_code, name leader);
 
@@ -231,44 +231,44 @@ public:
         \param leader a name of the leader candidate for whom the vote is cast
         \param pct a share (in percent) of voter power cast for the leader. If \a pct is empty, the leader is given all unused voter power
 
-        When this action is called, event information is stored in \p leadertate and sent to the event engine.
+        When this action is called, event information is stored in \a leaderstate and sent to the event engine.
 
         Total amount of all shares that voter distributes among the leaders can not exceed 100 %. If \a pct is not set, then the percentage allocated to the leader is calculated as follows:
-		
-		<center> <i> pct = ( 100 — &sum; N<sub>j</sub> ) % </i> </center>
-		
-		<i> &sum; N<sub>j</sub> </i> — sum of shares allocated to another leaders.
-		
-        After voting, the leader’s total <i>weight</i> will be equal to
-		
-		<center> <i>weight = ( voter_balance × pct / 100 ) % </i> </center>
-		
-		This <i>weight</i> will be updated each time after changing the balance (see \ref changepoints).
-		
+
+        <center> <i> pct = ( 100 — &sum; N<sub>j</sub> ) % </i> </center>
+
+        <i> &sum; N<sub>j</sub> </i> — sum of shares allocated to another leaders.
+
+        After voting, the leader’s total <i>weight</i> will be calculated as follows:
+
+        <center> <i>weight = ( voter_balance × pct / 100 ) % </i> </center>
+
+        This \a weight will be updated each time after changing the balance (see \ref changepoints).
+
         <b>Restrictions:</b>
             - the leader candidate name must first be registered through a call to regleader;
             - total number of votes cast by the voter account for all candidates should not exceed the max_votes community parameter value;
-			- it is not allowed to vote for a leader candidate whose activity is suspended (after calling the stopleader action, for example).
-		
-		This action requires a signature of the user voting for the leader candidate.
+            - it is not allowed to vote for a leader candidate whose activity is suspended (after calling the stopleader action, for example).
+
+        This action requires a signature of the user voting for the leader candidate.
     */
     [[eosio::action]] void voteleader(symbol_code commun_code, name voter, name leader, std::optional<uint16_t> pct);
 
     /**
-        \brief The action unvotelead is used to withdraw a previously cast vote for a leader candidate.
+        \brief The \ref unvotelead action is used to withdraw a previously cast vote for a leader candidate.
 
         \param commun_code a point symbol of the community
         \param voter a user who intends to withdraw her/his vote which was previously cast for the leader candidate
         \param leader the leader candidate name from whom the vote is withdrawn
 
-        When this action is called, event information is stored in \p leadertate and sent to the event engine.
+        When this action is called, event information is stored in \a leaderstate and sent to the event engine.
 
         This action requires a signature of the user who withdraws a vote.
     */
     [[eosio::action]] void unvotelead(symbol_code commun_code, name voter, name leader);
 
     /**
-        \brief The claim action is used to withdraw a reward by a leader
+        \brief The \ref claim action is used to withdraw a reward by a leader
 
         \param commun_code a point symbol of the community
         \param leader account name of the leader
@@ -278,13 +278,12 @@ public:
     [[eosio::action]] void claim(symbol_code commun_code, name leader);
 
     /**
-        \brief The \ref changepoints action is an internal and unavailable to the user. It is used by \ref commun.point to notify the \ref commun.ctrl smart contract about a change of the points amount on the user's balance. The action is called automatically after changing the points amount on a user's balance. The \a weights of all the leaders voted for by this user are also updated.
+        \brief The \ref changepoints action is an internal and unavailable to the user. It is used by \a commun.point to notify the \a commun.ctrl smart contract about a change of the points amount on the user's balance. The action is called automatically after changing the points amount on a user's balance. The \a weights of all the leaders voted for by this user are also updated.
 
         \param who an account name whose points amount has been changed.
         \param diff a relative change of points amount.
 
-        When this action is called, event information is stored in \p leadertate and sent to the event engine.
-
+        When this action is called, event information is stored in \a leaderstate and sent to the event engine.
     */
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_points_transfer(name from, name to, asset quantity, std::string memo);
@@ -313,8 +312,8 @@ public:
         \param approver name of account approving multi-signature transaction
         \param proposal_hash a hash sum to check if the transaction is substituted or not (optional parameter)
 
-	<b>Restrictions:</b>
-		    - Only a top leader can approve (can sign) the transaction.
+        <b>Restrictions:</b>
+            - Only a top leader can approve (can sign) the transaction.
     */
     [[eosio::action]] void approve(name proposer, name proposal_name, name approver,
                 const eosio::binary_extension<eosio::checksum256>& proposal_hash);
@@ -355,10 +354,10 @@ public:
         \param executer name of account executing transaction
 
         Conditions for transaction execution:
-			- the transaction should not be expired;
-			- there should be a required number of signatures (only the signatures of top leaders are taken into account, excluding invalid ones);
-			- all operations contained in the transaction should be feasible;
-			- the memory in the database allocated for the transaction can be erased.
+            - the transaction should not be expired;
+            - there should be a required number of signatures (only the signatures of top leaders are taken into account, excluding invalid ones);
+            - all operations contained in the transaction should be feasible;
+            - the memory in the database allocated for the transaction can be erased.
 
         This action requires a signature of the \a executer.
     */
@@ -369,8 +368,7 @@ public:
 
         \param account name of account revoking permissions
 
-		
-		\details This action revokes all permissions issued by this account for currently executing multi-signature transactions. This action does not apply to completed transactions, as well as to transactions that will be signed by this account after calling \ref invalidate. The proposed transaction can still be sent to the network if it contains the needed number of signatures, taking into account the withdrawn one.
+        \details This action revokes all permissions issued by this account for currently executing multi-signature transactions. This action does not apply to completed transactions, as well as to transactions that will be signed by this account after calling \ref invalidate. The proposed transaction can still be sent to the network if it contains the needed number of signatures, taking into account the withdrawn one.
 
         This action requires a signature of the account revoking permissions.
     */
@@ -392,7 +390,7 @@ private:
         symbol_code commun_code; //!< a point symbol of the community to which the leader belongs
         name name; //!< the leader name
         uint64_t total_weight; //!< total \a weight of the leader
-        bool active; //!< «true» if the leader is active
+        bool active; //!< \a true if the leader is active
     };
 
     void send_leader_event(symbol_code commun_code, const leader_info& wi);
