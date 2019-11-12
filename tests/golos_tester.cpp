@@ -105,7 +105,7 @@ base_tester::action_result golos_tester::push_action_msig_tx(
     return push_tx(std::move(tx));
 }
 
-base_tester::action_result golos_tester::push_tx(signed_transaction&& tx) {
+base_tester::action_result golos_tester::push_tx(signed_transaction&& tx, bool produce_and_check) {
     try {
         push_transaction(tx);
     } catch (const fc::exception& ex) {
@@ -113,9 +113,31 @@ base_tester::action_result golos_tester::push_tx(signed_transaction&& tx) {
         return error(ex.top_message()); // top_message() is assumed by many tests; otherwise they fail
         //return error(ex.to_detail_string());
     }
-    produce_block();
-    BOOST_REQUIRE_EQUAL(true, chain_has_transaction(tx.id()));
+    if (produce_and_check) {
+        produce_block();
+        BOOST_REQUIRE_EQUAL(true, chain_has_transaction(tx.id()));
+    }
     return success();
+}
+
+base_tester::action_result golos_tester::push_tx(const std::vector<action_data> actions, const std::vector<account_name> signers, bool produce_and_check) {
+    signed_transaction tx;
+    for(const auto& act_data : actions) {
+        auto& abi = _abis[act_data.code];
+        action act;
+        act.account = act_data.code;
+        act.name    = act_data.action;
+        act.data    = abi.variant_to_binary(abi.get_action_type(act_data.action), act_data.data, abi_serializer_max_time);
+        for (const auto& perm : act_data.perms) {
+            act.authorization.emplace_back(perm);
+        }
+        tx.actions.emplace_back(std::move(act));
+    }
+    set_transaction_headers(tx);
+    for (const auto& a : signers) {
+        tx.sign(get_private_key(a, "active"), control->get_chain_id());
+    }
+    return push_tx(std::move(tx), produce_and_check);
 }
 
 variant golos_tester::get_chaindb_struct(name code, uint64_t scope, name tbl, uint64_t id,
