@@ -7,7 +7,7 @@ using namespace eosio;
 using std::optional;
 
 /**
- * \brief This class implements comn.list contract behaviour
+ * \brief This class implements the \a commun.list contract functionality
  * \ingroup list_class
  */
 class commun_list: public contract {
@@ -15,50 +15,50 @@ public:
     using contract::contract;
 
     /**
-        \brief The create action creates the community.
+        \brief The \ref create action is used to create an individual community in the commun application.
 
-        \param commun_code a point symbol of the community
-        \param community_name name of th community
+        \param commun_code a point symbol of the new community
+        \param community_name a name of the new community
 
-        Performing the action requires the validators signature.
+        Performing this action requires the signature of most validators.
     */
     [[eosio::action]] void create(symbol_code commun_code, std::string community_name);
 
     /**
-        \brief The setappparams action is used to update parameters of dApp.
+        \brief The \ref setappparams action is used to configure the parameters of dApp.
 
-        \param leaders_num number of dApp (top) leaders
-        \param max_votes max number of leaders votes by the user
-        \param permission multisig permission to which set threshold. If not exists, will be created. Should be set if required_threshold set
-        \param required_threshold threshold which should be set to specified multisig permission. If set to 0, permission will be removed. Should be set if permission set
+        \param leaders_num number of dApp (top) leaders.  Default value is 21
+        \param max_votes maximum number of leaders a user can vote for. Default value is 30
+        \param permission permission for multisig transaction, for which the threshold is set. If this parameter is set, but not stored in DB, it will be placed in that DB. If \a required_threshold is set, the \a permission should be set too
+        \param required_threshold threshold at which a multisig transaction is considered approved. If this parameter is set to «0», the \a permission will be removed. If \a permission is set, the threshold should be set too
 
-        All parameters are optional. To not change parameter, do not pass it.
+        All parameters are optionally. So, each of them can be set via separate calling of this action.
 
-        Performing the action requires the validators signature.
+        Performing this action requires the signature of most validators.
     */
     [[eosio::action]] void setappparams(optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
                                         optional<name> permission, optional<uint8_t> required_threshold);
     /**
-        \brief The setsysparams action is used to update system parameters of community.
+        \brief The \ref setsysparams action is used to set up the system parameters for a separate community.
 
         \param commun_code a point symbol of the community
-        \param permission multisig permission to which set threshold. If not exists, will be created. Should be set if required_threshold set
-        \param required_threshold threshold which should be set to specified multisig permission. If set to 0, permission will be removed. Should be set if permission set
-        \param collection_period mosaic collection period in seconds
-        \param moderation_period mosaic moderation period in seconds
-        \param lock_period mosaic lock period in seconds
-        \param gems_per_day count of gems user can freeze per day
-        \param rewarded_mosaic_num count of mosaics receiving reward
-        \param opuses opuses which should be added, or updated if already exist
+        \param permission permission for multisig transaction, for which the threshold is set. If this parameter is set, but not stored in DB, it will be placed in that DB. If \a required_threshold is set, the \a permission should be set too
+        \param required_threshold threshold at which a multisig transaction is considered approved. If this parameter is set to «0», the \a permission will be removed. If \a permission is set, the threshold should be set too
+        \param collection_period mosaic collection period (in seconds). Default value is 604800 (calculated as 7×24×60×60)
+        \param moderation_period mosaic moderation period (in seconds). Default value is 259200 (calculated as 3×24×60×60)
+        \param lock_period mosaic lock period (in seconds)
+        \param gems_per_day number of gems that a user can freeze per day. Default value is 10
+        \param rewarded_mosaic_num number of mosaics receiving a reward. Default value is 10
+        \param opuses opuses which should be added or updated if they exist
         \param remove_opuses opuses which should be removed
-        \param min_lead_rating minimal leader rating of mosaic to receive reward
-        \param damned_gem_reward_enabled allow gem owner got reward from gem with negative shares or not
-        \param refill_gem_enabled allow to refill gems by points and shares or not
-        \param custom_gem_size_enabled sets whether the custom size of the gem can be adjusted when voting and creating a post/comment
+        \param min_lead_rating minimum mosaic leader rating required to receive a reward. Default value is 10001 (calculated as advice_weight[0]+1 = 10000+1)
+        \param damned_gem_reward_enabled \a true — it allows a gem owner to get reward from a gem with negative shares. Default value is \a false
+        \param refill_gem_enabled \a true — it allows to refill the gems with points and shares. Default value is \a false
+        \param custom_gem_size_enabled \a true — it allows to adjust the custom size of the gem when voting, posting or leaving a comment. Default value is \a false
 
-        All parameters are optional. To not change parameter, do not pass it.
+        All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
 
-        Performing the action requires the validators signature.
+        Performing this action requires the signature of most validators.
     */
     [[eosio::action]] void setsysparams(symbol_code commun_code,
         optional<name> permission, optional<uint8_t> required_threshold,
@@ -68,20 +68,22 @@ public:
         optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled, optional<bool> custom_gem_size_enabled);
 
     /**
-        \brief The setparams action is used to update parameters of community.
+        \brief The \ref setparams action is used to set up the parameters for a community.
 
         \param commun_code a point symbol of the community
-        \param leaders_num number of community (top) leaders
-        \param max_votes max number of leaders votes by the user
-        \param permission multisig permission to which set threshold. (This action cannot create or delete permissions). Should be set if required_threshold set
-        \param required_threshold threshold which should be set to specified multisig permission. Should be set if permission set
-        \param emission_rate annual emission rate in percents. Values: 1.00%, or from 5.00% to 50.00% with step 5.00%
-        \param leaders_percent percent of leaders reward from emission. Values: 1.00% to 10.00% with step 1.00%
-        \param author_percent percent of author reward in post reward. Values: 25.00%, or 50.00%, or 75.00%. Remaining reward part is for curators
+        \param leaders_num number of community (top) leaders.  Default value is 3
+        \param max_votes maximum number of leaders a user can vote for. Default value is 5
+        \param permission permission for multisig transaction, for which the threshold is set. This action can not create or delete \a permissions. If \a required_threshold is set, this parameter should be set too
+        \param required_threshold threshold at which a multisig transaction is considered approved. If \a permission is set, this parameter should be set too
+        \param emission_rate annual emission rate (in percent). This parameter takes values from 1.00 to 50.00 (%) inclusive in increments of 5.00 (i.e. 1.00, 5.00, 10.00, ..., 50.00)%
+        \param leaders_percent share (in percent) of the annual emission deducted as a reward to community leaders. This parameter takes values from 1.00 to 10.00 (%) inclusive in increments of 1.00
+        \param author_percent share (percentage) deducted from a post reward to author of the post. This parameter can take one of the values: 25.00, 50.00 and 75.00(%). Remaining share of the post reward is allocated to curators
 
-        All parameters are optional. To not change parameter, do not pass it.
+        All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
 
-        Performing the action requires the community leaders signature.
+        Depending on the \a required_threshold set, a number of signatures required to complete a multisig transaction may be vary. For example, setting threshold=3 is considered to be obtained if the signature is affixed with at least three leaders with the threshold value «1».
+
+        Performing this action requires the signature of most community leaders.
     */
     [[eosio::action]] void setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
@@ -89,96 +91,97 @@ public:
         optional<uint16_t> emission_rate, optional<uint16_t> leaders_percent, optional<uint16_t> author_percent);
 
     /**
-        \brief The setinfo action is used to update non-consensus info of community.
+        \brief The \ref setinfo action is used to set up a non-consensus information for a community.
 
         \param commun_code a point symbol of the community
-        \param description community description
+        \param description community description. The text length is not limited
         \param language community content language
-        \param rules community users for its members
+        \param rules a set of rules for community members. The text length is not limited 
         \param avatar_image community avatar
         \param cover_image community profile cover
 
-        Action do not stores any state in DB, it only checks authority, and community presence.
+        All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
+        This action does not store any state in DB, it only checks an authority and community presence.
 
-        Performing the action requires the community leaders signature.
+        Performing this action requires the community leaders signature.
     */
     [[eosio::action]] void setinfo(symbol_code commun_code,
         optional<std::string> description, optional<std::string> language, optional<std::string> rules,
         optional<std::string> avatar_image, optional<std::string> cover_image);
 
     /**
-        \brief The follow action allows user to follow the community posts.
+        \brief The \ref follow action allows a user to follow (to track) the posts of specified community.
 
         \param commun_code a point symbol of the community 
         \param follower account of the user
 
-        Action do not stores any state in DB, it only checks input parameters.
+        This action does not store any state in DB, it only checks input parameters.
 
-        Performing the action requires the follower account signature.
+        Performing this action requires the \a follower account signature.
     */
     [[eosio::action]] void follow(symbol_code commun_code, name follower);
 
     /**
-        \brief The unfollow action allows user to unfollow the community posts.
+        \brief The \ref unfollow action allows a user to opt out of tracking the posts of specified community.
 
         \param commun_code a point symbol of the community 
         \param follower account of the user
 
-        Action do not stores any state in DB, it only checks input parameters.
+        This action does not store any state in DB, it only checks input parameters.
 
-        Performing the action requires the unfollower account signature.
+        Performing this action requires the \a follower account signature.
     */
     [[eosio::action]] void unfollow(symbol_code commun_code, name follower);
 
     /**
-        \brief The follow action hides posts of specified community from the user.
+        \brief The \ref hide action is used to hide posts of specified community from a user.
 
         \param commun_code a point symbol of the community 
         \param follower account of the user
 
-        Action do not stores any state in DB, it only checks input parameters.
+        This action does not store any state in DB, it only checks input parameters.
 
-        Performing the action requires the follower account signature.
+        Performing this action requires the \a follower account signature.
     */
     [[eosio::action]] void hide(symbol_code commun_code, name follower);
 
     /**
-        \brief The follow action cancels hiding posts of specified community from the user.
+        \brief The \ref unhide action cancels hiding posts of specified community from a user.
 
         \param commun_code a point symbol of the community 
         \param follower account of the user
 
-        Action do not stores any state in DB, it only checks input parameters.
+        This action does not store any state in DB, it only checks input parameters.
 
-        Performing the action requires the follower account signature.
+        Performing this action requires the \a follower account signature.
     */
     [[eosio::action]] void unhide(symbol_code commun_code, name follower);
 
     /**
-        \brief The ban action is used by a leader to ban user in providebw service,
+        \brief The \ref ban action is used by a leader to ban (to block) a user in providebw service. To pay for the resources (bandwidth) used by an account, one more action \a providebw can be added to the transaction. Such service requires that the transaction should be signed by two persons — by those who performs an action and who pays for used bandwidth. So, a leader can ban a user who uses this service for personal gain.
 
-        \param commun_code a point symbol of the community where user banning
-        \param leader account of the leader
-        \param account account to ban
-        \param reason reason of the ban (required)
+        \param commun_code a point symbol of the community in which the user is banned
+        \param leader account of the leader banning the user
+        \param account user account is to be banned
+        \param reason text explaining the reason for banning (it is required parameter)
 
-        Action do not stores any state in DB, it only checks input parameters.
+        This action does not store any state in DB, it only checks input parameters.
 
-        Performing the action requires the leader account signature.
+        Performing this action requires the \a leader account signature.
     */
     [[eosio::action]] void ban(symbol_code commun_code, name leader, name account, std::string reason);
 
     /**
-        \brief The unban action is used by a leader to unban user in providebw service,
+        \brief The \ref unban action is used by a leader to unban (to allow) a user in providebw service.
 
-        \param commun_code a point symbol of the community where user unbanning
-        \param leader account of the leader
-        \param account account to unban
-        \param reason reason of the unban (required)
+        \param commun_code a point symbol of the community in which the user is unbanned
+        \param leader account of the leader unbanning the user
+        \param account user account is to be unbanned
+        \param reason text explaining the reason for unbanning (it is required parameter)
 
-        Action do not stores any state in DB, it only checks input parameters.
+        This action does not store any state in DB, it only checks input parameters.
 
-        Performing the action requires the leader account signature.
+        Performing this action requires the \a leader account signature.
     */
     [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
 
