@@ -197,7 +197,7 @@ public:
         \param commun_code a point symbol of the community
         \param leader account name of a leader (or a leader candidate) whose activity is temporarily suspended
 
-        When this action is called, event information is stored in \p leadertate and sent to the event engine.
+        When this action is called, event information is stored in \p leaderstate and sent to the event engine.
 
         Condition for performing the action:
             - the leader account should be active.
