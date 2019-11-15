@@ -53,9 +53,9 @@ static constexpr auto block_interval_ms = 3000;//1000 / 2;
 static constexpr int64_t blocks_per_year = int64_t(365)*24*60*60*1000/block_interval_ms;
 
 #ifndef UNIT_TEST_ENV
-    static constexpr auto reserve_token = eosio::symbol("COMMUN", 4);
+    static constexpr auto reserve_token = eosio::symbol("CMN", 4);
 #else
-    static const auto reserve_token = eosio::chain::symbol(4, "COMMUN");
+    static const auto reserve_token = eosio::chain::symbol(4, "CMN");
 #endif
 
 } // config
