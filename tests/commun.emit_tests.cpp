@@ -33,11 +33,12 @@ public:
         , emit({this, _code})
     {
         create_accounts({_code, _commun, _golos, _alice, _bob, _carol,
-            cfg::token_name, cfg::point_name, cfg::list_name, cfg::control_name});
+            cfg::token_name, cfg::point_name, cfg::list_name, cfg::control_name, cfg::gallery_name});
         produce_block();
         install_contract(cfg::token_name, contracts::token_wasm(), contracts::token_abi());
         install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
+        install_contract(cfg::gallery_name, contracts::gallery_wasm(), contracts::gallery_abi());
         install_contract(_code, contracts::emit_wasm(), contracts::emit_abi());
         
         set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
@@ -52,18 +53,22 @@ public:
         set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
 
+        set_authority(cfg::gallery_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::gallery_name, cfg::gallery_name, N(init), N(init));
+
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
-        set_authority(cfg::point_name, cfg::transfer_permission, create_code_authority({cfg::emit_name}), "active");
         link_authority(cfg::point_name, cfg::point_name, cfg::issue_permission, N(issue));
-        link_authority(cfg::point_name, cfg::point_name, cfg::transfer_permission, N(transfer));
     }
 
     void init() {
-        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(supply * 2, point._symbol), 10000, 0));
+        set_authority(_golos, cfg::transfer_permission, create_code_authority({cfg::emit_name}), cfg::active_name);
+        link_authority(_golos, cfg::point_name, cfg::transfer_permission, N(transfer));
+
+        BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(supply * 2, point._symbol), 10000, 0));
         BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(reserve * 2, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
+        BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
     }
 
     const account_name _commun = cfg::dapp_name;
@@ -148,8 +153,6 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
     BOOST_CHECK_EQUAL(init_supply, point.get_supply());
     produce_block();
-    BOOST_CHECK_EQUAL(err.no_account(cfg::gallery_name), emit.issuereward(point_code, cfg::gallery_name));
-    create_accounts({cfg::gallery_name});
     BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point_code, cfg::gallery_name));
     BOOST_CHECK_EQUAL(success(), point.open(cfg::control_name, point_code, cfg::control_name));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
@@ -170,7 +173,6 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
 
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     BOOST_TEST_MESSAGE("basic tests");
-    create_accounts({cfg::gallery_name});
     init();
     double annual_rate = 0.5;
     double leaders_rate = 0.1;

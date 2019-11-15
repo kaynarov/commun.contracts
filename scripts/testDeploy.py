@@ -39,7 +39,7 @@ class DeployTests(unittest.TestCase):
         body = testnet.randomText(1024)
         community.createPost('CATS', author, permlink, 'cats', header, body, providebw=author+'/c@providebw', keys=[private, clientKey])
 
-        community.upvotePost('CATS', voter, author, permlink, 10000, providebw=voter+'/c@providebw', keys=[private2, clientKey])
+        community.upvotePost('CATS', voter, author, permlink, providebw=voter+'/c@providebw', keys=[private2, clientKey])
 
 
     def test_glsProvideBW(self):
@@ -109,7 +109,7 @@ class CommunLeaderTests(unittest.TestCase):
     def test_canIssueCommunityPoints(self):
         issuer = testnet.mongoClient["_CYBERWAY_c_point"]["param"].find_one({"max_supply._sym":"CATS"})["issuer"]
         trx = testnet.Trx()
-        trx.addAction('c.point', 'issue', issuer+'@owner', {
+        trx.addAction('c.point', 'issue', 'c.point', {
                 'to': issuer,
                 'quantity': '0.001 CATS',
                 'memo': 'issue by app leaders'
@@ -118,7 +118,7 @@ class CommunLeaderTests(unittest.TestCase):
                 'from': issuer,
                 'to': 'c',
                 'quantity': '0.001 CATS',
-                'memo': 'issue by app leaders'
+                'memo': 'transfer by app leaders'
             })
 
         community.createAndExecProposal(
@@ -280,7 +280,7 @@ class PointTestCase(unittest.TestCase):
     def tearDown(self):
         self.eeHelper.tearDown()
 
-    # This test check exchange notification when user buy/sell community points
+    # This test checks exchange notification when user buys/sells community points
     def test_exchangeNotification(self):
         params = {}
 
@@ -340,6 +340,8 @@ class PointTestCase(unittest.TestCase):
                     }, {
                         'code': 'c.point', 'event': 'exchange',
                         'args': {'amount': ee.Save(params,'exchange-tokens')}
+                    }, {
+                        'code': 'c.point', 'event': 'fee',
                     }, {
                         'code': 'c.point', 'event': 'currency',
                     })

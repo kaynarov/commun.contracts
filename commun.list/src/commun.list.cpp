@@ -42,6 +42,9 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 
     check(community_tbl.find(commun_code.raw()) == community_tbl.end(), "community token exists");
 
+    check(!community_name.empty(), "Community name should not be empty.");
+    check((community_name.front() != ' ') && (community_name.back() != ' '), "Community name should not start or end with space.");
+
     auto community_hash256 = eosio::sha256(community_name.c_str(), community_name.size());
     auto community_hash = *(reinterpret_cast<const uint64_t *>(community_hash256.extract_as_byte_array().data()));
     auto community_index = community_tbl.get_index<"byhash"_n>();
@@ -66,7 +69,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
     };
     send_init_action(config::emit_name);
     send_init_action(config::control_name);
-    //TODO: init gallery
+    send_init_action(config::gallery_name);
 }
 
 #define SET_PARAM(PARAM) if (PARAM) { c.PARAM = *PARAM; _empty = false; }
@@ -77,7 +80,7 @@ void commun_list::setsysparams(symbol_code commun_code,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating,
-        optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled) {
+        optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled, optional<bool> custom_gem_size_enabled) {
 
     require_auth(_self);
 
@@ -95,6 +98,7 @@ void commun_list::setsysparams(symbol_code commun_code,
         SET_PARAM(rewarded_mosaic_num);
         SET_PARAM(damned_gem_reward_enabled);
         SET_PARAM(refill_gem_enabled);
+        SET_PARAM(custom_gem_size_enabled);
         if (!opuses.empty()) {
             c.opuses = opuses;
             _empty = false;

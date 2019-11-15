@@ -39,10 +39,11 @@ public:
     bool _creators_added;
 
     //// token actions
-    action_result create(account_name issuer, asset maximum_supply, int16_t cw, int16_t fee) {
+    action_result create(account_name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee) {
         if (!_creators_added)
             return push(N(create), _code, args()
                 ("issuer", issuer)
+                ("initial_supply", initial_supply)
                 ("maximum_supply", maximum_supply)
                 ("cw", cw)
                 ("fee", fee)
@@ -53,6 +54,7 @@ public:
             {{_code}}, 
             args()
                 ("issuer", issuer)
+                ("initial_supply", initial_supply)
                 ("maximum_supply", maximum_supply)
                 ("cw", cw)
                 ("fee", fee)
@@ -71,12 +73,17 @@ public:
         return push(N(setfreezer), _code, args()("freezer", freezer));
     }
 
-    action_result issue(account_name issuer, account_name to, asset quantity, string memo) {
-        return push(N(issue), issuer, args()
-            ("to", to)
-            ("quantity", quantity)
-            ("memo", memo)
-        );
+    action_result issue(account_name to, asset quantity, string memo, account_name issuer=name()) {
+        if (issuer == name()) {
+            issuer = get_issuer(quantity.get_symbol());
+        }
+        std::vector<action_data> tx_actions = {{_code, N(issue), {{_code, config::active_name}}, args()("to", issuer)("quantity", quantity)("memo", memo)}};
+        std::vector<account_name> signers = {_code};
+        if (issuer != to) {
+            tx_actions.push_back({_code, N(transfer), {{issuer, config::active_name}}, args()("from", issuer)("to", to)("quantity", quantity)("memo", memo)});
+            signers.push_back(issuer);
+        }
+        return _tester->push_tx(tx_actions, signers, false /*produce_and_check*/);
     }
 
     action_result retire(account_name from, asset quantity, string memo) {
@@ -131,6 +138,15 @@ public:
             v = o;
         }
         return v;
+    }
+
+    account_name get_issuer(symbol sym) {
+        auto sname = sym.to_symbol_code().value;
+        auto v = get_struct(_code, N(param), sname, "param");
+        if (v.is_object()) {
+            return mvo(v)["issuer"].as<account_name>();
+        }
+        return name();
     }
 
     variant get_stats() {

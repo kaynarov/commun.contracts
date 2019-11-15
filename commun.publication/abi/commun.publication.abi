@@ -159,6 +159,16 @@
       ]
   },
   {
+    "name": "init",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      }
+    ]
+  },
+  {
     "name": "create",
     "base": "",
     "fields": [
@@ -499,7 +509,8 @@
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "name",                   "name": "owner" },
                 { "type": "name",                   "name": "creator" },
-                { "type": "asset",                  "name": "reward" }
+                { "type": "asset",                  "name": "reward" },
+                { "type": "asset",                  "name": "unfrozen" }
             ]
         },{
             "name": "mosaic_top_event",
@@ -529,6 +540,10 @@
         { "name": "inclstate",   "type": "inclusion_state_event" }
     ],
   "actions": [
+  {
+    "name": "init",
+    "type": "init"
+  },
   {
     "name": "create",
     "type": "create"

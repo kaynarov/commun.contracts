@@ -26,9 +26,10 @@ public:
         , community({this, cfg::list_name})
     {
         create_accounts({_commun, _golos, _alice, _bob, _carol, _nicolas, _client,
-            cfg::control_name, cfg::point_name, cfg::list_name, cfg::emit_name});
+            cfg::control_name, cfg::point_name, cfg::list_name, cfg::emit_name, cfg::gallery_name});
         produce_block();
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
+        install_contract(cfg::gallery_name, contracts::gallery_wasm(), contracts::gallery_abi());
         install_contract(cfg::list_name, contracts::list_wasm(), contracts::list_abi());
         
         set_authority(cfg::emit_name, N(init), create_code_authority({cfg::list_name}), "active");
@@ -36,6 +37,9 @@ public:
         
         set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
+
+        set_authority(cfg::gallery_name, N(init), create_code_authority({cfg::list_name}), "active");
+        link_authority(cfg::gallery_name, cfg::gallery_name, N(init), N(init));
 
         set_authority(cfg::list_name, cfg::client_permission_name,
             authority (1, {}, {{.permission = {_client, cfg::active_name}, .weight = 1}}), "owner");
@@ -53,7 +57,7 @@ public:
     const account_name _nicolas = N(nicolas);
 
     void create_token(account_name issuer, symbol symbol_token) {
-        BOOST_CHECK_EQUAL(success(), point.create(issuer, asset(1000000, symbol_token), 10000, 1));
+        BOOST_CHECK_EQUAL(success(), point.create(issuer, asset(0, symbol_token), asset(1000000, symbol_token), 10000, 1));
         produce_blocks(1);
     }
 
@@ -67,6 +71,8 @@ public:
         const string incorrect_author_percent = amsg("incorrect author percent");
         const string add_perm = amsg("cannot add permission");
         const string del_perm = amsg("cannot delete permission");
+        const string comn_name_empty = amsg("Community name should not be empty.");
+        const string comn_name_spaces = amsg("Community name should not start or end with space.");
     } err;
 };
 
@@ -77,6 +83,9 @@ BOOST_FIXTURE_TEST_CASE(create_community, commun_list_tester) try {
     create_token(_golos, _token);
 
     BOOST_CHECK_EQUAL(err.no_point_symbol, community.create(cfg::list_name, _token_e_code, "community 1"));
+    BOOST_CHECK_EQUAL(err.comn_name_empty, community.create(cfg::list_name, _token_code, ""));
+    BOOST_CHECK_EQUAL(err.comn_name_spaces, community.create(cfg::list_name, _token_code, " community 1"));
+    BOOST_CHECK_EQUAL(err.comn_name_spaces, community.create(cfg::list_name, _token_code, "community 1 "));
 
     BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, _token_code, "community 1"));
 

@@ -64,7 +64,7 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
         ).send();
 
         action(
-            permission_level{config::point_name, config::transfer_permission},
+            permission_level{issuer, config::transfer_permission},
             config::point_name,
             "transfer"_n,
             std::make_tuple(issuer, to_contract, quantity, string())

@@ -210,6 +210,7 @@ namespace events {
         name owner;
         name creator;
         asset reward;
+        asset unfrozen;
     };
     
     struct mosaic_top {
@@ -265,12 +266,13 @@ class gallery_base {
         eosio::event(_self, "gemstate"_n, data).send();
     }
     
-    void send_chop_event(name _self, const gallery_types::gem& gem, asset reward) {
+    void send_chop_event(name _self, const gallery_types::gem& gem, asset reward, asset unfrozen) {
         gallery_types::events::gem_chop data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
-            .reward = reward
+            .reward = reward,
+            .unfrozen = unfrozen
         };
         eosio::event(_self, "gemchop"_n, data).send();
     }
@@ -302,7 +304,7 @@ private:
         
         if (quantity.amount) {
             action(
-                permission_level{config::point_name, config::transfer_permission},
+                permission_level{from, config::transfer_permission},
                 config::point_name,
                 "transfer"_n,
                 std::make_tuple(from, to, quantity, "reward for " + std::to_string(tracery))
@@ -346,7 +348,7 @@ private:
     }
     
     static inline int64_t get_reserve_amount(asset quantity) {
-        return point::get_reserve_quantity(quantity, false).amount;
+        return point::get_reserve_quantity(quantity, nullptr).amount;
     }
     
     template<typename GemIndex, typename GemItr>
@@ -381,7 +383,7 @@ private:
         asset reward_points(reward, commun_symbol);
         
         freeze(_self, gem.owner, -frozen_points);
-        send_chop_event(_self, gem, reward_points);
+        send_chop_event(_self, gem, reward_points, frozen_points);
 
         if (gem.creator != gem.owner) {
             
@@ -420,7 +422,7 @@ private:
         }
         else {
             gallery_types::stats stats_table(_self, commun_code.raw());
-            const auto stat = get_stat(_self, stats_table, commun_code);
+            const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: no stat but community present");
             stats_table.modify(stat, name(), [&]( auto& s) { s.unclaimed += mosaic->reward - reward; });
             if (!mosaic->deactivated()) {
                 T::deactivate(_self, commun_code, *mosaic);
@@ -725,16 +727,6 @@ protected:
         return ret;
     }
 
-    auto get_stat(name _self, gallery_types::stats& stats_table, symbol_code commun_code) {
-        const auto stats_itr = stats_table.find(commun_code.raw());
-        if (stats_itr != stats_table.end()) {
-            return stats_itr;
-        }
-        return stats_table.emplace(_self, [&](auto& s) { s = {
-            .id = commun_code.raw(),
-        };});
-    }
-
     void on_points_transfer(name _self, name from, name to, asset quantity, std::string memo) {
         (void) memo;
         if (_self != to) { return; }
@@ -793,8 +785,8 @@ protected:
         }
         
         gallery_types::stats stats_table(_self, commun_code.raw());
-        const auto& stat = get_stat(_self, stats_table, commun_code);
-        auto total_reward = quantity.amount + stat->retained;
+        const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: no stat but community present");
+        auto total_reward = quantity.amount + stat.retained;
         auto left_reward  = total_reward;
         
         uint16_t place = 0;
@@ -815,6 +807,18 @@ protected:
             send_top_event(_self, commun_code, *mosaic, place++);
         }
         stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
+    }
+
+    void init_gallery(name _self, symbol_code commun_code) {
+        require_auth(_self);
+        commun_list::check_community_exists(commun_code);
+
+        gallery_types::stats stats_table(_self, commun_code.raw());
+        eosio::check(stats_table.find(commun_code.raw()) == stats_table.end(), "already exists");
+
+        stats_table.emplace(_self, [&](auto& s) { s = {
+            .id = commun_code.raw(),
+        };});
     }
 
     void create_mosaic(name _self, name creator, uint64_t tracery, name opus,
@@ -1083,10 +1087,14 @@ public:
     using contract::contract;
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
 
+    [[eosio::action]] void init(symbol_code commun_code) {
+        init_gallery(_self, commun_code);
+    }
+
     [[eosio::action]] void createmosaic(name creator, uint64_t tracery, name opus, asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
         create_mosaic(_self, creator, tracery, opus, quantity, royalty, providers);
     }
-        
+
     [[eosio::action]] void addtomosaic(uint64_t tracery, asset quantity, bool damn, name gem_creator, gallery_types::providers_t providers) {
         add_to_mosaic(_self, tracery, quantity, damn, gem_creator, providers);
     }
@@ -1143,4 +1151,4 @@ public:
     
 } /// namespace commun
 
-#define GALLERY_ACTIONS (createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
+#define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)

@@ -71,6 +71,17 @@ public:
     variant get_advice(name code, symbol point, name leader) {
         return get_chaindb_struct(code, point.to_symbol_code().value, N(advice), leader.value, "advice");
     }
+    
+    variant get_stat(name code, symbol point) {
+        return get_chaindb_struct(code, point.to_symbol_code().value, N(stat), point.to_symbol_code().value, "stat");
+    }
+    
+    int64_t calc_bancor_amount(int64_t current_reserve, int64_t current_supply, double cw, int64_t reserve_amount) {
+        if (!current_reserve) { return reserve_amount; }
+        double buy_prop = static_cast<double>(reserve_amount) / static_cast<double>(current_reserve);
+        double new_supply = static_cast<double>(current_supply) * std::pow(1.0 + buy_prop, cw);
+        return static_cast<int64_t>(new_supply) - current_supply;
+    }
 };
 
 }} // eosio::testing

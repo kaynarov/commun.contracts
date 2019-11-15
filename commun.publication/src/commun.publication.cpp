@@ -6,6 +6,10 @@
 
 namespace commun {
 
+void publication::init(symbol_code commun_code) {
+    init_gallery(_self, commun_code);
+}
+
 void publication::create(
     symbol_code commun_code,
     mssgid_t message_id,
@@ -17,7 +21,9 @@ void publication::create(
     std::optional<uint16_t> weight
 ) {
     require_auth(message_id.author);
+    auto& community = commun_list::get_community(commun_code);
     
+    eosio::check(!weight.has_value() || community.custom_gem_size_enabled, "custom gem size disabled.");
     eosio::check(!weight.has_value() || (*weight > 0), "weight can't be 0.");
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
 
@@ -61,7 +67,6 @@ void publication::create(
         item.childcount = 0;
     });
 
-    auto& community = commun_list::get_community(commun_code);
     auto gems_per_period = get_gems_per_period(commun_code);
 
     auto opus_name = parent_id.author ? config::comment_opus_name : config::post_opus_name;
@@ -177,12 +182,13 @@ void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_o
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, std::optional<uint16_t> weight, bool damn) {
     
-    if (weight.has_value() && *weight == 0) {
-        check_auth("weight can't be 0.", voter);
-        return; 
+    if (weight.has_value() && *weight == 0) { 
+        check_auth("weight can't be 0.", voter); // empty votes are allowed only with a client signature
+        return;                                  // custom_gem_size_enabled is not checked in this case
     }
     
     auto& community = commun_list::get_community(commun_code);
+    eosio::check(!weight.has_value() || community.custom_gem_size_enabled, "custom gem size disabled.");
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaic = mosaics_table.find(message_id.tracery());
@@ -359,5 +365,5 @@ void publication::ban(symbol_code commun_code, mssgid_t message_id) {
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
+    (init)(create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
     (claim)(hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise)(ban))

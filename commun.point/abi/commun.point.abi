@@ -43,6 +43,7 @@
             "base": "",
             "fields": [
                 { "type": "name",         "name": "issuer" },
+                { "type": "asset",        "name": "initial_supply" },
                 { "type": "asset",        "name": "maximum_supply" },
                 { "type": "int16",        "name": "cw" },
                 { "type": "int16",        "name": "fee" }
@@ -126,6 +127,13 @@
         },
         {
             "name": "exchange_event",
+            "base": "",
+            "fields": [
+                { "name": "amount", "type": "asset" }
+            ]
+        },
+        {
+            "name": "fee_event",
             "base": "",
             "fields": [
                 { "name": "amount", "type": "asset" }
@@ -225,7 +233,8 @@
     "events": [
         {"name": "currency", "type": "currency_event"},
         {"name": "balance", "type": "balance_event"},
-        {"name": "exchange", "type": "exchange_event"}
+        {"name": "exchange", "type": "exchange_event"},
+        {"name": "fee", "type": "fee_event"}
     ],
     "variants": [],
     "abi_extensions": []
