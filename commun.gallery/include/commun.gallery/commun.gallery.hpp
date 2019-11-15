@@ -1085,11 +1085,13 @@ public:
         add_to_mosaic(_self, tracery, quantity, damn, gem_creator, providers);
     }
     
-    [[eosio::action]] void hold(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
+    // [[eosio::action]] // TODO: removed from MVP
+    void hold(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
         hold_gem(_self, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner));
     }
     
-    [[eosio::action]] void transfer(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient) {
+    // [[eosio::action]] // TODO: removed from MVP
+    void transfer(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient) {
         transfer_gem(_self, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), recipient);
     }
     
@@ -1098,15 +1100,17 @@ public:
         claim_gem(_self, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
     }
     
-    [[eosio::action]] void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
+    // [[eosio::action]] // TODO: removed from MVP
+    void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
         provide_points(_self, grantor, recipient, quantity, fee);
     }
-    
-    [[eosio::action]] void advise(symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
+
+    // [[eosio::action]] // TODO: removed from MVP
+    void advise(symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
         control::require_leader_auth(commun_code, leader);
         advise_mosaics(_self, commun_code, leader, favorites);
     }
-    
+
     //TODO: [[eosio::action]] void checkadvice (symbol_code commun_code, name leader);
 
     [[eosio::action]] void update(symbol_code commun_code, uint64_t tracery) {
@@ -1141,4 +1145,6 @@ public:
     
 } /// namespace commun
 
-#define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
+// TODO: removed from MVP
+// #define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
+#define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(claim)(update)(lock)(unlock)(ban)(hide)

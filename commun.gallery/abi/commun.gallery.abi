@@ -251,22 +251,6 @@
             "type": "claim_args"
         },
         {
-            "name": "hold",
-            "type": "modifygem_args"
-        },
-        {
-            "name": "transfer",
-            "type": "transfer_args"
-        },
-        {
-            "name": "provide",
-            "type": "provide_args"
-        },
-        {
-            "name": "advise",
-            "type": "advise_args"
-        },
-        {
             "name": "update",
             "type": "update_args"
         },
