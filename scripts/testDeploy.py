@@ -328,10 +328,10 @@ class PointTestCase(unittest.TestCase):
         (private, public) = testnet.createKey()
         alice = testnet.createRandomAccount(public, keys=techKey)
 
-        community.issueCommunToken(alice, '1.0000 COMMUN', clientKey)
+        community.issueCommunToken(alice, '1.0000 CMN', clientKey)
         community.openBalance(alice, 'CATS', 'tech', keys=techKey)
 
-        buyArgs = {'from':alice, 'to':'c.point', 'quantity':'1.0000 COMMUN', 'memo':'CATS'}
+        buyArgs = {'from':alice, 'to':'c.point', 'quantity':'1.0000 CMN', 'memo':'CATS'}
         testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[private, clientKey])
 
         # Sell community points through transfer them to 'c.point' account
@@ -369,8 +369,8 @@ class PointTestCase(unittest.TestCase):
         self.eeHelper.waitEvents(
             [ ({'msg_type':'ApplyTrx', 'id':sellTrx}, {'block_num':sellBlock, 'actions':sellTrace, 'except':ee.Missing()}),
             ], sellBlock)
-        self.assertRegex(params['fee-amount'], '[0-9]+.[0-9]{4} COMMUN')
-        self.assertEqual(params['fee-amount'], '0.0100 COMMUN') # default fee is 1%, cw is 100%
+        self.assertRegex(params['fee-amount'], '[0-9]+.[0-9]{4} CMN')
+        self.assertEqual(params['fee-amount'], '0.0100 CMN') # default fee is 1%, cw is 100%
 
     # This test checks notifications when user transfers community points
     def test_transferPoints(self):
@@ -381,10 +381,10 @@ class PointTestCase(unittest.TestCase):
         (bobPrivate, bobPublic) = testnet.createKey()
         bob = testnet.createRandomAccount(bobPublic, keys=techKey)
 
-        community.issueCommunToken(alice, '1.0000 COMMUN', clientKey)
+        community.issueCommunToken(alice, '1.0000 CMN', clientKey)
         community.openBalance(alice, 'CATS', 'tech', keys=techKey)
 
-        buyArgs = {'from':alice, 'to':'c.point', 'quantity':'1.0000 COMMUN', 'memo':'CATS'}
+        buyArgs = {'from':alice, 'to':'c.point', 'quantity':'1.0000 CMN', 'memo':'CATS'}
         testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
 
         transferArgs = {'from':alice, 'to':bob, 'quantity':'0.998 CATS', 'memo':'CATS'}
