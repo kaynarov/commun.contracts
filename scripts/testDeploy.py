@@ -21,18 +21,18 @@ class DeployTests(unittest.TestCase):
             creator_auth = client,
             creator_key = clientKey,
             maximum_supply = testnet.Asset('100000000.000 %s'%point),
-            reserve_amount = testnet.Asset('1000000.0000 COMMUN'))
+            reserve_amount = testnet.Asset('1000000.0000 CMN'))
 
     def test_createPost(self):
         (private, public) = testnet.createKey()
         author = testnet.createRandomAccount(public, keys=techKey)
         community.openBalance(author, 'CATS', 'tech', keys=techKey)
-        community.buyCommunityPoints(author, '1000.0000 COMMUN', 'CATS', private, clientKey)
+        community.buyCommunityPoints(author, '1000.0000 CMN', 'CATS', private, clientKey)
 
         (private2, public2) = testnet.createKey()
         voter = testnet.createRandomAccount(public2, keys=techKey)
         community.openBalance(voter, 'CATS', 'tech', keys=techKey)
-        community.buyCommunityPoints(voter, '10.0000 COMMUN', 'CATS', private2, clientKey)
+        community.buyCommunityPoints(voter, '10.0000 CMN', 'CATS', private2, clientKey)
 
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
@@ -53,7 +53,7 @@ class CommunLeaderTests(unittest.TestCase):
         leaderDb = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"]
         leadCursor = leaderDb.find_one({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)])
         min_quantity = 10*leadCursor["total_weight"].to_decimal() if leadCursor else 0
-        quantity = '%.4f COMMUN'%(random.randint(min_quantity+10, min_quantity+100)/10000)
+        quantity = '%.4f CMN'%(random.randint(min_quantity+10, min_quantity+100)/10000)
 
         (voterPrivate, voterPublic) = testnet.createKey()
         voter = testnet.createRandomAccount(voterPublic, keys=techKey)
@@ -87,7 +87,7 @@ class CommunLeaderTests(unittest.TestCase):
         trx = testnet.Trx()
         trx.addAction('cyber.token', 'issue', 'c.issuer@active', {
                 'to': 'c.issuer',
-                'quantity': '0.0001 COMMUN',
+                'quantity': '0.0001 CMN',
                 'memo': ''
             })
 
@@ -147,12 +147,12 @@ class CommunityLeaderTests(unittest.TestCase):
             creator_auth = client,
             creator_key = clientKey,
             maximum_supply = testnet.Asset('100000000.000 %s'%point),
-            reserve_amount = testnet.Asset('1000000.0000 COMMUN'))
+            reserve_amount = testnet.Asset('1000000.0000 CMN'))
 
         (voterPrivate, voterPublic) = testnet.createKey()
         voter = testnet.createRandomAccount(voterPublic, keys=techKey)
         community.openBalance(voter, point, 'tech', keys=techKey)
-        community.buyCommunityPoints(voter, '%.4f COMMUN'%(random.randint(100, 20000)/10000), point, voterPrivate, clientKey)
+        community.buyCommunityPoints(voter, '%.4f CMN'%(random.randint(100, 20000)/10000), point, voterPrivate, clientKey)
 
         (appLeaderPrivate, appLeaderPublic) = testnet.createKey()
         appLeader = testnet.createRandomAccount(appLeaderPublic, keys=techKey)
@@ -222,7 +222,7 @@ class CommunityLeaderTests(unittest.TestCase):
         (private, public) = testnet.createKey()
         author = testnet.createRandomAccount(public, keys=techKey)
         community.openBalance(author, self.point, 'tech', keys=techKey)
-        community.buyCommunityPoints(author, '10.0000 COMMUN', self.point, private, clientKey)
+        community.buyCommunityPoints(author, '10.0000 CMN', self.point, private, clientKey)
 
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
@@ -287,11 +287,11 @@ class PointTestCase(unittest.TestCase):
         (private, public) = testnet.createKey()
         acc = testnet.createRandomAccount(public, keys=techKey)
 
-        community.issueCommunToken(acc, '1.0000 COMMUN', clientKey)
+        community.issueCommunToken(acc, '1.0000 CMN', clientKey)
         community.openBalance(acc, 'CATS', 'tech', keys=techKey)
        
         # Buy community points through transfer tokens to 'c.point' account
-        buyArgs = {'from':acc, 'to':'c.point', 'quantity':'1.0000 COMMUN', 'memo':'CATS'}
+        buyArgs = {'from':acc, 'to':'c.point', 'quantity':'1.0000 CMN', 'memo':'CATS'}
         buyResult = testnet.pushAction('cyber.token', 'transfer', acc, buyArgs, providebw=acc+'/c@providebw', keys=[private, clientKey])
 
         buyTrx = buyResult['transaction_id']

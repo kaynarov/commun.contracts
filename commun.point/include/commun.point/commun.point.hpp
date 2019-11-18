@@ -369,7 +369,7 @@ struct structures {
     };
 
     /**
-      \brief A struct represents event with amount of POINTS debited as fee on POINT transfer with fee, or amount of reserve (COMMUN) tokens subtracted as fee from amount of bought COMMUN tokens when selling POINTs.  
+      \brief A struct represents event with amount of POINTS debited as fee on POINT transfer with fee, or amount of reserve (CMN) tokens subtracted as fee from amount of bought CMN tokens when selling POINTs.  
       \ingroup point_events
     */
     struct fee_event {

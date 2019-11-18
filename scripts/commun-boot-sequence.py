@@ -18,7 +18,7 @@ unlockTimeout = 999999999
 
 _communAccounts = [
     # name           contract                warmup_code     permissions (name, keys, accounts, links)
-    #('c',        None),    # c - owner for COMMUN. Must be created outside of this script!
+    #('c',        None),    # c - owner for CMN. Must be created outside of this script!
     # Account for commun.com site
     ('c.com',     None,                   None, [
             ('c.com',     ['GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62'], [], ['cyber:newaccount'])

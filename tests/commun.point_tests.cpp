@@ -242,7 +242,7 @@ BOOST_FIXTURE_TEST_CASE(issue_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, supply, "issue"));
     CHECK_MATCHING_OBJECT(point.get_stats(), mvo()
         ("supply", "25.000 GLS")
-        ("reserve", "10.0000 COMMUN")
+        ("reserve", "10.0000 CMN")
     );
     BOOST_CHECK_EQUAL(point.get_amount(_golos), supply.get_amount());
 } FC_LOG_AND_RETHROW()
