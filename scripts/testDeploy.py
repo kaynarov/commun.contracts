@@ -21,18 +21,18 @@ class DeployTests(unittest.TestCase):
             creator_auth = client,
             creator_key = clientKey,
             maximum_supply = testnet.Asset('100000000.000 %s'%point),
-            reserve_amount = testnet.Asset('1000000.0000 COMMUN'))
+            reserve_amount = testnet.Asset('1000000.0000 CMN'))
 
     def test_createPost(self):
         (private, public) = testnet.createKey()
         author = testnet.createRandomAccount(public, keys=techKey)
         community.openBalance(author, 'CATS', 'tech', keys=techKey)
-        community.buyCommunityPoints(author, '1000.0000 COMMUN', 'CATS', private, clientKey)
+        community.buyCommunityPoints(author, '1000.0000 CMN', 'CATS', private, clientKey)
 
         (private2, public2) = testnet.createKey()
         voter = testnet.createRandomAccount(public2, keys=techKey)
         community.openBalance(voter, 'CATS', 'tech', keys=techKey)
-        community.buyCommunityPoints(voter, '10.0000 COMMUN', 'CATS', private2, clientKey)
+        community.buyCommunityPoints(voter, '10.0000 CMN', 'CATS', private2, clientKey)
 
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
@@ -53,7 +53,7 @@ class CommunLeaderTests(unittest.TestCase):
         leaderDb = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"]
         leadCursor = leaderDb.find_one({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)])
         min_quantity = 10*leadCursor["total_weight"].to_decimal() if leadCursor else 0
-        quantity = '%.4f COMMUN'%(random.randint(min_quantity+10, min_quantity+100)/10000)
+        quantity = '%.4f CMN'%(random.randint(min_quantity+10, min_quantity+100)/10000)
 
         (voterPrivate, voterPublic) = testnet.createKey()
         voter = testnet.createRandomAccount(voterPublic, keys=techKey)
@@ -87,7 +87,7 @@ class CommunLeaderTests(unittest.TestCase):
         trx = testnet.Trx()
         trx.addAction('cyber.token', 'issue', 'c.issuer@active', {
                 'to': 'c.issuer',
-                'quantity': '0.0001 COMMUN',
+                'quantity': '0.0001 CMN',
                 'memo': ''
             })
 
@@ -147,12 +147,12 @@ class CommunityLeaderTests(unittest.TestCase):
             creator_auth = client,
             creator_key = clientKey,
             maximum_supply = testnet.Asset('100000000.000 %s'%point),
-            reserve_amount = testnet.Asset('1000000.0000 COMMUN'))
+            reserve_amount = testnet.Asset('1000000.0000 CMN'))
 
         (voterPrivate, voterPublic) = testnet.createKey()
         voter = testnet.createRandomAccount(voterPublic, keys=techKey)
         community.openBalance(voter, point, 'tech', keys=techKey)
-        community.buyCommunityPoints(voter, '%.4f COMMUN'%(random.randint(100, 20000)/10000), point, voterPrivate, clientKey)
+        community.buyCommunityPoints(voter, '%.4f CMN'%(random.randint(100, 20000)/10000), point, voterPrivate, clientKey)
 
         (appLeaderPrivate, appLeaderPublic) = testnet.createKey()
         appLeader = testnet.createRandomAccount(appLeaderPublic, keys=techKey)
@@ -222,7 +222,7 @@ class CommunityLeaderTests(unittest.TestCase):
         (private, public) = testnet.createKey()
         author = testnet.createRandomAccount(public, keys=techKey)
         community.openBalance(author, self.point, 'tech', keys=techKey)
-        community.buyCommunityPoints(author, '10.0000 COMMUN', self.point, private, clientKey)
+        community.buyCommunityPoints(author, '10.0000 CMN', self.point, private, clientKey)
 
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
@@ -280,39 +280,39 @@ class PointTestCase(unittest.TestCase):
     def tearDown(self):
         self.eeHelper.tearDown()
 
-    # This test checks exchange notification when user buys/sells community points
-    def test_exchangeNotification(self):
+    # This test checks notifications when user sells community points
+    def test_buyPoints(self):
         params = {}
 
         (private, public) = testnet.createKey()
-        acc = testnet.createRandomAccount(public, keys=techKey)
+        alice = testnet.createRandomAccount(public, keys=techKey)
 
-        community.issueCommunToken(acc, '1.0000 COMMUN', clientKey)
-        community.openBalance(acc, 'CATS', 'tech', keys=techKey)
-       
+        community.issueCommunToken(alice, '1.0000 CMN', clientKey)
+        community.openBalance(alice, 'CATS', 'tech', keys=techKey)
+
         # Buy community points through transfer tokens to 'c.point' account
-        buyArgs = {'from':acc, 'to':'c.point', 'quantity':'1.0000 COMMUN', 'memo':'CATS'}
-        buyResult = testnet.pushAction('cyber.token', 'transfer', acc, buyArgs, providebw=acc+'/c@providebw', keys=[private, clientKey])
+        buyArgs = {'from':alice, 'to':'c.point', 'quantity':'1.0000 CMN', 'memo':'CATS'}
+        buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[private, clientKey])
 
         buyTrx = buyResult['transaction_id']
         buyBlock = buyResult['processed']['block_num']
         buyTrace = [
             {
                 'receiver': 'c.point', 'code': 'cyber.token', 'action': 'transfer',
-                'auth': [{'actor': acc, 'permission': 'active'}],
+                'auth': [{'actor': alice, 'permission': 'active'}],
                 'args': buyArgs,
                 'events': ee.AllItems(
                     {
                         'code': 'c.point', 'event': 'balance',
-                        'args': {'account': acc, 'balance': ee.Save(params,'point-balance')}
+                        'args': {'account': alice, 'balance': ee.Save(params,'point-balance')}
                     }, {
                         'code': 'c.point', 'event': 'exchange',
                         'args': {'amount': ee.Save(params,'exchange-points')}
                     }, {
                         'code': 'c.point', 'event': 'currency',
-                        # 'args' send according to commun.point logic (do not check in this test)
+                        # TODO check args #455
                     })
-            },
+            }
         ]
 
         self.eeHelper.waitEvents(
@@ -321,41 +321,106 @@ class PointTestCase(unittest.TestCase):
         self.assertRegex(params['exchange-points'], '[0-9]+.[0-9]{3} CATS')
         self.assertEqual(params['point-balance'], params['exchange-points'])   # Due initial point-balance equal zero
 
+    # This test checks notifications when user sells community points
+    def test_sellPoints(self):
+        params = {}
+
+        (private, public) = testnet.createKey()
+        alice = testnet.createRandomAccount(public, keys=techKey)
+
+        community.issueCommunToken(alice, '1.0000 CMN', clientKey)
+        community.openBalance(alice, 'CATS', 'tech', keys=techKey)
+
+        buyArgs = {'from':alice, 'to':'c.point', 'quantity':'1.0000 CMN', 'memo':'CATS'}
+        testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[private, clientKey])
 
         # Sell community points through transfer them to 'c.point' account
-        sellArgs = {'from':acc, 'to':'c.point', 'quantity':params['point-balance'], 'memo':''}
-        sellResult = testnet.pushAction('c.point', 'transfer', acc, sellArgs, providebw=acc+'/c@providebw', keys=[private, clientKey])
+        sellArgs = {'from':alice, 'to':'c.point', 'quantity':'1.000 CATS', 'memo':''}
+        sellResult = testnet.pushAction('c.point', 'transfer', alice, sellArgs, providebw=alice+'/c@providebw', keys=[private, clientKey])
 
         sellTrx = sellResult['transaction_id']
         sellBlock = sellResult['processed']['block_num']
         sellTrace = [
             {
                 'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
-                'auth': [{'actor': acc, 'permission': 'active'}],
+                'auth': [{'actor': alice, 'permission': 'active'}],
                 'args': sellArgs,
                 'events': ee.AllItems(
                     {
                         'code': 'c.point', 'event': 'balance',
-                        'args': {'account': acc, 'balance': '0.000 CATS'}
+                        'args': {'account': alice, 'balance': '0.000 CATS'}
                     }, {
                         'code': 'c.point', 'event': 'exchange',
                         'args': {'amount': ee.Save(params,'exchange-tokens')}
                     }, {
                         'code': 'c.point', 'event': 'fee',
+                        'args': {'amount': ee.Save(params,'fee-amount')}
                     }, {
                         'code': 'c.point', 'event': 'currency',
                     })
             }, {
                 'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
                 'auth': [{'actor': 'c.point', 'permission': 'active'}],
-                'args': {'from':'c.point','to':acc,'quantity':ee.Load(params,'exchange-tokens'),'memo':'CATS sold'},
-                # 'events' send according to cyber.token logic (do not check in this test)
+                'args': {'from':'c.point','to':alice,'quantity':ee.Load(params,'exchange-tokens'),'memo':'CATS sold'},
+                # TODO check args #455
             },
         ]
 
         self.eeHelper.waitEvents(
             [ ({'msg_type':'ApplyTrx', 'id':sellTrx}, {'block_num':sellBlock, 'actions':sellTrace, 'except':ee.Missing()}),
             ], sellBlock)
+        self.assertRegex(params['fee-amount'], '[0-9]+.[0-9]{4} CMN')
+        self.assertEqual(params['fee-amount'], '0.0100 CMN') # default fee is 1%, cw is 100%
+
+    # This test checks notifications when user transfers community points
+    def test_transferPoints(self):
+        params = {}
+
+        (alicePrivate, alicePublic) = testnet.createKey()
+        alice = testnet.createRandomAccount(alicePublic, keys=techKey)
+        (bobPrivate, bobPublic) = testnet.createKey()
+        bob = testnet.createRandomAccount(bobPublic, keys=techKey)
+
+        community.issueCommunToken(alice, '1.0000 CMN', clientKey)
+        community.openBalance(alice, 'CATS', 'tech', keys=techKey)
+
+        buyArgs = {'from':alice, 'to':'c.point', 'quantity':'1.0000 CMN', 'memo':'CATS'}
+        testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+
+        transferArgs = {'from':alice, 'to':bob, 'quantity':'0.998 CATS', 'memo':'CATS'}
+        transferResult = testnet.pushAction('c.point', 'transfer', alice, transferArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+
+        transferTrx = transferResult['transaction_id']
+        transferBlock = transferResult['processed']['block_num']
+        transferTrace = [
+            {
+                'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
+                'auth': [{'actor': alice, 'permission': 'active'}],
+                'args': transferArgs,
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.point', 'event': 'fee',
+                        'args': {'amount': ee.Save(params,'fee-amount')}
+                    }, 
+                    {
+                        'code': 'c.point', 'event': 'currency'
+                    }, 
+                    {
+                        'code': 'c.point', 'event': 'balance',
+                        'args': {'account': alice, 'balance': '0.000 CATS'}
+                    }, 
+                    {
+                        'code': 'c.point', 'event': 'balance',
+                        'args': {'account': bob, 'balance': '0.998 CATS'} # 0.001 subtracted due conversion and 0.001 is fee
+                    })
+            },
+        ]
+
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':transferTrx}, {'block_num':transferBlock, 'actions':transferTrace, 'except':ee.Missing()}),
+            ], transferBlock)
+        self.assertRegex(params['fee-amount'], '[0-9]+.[0-9]{3} CATS')
+        self.assertEqual(params['fee-amount'], '0.001 CATS') # default fee is 1%
 
 if __name__ == '__main__':
     unittest.main()

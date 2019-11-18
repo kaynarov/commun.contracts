@@ -73,22 +73,17 @@ public:
         return push(N(setfreezer), _code, args()("freezer", freezer));
     }
 
-    action_result issue(account_name issuer, account_name to, asset quantity, string memo) {
-        issuer = get_issuer(quantity.get_symbol());
-        action_result result;
-        
-        result = push(N(issue), _code, args()
-            ("to", issuer)
-            ("quantity", quantity)
-            ("memo", memo)
-        );
-        if (_tester->success() != result)
-            return result;
-
-        if (issuer == to)
-            return result;
-
-        return transfer(issuer, to, quantity, memo);
+    action_result issue(account_name to, asset quantity, string memo, account_name issuer=name()) {
+        if (issuer == name()) {
+            issuer = get_issuer(quantity.get_symbol());
+        }
+        std::vector<action_data> tx_actions = {{_code, N(issue), {{_code, config::active_name}}, args()("to", issuer)("quantity", quantity)("memo", memo)}};
+        std::vector<account_name> signers = {_code};
+        if (issuer != to) {
+            tx_actions.push_back({_code, N(transfer), {{issuer, config::active_name}}, args()("from", issuer)("to", to)("quantity", quantity)("memo", memo)});
+            signers.push_back(issuer);
+        }
+        return _tester->push_tx(tx_actions, signers, false /*produce_and_check*/);
     }
 
     action_result retire(account_name from, asset quantity, string memo) {

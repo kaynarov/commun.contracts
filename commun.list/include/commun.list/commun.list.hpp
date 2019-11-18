@@ -52,7 +52,7 @@ public:
         \param required_threshold threshold at which a multisig transaction is considered approved. If this parameter is set to «0», the \a permission will be removed. If \a permission is set, the threshold should be set too
         \param collection_period mosaic collection period (in seconds). Default value is 604800 (calculated as 7×24×60×60)
         \param moderation_period mosaic moderation period (in seconds). Default value is 259200 (calculated as 3×24×60×60)
-        \param lock_period mosaic lock period (in seconds)
+        \param extra_reward_period mosaic extra reward period (in seconds)
         \param gems_per_day number of gems that a user can freeze per day. Default value is 10
         \param rewarded_mosaic_num number of mosaics receiving a reward. Default value is 10
         \param opuses opuses which should be added or updated if they exist
@@ -74,7 +74,7 @@ public:
     */
     [[eosio::action]] void setsysparams(symbol_code commun_code,
         optional<name> permission, optional<uint8_t> required_threshold,
-        optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
+        optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> extra_reward_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating,
         optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled, optional<bool> custom_gem_size_enabled);

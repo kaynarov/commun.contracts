@@ -120,7 +120,7 @@ public:
             ("leaders_percent", leaders_reward_prop)));
         
         BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
+        BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
 
         produce_block();
@@ -919,7 +919,7 @@ BOOST_FIXTURE_TEST_CASE(a_lot_of_votes, commun_publication_tester) try {
         auto user = voters[u];
         int64_t cur_amount = 1 + (rand() % (max_amount - 1));
         BOOST_CHECK_EQUAL(success(), point.open(user));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, user, asset(cur_amount, point._symbol), ""));
+        BOOST_CHECK_EQUAL(success(), point.issue(user, asset(cur_amount, point._symbol), ""));
         auto masaic_pre = get_mosaic(_code, _point, tracery);
         auto points_in_gem = cur_amount / gems_per_period;
         auto new_shares = calc_bancor_amount(masaic_pre["points"].as<int64_t>(), masaic_pre["shares"].as<int64_t>(), cfg::shares_cw, points_in_gem);
@@ -965,7 +965,7 @@ BOOST_FIXTURE_TEST_CASE(a_lot_of_mosaics, commun_publication_tester) try {
         auto user = users[u];
         int64_t cur_amount = 1 + (rand() % (max_amount - 1));
         BOOST_CHECK_EQUAL(success(), point.open(user));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, user, asset(cur_amount, point._symbol), ""));
+        BOOST_CHECK_EQUAL(success(), point.issue(user, asset(cur_amount, point._symbol), ""));
         (u < mosaics_num ? authors : voters).emplace_back(make_pair(user, cur_amount));
         
         if (u % 50 == 0) {
@@ -1106,7 +1106,7 @@ BOOST_FIXTURE_TEST_CASE(resize, commun_publication_tester) try {
         auto user = users[u];
         int64_t cur_amount = (mosaics_num - u + 1) * 1000;
         BOOST_CHECK_EQUAL(success(), point.open(user));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, user, asset(cur_amount, point._symbol), ""));
+        BOOST_CHECK_EQUAL(success(), point.issue(user, asset(cur_amount, point._symbol), ""));
         authors.emplace_back(make_pair(user, cur_amount));
         BOOST_CHECK_EQUAL(success(), post.create({user, "permlink"}));
     }

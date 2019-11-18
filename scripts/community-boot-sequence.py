@@ -15,7 +15,7 @@ parser.add_argument('--creator-key', metavar='', help="Private key for --creator
 
 parser.add_argument('--community-name', metavar='', help="Community owner account", dest="community_name")
 parser.add_argument('--maximum-supply', metavar='', help="Maximum supply of community point", dest="maximum_supply")
-parser.add_argument('--reserve-amount', metavar='', help="Reserve amount for community point (in COMMUN tokens)", dest="reserve_amount")
+parser.add_argument('--reserve-amount', metavar='', help="Reserve amount for community point (in CMN tokens)", dest="reserve_amount")
 parser.add_argument('--cw', metavar='', help="CW parameter for community point", default=10000, type=int, dest="cw")
 parser.add_argument('--fee', metavar='', help="FEE parameter for community point", default=100, type=int, dest="fee")
 

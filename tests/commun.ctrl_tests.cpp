@@ -155,7 +155,7 @@ public:
         link_authority(_golos, cfg::point_name, cfg::transfer_permission, N(transfer));
 
         BOOST_CHECK_EQUAL(success(), token.transfer(_golos, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
+        BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
     }
 };
@@ -356,8 +356,8 @@ BOOST_FIXTURE_TEST_CASE(unvotelead_test, commun_ctrl_tester) try {
     BOOST_CHECK_EQUAL(err.no_vote, comm_ctrl.unvote_leader(_carol, _alice));
 
     BOOST_CHECK_EQUAL(success(), point.open(_carol, point_code));
-    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _bob, asset(1000, point._symbol), "issue to bob"));
-    BOOST_CHECK_EQUAL(success(), point.issue(_golos, _carol, asset(1000, point._symbol), "issue to carol"));
+    BOOST_CHECK_EQUAL(success(), point.issue(_bob, asset(1000, point._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.issue(_carol, asset(1000, point._symbol), ""));
     BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(_carol, _alice));
     BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _carol, asset(700, point._symbol)));
     BOOST_CHECK_EQUAL(success(), comm_ctrl.unvote_leader(_carol, _alice));
@@ -380,7 +380,7 @@ BOOST_FIXTURE_TEST_CASE(clearvotes_test, commun_ctrl_tester) try {
         auto user = user_name(u);
         create_accounts({user});
         BOOST_CHECK_EQUAL(success(), point.open(user));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, user, asset(42, point._symbol), ""));
+        BOOST_CHECK_EQUAL(success(), point.issue(user, asset(42, point._symbol), ""));
         BOOST_CHECK_EQUAL(success(), comm_ctrl.vote_leader(user, _alice));
         produce_block();
     }

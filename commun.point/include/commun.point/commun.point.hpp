@@ -375,7 +375,7 @@ struct structures {
     };
 
     /**
-      \brief The structure representing the events related to
+      \brief The structure representing the events related to:
        - amount of point tokens is to be debited as a fee for the transfer of point tokens
        - amount of reserve CMN tokens is to be debited as a fee for the purchase of CMN tokens when selling point tokens.
       \ingroup point_events
