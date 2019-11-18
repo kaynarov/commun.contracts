@@ -283,6 +283,7 @@ class PointTestCase(unittest.TestCase):
     # This test checks notifications when user sells community points
     def test_buyPoints(self):
         params = {}
+        issuer = testnet.mongoClient["_CYBERWAY_c_point"]["param"].find_one({"max_supply._sym":"CATS"})["issuer"]
 
         (private, public) = testnet.createKey()
         alice = testnet.createRandomAccount(public, keys=techKey)
@@ -309,21 +310,30 @@ class PointTestCase(unittest.TestCase):
                         'code': 'c.point', 'event': 'exchange',
                         'args': {'amount': ee.Save(params,'exchange-points')}
                     }, {
-                        'code': 'c.point', 'event': 'currency',
-                        # TODO check args #455
+                        'code': 'c.point', 'event': 'currency'
                     })
-            }
+            }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': ee.Save(params,'alice-diff-points')},
+            }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': issuer, 'diff': '10000 '},
+            },
         ]
 
         self.eeHelper.waitEvents(
             [ ({'msg_type':'ApplyTrx', 'id':buyTrx}, {'block_num':buyBlock, 'actions':buyTrace, 'except':ee.Missing()}),
             ], buyBlock)
         self.assertRegex(params['exchange-points'], '[0-9]+.[0-9]{3} CATS')
-        self.assertEqual(params['point-balance'], params['exchange-points'])   # Due initial point-balance equal zero
+        self.assertEqual(params['exchange-points'], params['point-balance'])   # Due initial point-balance equal zero
+        self.assertEqual(params['alice-diff-points'], params['point-balance'])
 
     # This test checks notifications when user sells community points
     def test_sellPoints(self):
         params = {}
+        issuer = testnet.mongoClient["_CYBERWAY_c_point"]["param"].find_one({"max_supply._sym":"CATS"})["issuer"]
 
         (private, public) = testnet.createKey()
         alice = testnet.createRandomAccount(public, keys=techKey)
@@ -359,10 +369,17 @@ class PointTestCase(unittest.TestCase):
                         'code': 'c.point', 'event': 'currency',
                     })
             }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': ee.Save(params,'alice-diff-points')},
+            }, {
                 'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
                 'auth': [{'actor': 'c.point', 'permission': 'active'}],
                 'args': {'from':'c.point','to':alice,'quantity':ee.Load(params,'exchange-tokens'),'memo':'CATS sold'},
-                # TODO check args #455
+            }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': issuer, 'diff': '-9899 '}, # 1.0000 CMN, minus 0.010 CATS (1% fee) = 0.0100 CMN, and minus 0.0001 (convertation when buying)
             },
         ]
 
@@ -371,6 +388,7 @@ class PointTestCase(unittest.TestCase):
             ], sellBlock)
         self.assertRegex(params['fee-amount'], '[0-9]+.[0-9]{4} CMN')
         self.assertEqual(params['fee-amount'], '0.0100 CMN') # default fee is 1%, cw is 100%
+        self.assertEqual(params['alice-diff-points'], '-1.000 CATS')
 
     # This test checks notifications when user transfers community points
     def test_transferPoints(self):
@@ -411,8 +429,16 @@ class PointTestCase(unittest.TestCase):
                     }, 
                     {
                         'code': 'c.point', 'event': 'balance',
-                        'args': {'account': bob, 'balance': '0.998 CATS'} # 0.001 subtracted due conversion and 0.001 is fee
+                        'args': {'account': bob, 'balance': ee.Save(params,'quantity')}
                     })
+            }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': '-0.999 CATS'}, # transferred and 0.001 (fee)
+            }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': bob, 'diff': ee.Load(params,'quantity')},
             },
         ]
 
@@ -421,6 +447,8 @@ class PointTestCase(unittest.TestCase):
             ], transferBlock)
         self.assertRegex(params['fee-amount'], '[0-9]+.[0-9]{3} CATS')
         self.assertEqual(params['fee-amount'], '0.001 CATS') # default fee is 1%
+        self.assertRegex(params['quantity'], '[0-9]+.[0-9]{3} CATS')
+        self.assertEqual(params['quantity'], '0.998 CATS') # 0.001 subtracted due conversion and 0.001 is fee
 
 if __name__ == '__main__':
     unittest.main()
