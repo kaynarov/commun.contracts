@@ -77,7 +77,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 
 void commun_list::setsysparams(symbol_code commun_code,
         optional<name> permission, optional<uint8_t> required_threshold, 
-        optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> lock_period,
+        optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> extra_reward_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
         std::set<structures::opus_info> opuses, std::set<name> remove_opuses, optional<int64_t> min_lead_rating,
         optional<bool> damned_gem_reward_enabled, optional<bool> refill_gem_enabled, optional<bool> custom_gem_size_enabled) {
@@ -93,7 +93,7 @@ void commun_list::setsysparams(symbol_code commun_code,
         bool _empty = !c.control_param.update(permission, required_threshold);
         SET_PARAM(collection_period);
         SET_PARAM(moderation_period);
-        SET_PARAM(lock_period);
+        SET_PARAM(extra_reward_period);
         SET_PARAM(gems_per_day);
         SET_PARAM(rewarded_mosaic_num);
         SET_PARAM(damned_gem_reward_enabled);

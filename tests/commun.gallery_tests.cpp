@@ -97,7 +97,7 @@ public:
         BOOST_CHECK_EQUAL(success(), point.setfreezer(cfg::gallery_name));
         
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, cfg::point_name, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
-        BOOST_CHECK_EQUAL(success(), point.issue(_golos, _golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
+        BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
         BOOST_CHECK_EQUAL(success(), point.open(_code, point_code, _code));
 
         BOOST_CHECK_EQUAL(success(), community.create(cfg::list_name, point_code, "community 1"));
