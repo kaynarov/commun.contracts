@@ -360,7 +360,7 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
 
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
             {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
-        notify_balance_change(param.issuer, vague_asset(-quantity.amount));
+        notify_balance_change(param.issuer, vague_asset(-sub_reserve.amount));
         send_exchange_event(sub_reserve);
         if (fee_quantity.amount) {
             send_fee_event(fee_quantity);
