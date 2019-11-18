@@ -29,7 +29,7 @@ if subprocess.call(commun_boot_sequence, shell=True):
 community_params = {
     'community_name': 'cats',
     'maximum_supply': '1000000000.000 CATS',
-    'reserve_amount': '1000000.0000 COMMUN',
+    'reserve_amount': '1000000.0000 CMN',
     'cw': 10000,
     'fee': 100,
 }

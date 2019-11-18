@@ -103,7 +103,7 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
     pushTrx(trx, keys=[creator_key])
 
 
-    # 1. Buy some value of COMMUN tokens (for testing purposes c.issuer@issue)
+    # 1. Buy some value of CMN tokens (for testing purposes c.issuer@issue)
     trx = Trx()
     trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {
         'to':'c.issuer',
@@ -130,7 +130,7 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
         'fee': fee
     }, providebw='c.point/c@providebw', keys=creator_key)
 
-    # 3. Restock COMMUN tokens for community points
+    # 3. Restock CMN tokens for community points
     transfer(owner_account, 'c.point', reserve_amount, 'restock: {code}'.format(code=symbol.code),
         providebw=owner_account+'/c@providebw', keys=creator_key)
 
