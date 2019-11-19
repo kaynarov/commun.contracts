@@ -29,21 +29,23 @@ public:
     using contract::contract;
 
     /**
-        \brief The \ref create action is used to create a new type (a symbol) of point token and supply it into the community.
+        \brief The \ref create action is used to create a point token with a unique symbol to begin the formation of a new community in which this token will circulate.
 
         \param issuer account issuing the token
-        \param initial_supply number of point tokens supplied initially. These tokens are on the issuer's balance sheet. The initial_supply parameter must be at most maximum_supply and must have the same symbol
-        \param maximum_supply maximum number of point tokens supplied
-        \param cw connector weight showing the exchange rate between the point token and the system one, calculted by the specified formula. This parameter should take value from «0» to «10000» inclusive («0» and «10000» equal to «0.00 % » and «100.00 % » correspondingly)
+        \param initial_supply number of point tokens supplied initially. These tokens are on the issuer's balance sheet. The initial_supply parameter must be at most maximum_supply
+        \param maximum_supply maximum allowable number of point tokens supplied
+        \param cw connector weight showing the exchange rate between the point token and the system one, calculated by the specified formula. This parameter should take value from «0» to «10000» inclusive («0» and «10000» equal to «0.00 % » and «100.00 % » correspondingly)
         \param fee amount of commission that should be charged from a user when exchanging created tokens for system ones. This parameter is set in the same way as \a cw one
 
         The asset type is a structure value containing the fields:
-           - maximum number of tokens supplied;
+           - maximum allowable number of tokens supplied;
            - token symbol (data type that uniquely identifies the token):
                + token name consisting of a set of capital letters;
                + field that specifies a token cost accuracy in the form of decimal places number.
 
-        When this action is called, the information about \a currency event is sent to the event engine.
+        When this action is called, the information about creating the new token symbol is sent to the event engine as a \a currency event.
+
+        To form a community for the created token, the list::create action is called in the commun.list contract. This action generates internal calls emit::init, curl::init and gallery::init to configure the community.
 
         This action requires the signature of most validators.
     */
@@ -54,7 +56,7 @@ public:
         \brief The \ref setparams action is used by a point issuer to set the parameters of the issued point token. These settings can be updated after issuing the token.
 
         \param commun_code the point symbol code
-        \param transfer_fee commission (in percent) charged from the amount of token transfer. This parameter should be at least min_transfer_fee_points. The comission and the amount transferred are debited from balance of the «from» account 
+        \param transfer_fee commission (in percent) charged from the amount of token transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account 
         \param min_transfer_fee_points minimum amount (in percent) of fee charged for transfer of point tokens
 
         <b>Requirements:</b>
@@ -81,7 +83,7 @@ public:
     /**
         \brief The \ref issue action is used to put the point tokens into circulation in the system.
 
-        \param to recipient account, on whose balance the point tokens are credited
+        \param to recipient account, on whose balance the point tokens are credited. Initially, the generated tokens are credited to the \a issuer balance. Then, tokens are removed from the \a issuer balance sheet and sent to the \a to balance if the \a issuer and \a to accounts are not the same.
         \param quantity number of the supplied tokens
         \param memo memo text that clarifies a meaning (necessity) of the point tokens emission in the system. This text should not exceed 256 symbols including blanks
 
@@ -121,7 +123,8 @@ public:
         <b>Restriction:</b>
             - It is not allowed to transfer tokens to oneself.
 
-        This action requires a signature either of the \a from account or of most validators.
+        This action requires a signature of the \a from account.
+
         Use of the bandwidth (RAM) resources is charged either to sending account or to receiving account, depending on who signed the transaction. If the \ref open action was previously performed, none of them should pay bandwidth, since the record already created in database is used.
     */
     [[eosio::action]]
@@ -134,7 +137,7 @@ public:
         \param commun_code a token symbol for which the record is being created
         \param ram_payer account name that pays for the used memory
 
-        This action requires a signature of account specified in the \a ram_payer parameter.
+        This action requires a signature of account specified in the \a ram_payer parameter. Since this parameter is an optional, the \a owner signature is required if \a ram_payer is omitted.
      */
     [[eosio::action]]
     void open(name owner, symbol_code commun_code, std::optional<name> ram_payer);
@@ -145,9 +148,7 @@ public:
         \param owner account name to which the record in database was created
         \param commun_code a token symbol for which the record in database was cleared
 
-        To perform this action, it is necessary to have two zeroed balances of the account \a owner:
-            - zero token balance (determined by the \a commun_code);
-            - zero payment balance.
+        To perform this action, it is necessary to have zeroed token balance of the account \a owner.
 
         This action requires a signature of the \a owner account.
      */
@@ -266,7 +267,7 @@ struct structures {
     */
     // DOCS_TABLE: param_struct
     struct [[eosio::table]] param {
-        asset max_supply; /**< maximum number of the point tokens supplied*/
+        asset max_supply; /**< maximum allowable number of the point tokens supplied*/
         int16_t  cw; /**< connector weight showing the exchange rate between the point token and the system one*/
         int16_t fee; /**< amount of commission that is charged from the \a issuer when exchanging the issued tokens for the system ones */
         name     issuer; /**< account who issued the point tokens */
@@ -349,7 +350,7 @@ struct structures {
     struct currency_event {
         asset   supply; //!< number of point tokens (with a specific symbol) supplied
         asset   reserve; //!< number of reserve system tokens
-        asset   max_supply; //!< maximum number of the point tokens supplied
+        asset   max_supply; //!< maximum allowable number of the point tokens supplied
         int16_t cw; //!< connector weight for the point token
         int16_t fee; //!< fee for the point token
         name    issuer; //!< account name issuing the point token
