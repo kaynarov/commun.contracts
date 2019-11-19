@@ -413,6 +413,11 @@ public:
         }
         return false;
     }
+
+    static inline void require_leader_auth(symbol_code commun_code, name leader) {
+        require_auth(leader);
+        eosio::check(in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    }
 };
 
 } // commun

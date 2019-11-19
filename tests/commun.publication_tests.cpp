@@ -163,18 +163,20 @@ public:
     int64_t reserve;
 
     struct errors: contract_error_messages {
-        const string auth_self                  = "Missing authority of _self. ";
+        const string auth_self             = " and missing authority of _self";
         const string no_param              = amsg("param does not exists");
         const string remove_children       = amsg("comment with child comments can't be removed during the active period");
         const string no_permlink           = amsg("Permlink doesn't exist.");
         const string max_comment_depth     = amsg("publication::create: level > MAX_COMMENT_DEPTH");
         const string max_cmmnt_dpth_less_0 = amsg("Max comment depth must be greater than 0.");
         const string msg_exists            = amsg("This message already exists.");
-        const string parent_no_message     = amsg(auth_self + "Parent message doesn't exist");
-        const string no_message            = amsg(auth_self + "Message does not exist.");
-        const string inactive              = amsg(auth_self + "Mosaic is inactive.");
-        const string not_enough_for_gem    = amsg(auth_self + "points are not enough for gem inclusion");
-        const string no_vote               = amsg(auth_self + "vote doesn't exist");
+        const string parent_no_message     = amsg("Parent message doesn't exist" + auth_self);
+        const string no_message            = amsg("Message does not exist" + auth_self);
+        const string inactive              = amsg("Mosaic is inactive" + auth_self);
+        const string not_enough_for_gem    = amsg("Points are not enough for gem inclusion" + auth_self);
+        const string no_vote               = amsg("Vote doesn't exist" + auth_self);
+        const string collection_is_over    = amsg("Collection period is over" + auth_self);     // TODO: Add tests #462
+        const string client_action         = amsg("Action enable only for client" + auth_self); // TODO: Add tests #462
 
         const string wrong_prmlnk_length   = amsg("Permlink length is empty or more than 256.");
         const string wrong_prmlnk          = amsg("Permlink contains wrong symbol.");
@@ -190,7 +192,7 @@ public:
         const string already_removed       = amsg("Message already removed.");
         const string parent_removed        = amsg("Parent message removed.");
         
-        const string vote_weight_0         = amsg(auth_self + "weight can't be 0.");
+        const string vote_weight_0         = amsg("Weight equal to 0" + auth_self);
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
         const string custom_gem            = amsg("custom gem size disabled.");
 
@@ -348,7 +350,7 @@ BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
     mssgid msg = {N(brucelee), "permlink"};
     BOOST_CHECK_EQUAL(success(), post.create(msg));
 
-    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason"));
+    BOOST_CHECK_EQUAL(err.client_action, post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason"));
     BOOST_CHECK_EQUAL(err.simple_no_message, post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason", _client));
 
     BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
@@ -372,7 +374,7 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
 
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
 
-    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.reblog(N(chucknorris), account_name(), {N(brucelee), "permlink"},
+    BOOST_CHECK_EQUAL(err.client_action, post.reblog(N(chucknorris), account_name(), {N(brucelee), "permlink"},
         "header",
         "body"));
 
@@ -401,7 +403,7 @@ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
         "",
         "body"));
 
-    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.erase_reblog(N(chucknorris), account_name(),
+    BOOST_CHECK_EQUAL(err.client_action, post.erase_reblog(N(chucknorris), account_name(),
         {N(brucelee), "notexist"}));
     BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog(N(brucelee), _client,
         {N(brucelee), "permlink"}));
@@ -594,8 +596,23 @@ BOOST_FIXTURE_TEST_CASE(advise_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(lock_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Lock message by leader testing.");
     mssgid msg = {N(brucelee), "permlink"};
+    BOOST_CHECK_EQUAL(errgallery.no_community, post.lock(N(jackiechan), msg, ""));
+    BOOST_CHECK_EQUAL(errgallery.no_community, post.unlock(N(jackiechan), msg, ""));
+
+    init();
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(jackiechan)), post.lock(N(jackiechan), msg, ""));
+    BOOST_CHECK_EQUAL(errgallery.not_a_leader(N(jackiechan)), post.unlock(N(jackiechan), msg, ""));
+
+    ctrl.prepare({N(jackiechan)}, N(brucelee));
     BOOST_CHECK_EQUAL(errgallery.reason_empty, post.lock(N(jackiechan), msg, ""));
     BOOST_CHECK_EQUAL(errgallery.reason_empty, post.unlock(N(jackiechan), msg, ""));
+
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.lock(N(jackiechan), msg, "Some reason"));
+    BOOST_CHECK_EQUAL(errgallery.no_mosaic, post.unlock(N(jackiechan), msg, "Some reason"));
+
+    BOOST_CHECK_EQUAL(success(), post.create(msg, {N(), "p"}, "h", "b", {"t"}, "m"));
+    BOOST_CHECK_EQUAL(success(), post.lock(N(jackiechan), msg, "Some reason"));
+    BOOST_CHECK_EQUAL(success(), post.unlock(N(jackiechan), msg, "Some reason"));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reward_for_downvote, commun_publication_tester) try {

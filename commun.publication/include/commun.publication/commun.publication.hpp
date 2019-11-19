@@ -261,8 +261,8 @@ private:
     static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight);
     void set_vote(symbol_code commun_code, name voter, const mssgid_t &message_id, std::optional<uint16_t> weight, bool damn);
     bool validate_permlink(std::string permlink);
-    bool check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id, name actor = name());
-    void check_auth(const std::string& s, name actor = name());
+    bool check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id);
+    void require_client_auth(const std::string& s = "Action enable only for client");
 };
 
 } // commun

@@ -810,7 +810,6 @@ protected:
     }
 
     void init_gallery(name _self, symbol_code commun_code) {
-        require_auth(_self);
         commun_list::check_community_exists(commun_code);
 
         gallery_types::stats stats_table(_self, commun_code.raw());
@@ -982,9 +981,6 @@ protected:
     }
     
     void advise_mosaics(name _self, symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
-        require_auth(leader);
-        commun_list::check_community_exists(commun_code);
-        eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         eosio::check(favorites.size() <= config::advice_weight.size(), "a surfeit of advice");
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -1032,9 +1028,7 @@ protected:
         });
     }
     
-    void set_lock_status(name _self, symbol_code commun_code, name leader, uint64_t tracery, bool lock) {
-        require_auth(leader);
-        check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    void set_lock_status(name _self, symbol_code commun_code, uint64_t tracery, bool lock) {
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
@@ -1049,18 +1043,7 @@ protected:
         });
     }
 
-    void lock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
-        set_lock_status(_self, commun_code, leader, tracery, true);
-        
-    }
-
-    void unlock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
-        set_lock_status(_self, commun_code, leader, tracery, false);
-    }
-
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
-        require_auth(point::get_issuer(commun_code));
-        
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
@@ -1088,14 +1071,17 @@ public:
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
 
     [[eosio::action]] void init(symbol_code commun_code) {
+        require_auth(_self);
         init_gallery(_self, commun_code);
     }
 
     [[eosio::action]] void createmosaic(name creator, uint64_t tracery, name opus, asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
+        require_auth(creator);
         create_mosaic(_self, creator, tracery, opus, quantity, royalty, providers);
     }
 
     [[eosio::action]] void addtomosaic(uint64_t tracery, asset quantity, bool damn, name gem_creator, gallery_types::providers_t providers) {
+        require_auth(gem_creator);
         add_to_mosaic(_self, tracery, quantity, damn, gem_creator, providers);
     }
     
@@ -1117,6 +1103,7 @@ public:
     }
     
     [[eosio::action]] void advise(symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
+        control::require_leader_auth(commun_code, leader);
         advise_mosaics(_self, commun_code, leader, favorites);
     }
     
@@ -1127,16 +1114,19 @@ public:
     }
 
     [[eosio::action]] void lock(symbol_code commun_code, name leader, uint64_t tracery, string reason) {
+        control::require_leader_auth(commun_code, leader);
         eosio::check(!reason.empty(), "Reason cannot be empty.");
-        lock_mosaic(_self, commun_code, leader, tracery);
+        set_lock_status(_self, commun_code, tracery, true);
     }
 
     [[eosio::action]] void unlock(symbol_code commun_code, name leader, uint64_t tracery, string reason) {
+        control::require_leader_auth(commun_code, leader);
         eosio::check(!reason.empty(), "Reason cannot be empty.");
-        unlock_mosaic(_self, commun_code, leader, tracery);
+        set_lock_status(_self, commun_code, tracery, false);
     }
 
     [[eosio::action]] void ban(symbol_code commun_code, uint64_t tracery) {
+        require_auth(_self);
         ban_mosaic(_self, commun_code, tracery);
     }
 
