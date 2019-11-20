@@ -56,8 +56,8 @@ public:
         \brief The \ref setparams action is used by a point issuer to set the parameters of the issued point token. These settings can be updated after issuing the token.
 
         \param commun_code the point symbol code
-        \param transfer_fee commission (in percent) charged from the amount of token transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account 
-        \param min_transfer_fee_points minimum amount (in percent) of fee charged for transfer of point tokens
+        \param transfer_fee commission (in percent) charged from the amount of token transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is 10
+        \param min_transfer_fee_points minimum amount (in percent) of fee charged for transfer of point tokens. Default value is 1
 
         <b>Requirements:</b>
             - the point token should be created before calling this action;
@@ -83,7 +83,7 @@ public:
     /**
         \brief The \ref issue action is used to put the point tokens into circulation in the system.
 
-        \param to recipient account, on whose balance the point tokens are credited. Initially, the generated tokens are credited to the \a issuer balance. Then, tokens are removed from the \a issuer balance sheet and sent to the \a to balance if the \a issuer and \a to accounts are not the same.
+        \param to recipient account, on whose balance the point tokens are credited
         \param quantity number of the supplied tokens
         \param memo memo text that clarifies a meaning (necessity) of the point tokens emission in the system. This text should not exceed 256 symbols including blanks
 
@@ -91,6 +91,8 @@ public:
         When this action is called, the information about \a currency and \a balance events is sent to the event engine.
 
         This action requires a signature either of the point tokens issuer or of most validators.
+
+        The procedure for crediting point tokens to the recipient balance "to" is carried out in two stages. Initially, the generated tokens are credited to the \a issuer balance. Next, \ref issue does (inline) call of \ref transfer action to transfer the tokens from the \a issuer to the \a to balance sheet if the \a issuer and \a to accounts are not the same.
     */
     [[eosio::action]]
     void issue(name to, asset quantity, string memo);
