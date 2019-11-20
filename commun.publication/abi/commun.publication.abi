@@ -589,34 +589,6 @@
     "type": "claim_args"
   },
   {
-    "name": "hold",
-    "type": "modifygem_args"
-  },
-  {
-    "name": "transfer",
-    "type": "transfer_args"
-  },
-  {
-    "name": "reblog",
-    "type": "reblog"
-  },
-  {
-    "name": "erasereblog",
-    "type": "erasereblog"
-  },
-  {
-    "name": "setproviders",
-    "type": "setproviders_args"
-  },
-  {
-    "name": "provide",
-    "type": "provide_args"
-  },
-  {
-    "name": "advise",
-    "type": "advise_args"
-  },
-  {
     "name": "ban",
     "type": "ban_args"
   }

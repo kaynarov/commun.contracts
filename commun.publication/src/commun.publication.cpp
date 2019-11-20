@@ -378,4 +378,6 @@ void publication::ban(symbol_code commun_code, mssgid_t message_id) {
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
     (init)(create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
-    (claim)(hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise)(ban))
+    (claim)
+    // (hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise) // TODO: removed from MVP
+    (ban))
