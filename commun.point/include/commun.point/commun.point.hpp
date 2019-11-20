@@ -56,8 +56,8 @@ public:
         \brief The \ref setparams action is used by a point issuer to set the parameters of the issued point token. These settings can be updated after issuing the token.
 
         \param commun_code the point symbol code
-        \param transfer_fee commission (in percent) charged from the amount of token transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is 10
-        \param min_transfer_fee_points minimum amount (in percent) of fee charged for transfer of point tokens. Default value is 1
+        \param transfer_fee commission (in percent) charged from the amount of token transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is «10» that corresponds to «0.1» (%)
+        \param min_transfer_fee_points minimum number of point tokens transferred as fee. Such a number of tokens will be debited from the account, even if the calculated fee is less than this value. Default value is «1» that corresponds to one smallest part of point token (i.e. 0.001 point)
 
         <b>Requirements:</b>
             - the point token should be created before calling this action;
@@ -92,7 +92,7 @@ public:
 
         This action requires a signature either of the point tokens issuer or of most validators.
 
-        The procedure for crediting point tokens to the recipient balance "to" is carried out in two stages. Initially, the generated tokens are credited to the \a issuer balance. Next, \ref issue does (inline) call of \ref transfer action to transfer the tokens from the \a issuer to the \a to balance sheet if the \a issuer and \a to accounts are not the same.
+        The procedure for crediting point tokens to the recipient balance \a to is carried out in two stages. Initially, the generated tokens are credited to the \a issuer balance. Next, \ref issue does (inline) call of \ref transfer action to transfer the tokens from the \a issuer to the \a to balance sheet if the \a issuer and \a to accounts are not the same.
     */
     [[eosio::action]]
     void issue(name to, asset quantity, string memo);
