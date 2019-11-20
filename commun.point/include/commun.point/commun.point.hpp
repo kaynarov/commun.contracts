@@ -21,7 +21,7 @@ namespace commun {
 using std::string;
 using namespace eosio;
 /**
-* \brief This class implements comn.point contract behaviour
+* \brief This class implements the commun.point contract functionality
 * \ingroup point_class
 */
 class [[eosio::contract]] point : public contract {
@@ -29,121 +29,130 @@ public:
     using contract::contract;
 
     /**
-        \brief Create point token.
+        \brief The \ref create action is used to create a point token with a unique symbol to begin the formation of a new community in which this token will circulate.
 
-        \param issuer an account who issues the token
-        \param initial_supply number of firstly supplied points. These points are placed on the \a issuer's balance.
-                \a initial_supply should be not more then \a maximum_supply and have same symbol.
-        \param maximum_supply a structure value containing the fields:
-                - maximum number of tokens supplied;
-                - token symbol (data type that uniquely identifies the token). This is a structure value containing fields:
-                   + token name, consisting of a set of capital letters;
-                   + field that specifies a token cost accuracy in the form of decimal places number.
-        \param cw connector weight of creating token to the system token
-        \param fee fee charging from account when it selling point tokens for system tokens
+        \param issuer account issuing the token
+        \param initial_supply number of point tokens supplied initially. These tokens are on the issuer's balance sheet. The initial_supply parameter must be at most maximum_supply
+        \param maximum_supply maximum allowable number of point tokens supplied
+        \param cw connector weight showing the exchange rate between the point token and the system one, calculated by the specified formula. This parameter should take value from «0» to «10000» inclusive («0» and «10000» equal to «0.00 % » and «100.00 % » correspondingly)
+        \param fee amount of commission that should be charged from a user when exchanging created tokens for system ones. This parameter is set in the same way as \a cw one
 
-        Sends \ref currency event.
+        The asset type is a structure value containing the fields:
+           - maximum allowable number of tokens supplied;
+           - token symbol (data type that uniquely identifies the token):
+               + token name consisting of a set of capital letters;
+               + field that specifies a token cost accuracy in the form of decimal places number.
 
-        Performing the action requires a validator signature.
+        When this action is called, the information about creating the new token symbol is sent to the event engine as a \a currency event.
+
+        To form a community for the created token, the list::create action is called in the commun.list contract. This action generates internal calls emit::init, curl::init and gallery::init to configure the community.
+
+        This action requires the signature of most validators.
     */
     [[eosio::action]]
     void create(name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee);
 
     /**
-        \brief The setparams action is used by POINT issuer to set POINT token parameters which can be updated after its creation.
+        \brief The \ref setparams action is used by a point issuer to set the parameters of the issued point token. These settings can be updated after issuing the token.
 
         \param commun_code the point symbol code
-        \param transfer_fee percent of amount to which should be added as fee to amount of POINTs when transferring. When transferring POINTs, the sum of transfer amount and fee being substracted from "from"-account balance, and fee being retired from supply
-        \param min_transfer_fee_points minimum amount of fee on POINTs transferring
+        \param transfer_fee commission (in percent) charged from the amount of token transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is «10» that corresponds to «0.1» (%)
+        \param min_transfer_fee_points minimum number of point tokens transferred as fee. Such a number of tokens will be debited from the account, even if the calculated fee is less than this value. Default value is «1» that corresponds to one smallest part of point token (i.e. 0.001 point)
 
-        <b>Restrictions:</b>
-            - Point token should be created before calling this action;
-            - min_transfer_fee_points can be 0 only if transfer_fee is 0%;
-            - No fee being charged on transfer if "from" or "to" account is POINT issuer, or is one of Commun contracts.
+        <b>Requirements:</b>
+            - the point token should be created before calling this action;
+            - the \a min_transfer_fee_points parameter should take the value «0» if \a transfer_fee is set to «0» (%);
+            - no fee is charged on transfer if the «from» (or «to») account is either a point issuer or is one of the commun contracts.
 
-        Performing the action requires the POINT issuer signature.
+        Performing the action requires the point issuer signature.
     */
     [[eosio::action]]
     void setparams(symbol_code commun_code, uint16_t transfer_fee, int64_t min_transfer_fee_points);
 
     /**
-        \brief Set contract account which can freeze point or system tokens from account balance.
+        \brief The \ref setfreezer action is used to set contract account, so, this account will have ability to «freeze» the point tokens or the system ones on its balance.
 
         \param freezer a freezer account
 
-        Performing the action requires the validators signature.
+        This action requires the signature of most validators.
     */
     [[eosio::action]]
     void setfreezer(name freezer);
 
 
     /**
-        \brief Put the point tokens into circulation in the system.
+        \brief The \ref issue action is used to put the point tokens into circulation in the system.
 
-        \param to recipient account to balance of which the tokens are transferred.
-        \param quantity number of the supplied tokens. This is a structure value containing fields:
-                - number of the supplied tokens in the system;
-                - the token symbol. This is a structure value containing fields:
-                    + the token name, consisting of a set of capital letters;
-                    + the field that specifies a token cost accuracy in the form of decimal places number.
-        \param memo memo text that clarifies a meaning (necessity) of the token emission in the system. Should not exceed 256 symbols including blanks.
+        \param to recipient account, on whose balance the point tokens are credited
+        \param quantity number of the supplied tokens
+        \param memo memo text that clarifies a meaning (necessity) of the point tokens emission in the system. This text should not exceed 256 symbols including blanks
 
-        Sends \ref currency event, \ref balance event.
+        The number of supplied point tokens should not exceed the maximum_supply value specified by the \ref create action.
+        When this action is called, the information about \a currency and \a balance events is sent to the event engine.
 
-        Performing the action requires a signature of token issuer, or of the validators.
+        This action requires a signature either of the point tokens issuer or of most validators.
+
+        The procedure for crediting point tokens to the recipient balance \a to is carried out in two stages. Initially, the generated tokens are credited to the \a issuer balance. Next, \ref issue does (inline) call of \ref transfer action to transfer the tokens from the \a issuer to the \a to balance sheet if the \a issuer and \a to accounts are not the same.
     */
     [[eosio::action]]
     void issue(name to, asset quantity, string memo);
 
     /**
-        \brief Retire a certain number of point tokens from the issuer account, or another account.
+        \brief The \ref retire action is used for taking a certain number of point tokens out of circulation («burning» the point tokens). These tokens can be withdrawn from balance of the \a issuer account as well as from balance of any other account.
 
-        \param from account from which tokens as retiring
-        \param quantity number of retiring tokens
-        \param memo a memo text clarifying a purpose of retiring tokens. Should not exceed 256 symbols including blanks.
+        \param from account from the balance of which tokens are withdrawn
+        \param quantity number of retiring tokens. This parameter should be positive
+        \param memo a memo text clarifying a purpose of retiring tokens. Should not exceed 256 symbols including blanks
 
-        Sends \ref currency event, \ref balance event.
+        When this action is called, the information about \a currency and \a balance events is sent to the event engine.
 
-        Use of the bandwidth resources (RAM) is charged to the from account. The number of tokens withdrawn from circulation is also removed from from account balance, so this account can not withdraw tokens more than he/she has them on own balance.
-        To perform this action, the from account authorization is required.
+        Use of the bandwidth resources (RAM) is charged to the account \a from. The number of tokens withdrawn from circulation will also be deducted from account balance, so this account (\a from) can not withdraw tokens more than he/she has them on own balance.
+        This action requires a signature of the account \a from..
     */
     [[eosio::action]]
     void retire(name from, asset quantity, string memo);
 
     /**
-        \brief Transfer point tokens from one account to another, or sell point tokens for system tokens.
+        \brief The \ref transfer action is used to transfer tokens from one account to another, as well as to exchange point tokens for system tokens at the current exchange rate.
 
         \param from sender account from balance of which the tokens are withdrawn
-        \param to recipient account to balance of which the tokens are transferred, or equals to point contract name if selling point tokens
-        \param quantity amount of tokens to be transferred. This value should be greater than zero
-        \param memo a memo text that clarifies a meaning of the tokens transfer. Should not exceed 256 symbols including blanks.
+        \param to recipient account to balance of which the tokens are transferred. This parameter takes the point contract name, in case of selling point tokens
+        \param quantity amount of tokens to be transferred. This value should be positive
+        \param memo a memo text that clarifies a meaning of the tokens transfer. This text should not exceed 256 symbols including blanks.
 
-        Sends \ref balance event. Can send \ref currency event, \ref exchange event.
+        When this action is called, the information about \a balance, \a currency and \a exchange events is sent to the event engine.
 
-        Performing the action requires a signature of the from account, or of the validators.
+        <b>Restriction:</b>
+            - It is not allowed to transfer tokens to oneself.
+
+        This action requires a signature of the \a from account.
+
+        Use of the bandwidth (RAM) resources is charged either to sending account or to receiving account, depending on who signed the transaction. If the \ref open action was previously performed, none of them should pay bandwidth, since the record already created in database is used.
     */
     [[eosio::action]]
     void transfer(name from, name to, asset quantity, string memo);
 
     /**
-        \brief Create a record in database for account balance for point or system symbol.
+        \brief The \ref open action is used to create a record in database. This record contains information about either point or system token symbol on the account balance.
 
-        \param owner account name to which the memory is allocated
-        \param commun_code symbol for which the entry is being created
+        \param owner account name for which the memory is allocated
+        \param commun_code a token symbol for which the record is being created
         \param ram_payer account name that pays for the used memory
 
-        Performing the action requires a signature of the ram_payer account.
+        This action requires a signature of account specified in the \a ram_payer parameter. Since this parameter is an optional, the \a owner signature is required if \a ram_payer is omitted.
      */
     [[eosio::action]]
     void open(name owner, symbol_code commun_code, std::optional<name> ram_payer);
 
     /**
-        \brief Action is an opposite of open and is used to free allocated memory in database.
+        \brief The \ref close action is used to free memory in the database previously allocated for information about token symbol on the account balance. This action is an opposite of the \ref open one.
 
-        \param owner  account name to which the memory is being created
-        \param commun_code symbol for which the entry is being cleared
+        \param owner account name to which the record in database was created
+        \param commun_code a token symbol for which the record in database was cleared
 
-        Performing the action requires a signature of the owner account.
+        To perform this action, it is necessary to have zeroed token balance of the account \a owner.
+
+        This action requires a signature of the \a owner account.
      */
     [[eosio::action]]
     void close(name owner, symbol_code commun_code);
@@ -151,14 +160,14 @@ public:
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
 
     /**
-        \brief Withdraw a certain number of system tokens from the account to its balance in system token contract.
+        \brief The \ref withdraw action is used to debit system tokens from the commun.point balance and credit them to the <i>cyber.token</i> balance. It should be noted that the \ref transfer action can be used for the reverse operation — to debit system tokens from the <i>cyber.token</i> balance and credit them to commun.point balance.
 
-        \param owner account name to which the tokens withdrawing
-        \param quantity amount of withdrawing tokens
+        \param owner account name withdrawing the tokens
+        \param quantity number of tokens to be withdrawn
 
-        Sends \ref balance event.
+        When this action is called, the information about \a balance event is sent to the event engine.
 
-        Performing the action requires a signature of the owner account.
+        This action requires a signature of the \a owner account.
      */
     [[eosio::action]]
     void withdraw(name owner, asset quantity);
@@ -232,52 +241,52 @@ struct structures {
 
     /**
 
-      \brief DB record for account balances of a token.
+      \brief DB record containing information about tokens of a certain symbol on the account balance
       \ingroup point_tables
     */
     // DOCS_TABLE: account_struct
     struct [[eosio::table]] account {
-        asset    balance; /**< amount of point or system tokens belongs to the account*/
+        asset    balance; /**< number of point tokens or of system ones on the account balance*/
         uint64_t primary_key()const { return balance.symbol.code().raw(); }
     };
 
     /**
 
-      \brief DB record for statistics of a token.
+      \brief DB record containing statistical information about tokens of a certain symbol in the system.
       \ingroup point_tables
     */
     // DOCS_TABLE: stat_struct
     struct [[eosio::table]] stat {
-        asset    supply; /**< amount of tokens used in the system, point tokens */
-        asset    reserve; /**< amount of tokens not used in the system, system tokens */
+        asset    supply; /**< number of point tokens that are in circulation in the system */
+        asset    reserve; /**< number of system tokens that are not in circulation in the system. These tokens can be used for exchange */
         uint64_t primary_key()const { return supply.symbol.code().raw(); }
     };
 
 
     /**
-      \brief DB record for params of a token.
+      \brief DB record containing data for a point token.
       \ingroup point_tables
     */
     // DOCS_TABLE: param_struct
     struct [[eosio::table]] param {
-        asset max_supply; /**< maximum amount of point tokens supplied*/
-        int16_t  cw; /**< connector weight*/
-        int16_t fee; /**< fee */
-        name     issuer; /**< an token issuer */
-        uint16_t transfer_fee = config::def_transfer_fee; //!< fee for transfer of POINTs
-        int64_t min_transfer_fee_points = config::def_min_transfer_fee_points; //!< minimum amount of POINTs which are retiring for fee on POINTs transfer
+        asset max_supply; /**< maximum allowable number of the point tokens supplied*/
+        int16_t  cw; /**< connector weight showing the exchange rate between the point token and the system one*/
+        int16_t fee; /**< amount of commission that is charged from the \a issuer when exchanging the issued tokens for the system ones */
+        name     issuer; /**< account who issued the point tokens */
+        uint16_t transfer_fee = config::def_transfer_fee; //!< fee charged for transfer of the point tokens
+        int64_t min_transfer_fee_points = config::def_min_transfer_fee_points; //!< minimum amount of fee charged for transfer of point tokens
 
         uint64_t primary_key()const { return max_supply.symbol.code().raw(); }
         name by_issuer()const { return issuer; }
     };
 
     /**
-      \brief struct represents global params table in a db
+      \brief The struct representing global params table in DB.
       \ingroup point_tables
     */
     // DOCS_TABLE: globalparam_struct
     struct [[eosio::table]] global_param {
-        name point_freezer; /**< a name of contract which can freeze tokens of accounts*/
+        name point_freezer; /**< a name of contract that has the ability to freeze tokens of accounts*/
     };
 };
 
@@ -337,43 +346,45 @@ struct structures {
     void do_transfer(name from, name to, const asset& quantity, const string& memo);
 
     /**
-      \brief A struct represents event about account balance update (sending from \ref create, \ref issue, \ref retire, can be sending on transfering reserve from cyber.token and on \ref transfer).
+      \brief The structure representing the event related to change of account balance. Such event occurs during execution of the actions \ref create, \ref issue and \ref retire as well as during the reserve tokens transfer from \a cyber.token to commun.point via performing \ref transfer.
       \ingroup point_events
     */
     struct currency_event {
-        asset   supply; //!< supply of points (of specific token)
-        asset   reserve; //!< reserver of system tokens
-        asset   max_supply; //!< maximum supply of points
-        int16_t cw; //!< connector weight for specific point token
-        int16_t fee; //!< fee for specific point token
-        name    issuer; //!< issuer account name for specific point token
-        uint16_t transfer_fee = config::def_transfer_fee; //!< fee for transfer of POINTs
-        int64_t min_transfer_fee_points = config::def_min_transfer_fee_points; //!< minimum amount of POINTs which are retiring for fee on POINTs transfer
+        asset   supply; //!< number of point tokens (with a specific symbol) supplied
+        asset   reserve; //!< number of reserve system tokens
+        asset   max_supply; //!< maximum allowable number of the point tokens supplied
+        int16_t cw; //!< connector weight for the point token
+        int16_t fee; //!< fee for the point token
+        name    issuer; //!< account name issuing the point token
+        uint16_t transfer_fee = config::def_transfer_fee; //!< fee charged for transfer of the point tokens
+        int64_t min_transfer_fee_points = config::def_min_transfer_fee_points; //!< minimum amount of fee charged for transfer of point tokens
     };
 
     /**
-      \brief A struct represents event about account balance update (sending from \ref retire, \ref withdraw, \ref transfer, \ref issue. Can be send on transfering system tokens to point contract)
+      \brief The structure representing the event related to change of account balance. Such event occurs during execution of the actions \ref retire, \ref withdraw, \ref transfer and \ref issue, as well as during a transfer of system tokens to the commun.point contract.
       \ingroup point_events
     */
     struct balance_event {
-        name    account; //!< account name
-        asset   balance; //!< balance in one of tokens for which account has opened balance
+        name    account; //!< account name whose balance is changing
+        asset   balance; //!< balance opened by the account for a concrete token
     };
 
     /**
-      \brief A struct represents event with amount added to tokens if selling points (sending on \ref transfer), or added to points if buying points (sending on transfering system tokens to point contract).
+      \brief The structure representing the event related to the purchase of a certain amount of system tokens in exchange for point tokens, as well as the event related to the purchase of a certain amount of point tokens. The first event occurs during the \ref transfer execution while the second one occurs during transfering system tokens to <i>commun.point</i> contract.
       \ingroup point_events
     */
     struct exchange_event {
-        asset   amount; //!< amount of tokens if selling points, or amount of points if buying points
+        asset   amount; //!< this parameter is either amount of system tokens when point tokens are selling or amount of point tokens when they are buying
     };
 
     /**
-      \brief A struct represents event with amount of POINTS debited as fee on POINT transfer with fee, or amount of reserve (CMN) tokens subtracted as fee from amount of bought CMN tokens when selling POINTs.  
+      \brief The structure representing the events related to:
+       - amount of point tokens is to be debited as a fee for the transfer of point tokens
+       - amount of reserve CMN tokens is to be debited as a fee for the purchase of CMN tokens when selling point tokens.
       \ingroup point_events
     */
     struct fee_event {
-        asset   amount; //!< amount of tokens debitd as fee
+        asset   amount; //!< amount of tokens is to be debited as a fee
     };
 
     void send_currency_event(const structures::stat& st, const structures::param& par);
