@@ -374,6 +374,13 @@ public:
     */
     [[eosio::action]] void invalidate(name account);
 
+    /**
+        \brief The \ref setrecover action is used to create cyber.msig authority before danger operations which can cause dApp leaders lose access to commun.ctrl multisignature transactions.
+        \param msig_contract name of msig contract account
+        This action requires a signature of most validators.
+    */
+    [[eosio::action]] void setrecover(name msig_contract);
+
 private:
     void check_started(symbol_code commun_code);
     uint8_t get_required(symbol_code commun_code, name permission);

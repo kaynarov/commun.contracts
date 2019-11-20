@@ -10,6 +10,7 @@
 #include <eosio/event.hpp>
 #include <eosio/permission.hpp>
 #include <eosio/crypto.hpp>
+#include <cyber.bios/cyber.bios.hpp>
 
 namespace commun {
 
@@ -485,6 +486,27 @@ void control::invalidate(name account) {
     }
 }
 
+void control::setrecover(name msig_contract) {
+    require_auth(_self);
+    check(is_account(msig_contract), "msig contract is not account");
+
+    cyber::authority auth;
+
+    auto top = top_leaders(symbol_code());
+    std::sort(top.begin(), top.end());
+
+    for (const auto& i : top) {
+        auth.accounts.push_back({{i,config::active_name},1});
+    }
+
+    auth.threshold = get_required(symbol_code(), config::super_majority_name);
+    action(
+        permission_level{msig_contract, config::active_name},
+        config::internal_name, "updateauth"_n,
+        std::make_tuple(msig_contract, config::recovery_name, config::active_name, auth)
+    ).send();
+}
+
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_transfer,
@@ -494,5 +516,5 @@ DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_tr
     (voteleader)(unvotelead)
     (clearvotes)
     (claim)(changepoints)
-    (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
+    (propose)(approve)(unapprove)(cancel)(exec)(invalidate)(setrecover)
     )
