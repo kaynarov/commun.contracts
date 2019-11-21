@@ -3,10 +3,10 @@
 
 namespace commun { namespace structures {
 /**
- * \brief struct represents an opus in opuses set in the community in the db
+ * \brief The structure represents the opus table for a community in DB.
  * \ingroup list_tables
  *
- * Defines pledges for creating mosaic and gem with specified opus (type of content)
+ * This structure defines the pledges for creating a mosaic and gems with specified opus (a type of content).
  */
 struct opus_info {
 #ifndef UNIT_TEST_ENV
@@ -15,7 +15,7 @@ struct opus_info {
     eosio::chain::name name;
 #endif
 
-    int64_t mosaic_pledge = 0; //!< pledge for mosaic creating
+    int64_t mosaic_pledge = 0; //!< pledge to create a mosaic
     int64_t min_mosaic_inclusion = 0; //!< inclusion for mosaic creating
     int64_t min_gem_inclusion = 0; //!< inclusion for gem creating
 

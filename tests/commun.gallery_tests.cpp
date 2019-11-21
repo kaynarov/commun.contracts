@@ -150,58 +150,59 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_gallery_tester) try {
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
-    BOOST_TEST_MESSAGE("Provide test");
-    init();
-    BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
-    int64_t init_amount = supply / 2;
-    uint16_t fee = 5000;
+// TODO: removed from MVP
+// BOOST_FIXTURE_TEST_CASE(provide_test, commun_gallery_tester) try {
+//     BOOST_TEST_MESSAGE("Provide test");
+//     init();
+//     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
+//     int64_t init_amount = supply / 2;
+//     uint16_t fee = 5000;
     
-    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
-    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
-    BOOST_CHECK_EQUAL(success(), point.open(_bob, point_code, _bob));
+//     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
+//     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _carol, asset(init_amount, point._symbol)));
+//     BOOST_CHECK_EQUAL(success(), point.open(_bob, point_code, _bob));
     
-    BOOST_CHECK_EQUAL(errgallery.no_points_provided, gallery.provide(_alice, _carol, asset(0, point._symbol)));
-    BOOST_CHECK_EQUAL(errgallery.symbol_precision, gallery.provide(_alice, _carol, asset(0, _point_wrong)));
-    BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _bob, asset(init_amount, point._symbol), fee));
-    BOOST_CHECK_EQUAL(success(), gallery.provide(_carol, _bob, asset(init_amount, point._symbol), fee));
+//     BOOST_CHECK_EQUAL(errgallery.no_points_provided, gallery.provide(_alice, _carol, asset(0, point._symbol)));
+//     BOOST_CHECK_EQUAL(errgallery.symbol_precision, gallery.provide(_alice, _carol, asset(0, _point_wrong)));
+//     BOOST_CHECK_EQUAL(success(), gallery.provide(_alice, _bob, asset(init_amount, point._symbol), fee));
+//     BOOST_CHECK_EQUAL(success(), gallery.provide(_carol, _bob, asset(init_amount, point._symbol), fee));
     
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 1, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount / 2)}));
-    produce_block();
-    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
+//     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 1, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount / 2)}));
+//     produce_block();
+//     produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     
-    BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(0, point._symbol), false, _bob, {std::make_pair(_alice, init_amount / 2)}));
-    produce_block();
-    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
+//     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(0, point._symbol), false, _bob, {std::make_pair(_alice, init_amount / 2)}));
+//     produce_block();
+//     produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     
-    //while creating this mosaic - the previous one receives a reward
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
+//     //while creating this mosaic - the previous one receives a reward
+//     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 2, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_carol, init_amount)}));
     
-    produce_block();
-    auto archive_date = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period;
-    produce_block(fc::seconds(archive_date - (2 * cfg::def_reward_mosaics_period) - block_interval));
+//     produce_block();
+//     auto archive_date = cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period;
+//     produce_block(fc::seconds(archive_date - (2 * cfg::def_reward_mosaics_period) - block_interval));
 
-    BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
-    produce_block();
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 3, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
-    produce_block();
-    auto reward = point.get_amount(_bob) * 2;
-    BOOST_CHECK(reward > 0);
-    BOOST_TEST_MESSAGE("--- reward = " << reward);
-    BOOST_CHECK_EQUAL((point.get_amount(_alice) - init_amount), reward / 2); // fee == 50%
+//     BOOST_CHECK_EQUAL(errgallery.overdrawn_balance, gallery.createmosaic(_bob, 3, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
+//     produce_block();
+//     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 3, gallery.default_opus.name, asset(0, point._symbol), royalty, {std::make_pair(_alice, init_amount)}));
+//     produce_block();
+//     auto reward = point.get_amount(_bob) * 2;
+//     BOOST_CHECK(reward > 0);
+//     BOOST_TEST_MESSAGE("--- reward = " << reward);
+//     BOOST_CHECK_EQUAL((point.get_amount(_alice) - init_amount), reward / 2); // fee == 50%
     
-    produce_block(fc::seconds(cfg::forced_chopping_delay + cfg::def_reward_mosaics_period - block_interval));
-    BOOST_CHECK_EQUAL(gallery.get_frozen(_carol), init_amount);
+//     produce_block(fc::seconds(cfg::forced_chopping_delay + cfg::def_reward_mosaics_period - block_interval));
+//     BOOST_CHECK_EQUAL(gallery.get_frozen(_carol), init_amount);
     
-    produce_block(fc::seconds(cfg::def_reward_mosaics_period));
+//     produce_block(fc::seconds(cfg::def_reward_mosaics_period));
     
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 4, gallery.default_opus.name, asset(reward / 2, point._symbol), royalty));
-    BOOST_CHECK(point.get_amount(_bob) > reward / 2);
+//     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_bob, 4, gallery.default_opus.name, asset(reward / 2, point._symbol), royalty));
+//     BOOST_CHECK(point.get_amount(_bob) > reward / 2);
     
-    //carol points are unfrozen now, but she did not receive a reward
-    BOOST_CHECK_EQUAL(point.get_amount(_carol), init_amount);
-    BOOST_CHECK_EQUAL(gallery.get_frozen(_carol), 0);    
-} FC_LOG_AND_RETHROW()
+//     //carol points are unfrozen now, but she did not receive a reward
+//     BOOST_CHECK_EQUAL(point.get_amount(_carol), init_amount);
+//     BOOST_CHECK_EQUAL(gallery.get_frozen(_carol), 0);    
+// } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("Reward the top");
@@ -223,63 +224,64 @@ BOOST_FIXTURE_TEST_CASE(reward_the_top_test, commun_gallery_tester) try {
     }
     std::map<uint64_t, int64_t> ranked_mosaics;
     
-    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_bob), gallery.advise(_bob, {9 , 10}));
+    // TODO: removed from MVP
+    // BOOST_CHECK_EQUAL(errgallery.not_a_leader(_bob), gallery.advise(_bob, {9 , 10}));
     
-    //these advices should be replaced after the next action
-    BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {9 , 10}));
+    // //these advices should be replaced after the next action
+    // BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {9 , 10}));
     
-    BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {1, 3, 50}));
-    BOOST_CHECK_EQUAL(success(), gallery.advise(_carol, {1, 2}));
-    ranked_mosaics[ 1] = cfg::default_lead_grades[0];
-    ranked_mosaics[ 2] = cfg::default_lead_grades[1];
-    ranked_mosaics[50] = cfg::default_lead_grades[2];
-    ranked_mosaics[ 3] = cfg::default_lead_grades[3];
+    // BOOST_CHECK_EQUAL(success(), gallery.advise(_alice, {1, 3, 50}));
+    // BOOST_CHECK_EQUAL(success(), gallery.advise(_carol, {1, 2}));
+    // ranked_mosaics[ 1] = cfg::default_lead_grades[0];
+    // ranked_mosaics[ 2] = cfg::default_lead_grades[1];
+    // ranked_mosaics[50] = cfg::default_lead_grades[2];
+    // ranked_mosaics[ 3] = cfg::default_lead_grades[3];
     
-    BOOST_TEST_MESSAGE("--- points_sum" << points_sum);
+    // BOOST_TEST_MESSAGE("--- points_sum" << points_sum);
     
-    produce_block();
-    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
-    BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(min_gem_points, point._symbol), false, _bob));
+    // produce_block();
+    // produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
+    // BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(min_gem_points, point._symbol), false, _bob));
     
-    produce_block();
-    produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
+    // produce_block();
+    // produce_block(fc::seconds(cfg::def_reward_mosaics_period - block_interval));
     
-    BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(min_gem_points, point._symbol), false, _bob));
+    // BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(min_gem_points, point._symbol), false, _bob));
     
-    for (int i = first_comm_mosaic; i <= mosaics_num; i++) {
-        int64_t cur_points = min_gem_points * i - gallery.default_mosaic_pledge;
-        ranked_mosaics[i] += cfg::default_comm_grades[mosaics_num - i] + commun::safe_prop(cfg::default_comm_points_grade_sum, cur_points, points_sum);
-        BOOST_TEST_MESSAGE("--- comm_grades_" << i << " = " << ranked_mosaics[i]);
-    }
+    // for (int i = first_comm_mosaic; i <= mosaics_num; i++) {
+    //     int64_t cur_points = min_gem_points * i - gallery.default_mosaic_pledge;
+    //     ranked_mosaics[i] += cfg::default_comm_grades[mosaics_num - i] + commun::safe_prop(cfg::default_comm_points_grade_sum, cur_points, points_sum);
+    //     BOOST_TEST_MESSAGE("--- comm_grades_" << i << " = " << ranked_mosaics[i]);
+    // }
     
-    std::vector<std::pair<uint64_t, int64_t> > top_mosaics;
-    top_mosaics.reserve(ranked_mosaics.size());
-    for (const auto& m : ranked_mosaics) {
-        top_mosaics.emplace_back(m);
-    }
+    // std::vector<std::pair<uint64_t, int64_t> > top_mosaics;
+    // top_mosaics.reserve(ranked_mosaics.size());
+    // for (const auto& m : ranked_mosaics) {
+    //     top_mosaics.emplace_back(m);
+    // }
     
-    std::sort(top_mosaics.begin(), top_mosaics.end(),
-        [](const std::pair<uint64_t, int64_t>& lhs, const std::pair<uint64_t, int64_t>& rhs) { return lhs.second > rhs.second; });
-    uint64_t grades_sum = 0;
-    for (int i = 0; i < cfg::def_rewarded_mosaic_num; i++) {
-        grades_sum += top_mosaics[i].second;
-    }
+    // std::sort(top_mosaics.begin(), top_mosaics.end(),
+    //     [](const std::pair<uint64_t, int64_t>& lhs, const std::pair<uint64_t, int64_t>& rhs) { return lhs.second > rhs.second; });
+    // uint64_t grades_sum = 0;
+    // for (int i = 0; i < cfg::def_rewarded_mosaic_num; i++) {
+    //     grades_sum += top_mosaics[i].second;
+    // }
     
-    auto total_reward = point.get_supply() - supply;
-    std::map<uint64_t, int64_t> rewards;
-    auto left_reward  = total_reward;
+    // auto total_reward = point.get_supply() - supply;
+    // std::map<uint64_t, int64_t> rewards;
+    // auto left_reward  = total_reward;
     
-    for (int i = 0; i < cfg::def_rewarded_mosaic_num; i++) {
-        auto cur_reward = commun::safe_prop(total_reward, top_mosaics[i].second, grades_sum);
-        rewards[top_mosaics[i].first] = cur_reward;
-        left_reward -= cur_reward;
-    }
+    // for (int i = 0; i < cfg::def_rewarded_mosaic_num; i++) {
+    //     auto cur_reward = commun::safe_prop(total_reward, top_mosaics[i].second, grades_sum);
+    //     rewards[top_mosaics[i].first] = cur_reward;
+    //     left_reward -= cur_reward;
+    // }
     
-    for (int i = 1; i <= mosaics_num; i++) {
-        auto cur_reward = get_mosaic(_code, _point, i)["reward"].as<int64_t>();
-        BOOST_CHECK_EQUAL(rewards[i], cur_reward);
-        BOOST_TEST_MESSAGE("--- reward_" << i << " = " << cur_reward);
-    }
+    // for (int i = 1; i <= mosaics_num; i++) {
+    //     auto cur_reward = get_mosaic(_code, _point, i)["reward"].as<int64_t>();
+    //     BOOST_CHECK_EQUAL(rewards[i], cur_reward);
+    //     BOOST_TEST_MESSAGE("--- reward_" << i << " = " << cur_reward);
+    // }
 
 } FC_LOG_AND_RETHROW()
 
@@ -307,40 +309,41 @@ BOOST_FIXTURE_TEST_CASE(addtomosaic_tests, commun_gallery_tester) try {
     BOOST_CHECK_EQUAL(success(), gallery.addtomosaic(1, asset(point.get_amount(_carol), point._symbol), false, _carol));
 } FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(advise_test, commun_gallery_tester) try {
-    BOOST_TEST_MESSAGE("Advise mosaic by leader testing.");
-    uint64_t tracery = 1;
-    BOOST_CHECK_EQUAL(errgallery.no_community, gallery.advise(_bob, {tracery}));
-    init();
-    int64_t init_amount = supply / 2;
-    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
-    BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(init_amount, point._symbol)));
-    ctrl.prepare({_bob}, _alice);
-    BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, tracery, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
+// TODO: removed from MVP
+// BOOST_FIXTURE_TEST_CASE(advise_test, commun_gallery_tester) try {
+//     BOOST_TEST_MESSAGE("Advise mosaic by leader testing.");
+//     uint64_t tracery = 1;
+//     BOOST_CHECK_EQUAL(errgallery.no_community, gallery.advise(_bob, {tracery}));
+//     init();
+//     int64_t init_amount = supply / 2;
+//     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _alice, asset(init_amount, point._symbol)));
+//     BOOST_CHECK_EQUAL(success(), point.transfer(_golos, _bob, asset(init_amount, point._symbol)));
+//     ctrl.prepare({_bob}, _alice);
+//     BOOST_CHECK_EQUAL(success(), gallery.createmosaic(_alice, tracery, gallery.default_opus.name, asset(min_gem_points, point._symbol), royalty));
 
-    BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.advise(_bob, {tracery+2}));
-    BOOST_CHECK_EQUAL(errgallery.not_a_leader(_alice), gallery.advise(_alice, {tracery}));
+//     BOOST_CHECK_EQUAL(errgallery.no_mosaic, gallery.advise(_bob, {tracery+2}));
+//     BOOST_CHECK_EQUAL(errgallery.not_a_leader(_alice), gallery.advise(_alice, {tracery}));
 
-    std::vector<uint64_t> too_many;
-    for (int i = 0; i < cfg::advice_weight.size() + 1; ++i) {
-        too_many.push_back(tracery + i);
-    }
-    BOOST_CHECK_EQUAL(errgallery.advice_surfeit, gallery.advise(_bob, too_many));
+//     std::vector<uint64_t> too_many;
+//     for (int i = 0; i < cfg::advice_weight.size() + 1; ++i) {
+//         too_many.push_back(tracery + i);
+//     }
+//     BOOST_CHECK_EQUAL(errgallery.advice_surfeit, gallery.advise(_bob, too_many));
 
-    std::vector<uint64_t> duplicated;
-    duplicated.push_back(tracery);
-    duplicated.push_back(tracery);
-    BOOST_CHECK_EQUAL(success(), gallery.advise(_bob, duplicated));
-    produce_block();
-    BOOST_CHECK_EQUAL(get_mosaic(_code, _point, tracery)["lead_rating"], cfg::advice_weight[0]);
-    BOOST_CHECK_EQUAL(get_advice(_code, _point, _bob)["favorites"].as<std::set<uint64_t>>().size(), 1);
-    BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, duplicated));
+//     std::vector<uint64_t> duplicated;
+//     duplicated.push_back(tracery);
+//     duplicated.push_back(tracery);
+//     BOOST_CHECK_EQUAL(success(), gallery.advise(_bob, duplicated));
+//     produce_block();
+//     BOOST_CHECK_EQUAL(get_mosaic(_code, _point, tracery)["lead_rating"], cfg::advice_weight[0]);
+//     BOOST_CHECK_EQUAL(get_advice(_code, _point, _bob)["favorites"].as<std::set<uint64_t>>().size(), 1);
+//     BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, duplicated));
 
-    BOOST_CHECK_EQUAL(success(), gallery.advise(_bob, std::vector<uint64_t>()));
-    produce_block();
-    BOOST_CHECK(get_advice(_code, _point, _bob).is_null());
-    BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, std::vector<uint64_t>()));
-} FC_LOG_AND_RETHROW()
+//     BOOST_CHECK_EQUAL(success(), gallery.advise(_bob, std::vector<uint64_t>()));
+//     produce_block();
+//     BOOST_CHECK(get_advice(_code, _point, _bob).is_null());
+//     BOOST_CHECK_EQUAL(errgallery.no_changes_favorites, gallery.advise(_bob, std::vector<uint64_t>()));
+// } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(claim_tests, commun_gallery_tester) try {
     BOOST_TEST_MESSAGE("claim tests");

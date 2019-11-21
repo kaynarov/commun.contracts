@@ -202,41 +202,48 @@ public:
     */
     void claim(symbol_code commun_code, mssgid_t message_id, name gem_owner,
         std::optional<name> gem_creator, std::optional<bool> eager);
+    // TODO: removed from MVP
     void hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator);
+    // TODO: removed from MVP
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
-    /**
-        \brief The reblog action is used by user to create a reblog on the post/comment
+    // TODO: removed from MVP
+    // /**
+    //     \brief The reblog action is used by user to create a reblog on the post/comment
 
-        \param commun_code symbol of community POINT.
-        \param rebloger account of rebloger
-        \param message_id post to reblog
-        \param header header of the reblog
-        \param body body of the reblog
+    //     \param commun_code symbol of community POINT.
+    //     \param rebloger account of rebloger
+    //     \param message_id post to reblog
+    //     \param header header of the reblog
+    //     \param body body of the reblog
 
-        Action do not stores any state in DB, it only checks input parameters.
+    //     Action do not stores any state in DB, it only checks input parameters.
 
-        Performing the action requires rebloger signature.
-        If also client signature provided, it doesn't check the presence of message.
-    */
+    //     Performing the action requires rebloger signature.
+    //     If also client signature provided, it doesn't check the presence of message.
+    // */
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
 
-    /**
-        \brief The erasereblog action is used by user to erase the reblog of the post/comment
+    // TODO: removed from MVP
+    // /**
+    //     \brief The erasereblog action is used by user to erase the reblog of the post/comment
 
-        \param commun_code symbol of community POINT.
-        \param rebloger account of rebloger
-        \param message_id post to reblog
+    //     \param commun_code symbol of community POINT.
+    //     \param rebloger account of rebloger
+    //     \param message_id post to reblog
 
-        Action do not stores any state in DB, it only checks input parameters.
+    //     Action do not stores any state in DB, it only checks input parameters.
 
-        Performing the action requires rebloger signature.
-        If also client signature provided, it doesn't check the presence of message.
-    */
+    //     Performing the action requires rebloger signature.
+    //     If also client signature provided, it doesn't check the presence of message.
+    // */
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
+    // TODO: removed from MVP
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
 
+    // TODO: removed from MVP
     void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee);
+    // TODO: removed from MVP
     void advise(symbol_code commun_code, name leader, std::set<mssgid_t> favorites);
     //TODO: void checkadvice (symbol_code commun_code, name leader);
 
@@ -261,8 +268,8 @@ private:
     static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight);
     void set_vote(symbol_code commun_code, name voter, const mssgid_t &message_id, std::optional<uint16_t> weight, bool damn);
     bool validate_permlink(std::string permlink);
-    bool check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id, name actor = name());
-    void check_auth(const std::string& s, name actor = name());
+    bool check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id);
+    void require_client_auth(const std::string& s = "Action enable only for client");
 };
 
 } // commun

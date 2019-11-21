@@ -242,6 +242,16 @@
             ]
         },
         {
+            "name": "setrecover",
+            "base": "",
+            "fields": [
+                {
+                    "name": "msig_contract",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "invalidation",
             "base": "",
             "fields": [
@@ -428,6 +438,10 @@
         {
             "name": "invalidate",
             "type": "invalidate"
+        },
+        {
+            "name": "setrecover",
+            "type": "setrecover"
         },
         {
             "name": "propose",
