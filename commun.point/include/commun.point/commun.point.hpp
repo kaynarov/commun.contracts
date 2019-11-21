@@ -12,9 +12,9 @@
 
 #include <string>
 #include <cmath>
-#include "commun.point/commun.point.hpp"
 #include <commun/bancor.hpp>
 #include <commun/util.hpp>
+#include "commun.point/asset_from_string.hpp"
 
 namespace commun {
 
@@ -342,6 +342,18 @@ struct structures {
     static inline bool no_fee_transfer(name issuer, name from, name to) {
         return from == issuer || to == issuer || get_prefix(from) == config::dapp_name || get_prefix(to) == config::dapp_name;
     };
+
+    inline std::optional<asset> get_min_order(const std::string& memo) {
+        std::optional<asset> ret;
+        auto prefix_size = config::minimum_prefix.size();
+        if (memo.compare(0, prefix_size, config::minimum_prefix)) { // hasn't prefix
+            return ret;
+        }
+
+        asset value = asset_from_string(memo.substr(prefix_size));
+        check(value.amount >= 0, "minimum amount cannot be negative");
+        return value;
+    }
 
     void do_transfer(name from, name to, const asset& quantity, const string& memo);
 
