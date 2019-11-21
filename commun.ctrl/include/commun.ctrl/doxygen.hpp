@@ -5,6 +5,7 @@
  * \brief The commun.ctrl smart contract implements the logic of electing community leaders, including:
    - logic of community leader registration;
    - logic of voting for community leaders.
+
    Besides of it, this contract contains actions providing creation and promotion of multi-signature transactions.
  */
 

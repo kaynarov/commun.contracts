@@ -27,9 +27,9 @@ struct threshold {
  * This structure represents the leaders data used by commun.control contract.
  */
 struct control_param_t {
-    uint8_t leaders_num; //!< number of leaders can be in top simultaneously
-    uint8_t max_votes; //!< number of leaders can be voted by one user simultaneously
-    std::vector<threshold> custom_thresholds; //!< custom leaders permissions which can be requested for multi-signature transactions in community or dApp (non-custom permissions are: minority, majority and super majority) 
+    uint8_t leaders_num; //!< Number of leaders can be in top simultaneously
+    uint8_t max_votes; //!< Number of leaders can be voted by one user simultaneously
+    std::vector<threshold> custom_thresholds; //!< Custom leaders permissions which can be requested for multi-signature transactions in community or dApp (non-custom permissions are: minority, majority and super majority) 
     bool update(optional<name> permission_, optional<uint8_t> required_threshold_,
                 optional<uint8_t> leaders_num_ = optional<uint8_t>(), optional<uint8_t> max_votes_ = optional<uint8_t>(),
                 bool can_change_permissions_num = true) {
@@ -88,7 +88,7 @@ struct control_param_t {
  * \brief The structure stores dApp configuration in DB.
  * \ingroup list_tables
  *
- * Such a record is created (in case it does not exist) by \ref commun_list::create or by \ref commun_list::setappparams, and changed by \ref commun_list::setappparams. This type of recording is the only one in the application.
+ * Such record is created (in case it does not exist) by \ref commun_list::create or by \ref commun_list::setappparams, and changed by \ref commun_list::setappparams. This type of recording is the only one in the application.
  *
  */
 // DOCS_TABLE: dapp
@@ -124,28 +124,28 @@ struct emission_receiver {
  */
 // DOCS_TABLE: community
 struct community {
-    symbol commun_symbol; //!< symbol code of the community POINT. Primary key
-    uint64_t community_hash; //!< hash of the community name for uniques
+    symbol commun_symbol; //!< Symbol code (primary key) of the community point tokens
+    uint64_t community_hash; //!< Community name hash making the name unique
 
-    control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };  //!< parameters of leadership
+    control_param_t control_param = control_param_t{ .leaders_num = config::def_comm_leaders_num, .max_votes = config::def_comm_max_votes };  //!< Parameters of leadership
 
     // emit
-    uint16_t emission_rate = config::def_emission_rate;  //!< default emission rate of the community point tokens
-    std::vector<emission_receiver> emission_receivers;   //!< list of emission receivers
+    uint16_t emission_rate = config::def_emission_rate;  //!< Emission rate of the community point tokens
+    std::vector<emission_receiver> emission_receivers;   //!< List of emission receivers
 
     // publish
-    uint16_t author_percent = config::def_author_percent; //!< default share allocated to author of post
-    int64_t collection_period = config::def_collection_period; //!< default period value (in seconds) for mosaic collection
-    int64_t moderation_period = config::def_moderation_period; //!< default period value (in seconds) for mosaic moderation
-    int64_t extra_reward_period = config::def_extra_reward_period; //!< default period value (in seconds) for mosaic extra reward
-    uint16_t gems_per_day = config::def_gems_per_day; //!< default number of gems that a user can freeze per day
-    uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num; //!< default number of mosaics receiving a reward
-    int64_t min_lead_rating = config::def_min_lead_rating; //!< default value for minimum mosaic leader rating required to receive a reward
+    uint16_t author_percent = config::def_author_percent; //!< The share of award allocated to author of post
+    int64_t collection_period = config::def_collection_period; //!< The period (in seconds) of mosaic collection
+    int64_t moderation_period = config::def_moderation_period; //!< The period (in seconds) of mosaic moderation
+    int64_t extra_reward_period = config::def_extra_reward_period; //!< The period (in seconds) of mosaic extra reward
+    uint16_t gems_per_day = config::def_gems_per_day; //!< Number of gems that a user can freeze per day
+    uint16_t rewarded_mosaic_num = config::def_rewarded_mosaic_num; //!< Number of mosaics receiving a reward
+    int64_t min_lead_rating = config::def_min_lead_rating; //!< The value for minimum mosaic leader rating required to receive a reward
 
-    std::set<opus_info> opuses = config::def_opuses; //!< default value for opuses with pledges
-    bool damned_gem_reward_enabled = config::def_damned_gem_reward_enabled; //!< default flag value to enable getting a damned gem reward
-    bool refill_gem_enabled = config::def_refill_gem_enabled; //!< default flag value to enable refilling a gem
-    bool custom_gem_size_enabled = config::def_custom_gem_size_enabled; //!< default flag value to enable adjusting a custom gem size
+    std::set<opus_info> opuses = config::def_opuses; //!< The value for opuses with pledges
+    bool damned_gem_reward_enabled = config::def_damned_gem_reward_enabled; //!< The flag to enable getting a damned gem reward
+    bool refill_gem_enabled = config::def_refill_gem_enabled; //!< The flag to enable refilling a gem
+    bool custom_gem_size_enabled = config::def_custom_gem_size_enabled; //!< The flag to enable adjusting a custom gem size
 
     uint64_t primary_key() const {
         return commun_symbol.code().raw();
