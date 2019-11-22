@@ -13,7 +13,7 @@ namespace eosio { namespace testing {
 #endif
 
 /**
-    \brief Action parameter type contains a kit of fields of account profile.
+    \brief The \ref accountmeta structure contains account profile data.
     \ingroup social_class
 */
 struct accountmeta {
