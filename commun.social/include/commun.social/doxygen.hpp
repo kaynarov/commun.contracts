@@ -20,5 +20,5 @@
  *
  * <b>Pin-list</b> — a user's list of account names that a given user is interested in. This list is created and edited by the user. It can be used in the client application to create subscriptions, including informing the given user (subscriber) about the appearance of a new post whose author’s name is contained in the pin list.
  *
- * <b>«Black» list</b> —  a user's list of account names that this user characterizes as unwanted. The list is created and edited by its owner. «Black» list allows the user to block comments and votes of accounts whose names are contained in the list. Commun.social contract is not responsible for content of the list, as well as for its storage. The contract only controls authorization of the user when compiling the list and blocks the actions of listed accounts in relation to the user.
+ * <b>«Black» list</b> —  a user's list of account names that this user characterizes as unwanted. The list is created and edited by its owner. «Black» list allows the user to block comments and votes of accounts whose names are contained in the list. Commun.social contract is not responsible for content of the list, as well as for its storage. The contract only controls authorization of the user when compiling the list.
  */
