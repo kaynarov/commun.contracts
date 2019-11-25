@@ -237,3 +237,24 @@ def getResourceUsage(account):
         'storage': info['storage_limit']['used']
     }
 
+def msigPropose(proposer, proposal_name, requested_permissions, trx, providebw=None, keys=None):
+    pushAction('cyber.msig', 'propose', proposer, {
+            'proposer': proposer,
+            'proposal_name': proposal_name,
+            'requested': requested_permissions,
+            'trx': trx
+        }, providebw=providebw, keys=keys)
+
+def msigApprove(approver, proposer, proposal_name, providebw=None, keys=None):
+    pushAction('cyber.msig', 'approve', approver, {
+            'proposer': proposer,
+            'proposal_name': proposal_name,
+            'level': {'actor': approver, 'permission': 'active'}
+        }, providebw=providebw, keys=keys)
+
+def msigExec(executer, proposer, proposal_name, providebw=None, keys=None):
+    pushAction('cyber.msig', 'exec', proposer, {
+            'executer': executer,
+            'proposer': proposer,
+            'proposal_name': proposal_name
+        }, providebw=providebw, keys=keys)
