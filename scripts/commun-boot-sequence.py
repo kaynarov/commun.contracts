@@ -28,6 +28,7 @@ _communAccounts = [
             ('lead.smajor',  [], ['c.ctrl@cyber.code'], []),
             ('lead.major',   [], ['c.ctrl@cyber.code'], []),
             ('lead.minor',   [], ['c.ctrl@cyber.code'], []),
+            ('lead.recover', [], ['c@active'], []), # empty auth, active is just filler
             ('clients',      [], ['c.com@c.com'], ['cyber.domain:newusername']),
             ('providebw',    [], ['c@clients'], ['cyber:providebw', 'c.point:open']),
         ]),
@@ -162,7 +163,7 @@ def configureCommun():
         }, providebw='c.list/c')
 
     c = getAccount('c')
-    updateAuth('c', 'active', 'owner', [], ['c@lead.smajor'])
+    updateAuth('c', 'active', 'owner', [], ['c@lead.smajor', 'c@lead.recover'])
 
 # -------------------- Argument parser ----------------------------------------
 # Command Line Arguments

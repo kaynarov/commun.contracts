@@ -245,10 +245,6 @@
             "name": "setrecover",
             "base": "",
             "fields": [
-                {
-                    "name": "msig_contract",
-                    "type": "name"
-                }
             ]
         },
         {
