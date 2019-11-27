@@ -28,39 +28,47 @@ namespace gallery_types {
     using providers_t = std::vector<std::pair<name, int64_t> >;
 
     /**
-     * \brief struct represents a mosaic table in a db
-     * \ingroup publish_tables
+     * \brief The structure represents mosaic data table in DB.
+     * \ingroup gallery_tables
      *
-     * Contains information about a mosaic
+     * \details The table contains data that uniquely identifies and represents a mosaic.
+     *
+     * <b>The states which a mosaic may exist in:</b>
+     * - ACTIVE — Active state of the mosaic, collecting user opinions (sympathy);
+     * - ARCHIVED — Mosaic is in archiving state; user opinions collection has been completed;
+     * - LOCKED — Collection of user opinions is temporarily blocked by leaders (i.e. due to complaints from users about the post). After time elapses, opinions collection can be unlocked;
+     * - BANNED — Post has been locked by leaders.Collected reward to the author of the post and voted users will not be paid;
+     * - HIDDEN — Post has been removed by the author. Mosaic of the post may still exist, since  it takes some time to destroy the crystals. If the post has collected the sympathy of users, then rewards to these users will be paid;
+     * - BANNED_AND_HIDDEN — Post has been removed and blocked by moderators (no rewards will be paid).
      */
     struct mosaic {
 
         mosaic() = default;
-        uint64_t tracery; //!< the mosaic tracery, used as primary key
-        name creator;     //!< the mosaic creator
+        uint64_t tracery; //!< The mosaic tracery, used as primary key.
+        name creator;     //!< The mosaic creator.
         
-        name opus;        //!< the mosaic opus, an example: post/comment for publications
-        uint16_t royalty;
+        name opus;        //!< Mosaic description type. The parameter indicates what the mosaic describes, such as a post or comment
+        uint16_t royalty; //!< Share (in percent) of royalties to the author for creating the mosaic. When creating a mosaic, its first crystal belongs to the author. Part of weight of other crystals created by other members is added to the crystal of mosaic author. So, part of funds invested in crystal is allocated to the mosaic author. 
 
-        time_point lock_date = time_point();
-        time_point collection_end_date;
-        uint16_t gem_count;
+        time_point lock_date = time_point();   //!< Mosaic lock date. The mosaic is blocked by the leaders if any frauds with the mosaic are detected. After blocking, the collection of crystals inside this mosaic is suspended.
+        time_point collection_end_date;        //!< Crystal collection period.
+        uint16_t gem_count;   //!< Current number of crystals inside the mosaic.
         
-        int64_t points;
-        int64_t shares;
-        int64_t damn_points = 0;
-        int64_t damn_shares = 0;
-        int64_t pledge_points = 0;
+        int64_t points;   //!< Number of points collected inside this mosaic. Points are added to the mosaic when users vote.
+        int64_t shares;   //!< Mosaic weight (post weight) calculated via «banker» function. Weight of vote depends on the voting time. The earlier vote carries more weight.
+        int64_t damn_points = 0;   //!< Number of points related to positive votes.
+        int64_t damn_shares = 0;   //!< Number of points related to negative votes.
+        int64_t pledge_points = 0; //!< Number of tokens pledged. A number of points is invested in creating a mosaic and thereby limits the number of mosaics created by author. These points are «frozen» and cannot be part of the reward.
         
-        int64_t reward = 0;
+        int64_t reward = 0;   //!< Total reward amount. The award is formed not at the end of the mosaic collection, but with a certain periodicity. Awards are alocated to the top 10 mosaics (posts), which have become the most popular among users. Commun.control contract allocates the reward to commun.gallery contract, which then distributes it among worthy mosaics.
         
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
         
         enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED, HIDDEN, BANNED_AND_HIDDEN };
-        uint8_t status = ACTIVE;
+        uint8_t status = ACTIVE;   //!< Mosaic active status.
         bool meritorious = false;
-        bool deactivated_xor_locked = false;
+        bool deactivated_xor_locked = false;   //!< Tlag indicating the post is inactive or blocked. \a true — post blocked by leaders.
         
         bool banned()const { return status == BANNED || status == BANNED_AND_HIDDEN; }
         bool hidden()const { return status == HIDDEN || status == BANNED_AND_HIDDEN; }
@@ -69,9 +77,9 @@ namespace gallery_types {
         void lock() {
             check(status == ACTIVE, "mosaic is inactive");
             check(lock_date == time_point(), "Mosaic should be modified to lock again.");
-            check(!deactivated_xor_locked, "SYSTEM: lock, incorrect deactivated_xor_locked value");
+            check(!deactivated_xor_locked, "SYSTEM: lock, incorrect deactivated_xor_locked value"); 
             status = LOCKED;
-            lock_date = eosio::current_time_point();
+            lock_date = eosio::current_time_point(); 
             deactivated_xor_locked = true;
         }
 
@@ -94,17 +102,23 @@ namespace gallery_types {
         by_date_t by_date()const { return std::make_tuple(deactivated_xor_locked, collection_end_date); }
     };
     
+    /**
+     * \brief The structure represents gem data table in DB
+     * \ingroup gallery_tables
+     *
+     * The table contains data that uniquely identifies and represents a crystal in mosaic.
+     */
     struct gem {
-        uint64_t id;
-        uint64_t tracery;
-        time_point claim_date;
+        uint64_t id; //!< Unique crystal identifier.
+        uint64_t tracery; //!< Mosaic tracery containing the crystal.
+        time_point claim_date; //!< Date when the crystal can be broken down. The crystal cannot be destroyed until this date. Also, points spent on voting for the mosaic cannot be returned back until this date(such implementation excludes voting for another mosaic with the same points).
         
-        int64_t points;
-        int64_t shares;
+        int64_t points; //!< Number of points that were frozen during voting.
+        int64_t shares; //!< Number of shares calculated by the «shares» function.
         
-        int64_t pledge_points;
+        int64_t pledge_points; //!< Number of points pledged to create the crystal (this is implemented to limit a number of crystals created in community. The parameter is set in commun.list contract).
         
-        name owner;
+        name owner; //!< Cristal owner
         name creator;
         
         uint64_t primary_key() const { return id; }
@@ -116,8 +130,14 @@ namespace gallery_types {
         time_point by_claim_joint()const { return claim_date; }
     };
     
+    /**
+     * \brief The structure represents the table in DB containig total number of all «frozen» points for a user.
+     * \ingroup gallery_tables
+     *
+     * The user account name can be found in the scope field of the table. Each created table has two additional fields — code of the table and scope indicating the owner of points.
+     */
     struct [[eosio::table]] inclusion {
-        asset quantity;
+        asset quantity; //!< Total number of «frozen» user points.
             // just an idea:
             // use as inclusion not only points, but also other gems. 
             // this will allow to buy shares in the mosaics without liquid points, creating more sophisticated collectables
@@ -126,10 +146,16 @@ namespace gallery_types {
         uint64_t primary_key()const { return quantity.symbol.code().raw(); }
     };
     
+    /**
+     * \brief The structure represents the mosaic statictic data table in DB.
+     * \ingroup gallery_tables
+     *
+     * The table contains statistic information about total number of unclaimed (blocked) points for all users related to a mosaic.
+     */
     struct [[eosio::table]] stat {
-        uint64_t id;
-        int64_t unclaimed = 0;
-        int64_t retained = 0;
+        uint64_t id; //!< Mosaic identifier.
+        int64_t unclaimed = 0; //!< Total number of unclaimed points for all users related to the mosaic.
+        int64_t retained = 0; //!< Total amount of retained reward related to unclaimed points.
 
         uint64_t primary_key()const { return id; }
     };
@@ -179,51 +205,75 @@ namespace gallery_types {
     
 namespace events {
     
+    /**
+     * \brief The structure represents a mosaic destruction event. The destruction of a mosaic, including its crystals, occurs after moderators closed it and users who voted for it received their points back.
+     * \ingroup gallery_events
+     */
     struct mosaic_chop {
-        symbol_code commun_code;
-        uint64_t tracery;
+        symbol_code commun_code; //!< Point symbol.
+        uint64_t tracery; //!< Tracery that breaks down.
     };
     
+    /**
+     * \brief The structure represents a mosaic state change event. Such event is sent when a mosaic state changes.
+     * \ingroup gallery_events
+     */
     struct mosaic_state {
-        uint64_t tracery;
-        name creator;
-        time_point collection_end_date;
-        uint16_t gem_count;
-        int64_t shares;
-        int64_t damn_shares;
-        asset reward;
-        bool banned;
+        uint64_t tracery; //!< Mosaic tracery.
+        name creator; //!< Mosaic creator.
+        time_point collection_end_date; //!< End date of collecting user opinions.
+        uint16_t gem_count; //!< Number of crystals inside the mosaic.
+        int64_t shares; //!< Mosaic weight.
+        int64_t damn_shares; //!< Weight of crystals with negative votes.
+        asset reward; //!< Amount of currently collected rewards.
+        bool banned; //!< Flag indicating the blocking of award at the initiative of community leaders.
     };
     
+    /**
+     * \brief The structure represents a crystal state change event. Crystal for a mosaic is automatically created when an author creates the mosaic. A state of the crystal changes when a user votes.
+     * \ingroup gallery_events
+     */
     struct gem_state {
-        uint64_t tracery;
-        name owner;
+        uint64_t tracery; //!< Mosaic traceryа.
+        name owner; //!< Mosaic owner.
         name creator;
-        asset points;
-        asset pledge_points;
-        bool damn;
-        int64_t shares;
+        asset points; //!< Number of «frozen» points in the crystal.
+        asset pledge_points; //!< Number of pledged points in the crystal.
+        bool damn; //!< Flag indicating a negative or positive user opinion. \a true is negative one.
+        int64_t shares; //!< Weight of cristal calculated by the banck function.
     };
     
+    /**
+     * \brief The structure represents a crystal destruction event. Mosaic breakes down after rewarding it, when users can take back their points.
+     * \ingroup gallery_events
+     */
     struct gem_chop {
-        uint64_t tracery;
-        name owner;
-        name creator;
-        asset reward;
-        asset unfrozen;
+        uint64_t tracery; //!< Mosaic traceryа.
+        name owner; //!< Mosaic owner.
+        name creator; 
+        asset reward; //!< Crystal owner reward.
+        asset unfrozen; //!< Number of returned points that were «frozen» at the time of collecting user opinions. This is total number of points given as sympathies and those that were pledged.
     };
     
+    /**
+     * \brief The structure represents the event of the selected 10 best mosaics which will be awarded.
+     * \ingroup gallery_events
+     */
     struct mosaic_top {
-        symbol_code commun_code;
-        uint64_t tracery;
-        uint16_t place;
+        symbol_code commun_code; //!< Point symbol.
+        uint64_t tracery; //!< Mosaic traceryа.
+        uint16_t place; //!< Place where the mosaic is located.
         int64_t comm_rating;
         int64_t lead_rating;
     };
     
+    /**
+     * \brief The structure represents an event about the current number of «frozen» user points.
+     * \ingroup gallery_events
+     */
     struct inclusion_state {
-        name account;
-        asset quantity;
+        name account; //!< User account.
+        asset quantity; //!< Total number of «frozen» points in community.
     };
 }// events
 }// gallery_types
