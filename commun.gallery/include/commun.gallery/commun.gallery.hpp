@@ -47,7 +47,7 @@ namespace gallery_types {
         uint64_t tracery; //!< The mosaic tracery, used as primary key.
         name creator;     //!< The mosaic creator.
         
-        name opus;        //!< Mosaic description type. The parameter indicates what the mosaic describes, such as a post or comment
+        name opus;        //!< Mosaic description type. The parameter indicates what the mosaic describes, such as a post or comment.
         uint16_t royalty; //!< Share (in percent) of royalties to the author for creating the mosaic. When creating a mosaic, its first crystal belongs to the author. Part of weight of other crystals created by other members is added to the crystal of mosaic author. So, part of funds invested in crystal is allocated to the mosaic author. 
 
         time_point lock_date = time_point();   //!< Mosaic lock date. The mosaic is blocked by the leaders if any frauds with the mosaic are detected. After blocking, the collection of crystals inside this mosaic is suspended.
@@ -77,9 +77,9 @@ namespace gallery_types {
         void lock() {
             check(status == ACTIVE, "mosaic is inactive");
             check(lock_date == time_point(), "Mosaic should be modified to lock again.");
-            check(!deactivated_xor_locked, "SYSTEM: lock, incorrect deactivated_xor_locked value"); 
+            check(!deactivated_xor_locked, "SYSTEM: lock, incorrect deactivated_xor_locked value");
             status = LOCKED;
-            lock_date = eosio::current_time_point(); 
+            lock_date = eosio::current_time_point();
             deactivated_xor_locked = true;
         }
 
@@ -118,7 +118,7 @@ namespace gallery_types {
         
         int64_t pledge_points; //!< Number of points pledged to create the crystal (this is implemented to limit a number of crystals created in community. The parameter is set in commun.list contract).
         
-        name owner; //!< Cristal owner
+        name owner; //!< Cristal owner.
         name creator;
         
         uint64_t primary_key() const { return id; }
@@ -250,7 +250,7 @@ namespace events {
     struct gem_chop {
         uint64_t tracery; //!< Mosaic traceryа.
         name owner; //!< Mosaic owner.
-        name creator; 
+        name creator;
         asset reward; //!< Crystal owner reward.
         asset unfrozen; //!< Number of returned points that were «frozen» at the time of collecting user opinions. This is total number of points given as sympathies and those that were pledged.
     };
