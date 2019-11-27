@@ -56,17 +56,17 @@ namespace gallery_types {
         
         int64_t points;   //!< Number of points collected inside this mosaic. Points are added to the mosaic when users vote.
         int64_t shares;   //!< Mosaic weight (post weight) calculated via «banker» function. Weight of vote depends on the voting time. The earlier vote carries more weight.
-        int64_t damn_points = 0;   //!< Number of points related to positive votes.
-        int64_t damn_shares = 0;   //!< Number of points related to negative votes.
+        int64_t damn_points = 0;   //!< Number of points related to negative votes.
+        int64_t damn_shares = 0;   //!< Number of shares related to negative votes.
         int64_t pledge_points = 0; //!< Number of tokens pledged. A number of points is invested in creating a mosaic and thereby limits the number of mosaics created by author. These points are «frozen» and cannot be part of the reward.
         
-        int64_t reward = 0;   //!< Total reward amount. The award is formed not at the end of the mosaic collection, but with a certain periodicity. Awards are alocated to the top 10 mosaics (posts), which have become the most popular among users. Commun.control contract allocates the reward to commun.gallery contract, which then distributes it among worthy mosaics.
+        int64_t reward = 0;   //!< Total reward amount. The award is formed not at the end of the mosaic collection, but with a certain periodicity. Awards are alocated to the top 10 mosaics (posts), which have become the most popular among users. The Commun.control contract allocates tokens as a share of the annual emission to commun.gallery contract. The funds received are converted into points and then distributed among worthy mosaics.
         
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
         
         enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED, HIDDEN, BANNED_AND_HIDDEN };
-        uint8_t status = ACTIVE;   //!< Mosaic active status.
+        uint8_t status = ACTIVE;   //!< Default status value.
         bool meritorious = false;
         bool deactivated_xor_locked = false;   //!< Tlag indicating the post is inactive or blocked. \a true — post blocked by leaders.
         
