@@ -55,7 +55,7 @@ namespace gallery_types {
         uint16_t gem_count;   //!< Current number of crystals inside the mosaic.
         
         int64_t points;   //!< Number of points collected inside this mosaic. Points are added to the mosaic when users vote.
-        int64_t shares;   //!< Mosaic weight (post weight) calculated via «banker» function. Weight of vote depends on the voting time. The earlier vote carries more weight.
+        int64_t shares;   //!< Mosaic weight (post weight) calculated via «bankor» function. Weight of vote depends on the voting time. The earlier vote carries more weight.
         int64_t damn_points = 0;   //!< Number of points related to negative votes.
         int64_t damn_shares = 0;   //!< Number of shares related to negative votes.
         int64_t pledge_points = 0; //!< Number of tokens pledged. A number of points is invested in creating a mosaic and thereby limits the number of mosaics created by author. These points are «frozen» and cannot be part of the reward.
