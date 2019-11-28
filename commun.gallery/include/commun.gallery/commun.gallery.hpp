@@ -66,9 +66,9 @@ namespace gallery_types {
         int64_t lead_rating = 0;
         
         enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED, HIDDEN, BANNED_AND_HIDDEN };
-        uint8_t status = ACTIVE;   //!< Default status value.
+        uint8_t status = ACTIVE;   //!< Field indicating a mosaic status. Once a mosaic is created, it is assigned ACTIVE status.
         bool meritorious = false;
-        bool deactivated_xor_locked = false;   //!< Tlag indicating the post is inactive or blocked. \a true — post blocked by leaders.
+        bool deactivated_xor_locked = false;   //!< Flag indicating the post is inactive or blocked. \a true — post blocked by leaders.
         
         bool banned()const { return status == BANNED || status == BANNED_AND_HIDDEN; }
         bool hidden()const { return status == HIDDEN || status == BANNED_AND_HIDDEN; }
