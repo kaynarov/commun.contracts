@@ -36,7 +36,7 @@ namespace gallery_types {
      * <b>The states which a mosaic may exist in:</b>
      * - ACTIVE — Active state of the mosaic, collecting user opinions (sympathy);
      * - ARCHIVED — Mosaic is in archiving state; user opinions collection has been completed;
-     * - LOCKED — Collection of user opinions is temporarily blocked by leaders (i.e. due to complaints from users about the post). After time elapses, opinions collection can be unlocked;
+     * - LOCKED — Collection of user opinions is temporarily blocked by leaders (i.e. due to complaints from users about the post). As long as the mosaic is LOCKED, the author can improve its content. After that, leaders can put it back in the ACTIVE state to continue collecting users' opinions. The time spent by the mosaic in LOCKED state is determined using the lock_date parameter. The period of collecting opinions (collection_period parameter) is increased by this value. Leaders can lock the mosaic again if the author’s work still does not suit users;
      * - BANNED — Post has been locked by leaders.Collected reward to the author of the post and voted users will not be paid;
      * - HIDDEN — Post has been removed by the author. Mosaic of the post may still exist, since  it takes some time to destroy the crystals. If the post has collected the sympathy of users, then rewards to these users will be paid;
      * - BANNED_AND_HIDDEN — Post has been removed and blocked by moderators (no rewards will be paid).
@@ -256,7 +256,7 @@ namespace events {
     };
     
     /**
-     * \brief The structure represents the event of the selected 10 best mosaics which will be awarded.
+     * \brief The structure represents the even about the selected best mosaics to be awarded. The number of selected mosaics is determined by the rewarded_mosaic_num parameter in the \a commun.list contract and defaults to 10.
      * \ingroup gallery_events
      */
     struct mosaic_top {
@@ -272,7 +272,7 @@ namespace events {
      * \ingroup gallery_events
      */
     struct inclusion_state {
-        name account; //!< User account.
+        name account; //!< User account that changed the current number of «frozen» points. The event occurred due to this account action.
         asset quantity; //!< Total number of «frozen» points in community.
     };
 }// events
