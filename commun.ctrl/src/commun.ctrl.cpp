@@ -225,6 +225,13 @@ void control::claim(symbol_code commun_code, name leader) {
     });
 }
 
+void control::emit(symbol_code commun_code) {
+    check_started(commun_code);
+    require_auth(_self);
+
+    emit::issue_reward(commun_code, _self);
+}
+
 int64_t control::get_power(symbol_code commun_code, name voter, uint16_t pct = config::_100percent) {
     return safe_pct(pct, commun_code ? 
         point::get_balance(voter, commun_code).amount :
@@ -514,6 +521,6 @@ DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_tr
     (startleader)(stopleader)
     (voteleader)(unvotelead)
     (clearvotes)
-    (claim)(changepoints)
+    (claim)(emit)(changepoints)
     (propose)(approve)(unapprove)(cancel)(exec)(invalidate)(setrecover)
     )
