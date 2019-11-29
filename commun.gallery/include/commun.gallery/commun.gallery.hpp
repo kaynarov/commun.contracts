@@ -553,22 +553,30 @@ private:
             }
         }
         
-        if (!pre_shares_sum) {
-            return 0;
-        }
-        
         int64_t ret = 0;
         
         for (auto gem_itr = first_gem_itr; (gem_itr != gems_idx.end()) && 
                                            (gem_itr->tracery == tracery) && 
                                            (gem_itr->creator == mosaic_creator); ++gem_itr) {
+            int64_t cur_shares = 0;
+            
             if (gem_itr->shares > 0) {
-                int64_t cur_shares = safe_prop(shares, gem_itr->shares, pre_shares_sum);
+                cur_shares = safe_prop(shares, gem_itr->shares, pre_shares_sum);
+            }
+            else if (!pre_shares_sum && gem_itr->owner == mosaic_creator) {
+                cur_shares = shares;
+            }
+            
+            if (cur_shares > 0) {
                 gems_idx.modify(gem_itr, name(), [&](auto& item) {
                     item.shares += cur_shares;
                 });
                 send_gem_event(_self, commun_symbol, *gem_itr);
                 ret += cur_shares;
+                
+                if (ret == shares) {
+                    break;
+                }
             }
         }
         

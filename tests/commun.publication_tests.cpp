@@ -490,6 +490,18 @@ BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(vote_for_noob, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Vote for noob testing.");
+    init();
+    create_accounts({N(noob)});
+    BOOST_CHECK_EQUAL(success(), point.open(N(noob), point_code));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "permlink"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    
+    BOOST_CHECK_EQUAL(0, get_gem(_code, _point, mssgid{N(noob), "permlink"}.tracery(), N(noob))["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(noob), "permlink"}));
+    BOOST_CHECK(get_gem(_code, _point, mssgid{N(noob), "permlink"}.tracery(), N(noob))["shares"].as<int64_t>() > 0);
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(free_messages, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Free messages testing.");
     init();
@@ -914,7 +926,9 @@ BOOST_FIXTURE_TEST_CASE(pledge, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(alice), "alice-in-blockchains"}));
     
     gem = get_gem(_code, _point, tracery, N(chucknorris));
-    BOOST_CHECK_EQUAL(points_in_gem / 2, gem["shares"].as<int64_t>());
+    auto royalty = points_in_gem / 4;
+    BOOST_CHECK_EQUAL(royalty, get_gem(_code, _point, tracery, N(alice))["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(points_in_gem / 2 - royalty, gem["shares"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem / 2, gem["points"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem / 2, gem["pledge_points"].as<int64_t>());
     masaic = get_mosaic(_code, _point, tracery);
@@ -926,11 +940,14 @@ BOOST_FIXTURE_TEST_CASE(pledge, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(alice), "alice-in-blockchains"}));
     
     gem = get_gem(_code, _point, tracery, N(jackiechan));
-    BOOST_CHECK_EQUAL(calc_bancor_amount(points_in_gem / 2, points_in_gem / 2, cfg::shares_cw, points_in_gem), gem["shares"].as<int64_t>());
+    auto new_shares = calc_bancor_amount(points_in_gem / 2, points_in_gem / 2, cfg::shares_cw, points_in_gem);
+    auto new_royalty = new_shares / 2;
+    BOOST_CHECK_EQUAL(royalty + new_royalty, get_gem(_code, _point, tracery, N(alice))["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(new_shares - new_royalty, gem["shares"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem, gem["points"].as<int64_t>());
     BOOST_CHECK_EQUAL(0, gem["pledge_points"].as<int64_t>());
     masaic = get_mosaic(_code, _point, tracery);
-    BOOST_CHECK_EQUAL(points_in_gem / 2 + gem["shares"].as<int64_t>(), masaic["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(points_in_gem / 2 + gem["shares"].as<int64_t>() + new_royalty, masaic["shares"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem + points_in_gem / 2, masaic["points"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem * 2 + points_in_gem / 2, masaic["pledge_points"].as<int64_t>());
     BOOST_CHECK_EQUAL(masaic["points"].as<int64_t>(), masaic["comm_rating"].as<int64_t>());
