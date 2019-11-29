@@ -175,8 +175,8 @@ public:
         const string inactive              = amsg("Mosaic is inactive" + auth_self);
         const string not_enough_for_gem    = amsg("Points are not enough for gem inclusion" + auth_self);
         const string no_vote               = amsg("Vote doesn't exist" + auth_self);
-        const string collection_is_over    = amsg("Collection period is over" + auth_self);     // TODO: Add tests #462
-        const string client_action         = amsg("Action enable only for client" + auth_self); // TODO: Add tests #462
+        const string collection_is_over    = amsg("Collection period is over" + auth_self);
+        const string client_action         = amsg("Action enable only for client" + auth_self);
 
         const string wrong_prmlnk_length   = amsg("Permlink length is empty or more than 256.");
         const string wrong_prmlnk          = amsg("Permlink contains wrong symbol.");
@@ -542,6 +542,18 @@ BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink1"}.tracery(), N(noob)).is_null());
     BOOST_CHECK_EQUAL(err.no_vote, post.unvote(N(noob), {N(brucelee), "permlink1"}));
     BOOST_CHECK_EQUAL(success(), post.unvote(N(noob), {N(brucelee), "permlink1"}, _client));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(vote_after_collection, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Vote after collection period.");
+    init();
+
+    BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_collection_period - block_interval));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.collection_is_over, post.upvote(N(chucknorris), {N(brucelee), "permlink"}));
 } FC_LOG_AND_RETHROW()
 
 // TODO: remove from MVP
