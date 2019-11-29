@@ -198,7 +198,7 @@ class EEHelper():
                         pass
                     j += 1
                   if j == len(value):
-                    self.tcase.fail("%s doesn't contains %s : %s\nChecked items:\n%s" % (value, templ[i], path, '\n'.join(errors)))
+                    self.tcase.fail("%s \ndoesn't contains %s : %s\nChecked items:\n%s" % (json.dumps(value,indent=3), templ[i], path, '\n'.join(errors)))
                 i += 1
         elif type(templ) is Unorder or type(templ) is AllItems:
             self.tcase.assertEqual(type(value), type([]), path)

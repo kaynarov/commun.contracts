@@ -30,7 +30,7 @@ community_params = {
     'community_name': 'cats',
     'maximum_supply': '1000000000.000 CATS',
     'reserve_amount': '1000000.0000 CMN',
-    'cw': 10000,
+    'cw': 3333,
     'fee': 100,
 }
 community_args = ''

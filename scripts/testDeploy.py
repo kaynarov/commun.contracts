@@ -401,8 +401,8 @@ class PointTestCase(unittest.TestCase):
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
 
-        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
-        community.issueCommunToken(alice, str(tokenQuantity), clientKey)
+#        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
+#        community.issueCommunToken(alice, str(tokenQuantity), clientKey)
 
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
@@ -529,6 +529,424 @@ class PointTestCase(unittest.TestCase):
         self.eeHelper.waitEvents(
             [ ({'msg_type':'ApplyTrx', 'id':transferTrx}, {'block_num':transferBlock, 'actions':transferTrace, 'except':ee.Missing()}),
             ], transferBlock)
+
+class CtrlTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        point = community.getUnusedPointSymbol()
+        owner = community.createCommunity(
+            community_name = point,
+            creator_auth = client,
+            creator_key = clientKey,
+            maximum_supply = Asset.fromstr('100000000.000 %s'%point),
+            reserve_amount = Asset.fromstr('1000000.0000 CMN'))
+
+        (self.appLeader1, appLeader1Key) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community='', buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)), leaderUrl=testnet.randomText(16))
+
+        (self.appLeader2, appLeader2Key) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community='', buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)), leaderUrl=testnet.randomText(16))
+
+        community.voteLeader('', owner+'@owner', self.appLeader2, 4000, providebw=owner+'/tech', keys=[techKey])
+
+        (self.leader1, leader1Key) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)), leaderUrl=testnet.randomText(16))
+
+        (self.leader2, leader2Key) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)), leaderUrl=testnet.randomText(16))
+
+        self.point = point
+        self.owner = owner
+
+    def setUp(self):
+        self.eeHelper = ee.EEHelper(self)
+
+    def tearDown(self):
+        self.eeHelper.tearDown()
+
+    def getLeadersWeights(self, commun_code):
+        leaders = {}
+        cursor = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"].find({"_SERVICE_.scope":commun_code})
+        for item in cursor:
+            leaders[item['name']] = int(item['total_weight'].to_decimal())
+        return leaders
+
+    def test_voteLeader(self):
+        cases = (('', self.appLeader1), (self.point, self.leader1))
+        for (point, leader) in cases:
+          with self.subTest(point):
+            (alice, aliceKey) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+    
+            alicePoints = community.getPointBalance(point, alice)
+            leaders = self.getLeadersWeights(point)
+            leaders[leader] += (30*alicePoints.amount)//100
+    
+            trxResult = community.voteLeader(point, alice, leader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+            trxId = trxResult['transaction_id']
+            trxBlock = trxResult['processed']['block_num']
+            trxTrace = [
+                {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'voteleader',
+                    'auth': [{'actor': alice, 'permission': 'active'}],
+                    'args': {'commun_code': point, 'voter': alice, 'leader': leader, 'pct': 3000},
+                    'events': ee.AllItems(
+                        {
+                            'code': 'c.ctrl', 'event': 'leaderstate',
+                            'args': {'commun_code': point, 'leader': leader, 'weight': leaders[leader]}
+                        })
+                }
+            ]
+            self.eeHelper.waitEvents(
+                [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
+                ], trxBlock)
+    
+            self.assertEqual(leaders, self.getLeadersWeights(point))
+
+
+    def test_unvoteLeader(self):
+        cases = (('', self.appLeader1), (self.point, self.leader1))
+        for (point, leader) in cases:
+          with self.subTest(point):
+            (alice, aliceKey) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+            community.voteLeader(point, alice, leader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+    
+            alicePoints = community.getPointBalance(point, alice)
+            leaders = self.getLeadersWeights(point)
+            leaders[leader] -= (30*alicePoints.amount)//100
+    
+            trxResult = community.unvoteLeader(point, alice, leader, providebw=alice+'/tech', keys=[aliceKey,techKey])
+            trxId = trxResult['transaction_id']
+            trxBlock = trxResult['processed']['block_num']
+            trxTrace = [
+                {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'unvotelead',
+                    'auth': [{'actor': alice, 'permission': 'active'}],
+                    'args': {'commun_code': point, 'voter': alice, 'leader': leader},
+                    'events': ee.AllItems(
+                        {
+                            'code': 'c.ctrl', 'event': 'leaderstate',
+                            'args': {'commun_code': point, 'leader': leader, 'weight': leaders[leader]}
+                        })
+                }
+            ]
+            self.eeHelper.waitEvents(
+                [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
+                ], trxBlock)
+   
+            self.assertEqual(leaders, self.getLeadersWeights(point))
+
+
+    def test_voterTransferPoints(self):
+        pointParam = community.getPointParam(self.point)
+        (point, leader1, leader2) = (self.point, self.leader1, self.leader2)
+
+        (alice, aliceKey) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+        community.voteLeader(point, alice, leader1, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+        community.voteLeader(point, alice, leader2, 2000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        (bob, bobKey) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+        community.voteLeader(point, bob, leader2, 7000, providebw=bob+'/tech', keys=[bobKey,techKey])
+
+        alicePoints = community.getPointBalance(point, alice)
+        bobPoints = community.getPointBalance(point, bob)
+
+        transferPoints = alicePoints * random.uniform(0.1, 0.9)
+        feePoints = max(transferPoints*pointParam['transfer_fee']//10000, Asset(pointParam['min_transfer_fee_points'], pointParam['max_supply'].symbol))
+        alicePointsAfter = alicePoints - transferPoints - feePoints
+        bobPointsAfter = bobPoints + transferPoints
+        self.assertGreaterEqual(alicePointsAfter.amount, 0)
+
+        leaders = self.getLeadersWeights(point)
+        leaders[leader1] += 3*alicePointsAfter.amount//10 - 3*alicePoints.amount//10
+        leaders[leader2] += 2*alicePointsAfter.amount//10 - 2*alicePoints.amount//10
+        leader2AfterAlice = leaders[leader2]
+        leaders[leader2] += 7*bobPointsAfter.amount//10 - 7*bobPoints.amount//10
+
+        args = {'from':alice, 'to':bob, 'quantity':str(transferPoints), 'memo':''}
+        trxResult = testnet.pushAction('c.point', 'transfer', alice, args, providebw=alice+'/tech', keys=[aliceKey,techKey])
+        trxId = trxResult['transaction_id']
+        trxBlock = trxResult['processed']['block_num']
+        trxTrace = [
+            {
+                'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
+                'auth': [{'actor': alice, 'permission': 'active'}],
+                'args': args,
+            },{
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': str(-transferPoints-feePoints)},
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl', 'event': 'leaderstate',
+                        'args': {'commun_code': point, 'leader': leader1, 'weight': leaders[leader1]},
+                    },{
+                        'code': 'c.ctrl', 'event': 'leaderstate',
+                        'args': {'commun_code': point, 'leader': leader2, 'weight': leader2AfterAlice},
+                    }
+                ),
+            },{
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'args': {'who': bob, 'diff': str(transferPoints)},
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl', 'event': 'leaderstate',
+                        'args': {'commun_code': point, 'leader': leader2, 'weight': leaders[leader2]},
+                    }
+                ),
+            },
+        ]
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
+            ], trxBlock)
+   
+        self.assertEqual(leaders, self.getLeadersWeights(point))
+
+
+    def test_voterBuyPoints(self):
+        (point, leader) = (self.point, self.leader1)
+        (alice, aliceKey) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+        community.voteLeader(point, alice, leader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        pointParam = community.getPointParam(self.point)
+        pointStat = community.getPointStat(self.point)
+        alicePoints = community.getPointBalance(self.point, alice)
+
+        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+        newReserve = pointStat['reserve'] + tokenQuantity
+        q = pow(1.0 + tokenQuantity.amount/pointStat['reserve'].amount, pointParam['cw']/10000)
+        newSupply = pointStat['supply'] * q
+        pointQuantity = newSupply - pointStat['supply']
+
+        leaders = self.getLeadersWeights(point)
+        leaders[leader] += 3*(alicePoints+pointQuantity).amount//10 - 3*alicePoints.amount//10
+        appLeaders = self.getLeadersWeights('')
+        appLeaders[self.appLeader2] += 4*(pointStat['reserve']+tokenQuantity).amount//10 - 4*pointStat['reserve'].amount//10
+
+        trxResult = community.buyCommunityPoints(alice, tokenQuantity, point, aliceKey, clientKey)
+        trxId = trxResult['transaction_id']
+        trxBlock = trxResult['processed']['block_num']
+
+        args = {'from': alice, 'to': 'c.point', 'quantity': str(tokenQuantity), 'memo': point}
+        trxTrace = [
+            {
+                'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
+                'auth': [{'actor': alice, 'permission': 'active'}],
+                'args': args,
+            },{
+                'receiver': 'c.point', 'code': 'cyber.token', 'action': 'transfer',
+                'auth': [{'actor': alice,'permission': 'active'}],
+                'args': args,
+            },{
+                'receiver': 'c.ctrl', 'action': 'changepoints', 'code': 'c.ctrl',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': str(pointQuantity)},
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl','event': 'leaderstate',
+                        'args': {'commun_code': point, 'leader': leader, 'weight': leaders[leader]},
+                    }
+                ),
+            },{
+                'receiver': 'c.ctrl', 'action': 'changepoints', 'code': 'c.ctrl',
+                'auth': [{'actor': 'c.ctrl','permission': 'changepoints'}],
+                'args': {'who': self.owner, 'diff': '%d '%tokenQuantity.amount},
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl','event': 'leaderstate',
+                        'args': {'commun_code': '', 'leader': self.appLeader2, 'weight': str(appLeaders[self.appLeader2])},
+                    }
+                ),
+            },
+        ]
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
+            ], trxBlock)
+
+        self.assertEqual(leaders, self.getLeadersWeights(point))
+        self.assertEqual(appLeaders, self.getLeadersWeights(''))
+
+
+    def test_voterSellPoints(self):
+        (point, leader) = (self.point, self.leader1)
+        (alice, aliceKey) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+        community.voteLeader(point, alice, leader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        # Calculate CT/CP-quantities after transaction
+        pointParam = community.getPointParam(self.point)
+        pointStat = community.getPointStat(self.point)
+        alicePoints = community.getPointBalance(self.point, alice)
+
+        sellPoints = alicePoints * random.uniform(0.1, 0.9)
+        q = 1.0 - pow(1.0 - sellPoints.amount/pointStat['supply'].amount, 10000/pointParam['cw'])
+        totalQuantity = pointStat['reserve'] * q
+        tokenQuantity = totalQuantity * (10000-pointParam['fee']) // 10000
+        feeQuantity = totalQuantity - tokenQuantity
+
+        leaders = self.getLeadersWeights(point)
+        leaders[self.leader1] += 3*(alicePoints-sellPoints).amount//10 - 3*alicePoints.amount//10
+        appLeaders = self.getLeadersWeights('')
+        appLeaders[self.appLeader2] += 4*(pointStat['reserve']-tokenQuantity).amount//10 - 4*pointStat['reserve'].amount//10
+
+        # Sell community points through transfer them to 'c.point' account
+        trxArgs = {'from':alice, 'to':'c.point', 'quantity':str(sellPoints), 'memo':''}
+        trxResult = testnet.pushAction('c.point', 'transfer', alice, trxArgs, providebw=alice+'/c@providebw', keys=[aliceKey, clientKey])
+
+        trxTrx = trxResult['transaction_id']
+        trxBlock = trxResult['processed']['block_num']
+        trxTrace = [
+            {
+                'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
+                'auth': [{'actor': alice, 'permission': 'active'}],
+                'args': trxArgs,
+            }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': str(-sellPoints)},
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl','event': 'leaderstate',
+                        'args': {'commun_code': point, 'leader': leader, 'weight': leaders[leader]},
+                    }
+                )
+            }, {
+                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': pointParam['issuer'], 'diff': '-%d '%tokenQuantity.amount},
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl','event': 'leaderstate',
+                        'args': {'commun_code': '', 'leader': self.appLeader2, 'weight': str(appLeaders[self.appLeader2])},
+                    }
+                ),
+            },
+        ]
+
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':trxTrx}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
+            ], trxBlock)
+
+
+    def test_voterStakeTokens(self):
+        appLeader = self.appLeader1
+        (alice, aliceKey) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community='', buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+        community.voteLeader('', alice, appLeader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        aliceTokens = community.getPointBalance('', alice)
+        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
+
+        print("Alice: %s, %s"%(aliceTokens,tokenQuantity))
+
+        appLeaders = self.getLeadersWeights('')
+        appLeaders[appLeader] += 3*(aliceTokens.amount + tokenQuantity.amount)//10 - 3*aliceTokens.amount//10
+
+        trxResult = community.buyCommunityPoints(alice, tokenQuantity, '', aliceKey, clientKey)
+        trxId = trxResult['transaction_id']
+        trxBlock = trxResult['processed']['block_num']
+
+        args = {'from': alice, 'to': 'c.point', 'quantity': str(tokenQuantity), 'memo': ''}
+        trxTrace = [
+            {
+                'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
+                'auth': [{'actor': alice, 'permission': 'active'}],
+                'args': args,
+            },{
+                'receiver': 'c.point', 'code': 'cyber.token', 'action': 'transfer',
+                'auth': [{'actor': alice,'permission': 'active'}],
+                'args': args,
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.point', 'event': 'balance',
+                        'args': {'account': alice, 'balance': '%d '%(aliceTokens.amount + tokenQuantity.amount)}
+                    }
+                )
+            },{
+                'receiver': 'c.ctrl', 'action': 'changepoints', 'code': 'c.ctrl',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': '%d '%tokenQuantity.amount},
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl','event': 'leaderstate',
+                        'args': {'commun_code': '', 'leader': appLeader, 'weight': appLeaders[appLeader]},
+                    }
+                ),
+            },
+        ]
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
+            ], trxBlock)
+
+        self.assertEqual(appLeaders, self.getLeadersWeights(''))
+
+
+    def test_voterWithdrawTokens(self):
+        appLeader = self.appLeader1
+        (alice, aliceKey) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community='', buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+        community.voteLeader('', alice, appLeader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        aliceTokens = community.getPointBalance('', alice)
+        tokenQuantity = Asset.fromstr('%.4f CMN'%(aliceTokens.amount/10000*random.uniform(0.3, 0.7)))
+
+        print("Alice: %s, %s"%(aliceTokens,tokenQuantity))
+
+        appLeaders = self.getLeadersWeights('')
+        appLeaders[appLeader] += 3*(aliceTokens.amount - tokenQuantity.amount)//10 - 3*aliceTokens.amount//10
+
+        args = {'owner': alice, 'quantity': str(tokenQuantity)}
+        trxResult = testnet.pushAction('c.point', 'withdraw', alice, args, 
+               providebw=alice+'/tech', keys=[aliceKey,techKey])
+        trxId = trxResult['transaction_id']
+        trxBlock = trxResult['processed']['block_num']
+
+        trxTrace = [
+            {
+                'receiver': 'c.point', 'code': 'c.point', 'action': 'withdraw',
+                'auth': [{'actor': alice,'permission': 'active'}],
+                'args': args,
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.point', 'event': 'balance',
+                        'args': {'account': alice, 'balance': '%d '%(aliceTokens.amount - tokenQuantity.amount)}
+                    }
+                )
+            },{
+                'receiver': 'c.ctrl', 'action': 'changepoints', 'code': 'c.ctrl',
+                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                'args': {'who': alice, 'diff': '-%d '%tokenQuantity.amount},
+                'events': ee.AllItems(
+                    {
+                        'code': 'c.ctrl','event': 'leaderstate',
+                        'args': {'commun_code': '', 'leader': appLeader, 'weight': appLeaders[appLeader]},
+                    }
+                ),
+            },
+        ]
+        self.eeHelper.waitEvents(
+            [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
+            ], trxBlock)
+
+        self.assertEqual(appLeaders, self.getLeadersWeights(''))
+
 
 if __name__ == '__main__':
     unittest.main()
