@@ -44,6 +44,7 @@ _communAccounts = [
     ('c.ctrl',    'commun.ctrl',          None, [
             ('changepoints', [], ['c.point@cyber.code'], [':changepoints']),
             ('init',         [], ['c.list@cyber.code'], [':init']),
+            ('clients',      [], ['c@clients'], [':emit']),
             ('transferperm', [], ['c.ctrl@cyber.code'], ['c.point:transfer']),
         ]),
     ('c.emit',    'commun.emit',          None, [
@@ -54,7 +55,7 @@ _communAccounts = [
             ('clients',      [], ['c@clients'], [':create',':setsysparams',':follow',':unfollow',':hide',':unhide']),
         ]),
     ('c.gallery', 'commun.publication',   ['commun.gallery'],  [
-            ('clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog']),
+            ('clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog',':emit']),
             ('init',         [], ['c.list@cyber.code'], [':init']),
             ('transferperm', [], ['c.gallery@cyber.code'], ['c.point:transfer']),
         ]),

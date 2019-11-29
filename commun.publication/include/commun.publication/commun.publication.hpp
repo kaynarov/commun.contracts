@@ -47,6 +47,16 @@ public:
     void init(symbol_code commun_code);
 
     /**
+     * \brief The \ref emit action is used by the client to emit rewards for specified point symbol.
+     *
+     * \param commun_code a point symbol of community
+     *
+     * This action is unavailable for user and can be called only by the client.
+     * It requires signature of the client.
+     */
+    void emit(symbol_code commun_code);
+
+    /**
         \brief The create action is used by account to create a message.
 
         \param commun_code symbol of community POINT

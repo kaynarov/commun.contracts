@@ -169,6 +169,16 @@
     ]
   },
   {
+    "name": "emit",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      }
+    ]
+  },
+  {
     "name": "create",
     "base": "",
     "fields": [
@@ -543,6 +553,10 @@
   {
     "name": "init",
     "type": "init"
+  },
+  {
+    "name": "emit",
+    "type": "emit"
   },
   {
     "name": "create",

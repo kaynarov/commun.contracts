@@ -102,13 +102,23 @@ public:
     
     static inline void maybe_issue_reward(symbol_code commun_code, name to_contract) {
         if (is_it_time_to_reward(commun_code, to_contract)) {
-            action(
-                permission_level{config::emit_name, config::reward_perm_name},
-                config::emit_name,
-                "issuereward"_n,
-                std::make_tuple(commun_code, to_contract)
-            ).send();
+           call_issue_reward_action(commun_code, to_contract);
         }
+    }
+
+    static inline void issue_reward(symbol_code commun_code, name to_contract) {
+        eosio::check(is_it_time_to_reward(commun_code, to_contract), "it isn't time for reward");
+        call_issue_reward_action(commun_code, to_contract);
+    }
+
+private:
+    static inline void call_issue_reward_action(symbol_code commun_code, name to_contract) {
+        action(
+            permission_level{config::emit_name, config::reward_perm_name},
+            config::emit_name,
+            "issuereward"_n,
+            std::make_tuple(commun_code, to_contract)
+        ).send();
     }
 };
 
