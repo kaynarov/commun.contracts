@@ -486,9 +486,8 @@ void control::invalidate(name account) {
     }
 }
 
-void control::setrecover(name msig_contract) {
+void control::setrecover() {
     require_auth(_self);
-    check(is_account(msig_contract), "msig contract is not account");
 
     cyber::authority auth;
 
@@ -501,9 +500,9 @@ void control::setrecover(name msig_contract) {
 
     auth.threshold = get_required(symbol_code(), config::super_majority_name);
     action(
-        permission_level{msig_contract, config::active_name},
+        permission_level{config::dapp_name, config::active_name},
         config::internal_name, "updateauth"_n,
-        std::make_tuple(msig_contract, config::recovery_name, config::active_name, auth)
+        std::make_tuple(config::dapp_name, config::recovery_name, config::active_name, auth)
     ).send();
 }
 

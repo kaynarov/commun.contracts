@@ -129,6 +129,54 @@ class CommunLeaderTests(unittest.TestCase):
                 clientKey=clientKey,
                 providebw=issuer+'/c@providebw')
 
+    def test_setRecover(self):
+        # trx which is imitating setcode (requires c.ctrl@active too)
+        trx = testnet.Trx()
+        trx.addAction('c.ctrl', 'setrecover', 'c.ctrl', {})
+
+        requestedPermissions = []
+        for (approver, approverKey) in self.smajor_approvers:
+            requestedPermissions.append({'actor': approver, 'permission': 'active'})
+        (proposer, proposerKey) = self.smajor_approvers[0]
+
+        # trying setcode using cyber.msig without setrecover
+        with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
+            testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, proposer+'/c@providebw', [proposerKey, clientKey])
+
+        # setrecover adds leaders to lead.recover authority
+        trx_setRecover = testnet.Trx()
+        trx_setRecover.addAction('c.ctrl', 'setrecover', 'c.ctrl', {})
+        community.createAndExecProposal(
+                commun_code='',
+                permission='lead.smajor',
+                trx=trx_setRecover,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey,
+                providebw='c.ctrl/c@providebw')
+
+        # trying setcode again
+        testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, proposer+'/c@providebw', [proposerKey, clientKey])
+
+        # trying setcode with not enough approvers
+        for (approver, approverKey) in self.smajor_approvers[:-1]:
+            testnet.msigApprove(approver, proposer, 'recovery', approver+'/c@providebw', [approverKey, clientKey])
+        with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
+            testnet.msigExec(proposer, proposer, 'recovery', proposer+'/c@providebw', [proposerKey, clientKey])
+
+        # trying setcode with enough approvers
+        (approver, approverKey) = self.smajor_approvers[-1]
+        testnet.msigApprove(approver, proposer, 'recovery', approver+'/c@providebw', [approverKey, clientKey])
+        testnet.msigExec(proposer, proposer, 'recovery', proposer+'/c@providebw', [proposerKey, clientKey])
+
+        # checking duplicated setrecover not fails
+        community.createAndExecProposal(
+                commun_code='',
+                permission='lead.smajor',
+                trx=trx_setRecover,
+                leaders=self.smajor_approvers,
+                clientKey=clientKey,
+                providebw='c.ctrl/c@providebw')
+
 class CommunityLeaderTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
