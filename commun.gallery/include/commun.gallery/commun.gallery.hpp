@@ -553,22 +553,30 @@ private:
             }
         }
         
-        if (!pre_shares_sum) {
-            return 0;
-        }
-        
         int64_t ret = 0;
         
         for (auto gem_itr = first_gem_itr; (gem_itr != gems_idx.end()) && 
                                            (gem_itr->tracery == tracery) && 
                                            (gem_itr->creator == mosaic_creator); ++gem_itr) {
+            int64_t cur_shares = 0;
+            
             if (gem_itr->shares > 0) {
-                int64_t cur_shares = safe_prop(shares, gem_itr->shares, pre_shares_sum);
+                cur_shares = safe_prop(shares, gem_itr->shares, pre_shares_sum);
+            }
+            else if (!pre_shares_sum && gem_itr->owner == mosaic_creator) {
+                cur_shares = shares;
+            }
+            
+            if (cur_shares > 0) {
                 gems_idx.modify(gem_itr, name(), [&](auto& item) {
                     item.shares += cur_shares;
                 });
                 send_gem_event(_self, commun_symbol, *gem_itr);
                 ret += cur_shares;
+                
+                if (ret == shares) {
+                    break;
+                }
             }
         }
         
@@ -820,6 +828,10 @@ protected:
         };});
     }
 
+    void emit_for_gallery(name _self, symbol_code commun_code) {
+        emit::issue_reward(commun_code, _self);
+    }
+
     void create_mosaic(name _self, name creator, uint64_t tracery, name opus,
                        asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
         require_auth(creator);
@@ -1065,7 +1077,7 @@ protected:
     }
 };
 
-class [[eosio::contract("comn.gallery")]] gallery : public gallery_base<gallery>, public contract {
+class gallery : public gallery_base<gallery>, public contract {
 public:
     using contract::contract;
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
@@ -1073,6 +1085,11 @@ public:
     [[eosio::action]] void init(symbol_code commun_code) {
         require_auth(_self);
         init_gallery(_self, commun_code);
+    }
+
+    [[eosio::action]] void emit(symbol_code commun_code) {
+        require_auth(_self);
+        emit_for_gallery(_self, commun_code);
     }
 
     [[eosio::action]] void createmosaic(name creator, uint64_t tracery, name opus, asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
@@ -1146,5 +1163,5 @@ public:
 } /// namespace commun
 
 // TODO: removed from MVP
-// #define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
-#define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(claim)(update)(lock)(unlock)(ban)(hide)
+// #define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
+#define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(claim)(update)(lock)(unlock)(ban)(hide)

@@ -18,22 +18,93 @@ cleosCmd = "{cleos_path} --url {nodeos_url} ".format(**params)
 mongoClient = MongoClient(params["mongodb"])
 
 class Symbol():
-    def __init__(self, code, precission):
+    def __init__(self, precision, code):
+        if not isinstance(precision, int):
+            raise Exception("Invalid precision")
+        if not isinstance(code, str):
+            raise Exception("Invalid code")
+        self.precision = precision
         self.code = code
-        self.precission = precission
 
     def __str__(self):
-        return '{p},{s}'.format(p=self.precission, s=self.code)
+        return '{p},{s}'.format(p=self.precision, s=self.code)
+
+    def __eq__(self, other):
+        return self.precision == other.precision and self.code == other.code
 
 class Asset():
-    def __init__(self, string):
+    def __init__(self, amount, symbol):
+        if not isinstance(amount, int):
+            raise Exception("Invalid amount: "+ str(amount) + " " + str(type(amount)))
+        self.amount = amount
+        self.symbol = symbol
+
+    @classmethod
+    def fromdb(cls, data):
+        return Asset(data['_amount'], Symbol(int(data['_decs'].to_decimal()), data['_sym']))
+
+    @classmethod
+    def fromstr(cls, string):
         (value, code) = string.split(' ')
         (p, f) = value.split('.')
-        self.symbol = Symbol(code, len(f))
-        self.amount = int(p+f)
+        return Asset(int(p+f), Symbol(len(f), code))
     
     def __str__(self):
-        return '{:.{prec}f} {code}'.format(self.amount/(10**self.symbol.precission), prec=self.symbol.precission, code=self.symbol.code)
+        return '{:.{prec}f} {code}'.format(self.amount/(10**self.symbol.precision), prec=self.symbol.precision, code=self.symbol.code)
+
+    def __add__(self, other):
+        if isinstance(other, Asset):
+            if self.symbol != other.symbol:
+                raise Exception("Try to add asset with different symbol")
+            return Asset(self.amount + other.amount, self.symbol)
+        else:
+            return NotImplemented
+
+    def __sub__(self, other):
+        if isinstance(other, Asset):
+            if self.symbol != other.symbol:
+                raise Exception("Try to sub asset with different symbol")
+            return Asset(self.amount - other.amount, self.symbol)
+        else:
+            return NotImplemented
+
+    def __floordiv__(self, other):
+        if isinstance(other, int):
+            return Asset(self.amount // other, self.symbol)
+        elif isinstance(other, float):
+            return Asset(int(self.amount / other), self.symbol)
+        else:
+            return NotImplemented
+
+    def __mul__(self, other):
+        if isinstance(other, int):
+            return Asset(self.amount * other, self.symbol)
+        elif isinstance(other, float):
+            return Asset(int(self.amount * other), self.symbol)
+        else:
+            return NotImplemented
+
+    def __imul__(self, other):
+        return self.__mul__(other)
+
+    def __neg__(self):
+        return Asset(-self.amount, self.symbol)
+
+    def __eq__(self, other):
+        if isinstance(other, Asset):
+            if self.symbol != other.symbol:
+                raise Exception("Try to compare asset with different symbol")
+            return self.amount == other.amount
+        else:
+            return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, Asset):
+            if self.symbol != other.symbol:
+                raise Exception("Try to compare asset with different symbol")
+            return self.amount > other.amount
+        else:
+            return NotImplemented
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, value):
@@ -237,3 +308,24 @@ def getResourceUsage(account):
         'storage': info['storage_limit']['used']
     }
 
+def msigPropose(proposer, proposal_name, requested_permissions, trx, providebw=None, keys=None):
+    pushAction('cyber.msig', 'propose', proposer, {
+            'proposer': proposer,
+            'proposal_name': proposal_name,
+            'requested': requested_permissions,
+            'trx': trx
+        }, providebw=providebw, keys=keys)
+
+def msigApprove(approver, proposer, proposal_name, providebw=None, keys=None):
+    pushAction('cyber.msig', 'approve', approver, {
+            'proposer': proposer,
+            'proposal_name': proposal_name,
+            'level': {'actor': approver, 'permission': 'active'}
+        }, providebw=providebw, keys=keys)
+
+def msigExec(executer, proposer, proposal_name, providebw=None, keys=None):
+    pushAction('cyber.msig', 'exec', proposer, {
+            'executer': executer,
+            'proposer': proposer,
+            'proposal_name': proposal_name
+        }, providebw=providebw, keys=keys)

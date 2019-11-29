@@ -225,6 +225,13 @@ void control::claim(symbol_code commun_code, name leader) {
     });
 }
 
+void control::emit(symbol_code commun_code) {
+    check_started(commun_code);
+    require_auth(_self);
+
+    emit::issue_reward(commun_code, _self);
+}
+
 int64_t control::get_power(symbol_code commun_code, name voter, uint16_t pct = config::_100percent) {
     return safe_pct(pct, commun_code ? 
         point::get_balance(voter, commun_code).amount :
@@ -486,9 +493,8 @@ void control::invalidate(name account) {
     }
 }
 
-void control::setrecover(name msig_contract) {
+void control::setrecover() {
     require_auth(_self);
-    check(is_account(msig_contract), "msig contract is not account");
 
     cyber::authority auth;
 
@@ -501,9 +507,9 @@ void control::setrecover(name msig_contract) {
 
     auth.threshold = get_required(symbol_code(), config::super_majority_name);
     action(
-        permission_level{msig_contract, config::active_name},
+        permission_level{config::dapp_name, config::active_name},
         config::internal_name, "updateauth"_n,
-        std::make_tuple(msig_contract, config::recovery_name, config::active_name, auth)
+        std::make_tuple(config::dapp_name, config::recovery_name, config::active_name, auth)
     ).send();
 }
 
@@ -515,6 +521,6 @@ DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_tr
     (startleader)(stopleader)
     (voteleader)(unvotelead)
     (clearvotes)
-    (claim)(changepoints)
+    (claim)(emit)(changepoints)
     (propose)(approve)(unapprove)(cancel)(exec)(invalidate)(setrecover)
     )

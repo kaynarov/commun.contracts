@@ -73,7 +73,7 @@ public:
         return push(N(setfreezer), _code, args()("freezer", freezer));
     }
 
-    action_result issue(account_name to, asset quantity, string memo, account_name issuer=name()) {
+    action_result issue(account_name to, asset quantity, string memo="", account_name issuer=name()) {
         if (issuer == name()) {
             issuer = get_issuer(quantity.get_symbol());
         }
@@ -86,8 +86,9 @@ public:
         return _tester->push_tx(tx_actions, signers, false /*produce_and_check*/);
     }
 
-    action_result retire(account_name from, asset quantity, string memo) {
+    action_result retire(account_name from, asset quantity, string memo="") {
         return push(N(retire), from, args()
+            ("from", from)
             ("quantity", quantity)
             ("memo", memo)
         );

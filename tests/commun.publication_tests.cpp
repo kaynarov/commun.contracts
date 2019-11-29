@@ -175,8 +175,8 @@ public:
         const string inactive              = amsg("Mosaic is inactive" + auth_self);
         const string not_enough_for_gem    = amsg("Points are not enough for gem inclusion" + auth_self);
         const string no_vote               = amsg("Vote doesn't exist" + auth_self);
-        const string collection_is_over    = amsg("Collection period is over" + auth_self);     // TODO: Add tests #462
-        const string client_action         = amsg("Action enable only for client" + auth_self); // TODO: Add tests #462
+        const string collection_is_over    = amsg("Collection period is over" + auth_self);
+        const string client_action         = amsg("Action enable only for client" + auth_self);
 
         const string wrong_prmlnk_length   = amsg("Permlink length is empty or more than 256.");
         const string wrong_prmlnk          = amsg("Permlink contains wrong symbol.");
@@ -490,6 +490,18 @@ BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(vote_for_noob, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Vote for noob testing.");
+    init();
+    create_accounts({N(noob)});
+    BOOST_CHECK_EQUAL(success(), point.open(N(noob), point_code));
+    BOOST_CHECK_EQUAL(success(), post.create({N(noob), "permlink"}, {N(), ""}, "h", "b", {"t"}, "m", std::optional<uint16_t>(), _client));
+    
+    BOOST_CHECK_EQUAL(0, get_gem(_code, _point, mssgid{N(noob), "permlink"}.tracery(), N(noob))["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(noob), "permlink"}));
+    BOOST_CHECK(get_gem(_code, _point, mssgid{N(noob), "permlink"}.tracery(), N(noob))["shares"].as<int64_t>() > 0);
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(free_messages, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Free messages testing.");
     init();
@@ -542,6 +554,18 @@ BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink1"}.tracery(), N(noob)).is_null());
     BOOST_CHECK_EQUAL(err.no_vote, post.unvote(N(noob), {N(brucelee), "permlink1"}));
     BOOST_CHECK_EQUAL(success(), post.unvote(N(noob), {N(brucelee), "permlink1"}, _client));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(vote_after_collection, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("Vote after collection period.");
+    init();
+
+    BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}));
+    produce_block();
+    produce_block(fc::seconds(cfg::def_collection_period - block_interval));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.collection_is_over, post.upvote(N(chucknorris), {N(brucelee), "permlink"}));
 } FC_LOG_AND_RETHROW()
 
 // TODO: remove from MVP
@@ -902,7 +926,9 @@ BOOST_FIXTURE_TEST_CASE(pledge, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(alice), "alice-in-blockchains"}));
     
     gem = get_gem(_code, _point, tracery, N(chucknorris));
-    BOOST_CHECK_EQUAL(points_in_gem / 2, gem["shares"].as<int64_t>());
+    auto royalty = points_in_gem / 4;
+    BOOST_CHECK_EQUAL(royalty, get_gem(_code, _point, tracery, N(alice))["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(points_in_gem / 2 - royalty, gem["shares"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem / 2, gem["points"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem / 2, gem["pledge_points"].as<int64_t>());
     masaic = get_mosaic(_code, _point, tracery);
@@ -914,11 +940,14 @@ BOOST_FIXTURE_TEST_CASE(pledge, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(alice), "alice-in-blockchains"}));
     
     gem = get_gem(_code, _point, tracery, N(jackiechan));
-    BOOST_CHECK_EQUAL(calc_bancor_amount(points_in_gem / 2, points_in_gem / 2, cfg::shares_cw, points_in_gem), gem["shares"].as<int64_t>());
+    auto new_shares = calc_bancor_amount(points_in_gem / 2, points_in_gem / 2, cfg::shares_cw, points_in_gem);
+    auto new_royalty = new_shares / 2;
+    BOOST_CHECK_EQUAL(royalty + new_royalty, get_gem(_code, _point, tracery, N(alice))["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(new_shares - new_royalty, gem["shares"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem, gem["points"].as<int64_t>());
     BOOST_CHECK_EQUAL(0, gem["pledge_points"].as<int64_t>());
     masaic = get_mosaic(_code, _point, tracery);
-    BOOST_CHECK_EQUAL(points_in_gem / 2 + gem["shares"].as<int64_t>(), masaic["shares"].as<int64_t>());
+    BOOST_CHECK_EQUAL(points_in_gem / 2 + gem["shares"].as<int64_t>() + new_royalty, masaic["shares"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem + points_in_gem / 2, masaic["points"].as<int64_t>());
     BOOST_CHECK_EQUAL(points_in_gem * 2 + points_in_gem / 2, masaic["pledge_points"].as<int64_t>());
     BOOST_CHECK_EQUAL(masaic["points"].as<int64_t>(), masaic["comm_rating"].as<int64_t>());

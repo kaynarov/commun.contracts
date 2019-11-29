@@ -13,6 +13,9 @@ static const auto point_code_str = "GLS";
 static const auto _point = symbol(3, point_code_str);
 static const auto point_code = _point.to_symbol_code();
 
+std::string big_memo = std::string(256, '0');
+std::string super_big_memo = std::string(256 + 1, '1');
+
 class commun_point_tester : public golos_tester {
 protected:
     cyber_token_api token;
@@ -62,8 +65,8 @@ public:
         const string point_already_exists = amsg("point already exists");
         const string issuer_already_has_point = amsg("issuer already has a point");
         const string memo_too_long = amsg("memo has more than 256 bytes");
-        const string no_point_symbol = amsg("point with symbol does not exist, create it before issue");
-        const string no_point_symbol2 = amsg("point with symbol does not exist"); // TODO: separate from version with "create it"
+        const string no_point_symbol = amsg("point with symbol does not exist");
+        const string no_point_symbol_create_before_issue = amsg("point with symbol does not exist, create it before issue");
         const string no_symbol = amsg("symbol does not exist");
         const string no_auth = amsg("missing required signature");
         const string no_reserve = amsg("no reserve");
@@ -72,7 +75,9 @@ public:
         const string overdrawn_balance = amsg("overdrawn balance");
         const string tokens_cost_zero_points = amsg("these tokens cost zero points");
         const string invalid_quantity = amsg("invalid quantity");
-        const string quantity_not_positive = amsg("must issue positive quantity");
+        const string quantity_not_positive_issue = amsg("must issue positive quantity");
+        const string quantity_not_positive_retire = amsg("must retire positive quantity");
+        const string quantity_not_positive_transfer = amsg("must transfer positive quantity");
         const string symbol_precision = amsg("symbol precision mismatch");
         const string quantity_exceeds_supply = amsg("quantity exceeds available supply");
         const string issuer_cant_close = amsg("issuer can't close");
@@ -235,14 +240,14 @@ BOOST_FIXTURE_TEST_CASE(issue_tests, commun_point_tester) try {
     auto max_supply = asset(999999, point._symbol);
     auto supply =  asset(25000, point._symbol);
     auto reserve = asset(100000, token._symbol);
-    BOOST_CHECK_EQUAL(err.no_point_symbol, point.issue(_golos, supply, "issue", _golos));
+    BOOST_CHECK_EQUAL(err.no_point_symbol_create_before_issue, point.issue(_golos, supply, "issue", _golos));
     BOOST_CHECK_EQUAL(success(), point.create(_golos, init_supply, max_supply, 10000, 0));
     BOOST_CHECK_EQUAL(err.no_reserve, point.issue(_golos, supply, "issue"));
 
     BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _code, reserve, cfg::restock_prefix + point_code_str));
 
-    BOOST_CHECK_EQUAL(err.quantity_not_positive, point.issue(_golos, asset(-25000, point._symbol), "issue"));
+    BOOST_CHECK_EQUAL(err.quantity_not_positive_issue, point.issue(_golos, asset(-25000, point._symbol), "issue"));
     BOOST_CHECK_EQUAL(err.quantity_exceeds_supply, point.issue(_golos, asset(9999990, point._symbol), "issue"));
     BOOST_CHECK_EQUAL(err.symbol_precision, point.issue(_golos, asset(supply.get_amount(), symbol(0, "GLS")), "issue"));
 
@@ -252,6 +257,42 @@ BOOST_FIXTURE_TEST_CASE(issue_tests, commun_point_tester) try {
         ("reserve", "10.0000 CMN")
     );
     BOOST_CHECK_EQUAL(point.get_amount(_golos), supply.get_amount());
+
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, supply, ""));
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, supply, big_memo));
+    BOOST_CHECK_EQUAL(err.memo_too_long, point.issue(_golos, supply, super_big_memo));
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(retire_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("retire tests");
+    init();
+    BOOST_CHECK_EQUAL(success(), point.issue(_alice, asset(500, point._symbol), "issue for alice"));
+
+    BOOST_TEST_MESSAGE("-- retire by issuer");
+    auto supply0 = point.get_supply();
+    auto balance = point.get_amount(_golos);
+    BOOST_CHECK_EQUAL(success(), point.retire(_golos, asset(1000, point._symbol), "retire"));
+    BOOST_CHECK_EQUAL(point.get_amount(_golos), balance-1000);
+    BOOST_CHECK_EQUAL(point.get_supply(), supply0-1000);
+
+    BOOST_TEST_MESSAGE("-- retire not by issuer");
+    BOOST_CHECK_EQUAL(success(), point.retire(_alice, asset(300, point._symbol), "retire"));
+    BOOST_CHECK_EQUAL(point.get_amount(_alice), 200);
+    BOOST_CHECK_EQUAL(point.get_supply(), supply0-(1000+300));
+
+    BOOST_TEST_MESSAGE("-- wrong cases");
+    BOOST_CHECK_EQUAL(err.overdrawn_balance, point.retire(_alice, asset(200+1, point._symbol), "retire"));
+    BOOST_CHECK_EQUAL(success(), point.retire(_alice, asset(200, point._symbol), "retire"));
+    BOOST_CHECK_EQUAL(point.get_amount(_alice), 0);
+    BOOST_CHECK_EQUAL(point.get_supply(), supply0-(1000+500));
+
+    BOOST_CHECK_EQUAL(err.no_point_symbol, point.retire(_golos, asset(300, symbol(3, "SLG")), "retire"));
+    BOOST_CHECK_EQUAL(err.symbol_precision, point.retire(_golos, asset(300, symbol(4, "GLS")), "retire"));
+    BOOST_CHECK_EQUAL(err.quantity_not_positive_retire, point.retire(_golos, asset(0, point._symbol), "retire"));
+
+    BOOST_CHECK_EQUAL(success(), point.retire(_golos, asset(1, point._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.retire(_golos, asset(1, point._symbol), big_memo));
+    BOOST_CHECK_EQUAL(err.memo_too_long, point.retire(_golos, asset(1, point._symbol), super_big_memo));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(open_tests, commun_point_tester) try {
@@ -285,6 +326,11 @@ BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _bob, asset(700, point._symbol)));
     BOOST_CHECK_EQUAL(300, point.get_amount(_alice));
     BOOST_CHECK_EQUAL(700, point.get_amount(_bob));
+
+    BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _bob, asset(1, point._symbol), big_memo));
+    BOOST_CHECK_EQUAL(err.memo_too_long, point.transfer(_alice, _bob, asset(1, point._symbol), super_big_memo));
+
+    BOOST_CHECK_EQUAL(err.symbol_precision, point.transfer(_alice, _bob, asset(1, symbol(0, point_code_str)), "wrong precision"));
 
     BOOST_CHECK_EQUAL(err.freezer_not_exists, point.setfreezer(N(notexist)));
     BOOST_CHECK_EQUAL(success(), point.setfreezer(cfg::gallery_name));
@@ -393,7 +439,7 @@ BOOST_FIXTURE_TEST_CASE(transfer_min_order, commun_point_tester) try {
     BOOST_TEST_MESSAGE("-- buying");
     BOOST_CHECK_EQUAL(err.min_order, token.transfer(_carol, _code, asset(1000, token._symbol), "minimum: " + asset(1001, point._symbol).to_string()));
     BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1000, token._symbol), "minimum: " + asset(1000, point._symbol).to_string()));
-    BOOST_CHECK_EQUAL(err.no_point_symbol2, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: 1.000 CMN"));
+    BOOST_CHECK_EQUAL(err.no_point_symbol, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: 1.000 CMN"));
 
     BOOST_TEST_MESSAGE("-- symbol precision check");
     BOOST_CHECK_EQUAL(err.symbol_precision, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: 1.0 GLS"));
@@ -402,8 +448,12 @@ BOOST_FIXTURE_TEST_CASE(transfer_min_order, commun_point_tester) try {
     BOOST_TEST_MESSAGE("-- empty symbol NOT supported");
     BOOST_CHECK_EQUAL(err.invalid_symbol, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: 1.000 "));
     BOOST_CHECK_EQUAL(err.asset_string_format, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: 1.000"));
+    BOOST_CHECK_EQUAL(err.asset_string_format, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: 1."));
     BOOST_CHECK_EQUAL(err.asset_string_format, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: 1"));
     BOOST_CHECK_EQUAL(err.asset_string_format, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: "));
+    BOOST_CHECK_EQUAL(err.asset_string_format, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: -"));
+    BOOST_CHECK_EQUAL(err.asset_string_format, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: -.0 GLS"));
+    BOOST_CHECK_EQUAL(err.asset_string_format, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: -0.000 GLS"));
 
     BOOST_TEST_MESSAGE("-- negative min order");
     BOOST_CHECK_EQUAL(err.min_order_negative, token.transfer(_carol, _code, asset(100, token._symbol), "minimum: " + asset(-10000, point._symbol).to_string()));

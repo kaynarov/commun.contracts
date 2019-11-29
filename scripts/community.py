@@ -22,6 +22,43 @@ def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
             'quantity':quantity,
             'memo':community
         }, providebw=owner+'/c@providebw', keys=[ownerKey, clientKey])
+
+def createCommunityUser(community, creator, creatorKey, clientKey, *, buyPointsOn=None, leaderUrl=None):
+    (private, public) = createKey()
+    account = createRandomAccount(public, creator=creator, keys=creatorKey)
+    openBalance(account, community, creator, keys=creatorKey)
+    if buyPointsOn:
+        buyCommunityPoints(account, buyPointsOn, community, private, clientKey)
+    if leaderUrl:
+        regLeader(commun_code=community, leader=account, url=leaderUrl,
+                providebw=account+'/'+creator, keys=[private, creatorKey])
+    return (account, private)
+
+def getUnusedPointSymbol():
+    while True:
+        point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6)) 
+        if getPointParam(point) == None:
+            return point
+
+def getPointParam(point):
+    param = mongoClient["_CYBERWAY_c_point"]["param"].find_one({"max_supply._sym":point})
+    if param:
+        param['max_supply'] = Asset.fromdb(param['max_supply'])
+        param['transfer_fee'] = int(param['transfer_fee'].to_decimal())
+    return param
+
+def getPointStat(point):
+    stat = mongoClient["_CYBERWAY_c_point"]["stat"].find_one({"supply._sym":point})
+    if stat:
+        stat['supply'] = Asset.fromdb(stat['supply'])
+        stat['reserve'] = Asset.fromdb(stat['reserve'])
+    return stat
+
+def getPointBalance(point, account):
+    res = mongoClient["_CYBERWAY_c_point"]["accounts"].find_one({"balance._sym":point,"_SERVICE_.scope":account})
+    if res:
+        res = Asset.fromdb(res['balance'])
+    return res
     
 
 def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, providebw=None, keys=None):
@@ -55,7 +92,7 @@ def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, p
 
 def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=10000, fee=100, owner_account=None):
     symbol = maximum_supply.symbol
-    initial_supply = Asset(str(maximum_supply))
+    initial_supply = Asset.fromstr(str(maximum_supply))
     initial_supply.amount //= 1000
 
     c = parseAuthority(creator_auth)
