@@ -11,6 +11,11 @@ void publication::init(symbol_code commun_code) {
     init_gallery(_self, commun_code);
 }
 
+void publication::emit(symbol_code commun_code) {
+    require_auth(_self);
+    emit_for_gallery(_self, commun_code);
+}
+
 void publication::create(
     symbol_code commun_code,
     mssgid_t message_id,
@@ -377,7 +382,7 @@ void publication::ban(symbol_code commun_code, mssgid_t message_id) {
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (init)(create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
+    (init)(emit)(create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
     (claim)
     // (hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise) // TODO: removed from MVP
     (ban))

@@ -828,6 +828,10 @@ protected:
         };});
     }
 
+    void emit_for_gallery(name _self, symbol_code commun_code) {
+        emit::issue_reward(commun_code, _self);
+    }
+
     void create_mosaic(name _self, name creator, uint64_t tracery, name opus,
                        asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
         require_auth(creator);
@@ -1083,6 +1087,11 @@ public:
         init_gallery(_self, commun_code);
     }
 
+    [[eosio::action]] void emit(symbol_code commun_code) {
+        require_auth(_self);
+        emit_for_gallery(_self, commun_code);
+    }
+
     [[eosio::action]] void createmosaic(name creator, uint64_t tracery, name opus, asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
         require_auth(creator);
         create_mosaic(_self, creator, tracery, opus, quantity, royalty, providers);
@@ -1154,5 +1163,5 @@ public:
 } /// namespace commun
 
 // TODO: removed from MVP
-// #define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
-#define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(claim)(update)(lock)(unlock)(ban)(hide)
+// #define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
+#define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(claim)(update)(lock)(unlock)(ban)(hide)
