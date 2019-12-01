@@ -745,25 +745,33 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto by_comm_idx = mosaics_table.get_index<"bycommrating"_n>();
         
-        auto by_comm_first_itr = by_comm_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic::ACTIVE), MAXINT64, MAXINT64));
         auto by_comm_max = config::default_comm_grades.size();
         size_t mosaic_num = 0;
         int64_t points_sum = 0;
-        for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
+
+        struct ranked_mosaic final {
+            int64_t comm_rating;
+            size_t mosaic_num;
+            int64_t weight;
+        }; // struct ranked_mosaic
+
+        std::map<uint64_t, ranked_mosaic> ranked_mosaics;
+
+        for (auto by_comm_itr = by_comm_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic::ACTIVE), MAXINT64, MAXINT64));
+                                                   (mosaic_num < by_comm_max) &&
                                                    (by_comm_itr != by_comm_idx.end()) &&
                                                    (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
                                                    (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
+            ranked_mosaics[by_comm_itr->tracery] = ranked_mosaic {
+                .comm_rating = by_comm_itr->comm_rating,
+                .mosaic_num = mosaic_num,
+                .weight = 0
+            };
             points_sum += by_comm_itr->comm_rating;
         }
-        std::map<uint64_t, int64_t> ranked_mosaics;
-        mosaic_num = 0;
-        for (auto by_comm_itr = by_comm_first_itr; (mosaic_num < by_comm_max) &&
-                                                   (by_comm_itr != by_comm_idx.end()) &&
-                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
-                                                   (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
-
-            ranked_mosaics[by_comm_itr->tracery] = config::default_comm_grades[mosaic_num] + 
-                                    safe_prop(config::default_comm_points_grade_sum, by_comm_itr->comm_rating, points_sum);
+        for (auto& m: ranked_mosaics) {
+            m.second.weight = config::default_comm_grades[m.second.mosaic_num] +
+                safe_prop(config::default_comm_points_grade_sum, m.second.comm_rating, points_sum);
         }
         auto by_lead_idx = mosaics_table.get_index<"byleadrating"_n>();
         
@@ -774,13 +782,13 @@ protected:
                                                    (by_lead_itr != by_lead_idx.end()) &&
                                                    (by_lead_itr->lead_rating >= community.min_lead_rating); by_lead_itr++, mosaic_num++) {
             if (!by_lead_itr->hidden()) {
-                ranked_mosaics[by_lead_itr->tracery] += config::default_lead_grades[mosaic_num];
+                ranked_mosaics[by_lead_itr->tracery].weight += config::default_lead_grades[mosaic_num];
             }
         }
         std::vector<std::pair<uint64_t, int64_t> > top_mosaics;
         top_mosaics.reserve(ranked_mosaics.size());
         for (const auto& m : ranked_mosaics) {
-            top_mosaics.emplace_back(m);
+            top_mosaics.emplace_back(m.first, m.second.weight);
         }
         
         auto middle = top_mosaics.begin() + std::min(size_t(community.rewarded_mosaic_num), top_mosaics.size());
