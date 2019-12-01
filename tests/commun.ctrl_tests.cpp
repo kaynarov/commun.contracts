@@ -21,6 +21,7 @@ const account_name _golos = N(golos);
 const account_name _alice = N(alice);
 const account_name _bob = N(bob);
 const account_name _carol = N(carol);
+const account_name _client = N(communcom);
 const std::vector<account_name> leaders = {
     N(leadera), N(leaderb), N(leaderc), N(leaderd), N(leadere), N(leaderf), 
     N(leaderg), N(leaderh), N(leaderi), N(leaderj), N(leaderk)};
@@ -43,7 +44,7 @@ public:
         , comm_ctrl({this, cfg::control_name, _point.to_symbol_code(), _golos})
         , emit({this, cfg::emit_name})
     {
-        create_accounts({cfg::dapp_name, _golos, _alice, _bob, _carol,
+        create_accounts({cfg::dapp_name, _golos, _alice, _bob, _carol, _client,
             cfg::token_name, cfg::list_name, cfg::control_name, cfg::point_name, cfg::emit_name, cfg::gallery_name});
         create_accounts(leaders);
         produce_block();
@@ -56,7 +57,11 @@ public:
         
         set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(changepoints), N(changepoints));
-        
+
+        set_authority(cfg::control_name, cfg::client_permission_name,
+            authority (1, {}, {{.permission = {_client, "active"}, .weight = 1}}), "owner");
+        link_authority(cfg::control_name, cfg::control_name, cfg::client_permission_name, N(emit));
+
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
         
@@ -74,7 +79,7 @@ public:
         
         set_authority(cfg::point_name, cfg::issue_permission, create_code_authority({cfg::emit_name}), "active");
         link_authority(cfg::point_name, cfg::point_name, cfg::issue_permission, N(issue));
-        
+
     }
     struct errors : contract_error_messages {
         const string no_community = amsg("community not exists");
@@ -108,6 +113,8 @@ public:
         const string incorrect_count = amsg("incorrect count");
         
         const string there_are_votes = amsg("not possible to remove leader as there are votes");
+
+        const string it_isnt_time_for_reward = amsg("it isn't time for reward");
     } err;
     
     transaction get_point_create_trx(const vector<permission_level>& auths, name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee) {
@@ -478,6 +485,19 @@ BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     BOOST_TEST_MESSAGE("--- new_retained = " << new_retained);
     BOOST_CHECK_EQUAL(emitted + retained - reward_sum, new_retained);
     
+} FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(emit_test, commun_ctrl_tester) try {
+    BOOST_TEST_MESSAGE("emit_test");
+    BOOST_CHECK_EQUAL(err.no_community, comm_ctrl.emit(_alice, {_alice, cfg::active_name}));
+
+    init();
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), comm_ctrl.emit(_alice, {_alice, cfg::active_name}));
+    BOOST_CHECK_EQUAL(err.it_isnt_time_for_reward, comm_ctrl.emit(_client, {_code, cfg::client_permission_name}));
+
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_leaders_period));
+    BOOST_CHECK_EQUAL(success(), comm_ctrl.emit(_client, {_code, cfg::client_permission_name}));
 } FC_LOG_AND_RETHROW()
 
 BOOST_AUTO_TEST_SUITE_END()

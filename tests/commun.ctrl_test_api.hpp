@@ -87,6 +87,12 @@ struct commun_ctrl_api: base_contract_api {
             ("diff", diff)
         );
     }
+
+    action_result emit(name actor, permission_level permission) {
+        return push_msig(N(emit), {permission}, {actor}, args()
+            ("commun_code", commun_code)
+        );
+    }
     
     action_result claim(name leader) {
         return push(N(claim), leader, args()
