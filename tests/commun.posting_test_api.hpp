@@ -267,6 +267,12 @@ struct commun_posting_api: base_contract_api {
         );
     }
 
+    action_result emit(name actor, permission_level permission) {
+        return push_msig(N(emit), {permission}, {actor}, args()
+            ("commun_code", commun_code)
+        );
+    }
+
     variant get_vertex(mssgid message_id) {
         return get_struct(commun_code.value, N(vertex), message_id.tracery(), "vertex");
     }
