@@ -59,7 +59,7 @@ namespace gallery_types {
         
         enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED, HIDDEN, BANNED_AND_HIDDEN };
         uint8_t status = ACTIVE;
-        bool meritorious = false;
+        time_point last_top_date = time_point();
         bool deactivated_xor_locked = false;
         
         bool banned()const { return status == BANNED || status == BANNED_AND_HIDDEN; }
@@ -130,6 +130,7 @@ namespace gallery_types {
         uint64_t id;
         int64_t unclaimed = 0;
         int64_t retained = 0;
+        time_point last_reward_date = time_point();
 
         uint64_t primary_key()const { return id; }
     };
@@ -804,6 +805,7 @@ protected:
         const auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: no stat but community present");
         auto total_reward = quantity.amount + stat.retained;
         auto left_reward  = total_reward;
+        auto now = eosio::current_time_point();
         
         uint16_t place = 0;
         for (auto itr = top_mosaics.begin(); itr != middle; itr++) {
@@ -811,18 +813,19 @@ protected:
             
             auto mosaic = mosaics_table.find(itr->first);
             mosaics_table.modify(mosaic, name(), [&](auto& item) {
-                if (item.meritorious) {
+                if (item.last_top_date == stat.last_reward_date) {
                     item.reward += cur_reward;
                     left_reward -= cur_reward;
                     send_mosaic_event(_self, quantity.symbol, item);
                 }
-                else {
-                    item.meritorious = true;
-                }
+                item.last_top_date = now;
             });
             send_top_event(_self, commun_code, *mosaic, place++);
         }
-        stats_table.modify(stat, name(), [&]( auto& s) { s.retained = left_reward; });
+        stats_table.modify(stat, name(), [&]( auto& s) {
+            s.retained = left_reward;
+            s.last_reward_date = now;
+        });
     }
 
     void init_gallery(name _self, symbol_code commun_code) {
@@ -833,6 +836,7 @@ protected:
 
         stats_table.emplace(_self, [&](auto& s) { s = {
             .id = commun_code.raw(),
+            .last_reward_date = eosio::current_time_point()
         };});
     }
 

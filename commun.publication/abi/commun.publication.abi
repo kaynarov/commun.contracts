@@ -45,7 +45,7 @@
                 { "type": "int64",         "name": "comm_rating" },
                 { "type": "int64",         "name": "lead_rating" },
                 { "type": "uint8",         "name": "status" },
-                { "type": "bool",          "name": "meritorious" },
+                { "type": "time_point",    "name": "last_top_date" },
                 { "type": "bool",          "name": "deactivated_xor_locked" }
             ]
         },{
@@ -73,7 +73,8 @@
             "fields": [
                 { "type": "uint64",         "name": "id" },
                 { "type": "int64",          "name": "unclaimed" },
-                { "type": "int64",          "name": "retained" }
+                { "type": "int64",          "name": "retained" },
+                { "type": "time_point",     "name": "last_reward_date" }
             ]
         },{
             "name": "provision_struct",

@@ -1075,7 +1075,7 @@ BOOST_FIXTURE_TEST_CASE(a_lot_of_mosaics, commun_publication_tester) try {
         BOOST_TEST_MESSAGE("--- rating " << ratings[u].first << " = " << ratings[u].second);
         auto mosaic = get_mosaic(_code, _point, mssgid{authors[ratings[u].first].first, "permlink"}.tracery());
         BOOST_CHECK_EQUAL(ratings[u].second, mosaic["comm_rating"].as<int64_t>());
-        BOOST_CHECK_EQUAL(false, mosaic["meritorious"].as<bool>());
+        BOOST_CHECK_EQUAL(std::string(time_point()), std::string(mosaic["last_top_date"].as<time_point>()));
     }
     
     produce_block();
@@ -1086,9 +1086,9 @@ BOOST_FIXTURE_TEST_CASE(a_lot_of_mosaics, commun_publication_tester) try {
         auto tracery = mssgid{authors[ratings[u].first].first, "permlink"}.tracery();
         auto mosaic = get_mosaic(_code, _point, tracery);
         BOOST_CHECK_EQUAL(0, mosaic["reward"].as<int64_t>());
-        auto mer = mosaic["meritorious"].as<bool>();
-        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rating = " << ratings[u].second << ", rank = " << u << ", meritorious = " << mer);
-        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num && ratings[u].second > 0, mer);
+        auto last_top_date = mosaic["last_top_date"].as<time_point>();
+        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rating = " << ratings[u].second << ", rank = " << u << ", last_top_date = " << std::string(last_top_date));
+        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num && ratings[u].second > 0, last_top_date != time_point());
     }
     
     produce_block();
@@ -1102,10 +1102,10 @@ BOOST_FIXTURE_TEST_CASE(a_lot_of_mosaics, commun_publication_tester) try {
         auto mosaic = get_mosaic(_code, _point, tracery);
         int64_t cur_reward = mosaic["reward"].as<int64_t>();
         rewards.emplace_back(cur_reward);
-        auto mer = mosaic["meritorious"].as<bool>();
+        auto last_top_date = mosaic["last_top_date"].as<time_point>();
         BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rating = " << ratings[u].second << ", rank = " << u << ", reward = " << cur_reward);
-        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num && ratings[u].second > 0, mer);
-        BOOST_CHECK_EQUAL(cur_reward != 0, mer);
+        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num && ratings[u].second > 0, last_top_date != time_point());
+        BOOST_CHECK_EQUAL(cur_reward != 0, last_top_date != time_point());
         BOOST_CHECK(cur_reward <= prev_reward);
         prev_reward = cur_reward;
     }
@@ -1128,10 +1128,10 @@ BOOST_FIXTURE_TEST_CASE(a_lot_of_mosaics, commun_publication_tester) try {
     
     BOOST_TEST_MESSAGE("--- maybe one meritorious mosaic added");
     auto mosaic = get_mosaic(_code, _point, mssgid{authors[ratings[cfg::def_rewarded_mosaic_num].first].first, "permlink"}.tracery());
-    BOOST_CHECK_EQUAL(ratings[cfg::def_rewarded_mosaic_num].second > 0, mosaic["meritorious"].as<bool>());
+    BOOST_CHECK_EQUAL(ratings[cfg::def_rewarded_mosaic_num].second > 0, mosaic["last_top_date"].as<time_point>() != time_point());
     BOOST_CHECK_EQUAL(0, mosaic["reward"].as<int64_t>());
-    BOOST_CHECK_EQUAL(false, 
-        get_mosaic(_code, _point, mssgid{authors[ratings[cfg::def_rewarded_mosaic_num + 1].first].first, "permlink"}.tracery())["meritorious"].as<bool>());
+    BOOST_CHECK_EQUAL(std::string(time_point()),
+        get_mosaic(_code, _point, mssgid{authors[ratings[cfg::def_rewarded_mosaic_num + 1].first].first, "permlink"}.tracery())["last_top_date"].as<std::string>());
 
 } FC_LOG_AND_RETHROW()
 
@@ -1170,9 +1170,9 @@ BOOST_FIXTURE_TEST_CASE(resize, commun_publication_tester) try {
         auto tracery = mssgid{authors[u].first, "permlink"}.tracery();
         auto mosaic = get_mosaic(_code, _point, tracery);
         BOOST_CHECK_EQUAL(0, mosaic["reward"].as<int64_t>());
-        auto mer = mosaic["meritorious"].as<bool>();
-        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", meritorious = " << mer);
-        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num, mer);
+        auto last_top_date = mosaic["last_top_date"].as<std::string>();
+        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", last_top_date = " << last_top_date);
+        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num, last_top_date != std::string(time_point()));
     }
     
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
@@ -1188,9 +1188,9 @@ BOOST_FIXTURE_TEST_CASE(resize, commun_publication_tester) try {
         auto mosaic = get_mosaic(_code, _point, tracery);
         auto cur_reward = mosaic["reward"].as<int64_t>();
         BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num, cur_reward != 0);
-        auto mer = mosaic["meritorious"].as<bool>();
-        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", meritorious = " << mer<< ", reward = " << cur_reward);
-        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 2, mer);
+        auto last_top_date = mosaic["last_top_date"].as<std::string>();
+        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", last_top_date = " << last_top_date << ", reward = " << cur_reward);
+        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 2, last_top_date != std::string(time_point()));
     }
     
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
@@ -1206,9 +1206,9 @@ BOOST_FIXTURE_TEST_CASE(resize, commun_publication_tester) try {
         auto mosaic = get_mosaic(_code, _point, tracery);
         auto cur_reward = mosaic["reward"].as<int64_t>();
         BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 1, cur_reward != 0);
-        auto mer = mosaic["meritorious"].as<bool>();
-        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", meritorious = " << mer<< ", reward = " << cur_reward);
-        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 2, mer);
+        auto last_top_date = mosaic["last_top_date"].as<std::string>();
+        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", last_top_date = " << last_top_date << ", reward = " << cur_reward);
+        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 2, last_top_date != std::string(time_point()));
     }
 
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
@@ -1223,10 +1223,10 @@ BOOST_FIXTURE_TEST_CASE(resize, commun_publication_tester) try {
         auto tracery = mssgid{authors[u].first, "permlink"}.tracery();
         auto mosaic = get_mosaic(_code, _point, tracery);
         auto cur_reward = mosaic["reward"].as<int64_t>();
-        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 2, cur_reward != 0);
-        auto mer = mosaic["meritorious"].as<bool>();
-        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", meritorious = " << mer<< ", reward = " << cur_reward);
-        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 4, mer);
+        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 1, cur_reward != 0);
+        auto last_top_date = mosaic["last_top_date"].as<std::string>();
+        BOOST_TEST_MESSAGE("--- tracery " << tracery << ": rank = " << u << ", last_top_date = " << last_top_date << ", reward = " << cur_reward);
+        BOOST_CHECK_EQUAL(u < cfg::def_rewarded_mosaic_num + 4, last_top_date != std::string(time_point()));
     }
     
 } FC_LOG_AND_RETHROW()
@@ -1279,9 +1279,9 @@ BOOST_FIXTURE_TEST_CASE(unlocked, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(0, get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["reward"].as<int64_t>());
     BOOST_CHECK_EQUAL(0, get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["reward"].as<int64_t>());
     
-    BOOST_CHECK_EQUAL(true, get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["meritorious"].as<int64_t>());
-    BOOST_CHECK_EQUAL(false, get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["meritorious"].as<int64_t>());
-    BOOST_CHECK_EQUAL(false, get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["meritorious"].as<int64_t>());
+    BOOST_CHECK_NE(std::string(time_point()), get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["last_top_date"].as<std::string>());
+    BOOST_CHECK_EQUAL(std::string(time_point()), get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["last_top_date"].as<std::string>());
+    BOOST_CHECK_EQUAL(std::string(time_point()), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["last_top_date"].as<std::string>());
     
 } FC_LOG_AND_RETHROW()
 
