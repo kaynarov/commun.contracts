@@ -1268,12 +1268,12 @@ BOOST_FIXTURE_TEST_CASE(unlocked, commun_publication_tester) try {
     produce_block();
     BOOST_CHECK_EQUAL(success(), post.unlock(N(jackiechan), {N(alice), "facelift"}, "no reason"));
     produce_block();
-    produce_block(fc::seconds(mosaic_active_period - block_interval));
+    produce_block(fc::seconds(cfg::def_collection_period - block_interval));
     BOOST_CHECK_EQUAL(success(), post.create({N(jackiechan), "it-is-a-masterpiece"}, {N(alice), "alice-in-blockchains"}));
     
     BOOST_CHECK_EQUAL(uint8_t(ACTIVE), get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["status"].as<uint8_t>());
     BOOST_CHECK_EQUAL(uint8_t(LOCKED), get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["status"].as<uint8_t>());
-    BOOST_CHECK_EQUAL(uint8_t(ARCHIVED), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["status"].as<uint8_t>());
+    BOOST_CHECK_EQUAL(uint8_t(MODERATE), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["status"].as<uint8_t>());
     
     BOOST_CHECK_EQUAL(0, get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["reward"].as<int64_t>());
     BOOST_CHECK_EQUAL(0, get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["reward"].as<int64_t>());
@@ -1282,6 +1282,11 @@ BOOST_FIXTURE_TEST_CASE(unlocked, commun_publication_tester) try {
     BOOST_CHECK_NE(std::string(time_point()), get_mosaic(_code, _point, mssgid{N(alice), "facelift"}.tracery())["last_top_date"].as<std::string>());
     BOOST_CHECK_EQUAL(std::string(time_point()), get_mosaic(_code, _point, mssgid{N(alice), "dirt"}.tracery())["last_top_date"].as<std::string>());
     BOOST_CHECK_EQUAL(std::string(time_point()), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["last_top_date"].as<std::string>());
+
+    produce_block();
+    produce_block(fc::seconds(cfg::def_moderation_period + cfg::def_extra_reward_period - block_interval));
+    BOOST_CHECK_EQUAL(success(), post.create({N(jackiechan), "it-is-a-done"}, {N(alice), "alice-in-blockchains"}));
+    BOOST_CHECK_EQUAL(uint8_t(ARCHIVED), get_mosaic(_code, _point, mssgid{N(alice), "alice-in-blockchains"}.tracery())["status"].as<uint8_t>());
     
 } FC_LOG_AND_RETHROW()
 

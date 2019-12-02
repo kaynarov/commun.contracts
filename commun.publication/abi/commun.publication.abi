@@ -645,7 +645,9 @@
                 { "name": "byleadrating", "unique": "false", "orders": [
                     {"field": "lead_rating", "order": "desc"}, {"field": "comm_rating", "order": "desc"} ] },
                 { "name": "bydate", "unique": "false", "orders": [
-                    {"field": "deactivated_xor_locked", "order": "desc"}, {"field": "collection_end_date", "order": "asc"} ] }
+                    {"field": "deactivated_xor_locked", "order": "desc"}, {"field": "collection_end_date", "order": "asc"} ] },
+                { "name": "bystatus", "unique": "false", "orders": [
+                    {"field": "status", "order": "desc"}, {"field": "collection_end_date", "order": "asc"} ] }
             ]
         },{
             "name": "gem",
