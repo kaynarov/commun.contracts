@@ -1083,11 +1083,9 @@ protected:
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);
-        auto& community = commun_list::get_community(commun_code);
-        auto now = eosio::current_time_point();
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
         eosio::check(!mosaic->banned(), "mosaic is already banned");
-        eosio::check(mosaic->collection_end_date + eosio::seconds(community.moderation_period) >= now, "mosaic moderation period is ended");
+        eosio::check(mosaic->status != gallery_types::mosaic::ARCHIVED, "mosaic is archived");
         mosaics_table.modify(mosaic, name(), [&](auto& item) {
             item.status = item.hidden() ? gallery_types::mosaic::BANNED_AND_HIDDEN : gallery_types::mosaic::BANNED;
         });
