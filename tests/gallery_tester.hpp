@@ -8,7 +8,7 @@ public:
     gallery_tester(name code, bool push_genesis = true)
         : golos_tester(code, push_genesis) {
     }
-    enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED, HIDDEN, BANNED_AND_HIDDEN };
+    enum status_t: uint8_t { ACTIVE, MODERATE, ARCHIVED, LOCKED, BANNED, HIDDEN, BANNED_AND_HIDDEN };
 
     struct gallery_errors : contract_error_messages {
         const string no_balance = amsg("point balance does not exist");
