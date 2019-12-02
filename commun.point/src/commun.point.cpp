@@ -185,9 +185,16 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
     check(quantity.symbol == config::reserve_token, "invalid reserve token symbol");
     const size_t memo_size = memo.size();
     if (memo_size) {
-        const size_t pref_size = config::restock_prefix.size();
-        bool restock = (memo_size >= pref_size) && memo.substr(0, pref_size) == config::restock_prefix;
-        auto commun_code = symbol_code(restock ? memo.substr(pref_size).c_str() : memo.c_str());
+        symbol_code commun_code;
+        bool restock = false;
+        const auto min_order = get_min_order(memo);
+        if (min_order) {
+            commun_code = min_order->symbol.code();
+        } else {
+            const size_t pref_size = config::restock_prefix.size();
+            restock = (memo_size >= pref_size) && memo.substr(0, pref_size) == config::restock_prefix;
+            commun_code = symbol_code(restock ? memo.substr(pref_size).c_str() : memo);
+        }
 
         params params_table(_self, _self.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
@@ -200,6 +207,8 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
             add_tokens = calc_token_quantity(param, stat, quantity);
             check(add_tokens.amount > 0, "these tokens cost zero points");
             check(add_tokens.amount <= param.max_supply.amount - stat.supply.amount, "quantity exceeds available supply");
+            check(!min_order || min_order->symbol == add_tokens.symbol, "symbol precision mismatch");
+            check(!min_order || add_tokens >= *min_order, "converted value is lesser than minimum order");
             check(balance_exists(from, commun_code), "balance of from not opened");
             add_balance(from, add_tokens, from);
             send_exchange_event(add_tokens);
@@ -347,11 +356,15 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
         add_balance(to, quantity, payer);
     }
     else {
+        auto min_order = get_min_order(memo);
+
         sub_balance(from, quantity);
 
         asset fee_quantity(0, config::reserve_token);
         auto sub_reserve = calc_reserve_quantity(param, stat, quantity, &fee_quantity);
         check(sub_reserve.amount > 0, "these points cost zero tokens");
+        check(!min_order || min_order->symbol == config::reserve_token, "invalid reserve token symbol");
+        check(!min_order || sub_reserve >= *min_order, "converted value is lesser than minimum order");
         stats_table.modify(stat, same_payer, [&](auto& s) {
             s.reserve -= sub_reserve;
             s.supply -= quantity;

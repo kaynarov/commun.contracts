@@ -43,6 +43,7 @@ static const auto active_name = "active"_n;
 static const auto super_majority_name = "lead.smajor"_n;
 static const auto majority_name = "lead.major"_n;
 static const auto minority_name = "lead.minor"_n;
+static const auto recovery_name = "lead.recover"_n;
 
 static const auto client_permission_name = "clientperm"_n;
 

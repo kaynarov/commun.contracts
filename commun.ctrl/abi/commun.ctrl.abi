@@ -39,6 +39,12 @@
                 {"type": "name",   "name": "leader"}
             ]
         }, {
+            "name": "emit",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "commun_code"}
+            ]
+        }, {
             "name": "voteleader",
             "base": "",
             "fields": [
@@ -242,6 +248,12 @@
             ]
         },
         {
+            "name": "setrecover",
+            "base": "",
+            "fields": [
+            ]
+        },
+        {
             "name": "invalidation",
             "base": "",
             "fields": [
@@ -410,6 +422,9 @@
             "name": "claim",
             "type": "leader_name"
         }, {
+            "name": "emit",
+            "type": "emit"
+        }, {
             "name": "changepoints",
             "type": "changepoints"
         },
@@ -428,6 +443,10 @@
         {
             "name": "invalidate",
             "type": "invalidate"
+        },
+        {
+            "name": "setrecover",
+            "type": "setrecover"
         },
         {
             "name": "propose",

@@ -169,6 +169,16 @@
     ]
   },
   {
+    "name": "emit",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      }
+    ]
+  },
+  {
     "name": "create",
     "base": "",
     "fields": [
@@ -545,6 +555,10 @@
     "type": "init"
   },
   {
+    "name": "emit",
+    "type": "emit"
+  },
+  {
     "name": "create",
     "type": "create"
   },
@@ -587,34 +601,6 @@
   {
     "name": "claim",
     "type": "claim_args"
-  },
-  {
-    "name": "hold",
-    "type": "modifygem_args"
-  },
-  {
-    "name": "transfer",
-    "type": "transfer_args"
-  },
-  {
-    "name": "reblog",
-    "type": "reblog"
-  },
-  {
-    "name": "erasereblog",
-    "type": "erasereblog"
-  },
-  {
-    "name": "setproviders",
-    "type": "setproviders_args"
-  },
-  {
-    "name": "provide",
-    "type": "provide_args"
-  },
-  {
-    "name": "advise",
-    "type": "advise_args"
   },
   {
     "name": "ban",

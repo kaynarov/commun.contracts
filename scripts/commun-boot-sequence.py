@@ -28,6 +28,7 @@ _communAccounts = [
             ('lead.smajor',  [], ['c.ctrl@cyber.code'], []),
             ('lead.major',   [], ['c.ctrl@cyber.code'], []),
             ('lead.minor',   [], ['c.ctrl@cyber.code'], []),
+            ('lead.recover', [], ['c@active'], []), # empty auth, active is just filler
             ('clients',      [], ['c.com@c.com'], ['cyber.domain:newusername']),
             ('providebw',    [], ['c@clients'], ['cyber:providebw', 'c.point:open']),
         ]),
@@ -43,6 +44,7 @@ _communAccounts = [
     ('c.ctrl',    'commun.ctrl',          None, [
             ('changepoints', [], ['c.point@cyber.code'], [':changepoints']),
             ('init',         [], ['c.list@cyber.code'], [':init']),
+            ('clients',      [], ['c@clients'], [':emit']),
             ('transferperm', [], ['c.ctrl@cyber.code'], ['c.point:transfer']),
         ]),
     ('c.emit',    'commun.emit',          None, [
@@ -53,7 +55,7 @@ _communAccounts = [
             ('clients',      [], ['c@clients'], [':create',':setsysparams',':follow',':unfollow',':hide',':unhide']),
         ]),
     ('c.gallery', 'commun.publication',   ['commun.gallery'],  [
-            ('clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog']),
+            ('clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog',':emit']),
             ('init',         [], ['c.list@cyber.code'], [':init']),
             ('transferperm', [], ['c.gallery@cyber.code'], ['c.point:transfer']),
         ]),
@@ -162,7 +164,7 @@ def configureCommun():
         }, providebw='c.list/c')
 
     c = getAccount('c')
-    updateAuth('c', 'active', 'owner', [], ['c@lead.smajor'])
+    updateAuth('c', 'active', 'owner', [], ['c@lead.smajor', 'c@lead.recover'])
 
 # -------------------- Argument parser ----------------------------------------
 # Command Line Arguments

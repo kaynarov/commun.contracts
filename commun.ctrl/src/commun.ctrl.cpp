@@ -10,6 +10,7 @@
 #include <eosio/event.hpp>
 #include <eosio/permission.hpp>
 #include <eosio/crypto.hpp>
+#include <cyber.bios/cyber.bios.hpp>
 
 namespace commun {
 
@@ -222,6 +223,13 @@ void control::claim(symbol_code commun_code, name leader) {
     leader_table.modify(leader_it, eosio::same_payer, [&](auto& w) {
         w.unclaimed_points = 0;
     });
+}
+
+void control::emit(symbol_code commun_code) {
+    check_started(commun_code);
+    require_auth(_self);
+
+    emit::issue_reward(commun_code, _self);
 }
 
 int64_t control::get_power(symbol_code commun_code, name voter, uint16_t pct = config::_100percent) {
@@ -485,6 +493,26 @@ void control::invalidate(name account) {
     }
 }
 
+void control::setrecover() {
+    require_auth(_self);
+
+    cyber::authority auth;
+
+    auto top = top_leaders(symbol_code());
+    std::sort(top.begin(), top.end());
+
+    for (const auto& i : top) {
+        auth.accounts.push_back({{i,config::active_name},1});
+    }
+
+    auth.threshold = get_required(symbol_code(), config::super_majority_name);
+    action(
+        permission_level{config::dapp_name, config::active_name},
+        config::internal_name, "updateauth"_n,
+        std::make_tuple(config::dapp_name, config::recovery_name, config::active_name, auth)
+    ).send();
+}
+
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_transfer,
@@ -493,6 +521,6 @@ DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_tr
     (startleader)(stopleader)
     (voteleader)(unvotelead)
     (clearvotes)
-    (claim)(changepoints)
-    (propose)(approve)(unapprove)(cancel)(exec)(invalidate)
+    (claim)(emit)(changepoints)
+    (propose)(approve)(unapprove)(cancel)(exec)(invalidate)(setrecover)
     )

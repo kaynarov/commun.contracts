@@ -7,7 +7,13 @@
 namespace commun {
 
 void publication::init(symbol_code commun_code) {
+    require_auth(_self);
     init_gallery(_self, commun_code);
+}
+
+void publication::emit(symbol_code commun_code) {
+    require_auth(_self);
+    emit_for_gallery(_self, commun_code);
 }
 
 void publication::create(
@@ -54,7 +60,7 @@ void publication::create(
             eosio::check(!mosaic.hidden(), "Parent message removed.");
         }
         else {
-            check_auth("Parent message doesn't exist");
+            require_client_auth("Parent message doesn't exist");
             parent_tracery = 0;
         }
     }
@@ -93,21 +99,22 @@ void publication::create(
 void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
-    if (check_mssg_exists(commun_code, message_id, message_id.author)) {
+    require_auth(message_id.author);
+    if (check_mssg_exists(commun_code, message_id)) {
         update_mosaic(_self, commun_code, message_id.tracery());
     }
 }
 
 void publication::settags(symbol_code commun_code, name leader, mssgid_t message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason) {
-    require_auth(leader);
+    control::require_leader_auth(commun_code, leader);
     eosio::check(!add_tags.empty() || !remove_tags.empty(), "No changes in tags.");
-    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     check_mssg_exists(commun_code, message_id);
 }
 
 void publication::remove(symbol_code commun_code, mssgid_t message_id) {
-    if (check_mssg_exists(commun_code, message_id, message_id.author)) {
+    require_auth(message_id.author);
+    if (check_mssg_exists(commun_code, message_id)) {
         auto tracery = message_id.tracery();
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -128,7 +135,7 @@ void publication::remove(symbol_code commun_code, mssgid_t message_id) {
 
 void publication::report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason) {
     require_auth(reporter);
-    require_auth(_self); // functionality of a client
+    require_client_auth();
     eosio::check(!reason.empty(), "Reason cannot be empty.");
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -138,39 +145,47 @@ void publication::report(symbol_code commun_code, name reporter, mssgid_t messag
 }
 
 void publication::lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    control::require_leader_auth(commun_code, leader);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    lock_mosaic(_self, commun_code, leader, message_id.tracery());
+    set_lock_status(_self, commun_code, message_id.tracery(), true);
 }
 
 void publication::unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+    control::require_leader_auth(commun_code, leader);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
-    unlock_mosaic(_self, commun_code, leader, message_id.tracery());
+    set_lock_status(_self, commun_code, message_id.tracery(), false);
 }
 
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
+    require_auth(voter);
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, false);
 }
 
 void publication::downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
+    require_auth(voter);
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, true);
 }
 
 void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_id) {
-    if (check_mssg_exists(commun_code, message_id, voter)) {
+    require_auth(voter);
+    if (check_mssg_exists(commun_code, message_id)) {
         eosio::check(voter != message_id.author, "author can't unvote");
         if (!claim_gems_by_creator(_self, message_id.tracery(), commun_code, voter, true, false)) {
-            check_auth("vote doesn't exist", voter);
+            require_client_auth("Vote doesn't exist");
         }
     }
 }
 
 void publication::hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator) {
+    require_auth(gem_owner);
     hold_gem(_self, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner));
 }
 
 void publication::transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient) {
+    require_auth(gem_owner);
+    require_auth(recipient);
     transfer_gem(_self, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), recipient);
 }
 
@@ -181,9 +196,8 @@ void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_o
 }
 
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, std::optional<uint16_t> weight, bool damn) {
-    
     if (weight.has_value() && *weight == 0) { 
-        check_auth("weight can't be 0.", voter); // empty votes are allowed only with a client signature
+        require_client_auth("Weight equal to 0");   // empty votes are allowed only with a client signature
         return;                                  // custom_gem_size_enabled is not checked in this case
     }
     
@@ -193,15 +207,15 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaic = mosaics_table.find(message_id.tracery());
     if (mosaic == mosaics_table.end()) {
-        check_auth("Message does not exist.", voter);
+        require_client_auth("Message does not exist");
         return;
     }
     if (mosaic->status != gallery_types::mosaic::ACTIVE) {
-        check_auth("Mosaic is inactive.", voter);
+        require_client_auth("Mosaic is inactive");
         return;
     }
     if (eosio::current_time_point() > mosaic->collection_end_date) {
-        check_auth("collection period is over", voter);
+        require_client_auth("Collection period is over");
         return;
     }
     auto gems_per_period = get_gems_per_period(commun_code);
@@ -217,7 +231,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     auto providers = get_providers(commun_code, voter, gems_per_period, weight);
     
     if ((providers.size() + 1) * community.get_opus(mosaic->opus).min_gem_inclusion > get_points_sum(quantity.amount, providers)) {
-        check_auth("points are not enough for gem inclusion", voter);
+        require_client_auth("Points are not enough for gem inclusion");
         return;
     }
     
@@ -226,7 +240,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
 
 void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {
     require_auth(rebloger);
-    require_auth(_self); // functionality of a client
+    require_client_auth();
 
     eosio::check(rebloger != message_id.author, "You cannot reblog your own content.");
     eosio::check(header.length() < config::max_length, "Title length is more than 256.");
@@ -238,7 +252,8 @@ void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t messag
 
 void publication::erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id) {
     require_auth(rebloger);
-    require_auth(_self); // functionality of a client
+    require_client_auth();
+
     eosio::check(rebloger != message_id.author, "You cannot erase reblog your own content.");
 }
 
@@ -255,18 +270,17 @@ bool publication::validate_permlink(std::string permlink) {
     return true;
 }
 
-bool publication::check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id, name actor) {
+bool publication::check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id) {
     vertices vertices_table(_self, commun_code.raw());
     if (vertices_table.find(message_id.tracery()) == vertices_table.end()) {
-        check_auth("Message does not exist.", actor);
+        require_client_auth("Message does not exist");
         return false;
     }
     return true;
 }
 
-void publication::check_auth(const std::string& s, name actor) {
-    if (actor != name()) { require_auth(actor); }
-    eosio::check(has_auth(_self), "Missing authority of _self. " + s);
+void publication::require_client_auth(const std::string& s) {
+    eosio::check(has_auth(_self), s + " and missing authority of _self");
 }
 
 
@@ -347,10 +361,12 @@ void publication::setproviders(symbol_code commun_code, name recipient, std::vec
 }
 
 void publication::provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
+    require_auth(grantor);
     provide_points(_self, grantor, recipient, quantity, fee);
 }
 
 void publication::advise(symbol_code commun_code, name leader, std::set<mssgid_t> favorites) {
+    control::require_leader_auth(commun_code, leader);
     std::set<uint64_t> favorite_mosaics;
     for (const auto& m : favorites) {
         favorite_mosaics.insert(m.tracery());
@@ -359,11 +375,14 @@ void publication::advise(symbol_code commun_code, name leader, std::set<mssgid_t
 }
 
 void publication::ban(symbol_code commun_code, mssgid_t message_id) {
+    require_auth(point::get_issuer(commun_code));
     ban_mosaic(_self, commun_code, message_id.tracery());
 }
 
 } // commun
 
 DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (init)(create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
-    (claim)(hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise)(ban))
+    (init)(emit)(create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
+    (claim)
+    // (hold)(transfer)(reblog)(erasereblog)(setproviders)(provide)(advise) // TODO: removed from MVP
+    (ban))

@@ -89,6 +89,12 @@
                 { "type": "symbol_code",            "name": "commun_code" }
             ]
         },{
+            "name": "emit_args",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" }
+            ]
+        },{
             "name": "createmosaic_args",
             "base": "",
             "fields": [
@@ -239,6 +245,10 @@
             "type": "init_args"
         },
         {
+            "name": "emit",
+            "type": "emit_args"
+        },
+        {
             "name": "createmosaic",
             "type": "createmosaic_args"
         },
@@ -249,22 +259,6 @@
         {
             "name": "claim",
             "type": "claim_args"
-        },
-        {
-            "name": "hold",
-            "type": "modifygem_args"
-        },
-        {
-            "name": "transfer",
-            "type": "transfer_args"
-        },
-        {
-            "name": "provide",
-            "type": "provide_args"
-        },
-        {
-            "name": "advise",
-            "type": "advise_args"
         },
         {
             "name": "update",

@@ -603,22 +603,30 @@ private:
             }
         }
         
-        if (!pre_shares_sum) {
-            return 0;
-        }
-        
         int64_t ret = 0;
         
         for (auto gem_itr = first_gem_itr; (gem_itr != gems_idx.end()) && 
                                            (gem_itr->tracery == tracery) && 
                                            (gem_itr->creator == mosaic_creator); ++gem_itr) {
+            int64_t cur_shares = 0;
+            
             if (gem_itr->shares > 0) {
-                int64_t cur_shares = safe_prop(shares, gem_itr->shares, pre_shares_sum);
+                cur_shares = safe_prop(shares, gem_itr->shares, pre_shares_sum);
+            }
+            else if (!pre_shares_sum && gem_itr->owner == mosaic_creator) {
+                cur_shares = shares;
+            }
+            
+            if (cur_shares > 0) {
                 gems_idx.modify(gem_itr, name(), [&](auto& item) {
                     item.shares += cur_shares;
                 });
                 send_gem_event(_self, commun_symbol, *gem_itr);
                 ret += cur_shares;
+                
+                if (ret == shares) {
+                    break;
+                }
             }
         }
         
@@ -860,7 +868,6 @@ protected:
     }
 
     void init_gallery(name _self, symbol_code commun_code) {
-        require_auth(_self);
         commun_list::check_community_exists(commun_code);
 
         gallery_types::stats stats_table(_self, commun_code.raw());
@@ -869,6 +876,10 @@ protected:
         stats_table.emplace(_self, [&](auto& s) { s = {
             .id = commun_code.raw(),
         };});
+    }
+
+    void emit_for_gallery(name _self, symbol_code commun_code) {
+        emit::issue_reward(commun_code, _self);
     }
 
     void create_mosaic(name _self, name creator, uint64_t tracery, name opus,
@@ -1032,9 +1043,6 @@ protected:
     }
     
     void advise_mosaics(name _self, symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
-        require_auth(leader);
-        commun_list::check_community_exists(commun_code);
-        eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
         eosio::check(favorites.size() <= config::advice_weight.size(), "a surfeit of advice");
         
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
@@ -1082,9 +1090,7 @@ protected:
         });
     }
     
-    void set_lock_status(name _self, symbol_code commun_code, name leader, uint64_t tracery, bool lock) {
-        require_auth(leader);
-        check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+    void set_lock_status(name _self, symbol_code commun_code, uint64_t tracery, bool lock) {
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
@@ -1099,18 +1105,7 @@ protected:
         });
     }
 
-    void lock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
-        set_lock_status(_self, commun_code, leader, tracery, true);
-        
-    }
-
-    void unlock_mosaic(name _self, symbol_code commun_code, name leader, uint64_t tracery) {
-        set_lock_status(_self, commun_code, leader, tracery, false);
-    }
-
     void ban_mosaic(name _self, symbol_code commun_code, uint64_t tracery) {
-        require_auth(point::get_issuer(commun_code));
-        
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
@@ -1132,28 +1127,38 @@ protected:
     }
 };
 
-class [[eosio::contract("comn.gallery")]] gallery : public gallery_base<gallery>, public contract {
+class gallery : public gallery_base<gallery>, public contract {
 public:
     using contract::contract;
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
 
     [[eosio::action]] void init(symbol_code commun_code) {
+        require_auth(_self);
         init_gallery(_self, commun_code);
     }
 
+    [[eosio::action]] void emit(symbol_code commun_code) {
+        require_auth(_self);
+        emit_for_gallery(_self, commun_code);
+    }
+
     [[eosio::action]] void createmosaic(name creator, uint64_t tracery, name opus, asset quantity, uint16_t royalty, gallery_types::providers_t providers) {
+        require_auth(creator);
         create_mosaic(_self, creator, tracery, opus, quantity, royalty, providers);
     }
 
     [[eosio::action]] void addtomosaic(uint64_t tracery, asset quantity, bool damn, name gem_creator, gallery_types::providers_t providers) {
+        require_auth(gem_creator);
         add_to_mosaic(_self, tracery, quantity, damn, gem_creator, providers);
     }
     
-    [[eosio::action]] void hold(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
+    // [[eosio::action]] // TODO: removed from MVP
+    void hold(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator) {
         hold_gem(_self, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner));
     }
     
-    [[eosio::action]] void transfer(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient) {
+    // [[eosio::action]] // TODO: removed from MVP
+    void transfer(uint64_t tracery, symbol_code commun_code, name gem_owner, std::optional<name> gem_creator, name recipient) {
         transfer_gem(_self, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), recipient);
     }
     
@@ -1162,14 +1167,17 @@ public:
         claim_gem(_self, tracery, commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
     }
     
-    [[eosio::action]] void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
+    // [[eosio::action]] // TODO: removed from MVP
+    void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee) {
         provide_points(_self, grantor, recipient, quantity, fee);
     }
-    
-    [[eosio::action]] void advise(symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
+
+    // [[eosio::action]] // TODO: removed from MVP
+    void advise(symbol_code commun_code, name leader, std::set<uint64_t> favorites) {
+        control::require_leader_auth(commun_code, leader);
         advise_mosaics(_self, commun_code, leader, favorites);
     }
-    
+
     //TODO: [[eosio::action]] void checkadvice (symbol_code commun_code, name leader);
 
     [[eosio::action]] void update(symbol_code commun_code, uint64_t tracery) {
@@ -1177,16 +1185,19 @@ public:
     }
 
     [[eosio::action]] void lock(symbol_code commun_code, name leader, uint64_t tracery, string reason) {
+        control::require_leader_auth(commun_code, leader);
         eosio::check(!reason.empty(), "Reason cannot be empty.");
-        lock_mosaic(_self, commun_code, leader, tracery);
+        set_lock_status(_self, commun_code, tracery, true);
     }
 
     [[eosio::action]] void unlock(symbol_code commun_code, name leader, uint64_t tracery, string reason) {
+        control::require_leader_auth(commun_code, leader);
         eosio::check(!reason.empty(), "Reason cannot be empty.");
-        unlock_mosaic(_self, commun_code, leader, tracery);
+        set_lock_status(_self, commun_code, tracery, false);
     }
 
     [[eosio::action]] void ban(symbol_code commun_code, uint64_t tracery) {
+        require_auth(_self);
         ban_mosaic(_self, commun_code, tracery);
     }
 
@@ -1201,4 +1212,6 @@ public:
     
 } /// namespace commun
 
-#define GALLERY_ACTIONS (init)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
+// TODO: removed from MVP
+// #define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
+#define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(claim)(update)(lock)(unlock)(ban)(hide)

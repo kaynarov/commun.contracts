@@ -22,14 +22,14 @@ parser.add_argument('--fee', metavar='', help="FEE parameter for community point
 args = None
 args = parser.parse_args()
 
-commun_code = Asset(args.reserve_amount).symbol.code
+commun_code = Asset.fromstr(args.reserve_amount).symbol.code
 
 owner = community.createCommunity(
     community_name  = args.community_name,
     creator_auth    = args.creator_auth,
     creator_key     = args.creator_key,
-    maximum_supply  = Asset(args.maximum_supply),
-    reserve_amount  = Asset(args.reserve_amount),
+    maximum_supply  = Asset.fromstr(args.maximum_supply),
+    reserve_amount  = Asset.fromstr(args.reserve_amount),
     cw              = args.cw,
     fee             = args.fee)
 

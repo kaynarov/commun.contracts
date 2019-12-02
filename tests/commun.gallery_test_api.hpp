@@ -41,7 +41,7 @@ public:
         
         return push(N(addtomosaic), gem_creator, a);
     }
-      
+    
     action_result claim(uint64_t tracery, account_name gem_owner, 
                     account_name gem_creator = account_name(), bool eager = false, account_name signer = account_name()) {
         auto a = args()
@@ -57,53 +57,57 @@ public:
         
         return push(N(claim), signer ? signer : gem_owner, a);
     }
-    
-    action_result hold(uint64_t tracery, account_name gem_owner, account_name gem_creator = account_name()) {
-        auto a = args()
-            ("tracery", tracery)
-            ("commun_code", _symbol.to_symbol_code())
-            ("gem_owner", gem_owner);
-        if (gem_creator) {
-            a("gem_creator", gem_creator);
-        }
-        return push(N(hold), gem_owner, a);
-    }
-    
-    action_result transfer(uint64_t tracery, account_name gem_owner, 
-                        account_name gem_creator, account_name recipient, bool recipient_sign = true) {
-        auto a = args()
-            ("tracery", tracery)
-            ("commun_code", _symbol.to_symbol_code())
-            ("gem_owner", gem_owner);
-        if (gem_creator) {
-            a("gem_creator", gem_creator);
-        }
-        a("recipient", recipient);
-        
-        return recipient_sign ? 
-            push_msig(N(transfer), {{gem_owner, config::active_name}, {recipient, config::active_name}}, {gem_owner, recipient}, a) :
-            push(N(transfer), gem_owner, a);
-    }
-    
-    action_result provide(account_name grantor, account_name recipient, asset quantity, 
-                                    std::optional<uint16_t> fee = std::optional<uint16_t>()) {
-        auto a = args()
-            ("grantor", grantor)
-            ("recipient", recipient)
-            ("quantity", quantity);
-        if (fee.has_value()) {
-            a("fee", *fee);
-        }
-        return push(N(provide), grantor, a);
-    }
 
-    action_result advise(account_name leader, std::vector<uint64_t> favorites) { // vector is to test if duplicated
-        return push(N(advise), leader, args()
-            ("commun_code", _symbol.to_symbol_code())
-            ("leader", leader)
-            ("favorites", favorites)
-        );
-    }
+    // TODO: removed from MVP
+    // action_result hold(uint64_t tracery, account_name gem_owner, account_name gem_creator = account_name()) {
+    //     auto a = args()
+    //         ("tracery", tracery)
+    //         ("commun_code", _symbol.to_symbol_code())
+    //         ("gem_owner", gem_owner);
+    //     if (gem_creator) {
+    //         a("gem_creator", gem_creator);
+    //     }
+    //     return push(N(hold), gem_owner, a);
+    // }
+
+    // TODO: removed from MVP
+    // action_result transfer(uint64_t tracery, account_name gem_owner, 
+    //                     account_name gem_creator, account_name recipient, bool recipient_sign = true) {
+    //     auto a = args()
+    //         ("tracery", tracery)
+    //         ("commun_code", _symbol.to_symbol_code())
+    //         ("gem_owner", gem_owner);
+    //     if (gem_creator) {
+    //         a("gem_creator", gem_creator);
+    //     }
+    //     a("recipient", recipient);
+        
+    //     return recipient_sign ? 
+    //         push_msig(N(transfer), {{gem_owner, config::active_name}, {recipient, config::active_name}}, {gem_owner, recipient}, a) :
+    //         push(N(transfer), gem_owner, a);
+    // }
+
+    // TODO: removed from MVP
+    // action_result provide(account_name grantor, account_name recipient, asset quantity, 
+    //                                 std::optional<uint16_t> fee = std::optional<uint16_t>()) {
+    //     auto a = args()
+    //         ("grantor", grantor)
+    //         ("recipient", recipient)
+    //         ("quantity", quantity);
+    //     if (fee.has_value()) {
+    //         a("fee", *fee);
+    //     }
+    //     return push(N(provide), grantor, a);
+    // }
+
+    // TODO: removed from MVP
+    // action_result advise(account_name leader, std::vector<uint64_t> favorites) { // vector is to test if duplicated
+    //     return push(N(advise), leader, args()
+    //         ("commun_code", _symbol.to_symbol_code())
+    //         ("leader", leader)
+    //         ("favorites", favorites)
+    //     );
+    // }
 
     action_result update(account_name creator, uint64_t tracery) {
         return push(N(update), creator, args()

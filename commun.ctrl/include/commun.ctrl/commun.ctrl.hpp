@@ -278,6 +278,15 @@ public:
     [[eosio::action]] void claim(symbol_code commun_code, name leader);
 
     /**
+        \brief The \ref emit action is used to emit rewards for community leaders
+
+        \param commun_code a point symbol of the community
+
+        This action requires a signature of the client.
+    */
+    [[eosio::action]] void emit(symbol_code commun_code);
+
+    /**
         \brief The \ref changepoints action is an internal and unavailable to the user. It is used by \a commun.point to notify the \a commun.ctrl smart contract about a change of the points amount on the user's balance. The action is called automatically after changing the points amount on a user's balance. The \a weights of all the leaders voted for by this user are also updated.
 
         \param who an account name whose points amount has been changed.
@@ -374,6 +383,13 @@ public:
     */
     [[eosio::action]] void invalidate(name account);
 
+    /**
+        \brief The \ref setrecover action is used to create dApp authority before danger operations which can cause dApp leaders lose access to commun.ctrl multisignature transactions.
+
+        This action requires a signature of most validators.
+    */
+    [[eosio::action]] void setrecover();
+
 private:
     void check_started(symbol_code commun_code);
     uint8_t get_required(symbol_code commun_code, name permission);
@@ -412,6 +428,11 @@ public:
             }
         }
         return false;
+    }
+
+    static inline void require_leader_auth(symbol_code commun_code, name leader) {
+        require_auth(leader);
+        eosio::check(in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
     }
 };
 

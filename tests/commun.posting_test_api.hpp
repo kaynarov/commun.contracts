@@ -116,33 +116,35 @@ struct commun_posting_api: base_contract_api {
         return push_maybe_msig(N(report), reporter, a, client);
     }
 
-    action_result reblog(
-        account_name rebloger,
-        account_name client,
-        mssgid message_id,
-        std::string title = "header",
-        std::string body = "body"
-    ) {
-        auto a = args()
-            ("commun_code", commun_code)
-            ("rebloger", rebloger)
-            ("message_id", message_id)
-            ("header", title)
-            ("body", body);
-        return push_maybe_msig(N(reblog), rebloger, a, client);
-    }
+    // TODO: removed from MVP
+    // action_result reblog(
+    //     account_name rebloger,
+    //     account_name client,
+    //     mssgid message_id,
+    //     std::string title = "header",
+    //     std::string body = "body"
+    // ) {
+    //     auto a = args()
+    //         ("commun_code", commun_code)
+    //         ("rebloger", rebloger)
+    //         ("message_id", message_id)
+    //         ("header", title)
+    //         ("body", body);
+    //     return push_maybe_msig(N(reblog), rebloger, a, client);
+    // }
 
-    action_result erase_reblog(
-        account_name rebloger,
-        account_name client,
-        mssgid message_id
-    ) {
-        auto a = args()
-            ("commun_code", commun_code)
-            ("rebloger", rebloger)
-            ("message_id", message_id);
-        return push_maybe_msig(N(erasereblog), rebloger, a, client);
-    }
+    // TODO: removed from MVP
+    // action_result erase_reblog(
+    //     account_name rebloger,
+    //     account_name client,
+    //     mssgid message_id
+    // ) {
+    //     auto a = args()
+    //         ("commun_code", commun_code)
+    //         ("rebloger", rebloger)
+    //         ("message_id", message_id);
+    //     return push_maybe_msig(N(erasereblog), rebloger, a, client);
+    // }
     
     mvo get_vote_args(account_name voter, mssgid message_id, std::optional<uint16_t> weight = std::optional<uint16_t>()) {
         auto ret = args()
@@ -194,47 +196,51 @@ struct commun_posting_api: base_contract_api {
         return push(N(claim), signer ? signer : gem_owner, a);
     }
 
-    action_result hold(mssgid message_id, account_name gem_owner, account_name gem_creator = account_name()) {
-        auto a = args()
-            ("commun_code", commun_code)
-            ("message_id", message_id)
-            ("gem_owner", gem_owner);
-        if (gem_creator) {
-            a("gem_creator", gem_creator);
-        }
-        return push(N(hold), gem_owner, a);
-    }
+    // TODO: removed from MVP
+    // action_result hold(mssgid message_id, account_name gem_owner, account_name gem_creator = account_name()) {
+    //     auto a = args()
+    //         ("commun_code", commun_code)
+    //         ("message_id", message_id)
+    //         ("gem_owner", gem_owner);
+    //     if (gem_creator) {
+    //         a("gem_creator", gem_creator);
+    //     }
+    //     return push(N(hold), gem_owner, a);
+    // }
 
-    action_result transfer(mssgid message_id, account_name gem_owner, account_name gem_creator, account_name recipient, bool recipient_sign = true) {
-        auto a = args()
-            ("commun_code", commun_code)
-            ("message_id", message_id)
-            ("gem_owner", gem_owner);
-        if (gem_creator) {
-            a("gem_creator", gem_creator);
-        }
-        a("recipient", recipient);
+    // TODO: removed from MVP
+    // action_result transfer(mssgid message_id, account_name gem_owner, account_name gem_creator, account_name recipient, bool recipient_sign = true) {
+    //     auto a = args()
+    //         ("commun_code", commun_code)
+    //         ("message_id", message_id)
+    //         ("gem_owner", gem_owner);
+    //     if (gem_creator) {
+    //         a("gem_creator", gem_creator);
+    //     }
+    //     a("recipient", recipient);
 
-        return recipient_sign ? 
-            push_msig(N(transfer), {{gem_owner, config::active_name}, {recipient, config::active_name}}, {gem_owner, recipient}, a) :
-            push(N(transfer), gem_owner, a);
-    }
+    //     return recipient_sign ? 
+    //         push_msig(N(transfer), {{gem_owner, config::active_name}, {recipient, config::active_name}}, {gem_owner, recipient}, a) :
+    //         push(N(transfer), gem_owner, a);
+    // }
 
-    action_result setproviders(account_name recipient, std::vector<account_name> providers) {
-        return push(N(setproviders), recipient, args()
-            ("commun_code", commun_code)
-            ("recipient", recipient)
-            ("providers", providers)
-        );
-    }
+    // TODO: removed from MVP
+    // action_result setproviders(account_name recipient, std::vector<account_name> providers) {
+    //     return push(N(setproviders), recipient, args()
+    //         ("commun_code", commun_code)
+    //         ("recipient", recipient)
+    //         ("providers", providers)
+    //     );
+    // }
 
-    action_result advise(account_name leader, std::vector<mssgid> favorites) { // vector is to test if duplicated
-        return push(N(advise), leader, args()
-            ("commun_code", commun_code)
-            ("leader", leader)
-            ("favorites", favorites)
-        );
-    }
+    // TODO: removed from MVP
+    // action_result advise(account_name leader, std::vector<mssgid> favorites) { // vector is to test if duplicated
+    //     return push(N(advise), leader, args()
+    //         ("commun_code", commun_code)
+    //         ("leader", leader)
+    //         ("favorites", favorites)
+    //     );
+    // }
 
     action_result lock(account_name leader, mssgid message_id, const std::string& reason) {
         return push(N(lock), leader, args()

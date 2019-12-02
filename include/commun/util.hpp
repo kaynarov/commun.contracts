@@ -30,7 +30,7 @@ int64_t mul_cut(int64_t a, int64_t b) {
 static constexpr int64_t MAXINT64 = std::numeric_limits<int64_t>::max();
 
 // TODO: can be added to CDT
-static name get_prefix(name acc) {
+name get_prefix(name acc) {
     auto tmp = acc.value;
     auto remain_bits = 64;
     for (; remain_bits >= -1; remain_bits-=5) {

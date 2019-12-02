@@ -3,10 +3,13 @@
 import sys
 import json
 import os
+import codecs
+
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
 
 cpp_path = sys.argv[1]
 include_path = os.path.dirname(os.path.dirname(cpp_path))
-fp = open(cpp_path)
+fp = open(cpp_path, 'r', encoding="utf-8")
 if os.path.basename(include_path) != "include":
     print(fp.read())
     exit()
