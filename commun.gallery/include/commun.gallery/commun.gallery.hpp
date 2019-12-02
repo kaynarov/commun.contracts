@@ -36,10 +36,10 @@ namespace gallery_types {
      * <b>The states which a mosaic may exist in:</b>
      * - ACTIVE — Active state of the mosaic, collecting user opinions (sympathy);
      * - ARCHIVED — Mosaic is in archiving state; user opinions collection has been completed;
-     * - LOCKED — Collection of user opinions is temporarily blocked by leaders (i.e. due to complaints from users about the post). As long as the mosaic is LOCKED, the author can improve its content. After that, leaders can put it back in the ACTIVE state to continue collecting users' opinions. The time spent by the mosaic in LOCKED state is determined using the lock_date parameter. The period of collecting opinions (collection_period parameter) is increased by this value. Leaders can lock the mosaic again if the author’s work still does not suit users;
-     * - BANNED — Post has been locked by leaders.Collected reward to the author of the post and voted users will not be paid;
-     * - HIDDEN — Post has been removed by the author. Mosaic of the post may still exist, since  it takes some time to destroy the crystals. If the post has collected the sympathy of users, then rewards to these users will be paid;
-     * - BANNED_AND_HIDDEN — Post has been removed and blocked by moderators (no rewards will be paid).
+     * - LOCKED — Collection of user opinions is temporarily blocked by leaders (i.e. due to complaints from users about the post). Leaders can put it back in the ACTIVE state to continue collecting users' opinions. The time spent by the mosaic in LOCKED state is determined using the lock_date parameter. The period of collecting opinions (collection_period parameter) is increased by this value. The author can improve content of unlocked mosaic. In this case, the lock_date parameter will be reset to zero. Leaders can lock the mosaic again if the author’s work still does not suit users;
+     * - BANNED — Post has been locked by leaders. Collected reward to the author of the post and voted users will not be paid;
+     * - HIDDEN — Post has been removed by the author. Mosaic of the post may still exist, since it takes some time to destroy the gems. If the post has collected the sympathy of users, then rewards to these users will be paid;
+     * - BANNED_AND_HIDDEN — Post has been removed and blocked by leaders (no rewards will be paid).
      */
     struct mosaic {
 
@@ -48,19 +48,19 @@ namespace gallery_types {
         name creator;     //!< The mosaic creator.
         
         name opus;        //!< Mosaic description type. The parameter indicates what the mosaic describes, such as a post or comment.
-        uint16_t royalty; //!< Share (in percent) of royalties to the author for creating the mosaic. When creating a mosaic, its first crystal belongs to the author. Part of weight of other crystals created by other members is added to the crystal of mosaic author. So, part of funds invested in crystal is allocated to the mosaic author. 
+        uint16_t royalty; //!< Share (in percent) of royalties to the author for creating the mosaic. When creating a mosaic, its first gem belongs to the author. Part of weight of other gems created by other members is added to the gem of mosaic author. So, part of funds invested in gem is allocated to the mosaic author. 
 
-        time_point lock_date = time_point();   //!< Mosaic lock date. The mosaic is blocked by the leaders if any frauds with the mosaic are detected. After blocking, the collection of crystals inside this mosaic is suspended.
-        time_point collection_end_date;        //!< Crystal collection period.
-        uint16_t gem_count;   //!< Current number of crystals inside the mosaic.
+        time_point lock_date = time_point();   //!< Mosaic lock date. The mosaic is blocked by the leaders if any frauds with the mosaic are detected. After blocking, the collection of gems inside this mosaic is suspended.
+        time_point collection_end_date;        //!< Gem collection period.
+        uint16_t gem_count;   //!< Current number of gems inside the mosaic.
         
         int64_t points;   //!< Number of points collected inside this mosaic. Points are added to the mosaic when users vote.
-        int64_t shares;   //!< Mosaic weight (post weight) calculated via «bankor» function. Weight of vote depends on the voting time. The earlier vote carries more weight.
+        int64_t shares;   //!< Mosaic weight (post weight) calculated via «bancor» function. Weight of vote depends on the voting time. The earlier vote carries more weight.
         int64_t damn_points = 0;   //!< Number of points related to negative votes.
         int64_t damn_shares = 0;   //!< Number of shares related to negative votes.
         int64_t pledge_points = 0; //!< Number of tokens pledged. A number of points is invested in creating a mosaic and thereby limits the number of mosaics created by author. These points are «frozen» and cannot be part of the reward.
         
-        int64_t reward = 0;   //!< Total reward amount. The award is formed not at the end of the mosaic collection, but with a certain periodicity. Awards are alocated to the top 10 mosaics (posts), which have become the most popular among users. The Commun.control contract allocates tokens as a share of the annual emission to commun.gallery contract. The funds received are converted into points and then distributed among worthy mosaics.
+        int64_t reward = 0;   //!< Total reward amount. The reward is formed not at the end of the mosaic collection, but with a certain periodicity. Rewards are allocated to top mosaics which have become the most popular among users. Number of these mosaics is determined by the \a rewarded_mosaic_num parameter in the \a commun.list. The commun.ctrl contract allocates tokens as a share of the annual emission to commun.gallery contract. The funds received are converted into points and then distributed among worthy mosaics.
         
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
@@ -68,7 +68,7 @@ namespace gallery_types {
         enum status_t: uint8_t { ACTIVE, ARCHIVED, LOCKED, BANNED, HIDDEN, BANNED_AND_HIDDEN };
         uint8_t status = ACTIVE;   //!< Field indicating a mosaic status. Once a mosaic is created, it is assigned ACTIVE status.
         bool meritorious = false;
-        bool deactivated_xor_locked = false;   //!< Flag indicating the post is inactive or blocked. \a true — post blocked by leaders.
+        bool deactivated_xor_locked = false;   //!< Flag indicating the post is inactive or blocked. \a true — post blocked by leaders or archived.
         
         bool banned()const { return status == BANNED || status == BANNED_AND_HIDDEN; }
         bool hidden()const { return status == HIDDEN || status == BANNED_AND_HIDDEN; }
@@ -106,19 +106,19 @@ namespace gallery_types {
      * \brief The structure represents gem data table in DB
      * \ingroup gallery_tables
      *
-     * The table contains data that uniquely identifies and represents a crystal in mosaic.
+     * The table contains data that uniquely identifies and represents a gem in mosaic.
      */
     struct gem {
-        uint64_t id; //!< Unique crystal identifier.
-        uint64_t tracery; //!< Mosaic tracery containing the crystal.
-        time_point claim_date; //!< Date when the crystal can be broken down. The crystal cannot be destroyed until this date. Also, points spent on voting for the mosaic cannot be returned back until this date(such implementation excludes voting for another mosaic with the same points).
+        uint64_t id; //!< Unique gem identifier.
+        uint64_t tracery; //!< Mosaic tracery containing the gem.
+        time_point claim_date; //!< Date when the gem can be broken down. The gem cannot be destroyed until this date. Also, points spent on voting for the mosaic cannot be returned back until this date(such implementation excludes voting for another mosaic with the same points).
         
         int64_t points; //!< Number of points that were frozen during voting.
         int64_t shares; //!< Number of shares calculated by the «shares» function.
         
-        int64_t pledge_points; //!< Number of points pledged to create the crystal (this is implemented to limit a number of crystals created in community. The parameter is set in commun.list contract).
+        int64_t pledge_points; //!< Number of points pledged to create the gem (this is implemented to limit a number of gems created in community. The parameter is set in commun.list contract).
         
-        name owner; //!< Cristal owner.
+        name owner; //!< Gem owner.
         name creator;
         
         uint64_t primary_key() const { return id; }
@@ -131,7 +131,7 @@ namespace gallery_types {
     };
     
     /**
-     * \brief The structure represents the table in DB containig total number of all «frozen» points for a user.
+     * \brief The structure represents the table in DB containing total number of all «frozen» points for a user.
      * \ingroup gallery_tables
      *
      * The user account name can be found in the scope field of the table. Each created table has two additional fields — code of the table and scope indicating the owner of points.
@@ -206,7 +206,7 @@ namespace gallery_types {
 namespace events {
     
     /**
-     * \brief The structure represents a mosaic destruction event. The destruction of a mosaic, including its crystals, occurs after moderators closed it and users who voted for it received their points back.
+     * \brief The structure represents a mosaic destruction event. The mosaic is destroyed after destruction of the last gem belonging to this mosaic.
      * \ingroup gallery_events
      */
     struct mosaic_chop {
@@ -222,46 +222,46 @@ namespace events {
         uint64_t tracery; //!< Mosaic tracery.
         name creator; //!< Mosaic creator.
         time_point collection_end_date; //!< End date of collecting user opinions.
-        uint16_t gem_count; //!< Number of crystals inside the mosaic.
+        uint16_t gem_count; //!< Number of gems inside the mosaic.
         int64_t shares; //!< Mosaic weight.
-        int64_t damn_shares; //!< Weight of crystals with negative votes.
+        int64_t damn_shares; //!< Weight of gems with negative votes.
         asset reward; //!< Amount of currently collected rewards.
-        bool banned; //!< Flag indicating the blocking of award at the initiative of community leaders.
+        bool banned; //!< Flag indicating the blocking of reward at the initiative of community leaders.
     };
     
     /**
-     * \brief The structure represents a crystal state change event. Crystal for a mosaic is automatically created when an author creates the mosaic. A state of the crystal changes when a user votes.
+     * \brief The structure represents a gem state change event. Gem for a mosaic is automatically created when an author creates the mosaic. A state of the gem changes when a user votes.
      * \ingroup gallery_events
      */
     struct gem_state {
-        uint64_t tracery; //!< Mosaic traceryа.
+        uint64_t tracery; //!< Mosaic tracery.
         name owner; //!< Mosaic owner.
         name creator;
-        asset points; //!< Number of «frozen» points in the crystal.
-        asset pledge_points; //!< Number of pledged points in the crystal.
+        asset points; //!< Number of «frozen» points in the gem.
+        asset pledge_points; //!< Number of pledged points in the gem.
         bool damn; //!< Flag indicating a negative or positive user opinion. \a true is negative one.
-        int64_t shares; //!< Weight of cristal calculated by the banck function.
+        int64_t shares; //!< Weight of gem calculated by the banck function.
     };
     
     /**
-     * \brief The structure represents a crystal destruction event. Mosaic breakes down after rewarding it, when users can take back their points.
+     * \brief The structure represents a gem destruction event. Mosaic breaks down after rewarding it, when users can take back their points.
      * \ingroup gallery_events
      */
     struct gem_chop {
-        uint64_t tracery; //!< Mosaic traceryа.
+        uint64_t tracery; //!< Mosaic tracery.
         name owner; //!< Mosaic owner.
         name creator;
-        asset reward; //!< Crystal owner reward.
+        asset reward; //!< Gem owner reward.
         asset unfrozen; //!< Number of returned points that were «frozen» at the time of collecting user opinions. This is total number of points given as sympathies and those that were pledged.
     };
     
     /**
-     * \brief The structure represents the even about the selected best mosaics to be awarded. The number of selected mosaics is determined by the rewarded_mosaic_num parameter in the \a commun.list contract and defaults to 10.
+     * \brief The structure represents the event about the selected best mosaics to be rewarded. The number of selected mosaics is determined by the \a rewarded_mosaic_num parameter in the \a commun.list contract and defaults to 10.
      * \ingroup gallery_events
      */
     struct mosaic_top {
         symbol_code commun_code; //!< Point symbol.
-        uint64_t tracery; //!< Mosaic traceryа.
+        uint64_t tracery; //!< Mosaic tracery.
         uint16_t place; //!< Place where the mosaic is located.
         int64_t comm_rating;
         int64_t lead_rating;
@@ -273,7 +273,7 @@ namespace events {
      */
     struct inclusion_state {
         name account; //!< User account that changed the current number of «frozen» points. The event occurred due to this account action.
-        asset quantity; //!< Total number of «frozen» points in community.
+        asset quantity; //!< Current number of «frozen» points belonging to the account.
     };
 }// events
 }// gallery_types
