@@ -34,7 +34,8 @@ namespace gallery_types {
      * \details The table contains data that uniquely identifies and represents a mosaic.
      *
      * <b>The states which a mosaic may exist in:</b>
-     * - ACTIVE — Active state of the mosaic, collecting user opinions (sympathy);
+     * - ACTIVE — Active state of the mosaic, collecting user opinions (sympathy). Once a mosaic is created, it is assigned ACTIVE status;
+     * - MODERATE — Collection of user opinions has been completed. The leaders decide whether to pay reward to author of the mosaic and users who voted;
      * - ARCHIVED — Mosaic is in archiving state; user opinions collection has been completed;
      * - LOCKED — Collection of user opinions is temporarily blocked by leaders (i.e. due to complaints from users about the post). Leaders can put it back in the ACTIVE state to continue collecting users' opinions. The time spent by the mosaic in LOCKED state is determined using the lock_date parameter. The period of collecting opinions (collection_period parameter) is increased by this value. The author can improve content of unlocked mosaic. In this case, the lock_date parameter will be reset to zero. Leaders can lock the mosaic again if the author’s work still does not suit users;
      * - BANNED — Post has been locked by leaders. Collected reward to the author of the post and voted users will not be paid;
