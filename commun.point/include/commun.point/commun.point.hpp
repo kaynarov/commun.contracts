@@ -24,7 +24,7 @@ using namespace eosio;
  * \brief This class implements the \a commun.point contract functionality.
  * \ingroup point_class
  *
- * \details The class contains actions for introducing points inside a community. Each community has its own point with its own name, which can be exchanged for CMN token or redeemed by performing the reverse operation. Point are not a token and cannot be used in exchange trading. Points are used as coins to encourage community members and applied only within the community, while CMN tokens can be circulated outside it within the commun application.
+ * \details The class contains actions for introducing points inside a community. Each community has its own point with its own name, which can be exchanged for CMN token or redeemed by performing the reverse operation. Point is not a token and cannot be used in exchange trading. Points are used as coins to encourage community members and applied only within the community, while CMN tokens can be circulated outside it within the commun application.
  *
  * All transactions for purchase and sale of points are carried out through the account \a c.point, on which the commun application is deployed.
  */
@@ -49,7 +49,7 @@ public:
 
         When this action is called, the information about creating the new point symbol is sent to the event engine as a \a currency event.
 
-        To form a community for the created point, the \a list::create action is called in the \a commun.list contract. This action generates internal calls \a emit::init, \a curl::init and \a gallery::init to configure the community.
+        To form a community for the created point, the \a list::create action is called in the \a commun.list contract. This action generates internal calls \a emit::init, \a ctrl::init and \a gallery::init to configure the community.
 
         This action requires the signature of the trusted community client.
     */
@@ -166,7 +166,7 @@ public:
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
 
     /**
-        \brief The \ref withdraw action is used to debit CMN tokens from the \a c.point balance and credit them to user balance, i.e. to withdraw CMN tokens from a «frozen» state to a liquid one.
+        \brief The \ref withdraw action is used to debit CMN tokens from user balance in \a commun.point contract and credit them to user balance in  \a cyber.token contract (it should be noted that \ref transfer action can be used for the reverse operation).
 
         \param owner account name withdrawing the tokens
         \param quantity number of tokens to be withdrawn
@@ -252,7 +252,7 @@ struct structures {
     */
     // DOCS_TABLE: account_struct
     struct [[eosio::table]] account {
-        asset    balance; /**< Number of points or of system ones on the account balance*/
+        asset    balance; //!< Number of points or of system ones on the account balance
         uint64_t primary_key()const { return balance.symbol.code().raw(); }
     };
 
@@ -263,8 +263,8 @@ struct structures {
     */
     // DOCS_TABLE: stat_struct
     struct [[eosio::table]] stat {
-        asset    supply; /**< Number of points that are in circulation in the system*/
-        asset    reserve; /**< Number of CMN tokens that are not in circulation in the system and are used for exchange*/
+        asset    supply; //!< Number of points that are in circulation in the system
+        asset    reserve; //!< Number of CMN tokens that are not in circulation in the system and are used for exchange
         uint64_t primary_key()const { return supply.symbol.code().raw(); }
     };
 
@@ -275,10 +275,10 @@ struct structures {
     */
     // DOCS_TABLE: param_struct
     struct [[eosio::table]] param {
-        asset max_supply; /**< Maximum allowable number of the points supplied*/
-        int16_t  cw; /**< Connector weight showing the exchange rate between the point and the CMN token*/
-        int16_t fee; /**< Amount of commission that is charged from the \a issuer when exchanging the issued points for the CMN tokens*/
-        name     issuer; /**< Account who issued the points*/
+        asset max_supply; //!< Maximum allowable number of the points supplied
+        int16_t  cw; //!< Connector weight showing the exchange rate between the point and the CMN token
+        int16_t fee; //!< Amount of commission that is charged from the \a issuer when exchanging the issued points for the CMN tokens
+        name     issuer; //!< Account who issued the points*
         uint16_t transfer_fee = config::def_transfer_fee; //!< Fee charged for transfer of the points
         int64_t min_transfer_fee_points = config::def_min_transfer_fee_points; //!< Minimum amount of fee charged for transfer of points
 
@@ -292,7 +292,7 @@ struct structures {
     */
     // DOCS_TABLE: globalparam_struct
     struct [[eosio::table]] global_param {
-        name point_freezer; /**< A name of contract that has the ability to freeze points of accounts*/
+        name point_freezer; //!< A name of contract that has the ability to freeze points of accounts
     };
 };
 
