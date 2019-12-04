@@ -166,7 +166,7 @@ public:
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
 
     /**
-        \brief The \ref withdraw action is used to debit CMN tokens from user balance in \a commun.point contract and credit them to user balance in  \a cyber.token contract (it should be noted that \ref transfer action can be used for the reverse operation).
+        \brief The \ref withdraw action is used to debit CMN tokens from user balance in \a commun.point contract and credit them to user balance in \a cyber.token contract.
 
         \param owner account name withdrawing the tokens
         \param quantity number of tokens to be withdrawn
