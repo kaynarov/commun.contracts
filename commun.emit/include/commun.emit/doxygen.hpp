@@ -1,8 +1,8 @@
 #pragma once
 
 /**
- * \defgroup emission comn.emit
- * \brief The smart contract emit new POINTs for communities.
+ * \defgroup emission commun.emit
+ * \brief The smart contract implements the procedure for issuing new points to communities.
  */
 
 /**
@@ -11,7 +11,7 @@
  */
 
 /**
- * \details This structs implements comn.emit contract data structures stored in a db
+ * \details The structures represent the records of statistical table data in DB.
  * \defgroup emission_tables DB Stored structures
  * \ingroup emission
  */
