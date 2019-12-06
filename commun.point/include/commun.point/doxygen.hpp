@@ -1,12 +1,8 @@
 #pragma once
 
 /**
- * \defgroup point comn.point
- * \brief This smart contract represents blockchain tokens in Commun Applications.
- *
- * The commun.point smart contract provides token management functions, generates new tokens and stores information about created tokens
- * and provides an ability to conduct mutual settlements between accounts as well.
- * The commun.point smart contract includes the following actions: create, setfreezer, issue, retire, transfer, open, close and withdraw.
+ * \defgroup point commun.point
+ * \brief This contract represents functions providing creation and circulation of points in a community, as well as their conversion to application tokens.
  */
 
 /**
@@ -15,13 +11,13 @@
  */
 
 /**
- * \details This structs implements commun.point contract data structures stored in a db
+ * \details Structures representing actual data related to points, stored in DB.
  * \defgroup point_tables DB Stored structures
  * \ingroup point
  */
 
 /**
- * \details Events being sent by commun.point into Event-Engine
+ * \details Events sent to the Event Engine by the commun.point contract.
  * \defgroup point_events Events
  * \ingroup point
  */
