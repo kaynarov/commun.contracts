@@ -195,6 +195,7 @@ public:
         const string vote_weight_0         = amsg("Weight equal to 0" + auth_self);
         const string vote_weight_gt100     = amsg("weight can't be more than 100%.");
         const string custom_gem            = amsg("custom gem size disabled.");
+        const string author_vote           = amsg("author can't vote");
 
         const string own_reblog               = amsg("You cannot reblog your own content.");
         const string wrong_reblog_body_length = amsg("Body must be set if title is set.");
@@ -419,16 +420,16 @@ BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Upvote testing.");
     auto permlink = "permlink";
-    auto vote_brucelee = [&](std::optional<uint16_t> weight){ return post.upvote(N(brucelee), {N(brucelee), permlink}, weight); };
-    BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
+    BOOST_CHECK_EQUAL(errgallery.no_community, post.upvote(N(chucknorris), {N(brucelee), permlink}, 1));
     init();
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
-    BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(std::optional<uint16_t>()));
+    BOOST_CHECK_EQUAL(err.no_message, post.upvote(N(chucknorris), {N(brucelee), permlink}));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
-    BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
-    BOOST_CHECK_EQUAL(err.custom_gem, vote_brucelee(cfg::_100percent));
+    BOOST_CHECK_EQUAL(err.vote_weight_gt100, post.upvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent+1));
+    BOOST_CHECK_EQUAL(err.custom_gem, post.upvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent));
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("custom_gem_size_enabled", true)));
-    BOOST_CHECK_EQUAL(success(), vote_brucelee(cfg::_100percent));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent));
+    BOOST_CHECK_EQUAL(err.author_vote, post.upvote(N(brucelee), {N(brucelee), permlink}, cfg::_100percent));
     auto gem = get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(brucelee));
     BOOST_CHECK(!gem.is_null());
 } FC_LOG_AND_RETHROW()
@@ -436,15 +437,14 @@ BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
 BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Downvote testing.");
     auto permlink = "permlink";
-    auto vote_brucelee = [&](auto weight){ return post.downvote(N(brucelee), {N(brucelee), permlink}, weight); };
-    BOOST_CHECK_EQUAL(errgallery.no_community, vote_brucelee(1));
+    BOOST_CHECK_EQUAL(errgallery.no_community, post.downvote(N(chucknorris), {N(brucelee), permlink}, 1));
     init();
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
         ("refill_gem_enabled", true)("custom_gem_size_enabled", true)));
-    BOOST_CHECK_EQUAL(err.no_message, vote_brucelee(1));
+    BOOST_CHECK_EQUAL(err.no_message, post.downvote(N(chucknorris), {N(brucelee), permlink}, 1));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
-    BOOST_CHECK_EQUAL(err.vote_weight_gt100, vote_brucelee(cfg::_100percent+1));
-    BOOST_CHECK_EQUAL(err.gem_type_mismatch, vote_brucelee(cfg::_100percent)); //brucelee cannot downvote for his own post
+    BOOST_CHECK_EQUAL(err.vote_weight_gt100, post.downvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent+1));
+    BOOST_CHECK_EQUAL(err.author_vote, post.downvote(N(brucelee), {N(brucelee), permlink}, cfg::_100percent));
     BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent));
     auto gem = get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(chucknorris));
     BOOST_CHECK(!gem.is_null());
@@ -483,11 +483,11 @@ BOOST_FIXTURE_TEST_CASE(upvote_downvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("custom_gem_size_enabled", true)));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}, 100));
+    BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(jackiechan))["shares"].as<int64_t>() > 0);
     BOOST_CHECK_EQUAL(success(), post.downvote(N(jackiechan), {N(brucelee), "permlink"}, 0, _client)); //empty
-    BOOST_CHECK_EQUAL(errgallery.wrong_gem_type, post.downvote(N(jackiechan), {N(brucelee), "permlink"}, 100));
-    BOOST_CHECK_EQUAL(success(), post.unvote(N(jackiechan), {N(brucelee), "permlink"}));
+    BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(jackiechan))["shares"].as<int64_t>() > 0);
     BOOST_CHECK_EQUAL(success(), post.downvote(N(jackiechan), {N(brucelee), "permlink"}, 100));
-    
+    BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(jackiechan))["shares"].as<int64_t>() < 0);
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(vote_for_noob, commun_publication_tester) try {
