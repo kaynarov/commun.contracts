@@ -72,6 +72,8 @@ public:
      * \details The action is internal and its call is unavailable to users. 
      *
      * Funds issued due to emission are devided between the top mosaics. Mosaics for reward are selected from among the candidates included in the top list. The number of candidates in this list is determined by the \a default_comm_grades parameter. It is set by leaders and defaults to 20. The number of most rated mosaics submitted for reward is also set by leaders and defaults to 10.
+
+     * Distribution of rewards between mosaics is carried out by \a commun.gallery and \a commun.ctrl contracts. The \a commun.emit contract only issues requested amount of points and transfers them to those contracts.
      
      * Presence and location of a mosaic in the top list is determined by the \a comm_rating parameter. This parameter means total amount of rating points (hereinafter — ratings) obtained by a mosaic during collection of user opinions taking into account the sign of vote (positive or negative). The more ratings, the higher position of a mosaic in the list.
      
@@ -101,7 +103,7 @@ public:
      * \param commun_code point symbol to be issued
      * \param to_contract name of contract for which points are issued
      
-     * \details The \ref issuereward action is internal and its call is unavailable to users. It can only be called by contracts that have received permission from \a commun.emit. Contract calls \ref issuereward if a user demonstrates activity that requires a reward. This action determines the time elapsed since last award. 
+     * \details The \ref issuereward action is internal and its call is unavailable to users. It can only be called by contracts that have received permission from \a commun.emit. This action determines the time elapsed since last award. 
      
      * The period of access to \ref issuereward is set up separately for each contract. Number of points issued at each call of \ref issuereward is determined taking into account this period and set percentage of annual emission. If a contract calls the action frequently, the number of points issued will be less.
      
@@ -112,6 +114,9 @@ public:
      * - get_continious_rate() — method converting the set percentage of annual emission into a numerical value. This value is used to determine the number of points that can be issued at the moment;
      * - passed_seconds — number of seconds elapsed by the time \ref issuereward is called;
      * - seconds_per_year — seconds per year.
+     
+     * <b>Note:</b>  
+     The calculated reward also includes a leaders fee, determined by the value of \a def_leaders_percent in the contract \a commun.list. To determine a reward for mosaic, it is necessary to deduct this fee from the total amount.
      
      * This \ref issuereward action requires the signature of the trusted community client.
      */
