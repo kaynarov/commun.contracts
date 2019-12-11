@@ -107,7 +107,7 @@ public:
      
      * The period of access to \ref issuereward is set up separately for each contract. Number of points issued at each call of \ref issuereward is determined taking into account this period and set percentage of annual emission. If a contract calls the action frequently, the number of points issued will be less.
      
-     * The number of points to be issued for a contract is calculated by the formula:
+     * Total number of points to be issued for mosaics is calculated by the formula:
      * <center> <i> amount = get_supply() × get_continuous_rate() × ( passed_seconds / seconds_per_year ) </i> </center>
      * Components of the formula:
      * - get_supply() — method determining the number of points currently in circulation;
@@ -115,8 +115,7 @@ public:
      * - passed_seconds — number of seconds elapsed by the time \ref issuereward is called;
      * - seconds_per_year — seconds per year.
      
-     * <b>Note:</b>  
-     If the recipient is \a commun.ctrl, points will be transfer to this contract in full as a reward to community leaders. If the recipient is \a commun.gallery, only part of them will be transfer to this contract as a reward for mosaics. Namely, amount of points determined by the \a def_leaders_percent hardcoded value will be deducted from the result amount.
+     Calculated amount of points will be distributed between community leaders and users involved in the mosaics. If a recipient is \a commun.ctrl, share of points determined by the \a def_leaders_percent hardcoded value will be transfer to this contract as a reward to community leaders. If a recipient is \a commun.gallery, rest of the points will be transfer to this contract as a reward for mosaics.
      
      * This \ref issuereward action requires the signature of the trusted community client.
      */
