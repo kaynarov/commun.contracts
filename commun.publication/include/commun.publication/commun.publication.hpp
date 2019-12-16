@@ -7,7 +7,7 @@ namespace commun {
 using namespace eosio;
 
 /**
- * \brief This class implements comn.publish contract behaviour
+ * \brief This class implements commun.publication contract behaviour
  * \ingroup publish_class
  */
 class publication : public gallery_base<publication>, public contract {
@@ -37,178 +37,207 @@ public:
     }
 
     /**
-     * \brief The \ref init action is used by commun.list contract to initialize gallery for a community with specified point symbol.
-     *
-     * \param commun_code a point symbol of community
-     *
-     * This action is unavailable for user and can be called only internally.
-     * It requires signature of the gallery contract account.
-     */
+        \brief The \ref init action is used by \a commun.list contract to configure the gallery parameters for a community specified by a point symbol.
+        \param commun_code community symbol, same as point symbol
+
+        This action is unavailable for user and can be called only internally.
+        It requires signature of the trusted community client.
+    */
     void init(symbol_code commun_code);
 
     /**
-     * \brief The \ref emit action is used by the client to emit rewards for specified point symbol.
-     *
-     * \param commun_code a point symbol of community
-     *
-     * This action is unavailable for user and can be called only by the client.
-     * It requires signature of the client.
-     */
+        \brief The \ref emit action is used to emit points specified by parameter for rewarding community members. Points are issued directly in \a commun.emit contract, not in \a commun.publication one.
+        \param commun_code community symbol, same as point symbol
+
+        This action is unavailable for user and can be called only internally.
+        It requires signature of the trusted community client.
+    */
     void emit(symbol_code commun_code);
 
     /**
-        \brief The create action is used by account to create a message.
+        \brief The \ref create action is used by a user to create a message.
 
-        \param commun_code symbol of community POINT
-        \param message_id post/comment to create
-        \param parent_id if has author, parent post/comment to create comment
-        \param header header of the message (not stored in DB, only validation)
-        \param body body of the message (not stored in DB, only validation)
-        \param tags tags of the message (not stored in DB)
-        \param metadata metadata of the message (not stored in DB)
-        \param weight weight of freezing points for the message (only for posts, optional)
+        \param commun_code community symbol, same as point symbol
+        \param message_id identifier of the message (post or comment) to be created
+        \param parent_id identifier of the parent message. The field \a parent_id.author should be empty if a post is created
+        \param header title of the message (not stored in DB, only checked). The length must not exceed 256 characters
+        \param body body of the message (not stored in DB, only checked). The body must not be empty
+        \param tags list of tags of the message (not stored in DB)
+        \param metadata metadata of the message (recommended format is JSON. The data is not stored in DB)
+        \param weight weight of points «frozen» for creating the message. This parameter is optional and specified only when creating a post
 
-        Performing the action requires message_id.author signature.
+        This action requires signature of the message author specified in the field \a message_id.author.
     */
     void create(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
         std::string header, std::string body, std::vector<std::string> tags, std::string metadata,
         std::optional<uint16_t> weight);
 
     /**
-        \brief The update action is used by account to update a message.
+        \brief The \ref update action is used to edit a message sent previously.
 
-        \param commun_code symbol of community POINT
-        \param message_id post/comment to create
-        \param header header of the message (not stored in DB)
+        \param commun_code point symbol of community
+        \param message_id identifier of the message (post or comment) being edited
+        \param header title of the message (not stored in DB)
         \param body body of the message (not stored in DB)
-        \param tags tags of the message (not stored in DB)
-        \param metadata metadata of the message (not stored in DB)
+        \param tags list of tags of the message (not stored in DB)
+        \param metadata metadata of the message (recommended format is JSON. The data is not stored in DB)
 
-        Performing the action requires message_id.author signature.
-        If message was locked and unlocked, leaders can lock it again after update.
-        If client signature provided, it doesn't check the presence of message and doesn't allow leaders lock it after unlock.
+        This action requires signature of the message author \a message_id.author.
+
+        <b>Note:</b>  
+        Community leaders can lock a message even after it has been corrected regardless of whether it was previously locked temporarily or not. However, the message can not be locked again if the \ref update is also signed by the trusted community client because the message is not checked by leaders in this case.
     */
     void update(symbol_code commun_code, mssgid_t message_id, std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata);
 
     /**
-        \brief The settags action is used by leader to edit message tags.
+        \brief The \ref settags action is used by a leader to update the message tags.
 
-        \param commun_code symbol of community POINT
-        \param leader account of leader
-        \param message_id post/comment (message)
-        \param add_tags tags adding to the message
-        \param remove_tags tags removing from the message
-        \param reason reason of tags edit
+        \param commun_code community symbol, same as point symbol
+        \param leader account of the leader
+        \param message_id identifier of the message (post or comment) whose tags are being updated
+        \param add_tags list of new tags to be added to the message
+        \param remove_tags list of tags to be removed from the message
+        \param reason reason of tags change
 
-        Action do not stores any state in DB, it only checks input parameters.
+        The \ref settags action does not store any data in DB, it only checks the input parameters.
 
-        Performing the action requires the leader signature.
-        If client signature provided, it doesn't check the presence of message.
+        The action requires the leader's signature.
+
+        <b>Note:</b>  
+        Changes to tags of a message are not checked by leaders if the \ref settags action is signed by the trusted community client.
     */
     void settags(symbol_code commun_code, name leader, mssgid_t message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
 
     /**
-        \brief The remove action is used by message author to remove the message.
+        \brief The \ref remove action is used by message author to remove the message.
 
-        \param commun_code symbol of community POINT
-        \param message_id post/comment (message) to remove
+        \param commun_code community symbol, same as point symbol
+        \param message_id identifier of the message (post or comment) to be removed
 
-        Performing the action requires the message author signature.
-        If client signature provided, it doesn't check the presence of message and do not does any changes in DB (do not claims gems).
+        The action requires the message author's signature.
+
+        <b>Note:</b>  
+        Deleting a message and updating the corresponding records in DB are not checked if the \ref remove action is also signed by the trusted community client.
     */
     void remove(symbol_code commun_code, mssgid_t message_id);
 
     /**
-        \brief The report action is used by user to report the message
+        \brief The \ref report action is used by a user to notify community leaders about undesirable or suspicious message content.
 
-        \param commun_code symbol of community POINT.
-        \param reporter account which reporting message
-        \param message_id post/comment (message)
-        \param reason reason of report
+        \param commun_code community symbol, same as point symbol
+        \param reporter account of user who reports about suspicious message content to leaders
+        \param message_id identifier of the message (post or comment) whose content is considered undesirable
+        \param reason reason of reporting (this field should not be empty)
 
-        Action do not stores any state in DB, it only checks input parameters.
+        The action does not store any data in DB, it only checks the input parameters.
+        It can only be performed if the message state is active, that is, user opinions are collected.
 
-        Performing the action requires reporter signature.
-        If also client signature provided, it doesn't check the presence of message.
+        The action requires the reporter's signature.
+
+        <b>Note:</b>  
+        A message content is not checked for suspicion by leaders if the action is also signed by the trusted community client.
     */
     void report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason);
 
     /**
-        \brief The lock action is used by leader to lock the message
+        \brief The \ref lock action is used by a leader to temporarily lock a message that is considered undesirable.
 
-        \param commun_code symbol of community POINT.
-        \param leader account which locking message
-        \param message_id post/comment (message)
-        \param reason reason of locking
+        \param commun_code community symbol, same as point symbol
+        \param leader account of leader who is locking the message
+        \param message_id identifier of the message (post or comment) to be locked
+        \param reason reason of locking (this field should not be empty)
 
-        Locking message stops receiving reward by message.
+        This action stops receiving a reward allocated for the message.
 
-        Performing the action requires leader signature.
+        The action requires the leader's signature.
     */
     void lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
 
     /**
-        \brief The unlock action is used by leader to unlock the message
+        \brief The \ref unlock action is used by a leader to unlock a message which was previously locked.
 
-        \param commun_code symbol of community POINT.
-        \param leader account which unlocking message
-        \param message_id post/comment (message)
-        \param reason reason of locking
+        \param commun_code community symbol, same as point symbol
+        \param leader account of leader who is unlocking the message
+        \param message_id identifier of the message (post or comment) to be unlocked
+        \param reason reason of unlocking (this field should not be empty)
 
-        Performing the action requires leader signature.
+        The action requires the leader's signature.
     */
     void unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
 
     /**
-        \brief The upvote action is used by account to upvote the message.
+        \brief The \ref upvote action is used by a community member to cast a vote in the form of «upvote» for a message.
 
-        \param commun_code symbol of community POINT.
-        \param voter account which voting for the message
-        \param message_id post/comment (message)
-        \param weight weight of gem freezing for voting (optional)
+        \param commun_code community symbol, same as point symbol
+        \param voter account voting for the message
+        \param message_id identifier of the message (post or comment)
+        \param weight weight (in percent) of voter's gem «frozen» for voting. This parameter is optional, it should not equal to «0» if specified. The voter should provide a sufficient number of points for voting
 
-        Performing the action requires voter signature.
-        If also client signature provided, this action doesn't check that weight is not 0, that message exists, active and in collection period, and that voter has enough points. In this case action doesn't store anything in DB.
+        The action requires the \a voter's signature.
+
+        <b>Note:</b>  
+        If the action is also signed by the trusted community client, then the action does not check whether or not:
+     *   - the specified weight equal to «0»;
+     *   - the message exists;
+     *   - the message is in ACTIVE state;
+     *   - the gathering opinions period is over;
+     *   - the voter has enough points.
+
+        In this case the action also does not store anything in DB.
     */
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
 
     /**
-        \brief The downvote action is used by account to downvote the message.
+        \brief The \ref downvote action is used by a community member to cast a vote in the form of «downvote» for a message.
 
-        \param commun_code symbol of community POINT.
-        \param voter account which voting for the message
-        \param message_id post/comment (message)
-        \param weight weight of gem freezing for voting (optional)
+        \param commun_code community symbol, same as point symbol
+        \param voter account voting for the message
+        \param message_id identifier of the message (post or comment)
+        \param weight weight of voter's gem «frozen» for voting. This parameter is optional
 
-        Performing the action requires voter signature.
-        If also client signature provided, this action doesn't check that weight is not 0, that message exists, active and in collection period, and that voter has enough points. In this case action doesn't store anything in DB.
+        The action requires the \a voter's signature.
+
+        <b>Note:</b>  
+        If the action is also signed by the trusted community client, then the action does not check whether or not:
+     *   - the specified weight equal to «0»;
+     *   - the message exists;
+     *   - the message is in ACTIVE state;
+     *   - the gathering opinions period is over;
+     *   - the voter has enough points.
+
+        In this case the action also does not store anything in DB.
     */
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
 
     /**
-        \brief The unvote action is used by account to remove vote on the message.
+        \brief The \ref unvote action is used by a community member to revoke a vote cast previously for a message.
 
-        \param commun_code symbol of community POINT.
-        \param voter account which voting for the message
-        \param message_id post/comment (message)
+        \param commun_code community symbol, same as point symbol
+        \param voter account voting for the message
+        \param message_id identifier of the message (post or comment) 
 
-        Performing the action requires voter signature.
-        If also client signature provided, this action doesn't check that message exists. In this case action doesn't store anything in DB.
+        The action requires the \a voter's signature.
+
+        <b>Note:</b>  
+        If the action is also signed by the trusted community client, then the action does not store anything in DB and does not check whether or not:
+     *   - the message exists;
+     *   - the vote exists.
     */
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);
 
     /**
-        \brief The claim action allows to claim reward accumulated in message.
+        \brief The \ref claim action allows a user to get back the points previously allocated and «frozen» by her/him for a message, as well as expected share of reward accumulated for this message.
 
-        \param commun_code symbol of community POINT.
-        \param message_id post/comment (message)
-        \param gem_owner account which owns the gem
-        \param gem_creator account which created the gem
-        \param eager early claim message
+        \param commun_code community symbol, same as point symbol
+        \param message_id identifier of the message (post or comment)
+        \param gem_owner account who owns the gem
+        \param gem_creator account who created the gem
+        \param eager flag indicating the timeliness of the request; \a true — the request was sent in advance
 
-        Performing the action requires gem_owner or gem_creator signature.
+        User gets points, but does not get a reward if the request is sent before calculation of rewards for the message. In this case, the transaction containing \a claim, requires the signature of gam owner (or of gam creator).  
+        User gets points and a reward if the request is sent after calculation of rewards for the message. In this case, claim requires no any signature.
     */
     void claim(symbol_code commun_code, mssgid_t message_id, name gem_owner,
         std::optional<name> gem_creator, std::optional<bool> eager);
@@ -218,7 +247,6 @@ public:
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
     // TODO: removed from MVP
-    // /**
     //     \brief The reblog action is used by user to create a reblog on the post/comment
 
     //     \param commun_code symbol of community POINT.
@@ -231,11 +259,9 @@ public:
 
     //     Performing the action requires rebloger signature.
     //     If also client signature provided, it doesn't check the presence of message.
-    // */
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
 
     // TODO: removed from MVP
-    // /**
     //     \brief The erasereblog action is used by user to erase the reblog of the post/comment
 
     //     \param commun_code symbol of community POINT.
@@ -246,7 +272,6 @@ public:
 
     //     Performing the action requires rebloger signature.
     //     If also client signature provided, it doesn't check the presence of message.
-    // */
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     // TODO: removed from MVP
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
@@ -258,12 +283,14 @@ public:
     //TODO: void checkadvice (symbol_code commun_code, name leader);
 
     /**
-        \brief The ban action is used leaders to ban the message.
+        \brief The \ref ban action is used by leaders to lock a message for keeps.
 
-        \param commun_code symbol of community POINT
-        \param message_id post/comment (message) to ban
+        \param commun_code community symbol, same as point symbol
+        \param message_id identifier of the message (post or comment) to be banned
 
-        Performing the action requires authority of (top) leaders.
+        Collected reward to the author of the banned message and voted users will not be paid.
+
+        The action requires the signature of the community leader.
     */
     void ban(symbol_code commun_code, mssgid_t message_id);
 
