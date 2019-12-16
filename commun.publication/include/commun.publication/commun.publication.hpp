@@ -236,10 +236,8 @@ public:
         \param gem_creator account who created the gem
         \param eager flag indicating the timeliness of the request; \a true — the request was sent in advance
 
-        User gets points, but does not get a reward if the request is sent before calculation of rewards for the message.  
-        User gets points and a reward if the request is sent after calculation of rewards for the message.
-
-        Performing the action requires \a gem_owner.
+        User gets points, but does not get a reward if the request is sent before calculation of rewards for the message. In this case, the transaction containing \a claim, requires the signature of gam owner (or of gam creator).  
+        User gets points and a reward if the request is sent after calculation of rewards for the message. In this case, claim requires no any signature.
     */
     void claim(symbol_code commun_code, mssgid_t message_id, name gem_owner,
         std::optional<name> gem_creator, std::optional<bool> eager);
