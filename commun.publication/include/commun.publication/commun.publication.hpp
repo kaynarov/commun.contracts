@@ -38,9 +38,8 @@ public:
 
     /**
         \brief The \ref init action is used by \a commun.list contract to configure the gallery parameters for a community specified by a point symbol.
-     *
         \param commun_code community symbol, same as point symbol
-     *
+
         This action is unavailable for user and can be called only internally.
         It requires signature of the trusted community client.
     */
@@ -48,9 +47,8 @@ public:
 
     /**
         \brief The \ref emit action is used to emit points specified by parameter for rewarding community members. Points are issued directly in \a commun.emit contract, not in \a commun.publication one.
-     *
         \param commun_code community symbol, same as point symbol
-     *
+
         This action is unavailable for user and can be called only internally.
         It requires signature of the trusted community client.
     */
@@ -65,7 +63,7 @@ public:
         \param header title of the message (not stored in DB, only checked). The length must not exceed 256 characters
         \param body body of the message (not stored in DB, only checked). The body must not be empty
         \param tags list of tags of the message (not stored in DB)
-        \param metadata metadata of the message in the JSON format (not stored in DB)
+        \param metadata metadata of the message (recommended format is JSON. The data is not stored in DB)
         \param weight weight of points «frozen» for creating the message. This parameter is optional and specified only when creating a post
 
         This action requires signature of the message author specified in the field \a message_id.author.
@@ -82,9 +80,8 @@ public:
         \param header title of the message (not stored in DB)
         \param body body of the message (not stored in DB)
         \param tags list of tags of the message (not stored in DB)
-        \param metadata metadata of the message in the JSON format (not stored in DB)
+        \param metadata metadata of the message (recommended format is JSON. The data is not stored in DB)
 
-        The \ref update action changes mosaic tracery of the message.
         This action requires signature of the message author \a message_id.author.
 
         <b>Note:</b>  
@@ -185,8 +182,9 @@ public:
      *   - the specified weight equal to «0»;
      *   - the message exists;
      *   - the message is in ACTIVE state;
+     *   - the gathering opinions period is over;
      *   - the voter has enough points.
-         
+
         In this case the action also does not store anything in DB.
     */
     void upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
@@ -206,8 +204,9 @@ public:
      *   - the specified weight equal to «0»;
      *   - the message exists;
      *   - the message is in ACTIVE state;
+     *   - the gathering opinions period is over;
      *   - the voter has enough points.
-         
+
         In this case the action also does not store anything in DB.
     */
     void downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
@@ -222,7 +221,9 @@ public:
         The action requires the \a voter's signature.
 
         <b>Note:</b>  
-        If the action is also signed by the trusted community client, then the action does not check whether the message exists and does not store anything in DB.
+        If the action is also signed by the trusted community client, then the action does not store anything in DB and does not check whether or not:
+     *   - the message exists;
+     *   - the vote exists.
     */
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);
 
@@ -231,14 +232,14 @@ public:
 
         \param commun_code community symbol, same as point symbol
         \param message_id identifier of the message (post or comment)
-        \param gem_owner account who is owner the gem
+        \param gem_owner account who owns the gem
         \param gem_creator account who created the gem
         \param eager flag indicating the timeliness of the request; \a true — the request was sent in advance
 
         User gets points, but does not get a reward if the request is sent before calculation of rewards for the message.  
         User gets points and a reward if the request is sent after calculation of rewards for the message.
 
-        Performing the action requires \a gem_owner or \a gem_creator signature.
+        Performing the action requires \a gem_owner.
     */
     void claim(symbol_code commun_code, mssgid_t message_id, name gem_owner,
         std::optional<name> gem_creator, std::optional<bool> eager);
@@ -248,7 +249,6 @@ public:
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
     // TODO: removed from MVP
-    // / **
     //     \brief The reblog action is used by user to create a reblog on the post/comment
 
     //     \param commun_code symbol of community POINT.
@@ -261,11 +261,9 @@ public:
 
     //     Performing the action requires rebloger signature.
     //     If also client signature provided, it doesn't check the presence of message.
-    // * /
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
 
     // TODO: removed from MVP
-    // / **
     //     \brief The erasereblog action is used by user to erase the reblog of the post/comment
 
     //     \param commun_code symbol of community POINT.
@@ -276,7 +274,6 @@ public:
 
     //     Performing the action requires rebloger signature.
     //     If also client signature provided, it doesn't check the presence of message.
-    // * /
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     // TODO: removed from MVP
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);

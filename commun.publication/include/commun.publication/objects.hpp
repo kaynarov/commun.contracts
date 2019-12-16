@@ -41,7 +41,7 @@ struct mssgid_t {
  * \brief The structure represents a vertex table in DB.
  * \ingroup publish_tables
  *
- * The table contains information about hierarchy of a message (post or comment).
+ * The table contains information about hierarchy of messages (post and comments).
  */
 struct vertex_t {
     uint64_t tracery;  //!< Message mosaic's tracery using as the primary key
