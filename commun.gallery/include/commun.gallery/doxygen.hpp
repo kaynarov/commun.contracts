@@ -5,7 +5,7 @@
  * \brief This smart contract looks like a library that provides payout information for posts and comments.
  * \details Treasure gallery is a collection of users' opinions about an entity that unites users of that community. The users opinions can be expressed in form of positive or negative comments, votes or other forms of attitude towards the entity presented for discussion. Each community has its own treasure gallery.
 
- * The gallery consists of mosaics representing a separate entity. For example, a post creator creates a mosaic. Each mosaic after its creation begins to collect gems — the opinions of curators. Each curator inserts his/her own gem into the mosaic and thus forms a mosaic tracery.
+ * The gallery consists of mosaics representing a separate entity. For example, a post creator creates a mosaic. Each mosaic after its creation begins to collect gems — the opinions of curators. Each curator inserts his/her own gem into the mosaic and thus forms its total weight.
 
  * The mosaic tracery contains information about an author and title of post in the hash sum form. The tracery identifies the mosaic and is used as the primary key.
 
