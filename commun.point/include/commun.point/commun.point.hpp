@@ -23,10 +23,6 @@ using namespace eosio;
 /**
  * \brief This class implements the \a commun.point contract functionality.
  * \ingroup point_class
- *
- * \details The class contains actions for introducing points inside a community. Each community has its own point with its own name, which can be exchanged for CMN token or redeemed by performing the reverse operation. Point is not a token and cannot be used in exchange trading. Points are used as coins to encourage community members and applied only within the community, while CMN tokens can be circulated outside it within the commun application.
- *
- * All transactions for purchase and sale of points are carried out through the account \a c.point, on which the commun application is deployed.
  */
 class [[eosio::contract]] point : public contract {
 public:
