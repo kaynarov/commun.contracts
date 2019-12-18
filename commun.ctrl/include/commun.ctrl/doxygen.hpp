@@ -16,7 +16,7 @@
 
  * <b>dApp leaders election</b>
 
- * <i>dApp leader</i> — a user who is responsible for setting application parameters and making decisions on choosing a direction of application development. dApp leaders are elected from among communities leaders through endless voting.
+ * <i>dApp leader</i> — a user who is responsible for setting application parameters and making decisions on choosing a direction of application development. dApp leaders are also elected from among candidates through endless voting.
 
  * Both community leaders and regular community users can vote for dApp leader. A weight of each vote depends on number of system tokens reserved on balance of the voter. The vote can also be split into parts that makes it possible to vote for several leaders.
 
