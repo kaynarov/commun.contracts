@@ -1,14 +1,12 @@
 
-<img width="128" src="./docs/logo.png" />
+<img width="500" src="./docs/logo_1.png" />
 
 *****  
-
-**Welcome to the CyberWay Commun Contracts source code repository!**  
 
 [![buildkite](https://badge.buildkite.com/e37eaf75ef47a17ecf8d2b451d0175fb22907f5b51c5034334.svg?branch=master)](https://buildkite.com/commun.contracts)
 [![GitHub](https://img.shields.io/github/license/cyberway/cyberway.contracts.svg)](https://github.com/cyberway/cyberway.contracts/blob/master/LICENSE)
 
-*****  
+# Welcome to the Commun Contracts source code repository!
 
 The Commun Application is a platform for creating self-managed communities. Despite the fact that similar platforms already exist in networks, the commun platform in CyberWay has a number of original solutions: 
 
