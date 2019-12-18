@@ -30,6 +30,8 @@
  *  - community leader registration;
  *  - voting for community and dApp leaders;
  *  - creating specific permissions for dApp leaders.
+
+ * Besides of it, this class contains actions providing creation and promotion of multi-signature transactions sent by leaders.
  */
 
 /**
