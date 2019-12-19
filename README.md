@@ -6,7 +6,7 @@
 [![buildkite](https://badge.buildkite.com/e37eaf75ef47a17ecf8d2b451d0175fb22907f5b51c5034334.svg?branch=master)](https://buildkite.com/commun.contracts)
 [![GitHub](https://img.shields.io/github/license/cyberway/cyberway.contracts.svg)](https://github.com/cyberway/cyberway.contracts/blob/master/LICENSE)
 
-# Welcome to the Commun Contracts source code repository!
+# Welcome to the CyberWay Commun Application source code repository!
 
 The Commun Application is a platform for creating self-managed communities. Despite the fact that similar platforms already exist in networks, the commun platform in CyberWay has a number of original solutions: 
 
@@ -24,13 +24,13 @@ Number of communities is not limited. In the future, the platform’s capabiliti
 
 
 ## Commun Contracts Description
-* [commun.ctrl](https://doxygen.cyberway.io/group__control.html)
-* [commun.emit](https://doxygen.cyberway.io/group__emission.html)
-* [commun.gallery](https://doxygen.cyberway.io/group_gallery.html)
-* [commun.list](https://doxygen.cyberway.io/group__list.html)
-* [commun.point](https://doxygen.cyberway.io/group__point.html)
-* [commun.publication](https://doxygen.cyberway.io/group__publish.html)
-* [commun.social](https://doxygen.cyberway.io/group__social.html)
+* [point](https://doxygen.cyberway.io/group__point.html)
+* [emit](https://doxygen.cyberway.io/group__emission.html)
+* [ctrl](https://doxygen.cyberway.io/group__control.html)
+* [list](https://doxygen.cyberway.io/group__list.html)
+* [gallery](https://doxygen.cyberway.io/group__gallery.html)
+* [publication](https://doxygen.cyberway.io/group__publish.html)
+* [social](https://doxygen.cyberway.io/group__social.html)
 
 
 ## Important
