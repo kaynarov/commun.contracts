@@ -1,5 +1,5 @@
 
-<img width="500" src="./docs/logo_1.png" />
+<img width="600" src="./docs/logo_1.png" />
 
 *****  
 
