@@ -4,7 +4,7 @@
   <navindex>
     <tab type="mainpage" visible="no" title=" "/>
     <tab type="pages" visible="no" title="" intro=""/>
-    <tab type="modules" visible="yes" title="Smart Contracts" intro=" "/>
+    <tab type="modules" visible="yes" title="Smart Contracts" intro="The Commun Application is a platform for creating self-managed communities based on the Smart Contracts"/>
     <tab type="namespaces" visible="no" title="">
       <tab type="namespacelist" visible="no" title="" intro=""/>
       <tab type="namespacemembers" visible="no" title="" intro=""/>
