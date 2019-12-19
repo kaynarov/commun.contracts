@@ -94,6 +94,7 @@ public:
         link_authority(cfg::publish_name, cfg::publish_name, cfg::client_permission_name, N(report));
         link_authority(cfg::publish_name, cfg::publish_name, cfg::client_permission_name, N(reblog));
         link_authority(cfg::publish_name, cfg::publish_name, cfg::client_permission_name, N(erasereblog));
+        link_authority(cfg::publish_name, cfg::publish_name, cfg::client_permission_name, N(emit));
     }
 
     void init() {
@@ -203,10 +204,24 @@ public:
         const string gem_type_mismatch        = amsg("gem type mismatch");
         const string author_cannot_unvote     = amsg("author can't unvote");
         const string authorization_failed     = amsg("transaction authorization failed");
+
+        const string it_isnt_time_for_reward  = amsg("it isn't time for reward");
     } err;
 };
 
 BOOST_AUTO_TEST_SUITE(commun_publication_tests)
+
+BOOST_FIXTURE_TEST_CASE(emit_test, commun_publication_tester) try {
+    BOOST_TEST_MESSAGE("emit_test");
+
+    init();
+    BOOST_CHECK_EQUAL(err.missing_auth(_code), post.emit(N(alice), {N(alice), cfg::active_name}));
+    BOOST_CHECK_EQUAL(err.it_isnt_time_for_reward, post.emit(_client, {_code, cfg::client_permission_name}));
+
+    produce_block();
+    produce_block(fc::seconds(cfg::def_reward_mosaics_period));
+    BOOST_CHECK_EQUAL(success(), post.emit(_client, {_code, cfg::client_permission_name}));
+} FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(create_message, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Create message testing.");
