@@ -16,7 +16,7 @@ def issueCommunToken(owner, quantity, clientKey):
 
 def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
     issueCommunToken(owner, quantity, clientKey)
-    pushAction('cyber.token', 'transfer', owner, {
+    return pushAction('cyber.token', 'transfer', owner, {
             'from':owner,
             'to':'c.point',
             'quantity':quantity,
@@ -90,7 +90,7 @@ def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, p
         }, providebw=providebw, keys=[proposerKey, clientKey])
 
 
-def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=10000, fee=100, owner_account=None):
+def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=3333, fee=100, owner_account=None):
     symbol = maximum_supply.symbol
     initial_supply = Asset.fromstr(str(maximum_supply))
     initial_supply.amount //= 1000
@@ -208,9 +208,16 @@ def regLeader(commun_code, leader, url, *, providebw=None, keys=None):
 def voteLeader(commun_code, voter, leader, pct, *, providebw=None, keys=None):
     return pushAction('c.ctrl', 'voteleader', voter, {
             'commun_code': commun_code,
-            'voter': voter,
+            'voter': parseAuthority(voter)['actor'],
             'leader': leader,
             'pct': pct
+        }, providebw=providebw, keys=keys)
+
+def unvoteLeader(commun_code, voter, leader, *, providebw=None, keys=None):
+    return pushAction('c.ctrl', 'unvotelead', voter, {
+            'commun_code': commun_code,
+            'voter': voter,
+            'leader': leader,
         }, providebw=providebw, keys=keys)
 
 
