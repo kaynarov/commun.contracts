@@ -1,4 +1,4 @@
-add_contract_with_abi(commun.publication abi/commun.publication.abi src/commun.publication.cpp)
+add_contract(commun.publication commun.publication src/commun.publication.cpp)
 target_include_directories(commun.publication.wasm
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -10,7 +10,7 @@ using std::optional;
  * \brief This class implements the \a c.list contract functionality
  * \ingroup list_class
  */
-class commun_list: public contract {
+class [[eosio::contract("commun.list")]] commun_list: public contract {
     uint64_t validate_name(tables::community& community_tbl, const std::string& community_name);
 public:
     using contract::contract;

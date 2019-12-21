@@ -1,4 +1,4 @@
-add_contract_with_abi(commun.point abi/commun.point.abi src/commun.point.cpp)
+add_contract(commun.point commun.point src/commun.point.cpp)
 target_include_directories(commun.point.wasm
    PUBLIC
    ${TOKEN_INCLUDE_PATH}

@@ -43,7 +43,7 @@ struct mssgid_t {
  *
  * The table contains information about hierarchy of messages (post and comments).
  */
-struct vertex_t {
+struct vertex_struct {
     uint64_t tracery;  //!< Message mosaic's tracery using as the primary key
     uint64_t parent_tracery;  //!< Mosaic's tracery of the parent message
     uint16_t level; //!< Nesting level of the message(a post is assigned the zero level, comments are assigned levels from one onwards)
@@ -52,7 +52,7 @@ struct vertex_t {
     uint64_t primary_key() const { return tracery; }
 };
 
-struct acc_param_t {
+struct acc_param {
     name account;
     std::vector<name> providers;
     uint64_t primary_key() const { return account.value; }
@@ -60,7 +60,7 @@ struct acc_param_t {
 
 using namespace eosio;
 
-using vertices = eosio::multi_index<"vertex"_n, vertex_t>;
-using accparams = eosio::multi_index<"accparam"_n, acc_param_t>;
+using vertices [[using eosio: scope_type("symbol_code"), order("tracery","asc"), contract("commun.publication")]] = eosio::multi_index<"vertex"_n, vertex_struct>;
+using accparams [[using eosio: scope_type("symbol_code"), order("account","asc"), contract("commun.publication")]] = eosio::multi_index<"accparam"_n, acc_param>;
 
 } // commun

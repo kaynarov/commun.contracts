@@ -12,7 +12,7 @@ using std::optional;
  * \brief This class implements the \a c.recover contract functionality.
  * \ingroup recover_class
  */
-class commun_recover: public contract {
+class [[eosio::contract("commun.recover")]] commun_recover: public contract {
 public:
     using contract::contract;
 
@@ -100,8 +100,8 @@ public:
     [[eosio::action]] void cancelowner(name account);
 
 private:
-    structures::params getParams() const;
-    void setParams(const structures::params &params);
+    structures::params_struct getParams() const;
+    void setParams(const structures::params_struct& params);
 };
 
 }
