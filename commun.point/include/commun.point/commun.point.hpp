@@ -372,6 +372,8 @@ struct structures {
     }
 
     void do_transfer(name from, name to, const asset& quantity, const string& memo);
+    
+    void burn_the_fee(const asset& quantity, symbol_code commun_code, bool buying_points);
 
     /**
       \brief The structure representing the event related to change of point state. Such event occurs if at least one of the two values (supply or reserve) changes during execution of the actions \ref create, \ref issue and \ref retire as well as during the reserve tokens transfer via performing \ref transfer.

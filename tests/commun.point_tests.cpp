@@ -127,7 +127,9 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(point.get_amount(_alice), amount);
 
     int64_t amount_sent = amount / 2;
-    int64_t price_sent = (amount_sent * reserve / supply) * (1.0 - fee);
+    int64_t price_sent_no_fee = (amount_sent * reserve / supply);
+    int64_t price_sent = price_sent_no_fee * (1.0 - fee);
+    int64_t sell_fee_bob = price_sent_no_fee - price_sent;
     BOOST_TEST_MESSAGE("--- alice sends " << amount_sent  << " to bob ");
     BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _bob, asset(amount_sent, point._symbol)));
     BOOST_TEST_MESSAGE("--- bob sells " << amount_sent << " for " << price_sent);
@@ -137,10 +139,13 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     supply -= amount_sent;
     reserve -= price_sent;
     int64_t amount_sell = amount / 4;
-    int64_t price_sell = (amount_sell * reserve / supply) * (1.0 - fee);
+    int64_t price_sell_no_fee = amount_sell * reserve / supply;
+    int64_t price_sell = price_sell_no_fee * (1.0 - fee);
+    int64_t sell_fee_alice = price_sell_no_fee - price_sell;
     BOOST_TEST_MESSAGE("--- alice sells " << amount_sell << " for " << price_sell);
     BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _code, asset(amount_sell, point._symbol)));
     CHECK_MATCHING_OBJECT(token.get_account(_alice), mvo()("balance", asset(price_sell + (init_balance - price), token._symbol).to_string()));
+    CHECK_MATCHING_OBJECT(token.get_account(cfg::null_name), mvo()("balance", asset(sell_fee_alice + sell_fee_bob, token._symbol).to_string()));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(cw05_test, commun_point_tester) try {

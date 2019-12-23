@@ -34,6 +34,7 @@ static const auto publish_name = gallery_name;
 
 static const auto internal_name = "cyber"_n;
 static const auto token_name = "cyber.token"_n;
+static const auto null_name = "cyber.null"_n;
 static const auto point_name = "c.point"_n;
 
 // permissions
