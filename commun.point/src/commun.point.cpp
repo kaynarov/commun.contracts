@@ -202,6 +202,12 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
         stats stats_table(_self, commun_code.raw());
         auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
         
+        if (param.fee) {
+            auto initial = quantity.amount;
+            quantity.amount = safe_pct(quantity.amount, config::_100percent - param.fee);
+            burn_the_fee(asset(initial - quantity.amount, stat.reserve.symbol), commun_code, true);
+        }
+        
         asset add_tokens(0, stat.supply.symbol);
         if (!restock) {
             add_tokens = calc_token_quantity(param, stat, quantity);
