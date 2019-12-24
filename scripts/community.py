@@ -139,7 +139,6 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
 
     pushTrx(trx, keys=[creator_key])
 
-
     # 1. Buy some value of CMN tokens (for testing purposes c.issuer@issue)
     trx = Trx()
     trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {

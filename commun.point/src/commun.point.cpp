@@ -82,21 +82,21 @@ void point::create(name issuer, asset initial_supply, asset maximum_supply, int1
     };});
 }
 
-void point::setparams(symbol_code commun_code, uint16_t transfer_fee, int64_t min_transfer_fee_points) {
+void point::setparams(symbol_code commun_code, std::optional<uint16_t> fee, std::optional<uint16_t> transfer_fee, std::optional<int64_t> min_transfer_fee_points) {
     params params_table(_self, _self.value);
     const auto& param = params_table.get(commun_code.raw(), "symbol does not exist");
     require_auth(param.issuer);
-
-    check(transfer_fee <= config::_100percent, "transfer_fee can't be greater than 100%");
-
-    check(min_transfer_fee_points >= 0, "min_transfer_fee_points cannot be negative");
-    if (transfer_fee) {
-        check(min_transfer_fee_points > 0, "min_transfer_fee_points cannot be 0 if transfer_fee set");
-    }
+    eosio::check(fee || transfer_fee || min_transfer_fee_points, "No params changed");
+    
+    check(!fee || *fee <= config::_100percent, "fee can't be greater than 100%");
+    check(!transfer_fee || *transfer_fee <= config::_100percent, "transfer_fee can't be greater than 100%");
+    check(!min_transfer_fee_points || *min_transfer_fee_points >= 0, "min_transfer_fee_points cannot be negative");
 
     params_table.modify(param, eosio::same_payer, [&](auto& p) {
-        p.transfer_fee = transfer_fee;
-        p.min_transfer_fee_points = min_transfer_fee_points;
+        if (fee)                     { p.fee =                     *fee; }
+        if (transfer_fee)            { p.transfer_fee =            *transfer_fee; }
+        if (min_transfer_fee_points) { p.min_transfer_fee_points = *min_transfer_fee_points; }
+        check(!p.transfer_fee || p.min_transfer_fee_points > 0, "min_transfer_fee_points cannot be 0 if transfer_fee set");
     });
 }
 
