@@ -7,7 +7,7 @@ using namespace eosio;
 using std::optional;
 
 /**
- * \brief This class implements the \a commun.list contract functionality
+ * \brief This class implements the \a c.list contract functionality
  * \ingroup list_class
  */
 class commun_list: public contract {

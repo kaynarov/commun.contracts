@@ -21,7 +21,7 @@ namespace commun {
 using std::string;
 using namespace eosio;
 /**
- * \brief This class implements the \a commun.point contract functionality.
+ * \brief This class implements the \a c.point contract functionality.
  * \ingroup point_class
  */
 class [[eosio::contract]] point : public contract {
@@ -45,7 +45,7 @@ public:
 
         When this action is called, the information about creating the new point symbol is sent to the event engine as a \a currency event.
 
-        To form a community for the created point, the \a list::create action is called in the \a commun.list contract. This action generates internal calls \a emit::init, \a ctrl::init and \a gallery::init to configure the community.
+        To form a community for the created point, the \a list::create action is called in the \a c.list contract. This action generates internal calls \a emit::init, \a ctrl::init and \a gallery::init to configure the community.
 
         This action requires the signature of the trusted community client.
     */
@@ -162,7 +162,7 @@ public:
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
 
     /**
-        \brief The \ref withdraw action is used to debit CMN tokens from user balance in \a commun.point contract and credit them to user balance in \a cyber.token contract.
+        \brief The \ref withdraw action is used to debit CMN tokens from user balance in \a c.point contract and credit them to user balance in \a cyber.token contract.
 
         \param owner account name withdrawing the tokens
         \param quantity number of tokens to be withdrawn
