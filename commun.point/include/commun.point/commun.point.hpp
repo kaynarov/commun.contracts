@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
+#include <eosio/asset.hpp>
 #include <eosio/singleton.hpp>
 #include "config.hpp"
 
@@ -20,6 +20,9 @@ namespace commun {
 
 using std::string;
 using namespace eosio;
+
+using share_type = int64_t;
+
 /**
  * \brief This class implements the \a c.point contract functionality.
  * \ingroup point_class
@@ -38,10 +41,10 @@ public:
         \param fee amount of commission that should be charged from a user when exchanging created points for CMN tokens. This parameter is set in the same way as \a cw one
 
         The asset type is a structure value containing the fields:
-           - maximum allowable number of points supplied;
-           - point symbol (data type that uniquely identifies the point):
-               + point name consisting of a set of capital letters;
-               + field that specifies a point cost accuracy in the form of decimal places number.
+            - maximum allowable number of points supplied;
+            - point symbol (data type that uniquely identifies the point):
+                + point name consisting of a set of capital letters;
+                + field that specifies a point cost accuracy in the form of decimal places number.
 
         When this action is called, the information about creating the new point symbol is sent to the event engine as a \a currency event.
 
@@ -191,9 +194,133 @@ public:
     [[eosio::action]]
     void withdraw(name owner, asset quantity);
 
+    /**
+        \brief The \ref enablesafe action enables a safe on given balance and sets it's initial parameters.
+
+        \param owner account name of safe owner
+        \param unlock amount of points to initially unlock in the safe; must be >= 0 with correct point symbol
+        \param delay duration of locked period in seconds; must be greater than 0
+        \param trusted name of trusted account; if empty then no trusted account set, otherwise account must exist and can't be equal to \a owner
+
+        Balance owner calls this action to enable safe for points with symbol provided in asset, and to set it's initial parameters. Safe must not exist when calling this action. Action enables safe instantly.
+        When enabled, safe locks all points except \a unlock amount. Locked points still can be used to create mosaics, gems, vote, etc…, but can't be transferred. When owner transfers points, the unlocked amount reduces by appropriate value. Balance owner can't transfer more points than he unlocked. Points obtained from incoming transfer/issue automaticaly locked.
+
+        \signreq
+            - \a owner account.
+     */
+    [[eosio::action]] void enablesafe(name owner, asset unlock, uint32_t delay, name trusted);
+
+    /**
+        \brief The \ref disablesafe action disables a safe on given balance and sets it's initial parameters.
+
+        \param owner account name of safe owner
+        \param commun_code symbol code of point for which disabling the safe
+        \param mod_id named id of the current safe change; it's required to provide the same value to find delayed disable when apply or cancel it; must be empty name if disable instantly (see below)
+
+        Balance owner calls this action to disable his safe for \a commun_code points. Safe must be enabled when calling this action. Action disables safe with delay set previously. If trusted account was set earlier and action contains his authorization, then disable safe instantly.
+
+        \signreq
+            - \a owner account
+            - optionaly also trusted account from the currently active safe parameters
+     */
+    [[eosio::action]] void disablesafe(name owner, symbol_code commun_code, name mod_id);
+
+    /**
+        \brief The \ref unlocksafe action unlocks some funds in the safe.
+
+        \param owner account name of safe owner
+        \param unlock amount of points to unlock in the safe, must be greater than 0; may be greater than balance
+        \param mod_id id of the current change; it's used to find delayed unlock when apply or cancel it; must be empty name if unlocking instantly (see below)
+
+        Balance owner calls this action to increase amount of unlocked points in the safe. Points unlock with delay set previously. If trusted account was set earlier and action contains his authorization, then points unlock instantly, otherwise unlock should be applied after delay using \ref applysafemod action.
+
+        \signreq
+            - \a owner account
+            - optionaly also trusted account from the currently active safe parameters
+     */
+    [[eosio::action]] void unlocksafe(name owner, asset unlock, name mod_id);
+
+    /**
+        \brief The \ref locksafe action locks previously unlocked points.
+
+        \param owner account name of safe owner
+        \param lock amount of unlocked points to lock in the safe, set to 0 (with correct symbol) to lock all, otherwise must be greater than 0 and not greater than amount of currently unlocked points
+
+        Balance owner calls this action to lock points previously unlocked with \ref enablesafe or \ref unlocksafe (followed by \ref applysafemod). Action instantly reduces amount of unlocked points by value provided in \a lock.
+
+        \signreq
+            - \a owner account.
+     */
+    [[eosio::action]] void locksafe(name owner, asset lock);
+
+    /**
+        \brief The \ref modifysafe action changes delay and/or trusted account of the safe.
+
+        \param owner account name of safe owner
+        \param commun_code symbol code of points for which changing safe parameters
+        \param mod_id id of the current change; it's used to find delayed change when apply or cancel it; must be empty name if changing instantly (see below)
+        \param delay optional new duration of locked period in seconds, must be greater than 0; must be set if no \a trusted set; if set in instant change, must differ from the current value
+        \param trusted optional name of trusted account; set empty name to remove trusted account; must be set if no \a delay set; if set in instant change, must differ from the current value
+
+        Balance owner calls this action to change some safe parameters. Safe must be enabled earlier. Change delayed by the current value of `delay` parameter. If trusted account was set earlier and action contains his authorization, then new parameters apply instantly, otherwise it should applied after delay using \ref applysafemod action.
+
+        \signreq
+            - \a owner account
+            - optionaly also trusted account from the currently active parameters
+     */
+    [[eosio::action]] void modifysafe(name owner, symbol_code commun_code, name mod_id,
+        std::optional<uint32_t> delay, std::optional<name> trusted);
+
+    /**
+        \brief The \ref applysafemod action applies delayed change of the safe: points unlock or new parameters.
+
+        \param owner account name of safe owner
+        \param mod_id id of the change to apply
+
+        Balance owner calls this action to apply delayed points unlock or change of the safe parameters. If current safe parameters have trusted account and action contains his authorization, then new parameters apply instantly, otherwise it can be applied only after delay.
+
+        \signreq
+            - \a owner account
+            - optionaly also trusted account from the currently active parameters
+     */
+    [[eosio::action]] void applysafemod(name owner, name mod_id);
+
+    /**
+        \brief The \ref cancelsafemod action cancels delayed change of the safe (points unlock or new parameters).
+
+        \param owner account name of safe owner
+        \param mod_id id of the change to cancel
+
+        Balance owner calls this action to instantly cancel delayed points unlock or change of the safe parameters.
+
+        \signreq
+            - \a owner account.
+     */
+    [[eosio::action]] void cancelsafemod(name owner, name mod_id);
+
+    /**
+        \brief The \ref globallock action locks all points (freezing still allowed) and delayed mods to given period of time.
+
+        \param owner account name of points owner
+        \param period lock duration in seconds, can't reduce existing global lock duration, must be greater than 0
+
+        Balance owner (or authorized recovery contract) calls this action to instantly lock all his points and prevent delayed mods execution for a given period of time. Global lock has higher priority than safe unlocked points.
+
+        \signreq
+            - \a owner account.
+     */
+    [[eosio::action]] void globallock(name owner, uint32_t period); // Can also add "deletelock" to free storage
+
     static inline bool exist(symbol_code commun_code) {
         stats stats_table(config::point_name, commun_code.raw());
         return stats_table.find(commun_code.raw()) != stats_table.end();
+    }
+
+    static inline void validate_symbol(const asset a) { validate_symbol(a.symbol); }
+
+    static inline void validate_symbol(const symbol sym) {
+        auto supply = get_supply(sym.code());
+        check(supply.symbol == sym, "symbol precision mismatch");
     }
 
     static inline asset get_supply(symbol_code commun_code) {
@@ -201,7 +328,7 @@ public:
         const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
         return st.supply;
     }
-    
+
     static inline asset get_reserve(symbol_code commun_code) {
         stats stats_table(config::point_name, commun_code.raw());
         const auto& st = stats_table.get(commun_code.raw(), "point with symbol does not exist");
@@ -219,13 +346,13 @@ public:
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
         return param.issuer;
     }
-    
+
     static inline int64_t get_assigned_reserve_amount(name owner) {
         params params_table(config::point_name, config::point_name.value);
         auto params_idx = params_table.get_index<"byissuer"_n>();
         accounts accounts_table(config::point_name, owner.value);
         auto param = params_idx.find(owner);
-        
+
         auto ac = accounts_table.find(symbol_code().raw());
         eosio::check(param != params_idx.end() || ac != accounts_table.end(), "no assigned reserve");
         return (param != params_idx.end()  ? get_reserve(param->max_supply.symbol.code()).amount : 0) +
@@ -259,7 +386,6 @@ private:
 struct structures {
 
     /**
-
       \brief DB record containing information about points of a certain symbol on the account balance
       \ingroup point_tables
     */
@@ -270,7 +396,6 @@ struct structures {
     };
 
     /**
-
       \brief DB record containing statistical information about points of a certain symbol in the system.
       \ingroup point_tables
     */
@@ -307,16 +432,68 @@ struct structures {
     struct [[eosio::table]] global_param {
         name point_freezer; //!< A name of contract that has the ability to freeze points of accounts
     };
+
+    /**
+        \brief DB record containing information about safe for points of a certain symbol on the account balance
+        \ingroup point_tables
+    */
+    // DOCS_TABLE: safe_struct
+    struct [[eosio::table]] safe {
+        asset unlocked; //!< Number of unlocked points in the safe
+        name trusted; //!< Trusted account, disabled if empty
+        uint32_t delay; //!< Delay in seconds of unlock/modify period
+
+        uint64_t primary_key() const { return unlocked.symbol.code().raw(); }
+    };
+
+    /**
+        \brief DB record containing information about a delayed safe modify
+        \ingroup point_tables
+    */
+    // DOCS_TABLE: safemod_struct
+    struct [[eosio::table]] safemod {
+        name id;                //!< modification id of the safe
+        symbol_code commun_code;//!< commun code of the safe (points symbol code)
+        time_point_sec date;    //!< time when delayed changes become ready to apply
+        share_type unlock;      //!< number of points to unlock or 0
+        std::optional<uint32_t> delay;  //!< new delay to set
+        std::optional<name> trusted;    //!< new trusted account to set
+
+        uint64_t primary_key() const { return id.value; }
+        using key_t = std::tuple<symbol_code, name>;
+        key_t by_symbol_code() const { return std::make_tuple(commun_code, id); }
+
+#ifndef UNIT_TEST_ENV
+        EOSLIB_SERIALIZE(safemod, (id)(commun_code)(date)(unlock)(delay)(trusted))
+#endif
+    };
+
+    /**
+        \brief DB record containing information about a global lock; singleton; scope = safe owner
+        \ingroup point_tables
+    */
+    // DOCS_TABLE: lock_struct
+    struct [[eosio::table]] lock {
+        time_point_sec unlocks; //!< time when lock becomes ineffective
+    };
 };
 
     using param_id_index = eosio::indexed_by<"paramid"_n, eosio::const_mem_fun<structures::param, uint64_t, &structures::param::primary_key> >;
     using param_issuer_index = eosio::indexed_by<"byissuer"_n, eosio::const_mem_fun<structures::param, name, &structures::param::by_issuer> >;
     using params = eosio::multi_index<"param"_n, structures::param, param_id_index, param_issuer_index>;
-    
-    using stats  = eosio::multi_index<"stat"_n,  structures::stat>;
-    using accounts  = eosio::multi_index<"accounts"_n,  structures::account>;
+
+    using stats = eosio::multi_index<"stat"_n, structures::stat>;
+    using accounts = eosio::multi_index<"accounts"_n, structures::account>;
 
     using global_params = eosio::singleton<"globalparam"_n, structures::global_param>;
+
+    using safe_tbl = eosio::multi_index<"safe"_n, structures::safe>;
+
+    using safemod_sym_idx = eosio::indexed_by<"bysymbolcode"_n,
+        eosio::const_mem_fun<structures::safemod, structures::safemod::key_t, &structures::safemod::by_symbol_code>>;
+    using safemod_tbl = eosio::multi_index<"safemod"_n, structures::safemod, safemod_sym_idx>;
+
+    using lock_singleton = eosio::singleton<"lock"_n, structures::lock>;
 
     void notify_balance_change(name owner, asset diff);
     void sub_balance(name owner, asset value);
@@ -377,6 +554,18 @@ struct structures {
     void do_transfer(name from, name to, const asset& quantity, const string& memo);
     
     void burn_the_fee(const asset& quantity, symbol_code commun_code, bool buying_points);
+
+    void delay_safe_change(
+        name owner, asset unlock, name mod_id, std::optional<uint32_t> delay, std::optional<name> trusted,
+        bool check_params = true, bool check_sym = true);
+    void delay_safe_change(
+        name owner, symbol_code commun_code, name mod_id, std::optional<uint32_t> delay, std::optional<name> trusted,
+        bool check_params = true);
+
+    static inline bool is_locked(name owner) {
+        lock_singleton lock(config::point_name, owner.value);
+        return lock.exists() && lock.get().unlocks > eosio::current_time_point();
+    }
 
     /**
       \brief The structure representing the event related to change of point state. Such event occurs if at least one of the two values (supply or reserve) changes during execution of the actions \ref create, \ref issue and \ref retire as well as during the reserve tokens transfer via performing \ref transfer.

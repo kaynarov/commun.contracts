@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(commun_dapp_contracts VERSION 0.1.0)
 
-set(CYBERWAY_CDT_VERSION_MIN "1.6")
-set(CYBERWAY_CDT_VERSION_SOFT_MAX "1.7")
+set(CYBERWAY_CDT_VERSION_MIN "1.6.4")
+set(CYBERWAY_CDT_VERSION_SOFT_MAX "1.8")
 #set(CYBERWAY_CDT_VERSION_HARD_MAX "")
 
 find_package(cyberway.cdt)
@@ -14,6 +14,7 @@ CYBERWAY_CHECK_VERSION(VERSION_OUTPUT "${CYBERWAY_CDT_VERSION}"
                                    "${CYBERWAY_CDT_VERSION_SOFT_MAX}"
                                    "${CYBERWAY_CDT_VERSION_HARD_MAX}"
                                    VERSION_MATCH_ERROR_MSG)
+
 if(VERSION_OUTPUT STREQUAL "MATCH")
    message(STATUS "Using cyberway.cdt version ${CYBERWAY_CDT_VERSION}")
 elseif(VERSION_OUTPUT STREQUAL "WARN")

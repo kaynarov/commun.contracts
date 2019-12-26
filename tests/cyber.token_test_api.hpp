@@ -69,6 +69,7 @@ struct cyber_token_api: base_contract_api {
         if (v.is_object()) {
             auto o = mvo(v);
             o["balance"] = o["balance"].as<asset>().to_string();
+            o["payments"] = o["payments"].as<asset>().to_string();
             v = o;
         }
         return v;
