@@ -96,6 +96,7 @@ public:
         const string asset_overflow = amsg("asset amount overflow");
         const string min_order_negative = amsg("minimum amount cannot be negative");
         const string min_order = amsg("converted value is lesser than minimum order");
+        const string fee_only = amsg("the entire amount is spent on fee");
     } err;
 };
 
@@ -394,8 +395,11 @@ BOOST_FIXTURE_TEST_CASE(fee_tests, commun_point_tester) try {
     produce_block();
     BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("fee", cfg::_100percent)));
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(restock_amount, token._symbol), ""));
+    BOOST_CHECK_EQUAL(err.fee_only, token.transfer(_alice, _code, asset(restock_amount, token._symbol), cfg::restock_prefix + point_code_str));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("fee", cfg::_100percent / 2)));
     BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(restock_amount, token._symbol), cfg::restock_prefix + point_code_str));
-    burnt += restock_amount;
+    burnt += restock_amount / 2;
+    reserve += restock_amount / 2;
     BOOST_CHECK_EQUAL(point.get_stats()["reserve"].as<asset>().get_amount(), reserve);
     CHECK_MATCHING_OBJECT(token.get_account(cfg::null_name), mvo()("balance", asset(burnt, token._symbol).to_string()));
     

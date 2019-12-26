@@ -205,6 +205,7 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
         if (param.fee) {
             auto initial = quantity.amount;
             quantity.amount = safe_pct(quantity.amount, config::_100percent - param.fee);
+            check(quantity.amount > 0, "the entire amount is spent on fee");
             burn_the_fee(asset(initial - quantity.amount, stat.reserve.symbol), commun_code, true);
         }
         
@@ -377,7 +378,9 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
             s.supply -= quantity;
             send_currency_event(s, param);
         });
-        burn_the_fee(fee_quantity, quantity.symbol.code(), false);
+        if (fee_quantity.amount) {
+            burn_the_fee(fee_quantity, quantity.symbol.code(), false);
+        }
         INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
             {_self, from, sent_quantity, quantity.symbol.code().to_string() + " sold"});
         notify_balance_change(param.issuer, vague_asset(-sub_reserve.amount));
@@ -386,11 +389,10 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
 }
 
 void point::burn_the_fee(const asset& quantity, symbol_code commun_code, bool buying_points) {
-    if (quantity.amount) {
-        INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
-            {_self, config::null_name, quantity, (buying_points ? "buying " : "selling ") + commun_code.to_string() + " fee"});
-        send_fee_event(quantity);
-    }
+    check(quantity.amount > 0, "SYSTEM: nothing to burn");
+    INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
+        {_self, config::null_name, quantity, (buying_points ? "buying " : "selling ") + commun_code.to_string() + " fee"});
+    send_fee_event(quantity);
 }
 
 } /// namespace commun
