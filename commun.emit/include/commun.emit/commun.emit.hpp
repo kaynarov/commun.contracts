@@ -7,14 +7,14 @@ namespace commun {
 using namespace eosio;
 
 /**
- * \brief This class implements the operation logic of the \a commun.emit contract.
+ * \brief This class implements the operation logic of the \a c.emit contract.
  * \ingroup emission_class
  */
 class emit: public contract {
 struct structures {
 
     /**
-     * \brief The structure represents the record form in the DB statistical table and contains information about an reward recipient.
+     * \brief The structure represents the record form in the DB statistical table and contains information about a reward recipient.
      * \ingroup emission_tables
      */
     struct reward_receiver final {
@@ -65,7 +65,7 @@ public:
     using contract::contract;
 
     /**
-     * \brief The \ref init action is used by \a commun.list contract to initialize emission for a community specified by point symbol.
+     * \brief The \ref init action is used by \a c.list contract to initialize emission for a community specified by point symbol.
      *
      * \param commun_code point symbol of the community for which emission is initialized
      *
@@ -73,7 +73,7 @@ public:
      *
      * Funds issued due to emission are divided between the top mosaics. Mosaics for reward are selected from among the candidates included in the top list. The number of candidates in this list is determined by the \a default_comm_grades parameter. It is set by leaders and defaults to 20. The number of most rated mosaics submitted for reward is also set by leaders and defaults to 10.
 
-     * Distribution of rewards between mosaics is carried out by \a commun.gallery and \a commun.ctrl contracts. The \a commun.emit contract only issues requested amount of points and transfers them to those contracts.
+     * Distribution of rewards between mosaics is carried out by \a c.gallery and \a c.ctrl contracts. The \a c.emit contract only issues requested amount of points and transfers them to those contracts.
      
      * Presence and location of a mosaic in the top list is determined by the \a comm_rating parameter. This parameter means total amount of rating points (hereinafter — ratings) obtained by a mosaic during collection of user opinions taking into account the sign of vote (positive or negative). The more ratings, the higher position of a mosaic in the list.
      
@@ -103,11 +103,11 @@ public:
      * \param commun_code point symbol to be issued
      * \param to_contract name of contract that is a recipient and for which points are issued.
      
-     * \details The \ref issuereward action is internal and its call is unavailable to users. It can only be called by contracts that have received permission from \a commun.emit. This action determines the time elapsed since last award.
+     * \details The \ref issuereward action is internal and its call is unavailable to users. It can only be called by contracts that have received permission from \a c.emit. This action determines the time elapsed since last award.
      
      * The period of access to \ref issuereward is set up separately for each contract. Number of points issued at each call of \ref issuereward is determined taking into account this period and set percentage of annual emission. If a contract calls the action frequently, the number of points issued will be less.
      
-     * If \a commun.ctrl or \a commun.gallery makes a request for points, then the points will be issued as a reward for community leaders or for mosaics respectively.
+     * If \a c.ctrl or \a c.gallery makes a request for points, then the points will be issued as a reward for community leaders or for mosaics respectively.
      
      * Number of points to be issued and transfered to contract is calculated by the formula:
      * <center> <i> amount = get_supply() × get_continuous_rate() × ( passed_seconds / seconds_per_year ) × prcnt </i> </center>
@@ -116,7 +116,7 @@ public:
      * - get_continious_rate() — method converting the set percentage of annual emission into a numerical value. This value is used to determine the number of points that can be issued at the moment;
      * - passed_seconds — number of seconds elapsed by the time \ref issuereward is called;
      * - seconds_per_year — seconds per year;
-     * - prcnt — share of points determined by the \a def_leaders_percent hardcoded value. It takes the value of \a def_leaders_percent when the request comes from \a commun.ctrl and (100 - \a def_leaders_percent) when it comes from \a commun.gallery.
+     * - prcnt — share of points determined by the \a def_leaders_percent hardcoded value. It takes the value of \a def_leaders_percent when the request comes from \a c.ctrl and (100 - \a def_leaders_percent) when it comes from \a c.gallery.
      
      * This \ref issuereward action requires the signature of the trusted community client.
      */

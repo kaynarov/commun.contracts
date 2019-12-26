@@ -5,7 +5,7 @@ namespace commun {
 using namespace eosio;
 
 /**
- * \brief This class implements the \a commun.social contract behaviour.
+ * \brief This class implements the \a c.social contract behaviour.
  * \ingroup social_class
  */
 class commun_social: public contract {

@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * \defgroup control commun.ctrl
+ * \defgroup control c.ctrl
  * \brief This smart contract implements the logic of electing community and dApp leaders.
  * \details 
  * <b>Community leaders election</b>
@@ -37,11 +37,11 @@
 /**
  * \defgroup control_tables DB Stored structures
  * \ingroup control
- * \details These structs implement the \a commun.ctrl contract data stored in DB.
+ * \details These structs implement the \a c.ctrl contract data stored in DB.
  */
 
 /**
  * \defgroup control_events Events
  * \ingroup control
- * \details Events being sent to the Event-Engine by the \a commun.ctrl contract.
+ * \details Events being sent to the Event-Engine by the \a c.ctrl contract.
  */

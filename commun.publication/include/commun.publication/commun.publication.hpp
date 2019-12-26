@@ -7,8 +7,8 @@ namespace commun {
 using namespace eosio;
 
 /**
- * \brief This class implements commun.publication contract behaviour
- * \ingroup publish_class
+ * \brief This class implements \a c.gallery contract behaviour
+ * \ingroup gallery_class
  */
 class publication : public gallery_base<publication>, public contract {
 
@@ -37,7 +37,7 @@ public:
     }
 
     /**
-        \brief The \ref init action is used by \a commun.list contract to configure the gallery parameters for a community specified by a point symbol.
+        \brief The \ref init action is used by \a c.list contract to configure the gallery parameters for a community specified by a point symbol.
         \param commun_code community symbol, same as point symbol
 
         This action is unavailable for user and can be called only internally.
@@ -46,7 +46,7 @@ public:
     void init(symbol_code commun_code);
 
     /**
-        \brief The \ref emit action is used to emit points specified by parameter for rewarding community members. Points are issued directly in \a commun.emit contract, not in \a commun.publication one.
+        \brief The \ref emit action is used to emit points specified by parameter for rewarding community members. Points are issued directly in \a c.emit contract, not in \a c.gallery one.
         \param commun_code community symbol, same as point symbol
 
         This action is unavailable for user and can be called only internally.

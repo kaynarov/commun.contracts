@@ -120,7 +120,7 @@ struct [[eosio::table]] invalidation {
 using invalidations = eosio::multi_index< "invals"_n, invalidation>;
 
 /**
- * \brief This class implements the \a commun.ctrl contract functionality.
+ * \brief This class implements the \a c.ctrl contract functionality.
  * \ingroup control_class
  */
 class control: public contract {
@@ -140,12 +140,12 @@ public:
     }
 
     /**
-     * \brief The \ref init action is used by \a commun.list contract to initialize leaders for a community with specified point symbol.
+     * \brief The \ref init action is used by \a c.list contract to initialize leaders for a community with specified point symbol.
      *
      * \param commun_code a point symbol of community
      *
      * This action is unavailable for user and can be called only internally.
-     * It requires signature of the \a commun.ctrl contract account. 
+     * It requires signature of the \a c.ctrl contract account. 
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
@@ -287,7 +287,7 @@ public:
     [[eosio::action]] void emit(symbol_code commun_code);
 
     /**
-        \brief The \ref changepoints action is an internal and unavailable to the user. It is used by \a commun.point to notify the \a commun.ctrl smart contract about a change of the points amount on the user's balance. The action is called automatically after changing the points amount on a user's balance. The \a weights of all the leaders voted for by this user are also updated.
+        \brief The \ref changepoints action is an internal and unavailable to the user. It is used by \a c.point to notify the \a c.ctrl smart contract about a change of the points amount on the user's balance. The action is called automatically after changing the points amount on a user's balance. The \a weights of all the leaders voted for by this user are also updated.
 
         \param who an account name whose points amount has been changed.
         \param diff a relative change of points amount.
@@ -384,7 +384,7 @@ public:
     [[eosio::action]] void invalidate(name account);
 
     /**
-        \brief The \ref setrecover action is used to create dApp authority before danger operations which can cause dApp leaders lose access to commun.ctrl multisignature transactions.
+        \brief The \ref setrecover action is used to create dApp authority before danger operations which can cause dApp leaders lose access to \a c.ctrl multisignature transactions.
 
         This action requires a signature of most validators.
     */

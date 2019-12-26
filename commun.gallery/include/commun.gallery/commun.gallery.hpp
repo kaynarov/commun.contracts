@@ -45,23 +45,23 @@ namespace gallery_types {
     struct mosaic {
 
         mosaic() = default;
-        uint64_t tracery; //!< The mosaic tracery, used as primary key.
-        name creator;     //!< The mosaic creator.
+        uint64_t tracery; //!< The mosaic tracery, used as primary key
+        name creator;     //!< The mosaic creator
         
         name opus;        //!< Mosaic description type. The parameter indicates what the mosaic describes, such as a post or comment.
         uint16_t royalty; //!< Share (in percent) of royalties to the author for creating the mosaic. When creating a mosaic, its first gem belongs to the author. Part of weight of other gems created by other members is added to the gem of mosaic author. So, part of funds invested in gem is allocated to the mosaic author. 
 
         time_point lock_date = time_point();   //!< Mosaic lock date. The mosaic is blocked by the leaders if any frauds with the mosaic are detected. After blocking, the collection of gems inside this mosaic is suspended.
-        time_point collection_end_date;        //!< Gem collection period.
-        uint16_t gem_count;   //!< Current number of gems inside the mosaic.
+        time_point collection_end_date;        //!< Gem collection period
+        uint16_t gem_count;   //!< Current number of gems inside the mosaic
         
         int64_t points;   //!< Number of points collected inside this mosaic. Points are added to the mosaic when users vote.
         int64_t shares;   //!< Mosaic weight (post weight) calculated via «bancor» function. Weight of vote depends on the voting time. The earlier vote carries more weight.
-        int64_t damn_points = 0;   //!< Number of points related to negative votes.
-        int64_t damn_shares = 0;   //!< Number of shares related to negative votes.
+        int64_t damn_points = 0;   //!< Number of points related to negative votes
+        int64_t damn_shares = 0;   //!< Number of shares related to negative votes
         int64_t pledge_points = 0; //!< Number of tokens pledged. A number of points is invested in creating a mosaic and thereby limits the number of mosaics created by author. These points are «frozen» and cannot be part of the reward.
         
-        int64_t reward = 0;   //!< Total reward amount. The reward is formed not at the end of the mosaic collection, but with a certain periodicity. Rewards are allocated to top mosaics which have become the most popular among users. Number of these mosaics is determined by the \a rewarded_mosaic_num parameter in the \a commun.list. The commun.ctrl contract allocates tokens as a share of the annual emission to commun.gallery contract. The funds received are converted into points and then distributed among worthy mosaics.
+        int64_t reward = 0;   //!< Total reward amount. The reward is formed not at the end of the mosaic collection, but with a certain periodicity. Rewards are allocated to top mosaics which have become the most popular among users. Number of these mosaics is determined by the \a rewarded_mosaic_num parameter in the \a c.list. The \a c.ctrl contract allocates tokens as a share of the annual emission to \a c.gallery contract. The funds received are converted into points and then distributed among worthy mosaics.
         
         int64_t comm_rating = 0;
         int64_t lead_rating = 0;
@@ -106,22 +106,22 @@ namespace gallery_types {
     };
     
     /**
-     * \brief The structure represents gem data table in DB
+     * \brief The structure represents gem data table in DB.
      * \ingroup gallery_tables
      *
      * The table contains data that uniquely identifies and represents a gem in mosaic.
      */
     struct gem {
-        uint64_t id; //!< Unique gem identifier.
-        uint64_t tracery; //!< Mosaic tracery containing the gem.
+        uint64_t id; //!< Unique gem identifier
+        uint64_t tracery; //!< Mosaic tracery containing the gem
         time_point claim_date; //!< Date when the gem can be broken down. The gem cannot be destroyed until this date. Also, points spent on voting for the mosaic cannot be returned back until this date(such implementation excludes voting for another mosaic with the same points).
         
-        int64_t points; //!< Number of points that were frozen during voting.
-        int64_t shares; //!< Number of shares calculated by the «shares» function.
+        int64_t points; //!< Number of points that were frozen during voting
+        int64_t shares; //!< Number of shares calculated by the «shares» function
         
-        int64_t pledge_points; //!< Number of points pledged to create the gem (this is implemented to limit a number of gems created in community. The parameter is set in commun.list contract).
+        int64_t pledge_points; //!< Number of points pledged to create the gem (this is implemented to limit a number of gems created in community. The parameter is set in \a c.list contract).
         
-        name owner; //!< Gem owner.
+        name owner; //!< Gem owner
         name creator;
         
         uint64_t primary_key() const { return id; }
@@ -140,7 +140,7 @@ namespace gallery_types {
      * The user account name can be found in the scope field of the table. Each created table has two additional fields — code of the table and scope indicating the owner of points.
      */
     struct [[eosio::table]] inclusion {
-        asset quantity; //!< Total number of «frozen» user points.
+        asset quantity; //!< Total number of «frozen» user points
             // just an idea:
             // use as inclusion not only points, but also other gems. 
             // this will allow to buy shares in the mosaics without liquid points, creating more sophisticated collectables
@@ -156,9 +156,9 @@ namespace gallery_types {
      * The table contains statistic information about total number of unclaimed (blocked) points for all users related to a mosaic.
      */
     struct [[eosio::table]] stat {
-        uint64_t id; //!< Mosaic identifier.
-        int64_t unclaimed = 0; //!< Total number of unclaimed points for all users related to the mosaic.
-        int64_t retained = 0; //!< Total amount of retained reward related to unclaimed points.
+        uint64_t id; //!< Mosaic identifier
+        int64_t unclaimed = 0; //!< Total number of unclaimed points for all users related to the mosaic
+        int64_t retained = 0; //!< Total amount of retained reward related to unclaimed points
         time_point last_reward_date = time_point();
 
         uint64_t primary_key()const { return id; }
@@ -215,8 +215,8 @@ namespace events {
      * \ingroup gallery_events
      */
     struct mosaic_chop {
-        symbol_code commun_code; //!< Point symbol.
-        uint64_t tracery; //!< Tracery that breaks down.
+        symbol_code commun_code; //!< Point symbol
+        uint64_t tracery; //!< Tracery that breaks down
     };
     
     /**
@@ -224,14 +224,14 @@ namespace events {
      * \ingroup gallery_events
      */
     struct mosaic_state {
-        uint64_t tracery; //!< Mosaic tracery.
-        name creator; //!< Mosaic creator.
-        time_point collection_end_date; //!< End date of collecting user opinions.
-        uint16_t gem_count; //!< Number of gems inside the mosaic.
-        int64_t shares; //!< Mosaic weight.
-        int64_t damn_shares; //!< Weight of gems with negative votes.
-        asset reward; //!< Amount of currently collected rewards.
-        bool banned; //!< Flag indicating the blocking of reward at the initiative of community leaders.
+        uint64_t tracery; //!< Mosaic tracery
+        name creator; //!< Mosaic creator
+        time_point collection_end_date; //!< End date of collecting user opinions
+        uint16_t gem_count; //!< Number of gems inside the mosaic
+        int64_t shares; //!< Mosaic weight
+        int64_t damn_shares; //!< Weight of gems with negative votes
+        asset reward; //!< Amount of currently collected rewards
+        bool banned; //!< Flag indicating the blocking of reward at the initiative of community leaders
     };
     
     /**
@@ -239,13 +239,13 @@ namespace events {
      * \ingroup gallery_events
      */
     struct gem_state {
-        uint64_t tracery; //!< Mosaic tracery.
-        name owner; //!< Mosaic owner.
+        uint64_t tracery; //!< Mosaic tracery
+        name owner; //!< Mosaic owner
         name creator;
-        asset points; //!< Number of «frozen» points in the gem.
-        asset pledge_points; //!< Number of pledged points in the gem.
+        asset points; //!< Number of «frozen» points in the gem
+        asset pledge_points; //!< Number of pledged points in the gem
         bool damn; //!< Flag indicating a negative or positive user opinion. \a true is negative one.
-        int64_t shares; //!< Weight of gem calculated by the banck function.
+        int64_t shares; //!< Weight of gem calculated by the banck function
     };
     
     /**
@@ -253,21 +253,21 @@ namespace events {
      * \ingroup gallery_events
      */
     struct gem_chop {
-        uint64_t tracery; //!< Mosaic tracery.
-        name owner; //!< Mosaic owner.
+        uint64_t tracery; //!< Mosaic tracery
+        name owner; //!< Mosaic owner
         name creator;
         asset reward; //!< Gem owner reward.
         asset unfrozen; //!< Number of returned points that were «frozen» at the time of collecting user opinions. This is total number of points given as sympathies and those that were pledged.
     };
     
     /**
-     * \brief The structure represents the event about the selected best mosaics to be rewarded. The number of selected mosaics is determined by the \a rewarded_mosaic_num parameter in the \a commun.list contract and defaults to 10.
+     * \brief The structure represents the event about the selected best mosaics to be rewarded. The number of selected mosaics is determined by the \a rewarded_mosaic_num parameter in the \a c.list contract and defaults to 10.
      * \ingroup gallery_events
      */
     struct mosaic_top {
-        symbol_code commun_code; //!< Point symbol.
-        uint64_t tracery; //!< Mosaic tracery.
-        uint16_t place; //!< Place where the mosaic is located.
+        symbol_code commun_code; //!< Point symbol
+        uint64_t tracery; //!< Mosaic tracery
+        uint16_t place; //!< Place where the mosaic is located
         int64_t comm_rating;
         int64_t lead_rating;
     };
@@ -278,7 +278,7 @@ namespace events {
      */
     struct inclusion_state {
         name account; //!< User account that changed the current number of «frozen» points. The event occurred due to this account action.
-        asset quantity; //!< Current number of «frozen» points belonging to the account.
+        asset quantity; //!< Current number of «frozen» points belonging to the account
     };
 }// events
 }// gallery_types
