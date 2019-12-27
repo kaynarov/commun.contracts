@@ -154,8 +154,6 @@ public:
             — the \a ram_payer account (optional)  
             or  
             — \a owner (required if the \a ram_payer's sign is omitted) .
-
-        This action requires a signature of account specified in the \a ram_payer parameter. Since this parameter is an optional, the \a owner signature is required if \a ram_payer is omitted.
      */
     [[eosio::action]]
     void open(name owner, symbol_code commun_code, std::optional<name> ram_payer);

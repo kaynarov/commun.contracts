@@ -122,7 +122,7 @@ public:
         This action does not store any state in DB, it only checks an authority and community presence.
 
         \signreq
-            — <i>the community leaders</i> .
+            — <i>most community leaders</i> .
     */
     [[eosio::action]] void setinfo(symbol_code commun_code,
         optional<std::string> description, optional<std::string> language, optional<std::string> rules,
