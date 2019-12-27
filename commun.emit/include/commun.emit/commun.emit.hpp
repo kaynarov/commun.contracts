@@ -93,7 +93,8 @@ public:
      
      * The first mosaics having the highest SUM will be awarded (default is 10 mosaics).
      
-     * The \ref init action requires the signature of the trusted community client.
+     * \signreq  
+            — <i>trusted community client</i> .
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
@@ -118,7 +119,8 @@ public:
      * - seconds_per_year — seconds per year;
      * - prcnt — share of points determined by the \a def_leaders_percent hardcoded value. It takes the value of \a def_leaders_percent when the request comes from \a c.ctrl and (100 - \a def_leaders_percent) when it comes from \a c.gallery.
      
-     * This \ref issuereward action requires the signature of the trusted community client.
+     * \signreq  
+            — <i>trusted community client</i> .
      */
     [[eosio::action]] void issuereward(symbol_code commun_code, name to_contract);
 

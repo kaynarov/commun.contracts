@@ -145,7 +145,8 @@ public:
      * \param commun_code a point symbol of community
      *
      * This action is unavailable for user and can be called only internally.
-     * It requires signature of the \a c.ctrl contract account. 
+     * \signreq
+            — the \a c.ctrl contract account .
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
@@ -157,7 +158,8 @@ public:
         \param url a website address from where information about the candidate can be obtained, including the reasons
         for her/his desire to become a leader. The address string must not exceed 256 characters
 
-        This action requires a signature of the leader candidate.
+        \signreq
+            — the <i>leader candidate</i> .
     */
     [[eosio::action]] void regleader(symbol_code commun_code, name leader, std::string url);
 
@@ -170,7 +172,8 @@ public:
 
         When this action is called, event information is stored in \a leaderstate and sent to the event engine. 
 
-        This action requires a signature of the leader candidate.
+        \signreq
+            — the <i>leader candidate</i> .
     */
     [[eosio::action]] void clearvotes(symbol_code commun_code, name leader, std::optional<uint16_t> count);
 
@@ -187,7 +190,8 @@ public:
         Condition for performing the action:
             - no votes should be cast for this leader candidate. Votes of all users who voted for this leader candidate should be removed.
 
-        This action requires a signature of the leader candidate who is removed from the list.
+        \signreq
+            — the <i>leader candidate</i> who is removed from the list .
      */
     [[eosio::action]] void unregleader(symbol_code commun_code, name leader);
 
@@ -204,7 +208,8 @@ public:
 
         The leader account activity can be continued in case it has performed the \ref startleader action.
 
-        This action requires a signature of the leader whose activity is to be suspended.
+        \signreq
+            — the \a leader whose activity is to be suspended .
     */
     [[eosio::action]] void stopleader(symbol_code commun_code, name leader);
 
@@ -219,7 +224,8 @@ public:
         Condition for performing the action:
             - the leader account activity should be suspended, that is, the operation \ref stopleader should be performed previously.
 
-        This action requires a signature of the leader whose activity is to be resumed.
+        \signreq
+            — the \a leader whose activity is to be resumed .
      */
     [[eosio::action]] void startleader(symbol_code commun_code, name leader);
 
@@ -250,7 +256,8 @@ public:
             - total number of votes cast by the voter account for all candidates should not exceed the max_votes community parameter value;
             - it is not allowed to vote for a leader candidate whose activity is suspended (after calling the stopleader action, for example).
 
-        This action requires a signature of the user voting for the leader candidate.
+        \signreq
+            — the \a voter account .
     */
     [[eosio::action]] void voteleader(symbol_code commun_code, name voter, name leader, std::optional<uint16_t> pct);
 
@@ -263,7 +270,8 @@ public:
 
         When this action is called, event information is stored in \a leaderstate and sent to the event engine.
 
-        This action requires a signature of the user who withdraws a vote.
+        \signreq
+            — the \a voter account .
     */
     [[eosio::action]] void unvotelead(symbol_code commun_code, name voter, name leader);
 
@@ -273,7 +281,8 @@ public:
         \param commun_code a point symbol of the community
         \param leader account name of the leader
 
-        This action requires a signature of the leader who withdraws the reward.
+        \signreq
+            — the \a leader who withdraws the reward .
     */
     [[eosio::action]] void claim(symbol_code commun_code, name leader);
 
@@ -282,7 +291,8 @@ public:
 
         \param commun_code a point symbol of the community
 
-        This action requires a signature of the client.
+        \signreq
+            — <i>trusted community client</i> .
     */
     [[eosio::action]] void emit(symbol_code commun_code);
 
@@ -293,6 +303,7 @@ public:
         \param diff a relative change of points amount.
 
         When this action is called, event information is stored in \a leaderstate and sent to the event engine.
+        \nosignreq
     */
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_points_transfer(name from, name to, asset quantity, std::string memo);
@@ -308,7 +319,8 @@ public:
 
         The pair of proposer and proposal_name can be used in another actions to identify created proposed transaction.
 
-        Performing the action requires a signature of the \a proposer.
+        \signreq
+            — the \a proposer account .
     */
     [[eosio::action]] void propose(ignore<symbol_code> commun_code, ignore<name> proposer, ignore<name> proposal_name,
                 ignore<name> permission, ignore<eosio::transaction> trx);
@@ -321,8 +333,8 @@ public:
         \param approver name of account approving multi-signature transaction
         \param proposal_hash a hash sum to check if the transaction is substituted or not (optional parameter)
 
-        <b>Restrictions:</b>
-            - Only a top leader can approve (can sign) the transaction.
+        \signreq
+            — a <i>top leader</i> .
     */
     [[eosio::action]] void approve(name proposer, name proposal_name, name approver,
                 const eosio::binary_extension<eosio::checksum256>& proposal_hash);
@@ -337,7 +349,8 @@ public:
         <b>Restrictions:</b>
             - Only a person whose name is in approvals list can revoke a signature.
 
-        This action requires a signature of the \a approver.
+        \signreq
+            — the \a approver account .
     */
     [[eosio::action]] void unapprove(name proposer, name proposal_name, name approver);
 
@@ -351,7 +364,8 @@ public:
         <b>Restrictions:</b>
             - Only expired transaction can be canceled by a person who is not a proposer.
 
-        This action requires a signature of the \a canceler.
+        \signreq
+            — the \a canceler account .
     */
     [[eosio::action]] void cancel(name proposer, name proposal_name, name canceler);
 
@@ -368,7 +382,8 @@ public:
             - all operations contained in the transaction should be feasible;
             - the memory in the database allocated for the transaction can be erased.
 
-        This action requires a signature of the \a executer.
+        \signreq
+            — the \a executer account .
     */
     [[eosio::action]] void exec(name proposer, name proposal_name, name executer);
 
@@ -379,14 +394,16 @@ public:
 
         \details This action revokes all permissions issued by this account for currently executing multi-signature transactions. This action does not apply to completed transactions, as well as to transactions that will be signed by this account after calling \ref invalidate. The proposed transaction can still be sent to the network if it contains the needed number of signatures, taking into account the withdrawn one.
 
-        This action requires a signature of the account revoking permissions.
+        \signreq
+            — the \a account revoking permissions .
     */
     [[eosio::action]] void invalidate(name account);
 
     /**
         \brief The \ref setrecover action is used to create dApp authority before danger operations which can cause dApp leaders lose access to \a c.ctrl multisignature transactions.
 
-        This action requires a signature of most validators.
+        \signreq
+            — <i>most validators</i> .
     */
     [[eosio::action]] void setrecover();
 

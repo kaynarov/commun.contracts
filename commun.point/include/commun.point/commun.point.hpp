@@ -34,7 +34,7 @@ public:
         \param issuer account issuing the point
         \param initial_supply number of points supplied initially. These points are on the issuer's balance sheet. The initial_supply parameter must be at most maximum_supply
         \param maximum_supply maximum allowable number of points supplied
-        \param cw connector weight showing the exchange rate between the point and the CMN token, calculated by the specified formula. This parameter should take value from «0» to «10000» inclusive («0» and «10000» equal to «0.00 % » and «100.00 % » correspondingly)
+        \param cw connector weight showing the exchange rate between the point and the CMN token, calculated by the specified formula. This parameter should take value from «0» to «10 000» inclusive («0» and «10 000» equal to «0,00 \%» and «100,00 \%» correspondingly)
         \param fee amount of commission that should be charged from a user when exchanging created points for CMN tokens. This parameter is set in the same way as \a cw one
 
         The asset type is a structure value containing the fields:
@@ -47,7 +47,8 @@ public:
 
         To form a community for the created point, the \a list::create action is called in the \a c.list contract. This action generates internal calls \a emit::init, \a ctrl::init and \a gallery::init to configure the community.
 
-        This action requires the signature of the trusted community client.
+        \signreq
+            — <i>trusted community client</i> .
     */
     [[eosio::action]]
     void create(name issuer, asset initial_supply, asset maximum_supply, int16_t cw, int16_t fee);
@@ -56,15 +57,16 @@ public:
         \brief The \ref setparams action is used by a point issuer to set the parameters of the issued point. These settings can be updated after issuing the point.
 
         \param commun_code the point symbol code
-        \param transfer_fee commission (in percent) charged from the amount of point transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is «10» that corresponds to «0.1» (%)
-        \param min_transfer_fee_points minimum number of points transferred as fee. Such number of points will be debited from the account, even if the calculated fee is less than this value. Default value is «1» that corresponds to one smallest part of point (i.e. 0.001 point)
+        \param transfer_fee commission (in percent) charged from the amount of point transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is «10» that corresponds to «0,1» (\%)
+        \param min_transfer_fee_points minimum number of points transferred as fee. Such number of points will be debited from the account, even if the calculated fee is less than this value. Default value is «1» that corresponds to one smallest part of point (i.e. 0,001 point)
 
         <b>Requirements:</b>
             - the point should be created before calling this action;
-            - the \a min_transfer_fee_points parameter should take the value «0» if \a transfer_fee is set to «0» (%);
+            - the \a min_transfer_fee_points parameter should take the value «0» if \a transfer_fee is set to «0» (\%);
             - no fee is charged on transfer if the «from» (or «to») account is either a point issuer or one of the commun contracts.
 
-        Performing the action requires the point issuer signature.
+        \signreq
+            — <i>the point issuer</i> .
     */
     [[eosio::action]]
     void setparams(symbol_code commun_code, uint16_t transfer_fee, int64_t min_transfer_fee_points);
@@ -74,7 +76,8 @@ public:
 
         \param freezer a freezer account
 
-        This action requires the signature of the trusted community client.
+        \signreq
+            — <i>trusted community client</i> .
     */
     [[eosio::action]]
     void setfreezer(name freezer);
@@ -90,7 +93,10 @@ public:
         The number of supplied points should not exceed the maximum_supply value specified by the \ref create action.
         When the \ref issue action is called, the information about \a currency and \a balance events is sent to the event engine.
 
-        This action requires the signature of the points issuer or the trusted community client.
+        \signreq
+            — <i>the point issuer</i>  
+            or  
+            — <i>trusted community client</i> .
 
         The procedure for crediting points to the recipient balance \a to is carried out in two stages. Initially, the generated points are credited to the \a issuer balance. Next, \ref issue does (inline) call of \ref transfer action to transfer the points from the \a issuer to the \a to balance sheet if the \a issuer and \a to accounts are not the same.
     */
@@ -107,7 +113,9 @@ public:
         When this action is called, the information about \a currency and \a balance events is sent to the event engine.
 
         Use of the bandwidth resources (RAM) is charged to the account \a from. The number of points withdrawn from circulation will also be deducted from account balance, so this account (\a from) can not withdraw points more than he/she has them on own balance.
-        This action requires a signature of the account \a from.
+
+        \signreq
+            — the \a from account .
     */
     [[eosio::action]]
     void retire(name from, asset quantity, string memo);
@@ -127,7 +135,8 @@ public:
         <b>Restriction:</b>
             - It is not allowed to transfer points to oneself.
 
-        This action requires a signature of the \a from account.
+        \signreq
+            — the \a from account .
 
         Use of the bandwidth (RAM) resources is charged either to sending account or to receiving account, depending on who signed the transaction. If the \ref open action was previously performed, none of them should pay bandwidth, since the record already created in database is used.
     */
@@ -140,6 +149,11 @@ public:
         \param owner account name for which the memory is allocated
         \param commun_code point symbol for which the record is being created
         \param ram_payer account name that pays for the used memory
+
+        \signreq
+            — the \a ram_payer account (optional)  
+            or  
+            — \a owner (required if the \a ram_payer's sign is omitted) .
 
         This action requires a signature of account specified in the \a ram_payer parameter. Since this parameter is an optional, the \a owner signature is required if \a ram_payer is omitted.
      */
@@ -154,7 +168,8 @@ public:
 
         To perform this action, it is necessary to have zeroed point balance of the account \a owner.
 
-        This action requires a signature of the \a owner account.
+        \signreq
+            — the \a owner account .
      */
     [[eosio::action]]
     void close(name owner, symbol_code commun_code);
@@ -169,7 +184,8 @@ public:
 
         When this action is called, the information about \a balance event is sent to the event engine.
 
-        This action requires a signature of the \a owner account.
+        \signreq
+            — the \a owner account .
      */
     [[eosio::action]]
     void withdraw(name owner, asset quantity);

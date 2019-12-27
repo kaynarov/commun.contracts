@@ -20,7 +20,8 @@ public:
         \param commun_code a point symbol of the new community
         \param community_name a name of the new community
 
-        Performing this action requires the signature of most validators.
+        \signreq
+            — <i>most validators</i> .
     */
     [[eosio::action]] void create(symbol_code commun_code, std::string community_name);
 
@@ -34,9 +35,11 @@ public:
 
         All parameters are optionally. So, each of them can be set via separate calling of this action.
 
-        Performing this action requires the signature of most validators.
+        \signreq
+            — <i>most validators</i> .
 
-        It should be noted that the parameters \a permission and \a required_threshold can also be used for adjust default permissions as follows:
+        \note
+        The parameters \a permission and \a required_threshold can also be used for adjust default permissions as follows:
         <center> <i> lead.smajor = leaders_num×2/3+1 </i> </center>
         <center> <i> lead.major = leaders_num×1/2+1 </i> </center>
         <center> <i> lead.minor = leaders_num×1/3+1 </i> </center>
@@ -64,9 +67,11 @@ public:
 
         All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
 
-        Performing this action requires the signature of most validators.
+        \signreq
+            — <i>most validators</i> .
 
-        It should be noted that the parameters \a permission and \a required_threshold can be used by leaders for adjust default permissions as follows:
+        \note
+        The parameters \a permission and \a required_threshold can be used by leaders for adjust default permissions as follows:
         <center> <i> lead.smajor = leaders_num×2/3+1 </i> </center>
         <center> <i> lead.major = leaders_num×1/2+1 </i> </center>
         <center> <i> lead.minor = leaders_num×1/3+1 </i> </center>
@@ -87,15 +92,16 @@ public:
         \param max_votes maximum number of leaders a user can vote for. Default value is 5
         \param permission permission for multisig transaction, for which the threshold is set. This action can not create or delete \a permissions. If \a required_threshold is set, this parameter should be set too
         \param required_threshold threshold at which a multisig transaction is considered approved. If \a permission is set, this parameter should be set too
-        \param emission_rate annual emission rate (in percent). This parameter takes values from 1.00 to 50.00 inclusive in increments of 5.00 (i.e. 1.00, 5.00, 10.00, ..., 50.00). Default value is 20.00
-        \param leaders_percent share (in percent) of the annual emission deducted as a reward to community leaders. This parameter takes values from 1.00 to 10.00 inclusive in increments of 1.00. Default value is 3.00
-        \param author_percent share (in percent) deducted from a post reward to author of the post. This parameter can take one of the values: 25.00, 50.00 and 75.00. Remaining share of the post reward is allocated to curators. Default value is 50.00
+        \param emission_rate annual emission rate (in percent). This parameter takes values from 1,00 to 50,00 inclusive in increments of 5,00 (i.e. 1,00; 5,00; 10,00; ...; 50,00). Default value is 20,00
+        \param leaders_percent share (in percent) of the annual emission deducted as a reward to community leaders. This parameter takes values from 1,00 to 10,00 inclusive in increments of 1,00. Default value is 3,00
+        \param author_percent share (in percent) deducted from a post reward to author of the post. This parameter can take one of the values: 25,00; 50,00 and 75,00. Remaining share of the post reward is allocated to curators. Default value is 50,00
 
         All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
 
         Depending on the \a required_threshold set, a number of signatures required to complete a multisig transaction may be vary. For example, setting threshold=3 is considered to be obtained if the signature is affixed with at least three leaders.
 
-        Performing this action requires the signature of most community leaders.
+        \signreq
+            — <i>most community leaders</i> .
     */
     [[eosio::action]] void setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
@@ -115,7 +121,8 @@ public:
         All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
         This action does not store any state in DB, it only checks an authority and community presence.
 
-        Performing this action requires the community leaders signature.
+        \signreq
+            — <i>the community leaders</i> .
     */
     [[eosio::action]] void setinfo(symbol_code commun_code,
         optional<std::string> description, optional<std::string> language, optional<std::string> rules,
@@ -129,7 +136,8 @@ public:
 
         This action does not store any state in DB, it only checks input parameters.
 
-        Performing this action requires the \a follower account signature.
+        \signreq
+            — the \a follower account .
     */
     [[eosio::action]] void follow(symbol_code commun_code, name follower);
 
@@ -141,7 +149,8 @@ public:
 
         This action does not store any state in DB, it only checks input parameters.
 
-        Performing this action requires the \a follower account signature.
+        \signreq
+            — the \a follower account .
     */
     [[eosio::action]] void unfollow(symbol_code commun_code, name follower);
 
@@ -153,7 +162,8 @@ public:
 
         This action does not store any state in DB, it only checks input parameters.
 
-        Performing this action requires the \a follower account signature.
+        \signreq
+            — the \a follower account .
     */
     [[eosio::action]] void hide(symbol_code commun_code, name follower);
 
@@ -165,7 +175,8 @@ public:
 
         This action does not store any state in DB, it only checks input parameters.
 
-        Performing this action requires the \a follower account signature.
+        \signreq
+            — the \a follower account .
     */
     [[eosio::action]] void unhide(symbol_code commun_code, name follower);
 
@@ -179,7 +190,8 @@ public:
 
         This action does not store any state in DB, it only checks input parameters.
 
-        Performing this action requires the \a leader account signature.
+        \signreq
+            — the \a leader account .
     */
     [[eosio::action]] void ban(symbol_code commun_code, name leader, name account, std::string reason);
 
@@ -193,7 +205,8 @@ public:
 
         This action does not store any state in DB, it only checks input parameters.
 
-        Performing this action requires the \a leader account signature.
+        \signreq
+            — the \a leader account .
     */
     [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
 
