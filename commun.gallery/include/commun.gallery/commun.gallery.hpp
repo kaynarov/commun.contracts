@@ -245,7 +245,7 @@ namespace events {
         asset points; //!< Number of «frozen» points in the gem
         asset pledge_points; //!< Number of pledged points in the gem
         bool damn; //!< Flag indicating a negative or positive user opinion. \a true is negative one.
-        int64_t shares; //!< Weight of gem calculated by the banck function
+        int64_t shares; //!< Weight of gem calculated by the bancor function
     };
     
     /**
