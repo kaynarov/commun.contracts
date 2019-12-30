@@ -164,7 +164,7 @@ def configureCommun():
         }, providebw='c.list/c')
 
     c = getAccount('c')
-    updateAuth('c', 'active', 'owner', [], ['c@lead.smajor', 'c@lead.recover'])
+    updateAuth('c', 'active', 'owner', [], ['c@lead.smajor', 'c@lead.recover', 'c@owner'])
 
 # -------------------- Argument parser ----------------------------------------
 # Command Line Arguments

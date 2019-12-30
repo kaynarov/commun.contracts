@@ -7,8 +7,8 @@ namespace commun {
 using namespace eosio;
 
 /**
- * \brief This class implements commun.publication contract behaviour
- * \ingroup publish_class
+ * \brief This class implements \a c.gallery contract behaviour
+ * \ingroup gallery_class
  */
 class publication : public gallery_base<publication>, public contract {
 
@@ -37,20 +37,22 @@ public:
     }
 
     /**
-        \brief The \ref init action is used by \a commun.list contract to configure the gallery parameters for a community specified by a point symbol.
+        \brief The \ref init action is used by \a c.list contract to configure the gallery parameters for a community specified by a point symbol.
         \param commun_code community symbol, same as point symbol
 
         This action is unavailable for user and can be called only internally.
-        It requires signature of the trusted community client.
+        \signreq
+            — <i>trusted community client</i> .
     */
     void init(symbol_code commun_code);
 
     /**
-        \brief The \ref emit action is used to emit points specified by parameter for rewarding community members. Points are issued directly in \a commun.emit contract, not in \a commun.publication one.
+        \brief The \ref emit action is used to emit points specified by parameter for rewarding community members. Points are issued directly in \a c.emit contract, not in \a c.gallery one.
         \param commun_code community symbol, same as point symbol
 
         This action is unavailable for user and can be called only internally.
-        It requires signature of the trusted community client.
+        \signreq
+            — <i>trusted community client</i> .
     */
     void emit(symbol_code commun_code);
 
@@ -66,7 +68,8 @@ public:
         \param metadata metadata of the message (recommended format is JSON. The data is not stored in DB)
         \param weight weight of points «frozen» for creating the message. This parameter is optional and specified only when creating a post
 
-        This action requires signature of the message author specified in the field \a message_id.author.
+        \signreq
+            — account from the field \a message_id.author .
     */
     void create(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
         std::string header, std::string body, std::vector<std::string> tags, std::string metadata,
@@ -82,9 +85,10 @@ public:
         \param tags list of tags of the message (not stored in DB)
         \param metadata metadata of the message (recommended format is JSON. The data is not stored in DB)
 
-        This action requires signature of the message author \a message_id.author.
+        \signreq
+            — account from the field \a message_id.author .
 
-        <b>Note:</b>  
+        \note
         Community leaders can lock a message even after it has been corrected regardless of whether it was previously locked temporarily or not. However, the message can not be locked again if the \ref update is also signed by the trusted community client because the message is not checked by leaders in this case.
     */
     void update(symbol_code commun_code, mssgid_t message_id, std::string header, std::string body,
@@ -102,10 +106,13 @@ public:
 
         The \ref settags action does not store any data in DB, it only checks the input parameters.
 
-        The action requires the leader's signature.
 
-        <b>Note:</b>  
-        Changes to tags of a message are not checked by leaders if the \ref settags action is signed by the trusted community client.
+        \signreq
+            — \a leader ;  
+            — <i>trusted community client</i> (optional) .
+
+        \note
+        Changes to tags of a message are not checked by leaders if the \ref settags action is signed by the <i>trusted community client</i>.
     */
     void settags(symbol_code commun_code, name leader, mssgid_t message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
@@ -116,10 +123,12 @@ public:
         \param commun_code community symbol, same as point symbol
         \param message_id identifier of the message (post or comment) to be removed
 
-        The action requires the message author's signature.
+        \signreq
+            — \a author of message ;  
+            — <i>trusted community client</i> (optional) .
 
-        <b>Note:</b>  
-        Deleting a message and updating the corresponding records in DB are not checked if the \ref remove action is also signed by the trusted community client.
+        \note
+        Deleting a message and updating the corresponding records in DB are not checked if the \ref remove action is also signed by the <i>trusted community client</i>.
     */
     void remove(symbol_code commun_code, mssgid_t message_id);
 
@@ -134,10 +143,12 @@ public:
         The action does not store any data in DB, it only checks the input parameters.
         It can only be performed if the message state is active, that is, user opinions are collected.
 
-        The action requires the reporter's signature.
+        \signreq
+            — the \a reporter account;  
+            — <i>trusted community client</i> (optional) .
 
-        <b>Note:</b>  
-        A message content is not checked for suspicion by leaders if the action is also signed by the trusted community client.
+        \note
+        A message content is not checked for suspicion by leaders if the action is also signed by the <i>trusted community client</i>.
     */
     void report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason);
 
@@ -151,7 +162,8 @@ public:
 
         This action stops receiving a reward allocated for the message.
 
-        The action requires the leader's signature.
+        \signreq
+            — the \a leader account .
     */
     void lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
 
@@ -163,7 +175,8 @@ public:
         \param message_id identifier of the message (post or comment) to be unlocked
         \param reason reason of unlocking (this field should not be empty)
 
-        The action requires the leader's signature.
+        \signreq
+            — the \a leader account .
     */
     void unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
 
@@ -175,15 +188,17 @@ public:
         \param message_id identifier of the message (post or comment)
         \param weight weight (in percent) of voter's gem «frozen» for voting. This parameter is optional, it should not equal to «0» if specified. The voter should provide a sufficient number of points for voting
 
-        The action requires the \a voter's signature.
+        \signreq
+            — the \a voter account ;  
+            — <i>trusted community client</i> (optional) .
 
-        <b>Note:</b>  
-        If the action is also signed by the trusted community client, then the action does not check whether or not:
-     *   - the specified weight equal to «0»;
-     *   - the message exists;
-     *   - the message is in ACTIVE state;
-     *   - the gathering opinions period is over;
-     *   - the voter has enough points.
+        \note
+        If the action is also signed by the <i>trusted community client</i>, then the action does not check whether or not:
+        - the specified weight equal to «0»;
+        - the message exists;
+        - the message is in ACTIVE state;
+        - the gathering opinions period is over;
+        - the voter has enough points.
 
         In this case the action also does not store anything in DB.
     */
@@ -197,15 +212,17 @@ public:
         \param message_id identifier of the message (post or comment)
         \param weight weight of voter's gem «frozen» for voting. This parameter is optional
 
-        The action requires the \a voter's signature.
+        \signreq
+            — the \a voter account ;  
+            — <i>trusted community client</i> (optional) .
 
-        <b>Note:</b>  
-        If the action is also signed by the trusted community client, then the action does not check whether or not:
-     *   - the specified weight equal to «0»;
-     *   - the message exists;
-     *   - the message is in ACTIVE state;
-     *   - the gathering opinions period is over;
-     *   - the voter has enough points.
+        \note
+        If the action is also signed by the <i>trusted community client</i>, then the action does not check whether or not:
+        - the specified weight equal to «0»;
+        - the message exists;
+        - the message is in ACTIVE state;
+        - the gathering opinions period is over;
+        - the voter has enough points.
 
         In this case the action also does not store anything in DB.
     */
@@ -218,12 +235,14 @@ public:
         \param voter account voting for the message
         \param message_id identifier of the message (post or comment) 
 
-        The action requires the \a voter's signature.
+        \signreq
+            — the \a voter account ;  
+            — <i>trusted community client</i> (optional) .
 
-        <b>Note:</b>  
-        If the action is also signed by the trusted community client, then the action does not store anything in DB and does not check whether or not:
-     *   - the message exists;
-     *   - the vote exists.
+        \note
+        If the action is also signed by the <i>trusted community client</i>, then the action does not store anything in DB and does not check whether or not:
+        - the message exists;  
+        - the vote exists.
     */
     void unvote(symbol_code commun_code, name voter, mssgid_t message_id);
 
@@ -236,8 +255,14 @@ public:
         \param gem_creator account who created the gem
         \param eager flag indicating the timeliness of the request; \a true — the request was sent in advance
 
-        User gets points, but does not get a reward if the request is sent before calculation of rewards for the message. In this case, the transaction containing \a claim, requires the signature of gam owner (or of gam creator).  
-        User gets points and a reward if the request is sent after calculation of rewards for the message. In this case, claim requires no any signature.
+        <b> \a CASE_1: The request is sent before calculation of rewards for the message</b>  
+        User gets points, but does not get a reward.
+        \signreq
+            — the \a gem_owner account (or \a gem_creator) .
+
+        <b> \a CASE_2: The request is sent after calculation of rewards for the message</b>  
+        User gets points and a reward.
+        \nosignreq
     */
     void claim(symbol_code commun_code, mssgid_t message_id, name gem_owner,
         std::optional<name> gem_creator, std::optional<bool> eager);
@@ -290,7 +315,8 @@ public:
 
         Collected reward to the author of the banned message and voted users will not be paid.
 
-        The action requires the signature of the community leader.
+        \signreq
+            — <i>a community leader</i> .
     */
     void ban(symbol_code commun_code, mssgid_t message_id);
 

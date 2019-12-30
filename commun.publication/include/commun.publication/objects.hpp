@@ -39,7 +39,7 @@ struct mssgid_t {
 
 /**
  * \brief The structure represents a vertex table in DB.
- * \ingroup publish_tables
+ * \ingroup gallery_tables
  *
  * The table contains information about hierarchy of messages (post and comments).
  */

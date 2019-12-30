@@ -5,7 +5,7 @@ namespace commun {
 using namespace eosio;
 
 /**
- * \brief This class implements the \a commun.social contract behaviour.
+ * \brief This class implements the \a c.social contract behaviour.
  * \ingroup social_class
  */
 class commun_social: public contract {
@@ -24,7 +24,9 @@ public:
 
         The action does not store any data in DB.
 
-        The action requires signing the \a pinner account and the trusted community client.
+        \signreq
+            — the \a pinner account ;  
+            — <i>trusted community client</i> .
     */
     [[eosio::action]] void pin(name pinner, name pinning);
 
@@ -40,7 +42,9 @@ public:
 
         The action does not store any data in DB.
 
-        The action requires signing the \a pinner account and the trusted community client.
+        \signreq
+            — the \a pinner account ;  
+            — <i>trusted community client</i> .
     */
     [[eosio::action]] void unpin(name pinner, name pinning);
 
@@ -56,7 +60,9 @@ public:
 
         The action does not store any data in DB.
 
-        The action requires signing the \a blocker account and the trusted community client.
+        \signreq
+            — the \a blocker account ;  
+            — <i>trusted community client</i> .
     */
     [[eosio::action]] void block(name blocker, name blocking);
 
@@ -72,7 +78,9 @@ public:
 
         The action does not store any data in DB.
 
-        The action requires signing the \a blocker account and the trusted community client.
+        \signreq
+            — the \a blocker account ;  
+            — <i>trusted community client</i> .
     */
     [[eosio::action]] void unblock(name blocker, name blocking);
 
@@ -84,7 +92,9 @@ public:
 
         The action does not store any data in DB.
 
-        The action requires signing the \a account and the trusted community client.
+        \signreq
+            — <i>the account</i> ;  
+            — <i>trusted community client</i> .
     */
     [[eosio::action]] void updatemeta(name account, accountmeta meta);
 
@@ -95,7 +105,9 @@ public:
 
         The action does not store any data in DB.
 
-        The action requires signing the \a account and the trusted community client.
+        \signreq
+            — <i>the account</i> ;  
+            — <i>trusted community client</i> .
     */
     [[eosio::action]] void deletemeta(name account);
 };
