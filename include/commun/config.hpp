@@ -29,6 +29,7 @@ static const auto emit_name = "c.emit"_n;
 static const auto control_name = "c.ctrl"_n;
 static const auto gallery_name = "c.gallery"_n;
 static const auto social_name = "c.social"_n;
+static const auto recover_name = "c.recover"_n;
 static const auto publish_name = gallery_name;
 
 static const auto internal_name = "cyber"_n;
