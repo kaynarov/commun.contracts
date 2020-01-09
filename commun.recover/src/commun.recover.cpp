@@ -6,6 +6,29 @@
 using namespace commun;
 namespace cfg = commun::config;
 
+structures::params commun_recover::getParams() const {
+    return tables::params_table(_self, _self.value).get_or_default();
+}
+
+void commun_recover::setParams(const structures::params &params) {
+    tables::params_table(_self, _self.value).set(params, _self);
+}
+
+
+#define SET_PARAM(STRUCTURE, PARAM) if (PARAM && (STRUCTURE.PARAM != *PARAM)) { STRUCTURE.PARAM = *PARAM; _empty = false; }
+void commun_recover::setparams(std::optional<uint64_t> recover_delay) {
+    require_auth(_self);
+
+    auto params = getParams();
+    
+    bool _empty = true;
+    SET_PARAM(params, recover_delay);
+
+    eosio::check(!_empty, "No params changed");
+    setParams(params);
+}
+#undef SET_PARAM
+
 void commun_recover::recover(name account, std::optional<public_key> active_key, std::optional<public_key> owner_key) {
     require_auth(_self);
 
@@ -31,8 +54,9 @@ void commun_recover::recover(name account, std::optional<public_key> active_key,
     }
 
     if (change_owner) {
+        auto recover_delay = getParams().recover_delay;
         auto owner_request = tables::owner_request_table(_self, account.value);
-        auto change_time = eosio::current_time_point() + eosio::seconds(config::def_recover_delay);
+        auto change_time = eosio::current_time_point() + eosio::seconds(recover_delay);
         owner_request.set({change_time, owner_key.value()}, _self);
     }
 }
@@ -68,4 +92,4 @@ void commun_recover::cancelowner(name account) {
     owner_request.remove();
 }
 
-EOSIO_DISPATCH(commun::commun_recover, (recover)(applyowner)(cancelowner))
+EOSIO_DISPATCH(commun::commun_recover, (setparams)(recover)(applyowner)(cancelowner))

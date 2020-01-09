@@ -23,13 +23,27 @@
             "fields": [
                 {"name": "account",      "type": "name"}
             ]
+        },{
+            "name": "setparams",
+            "base": "",
+            "fields": [
+                {"name": "recover_delay", "type": "uint64?"}
+            ]
+        },{
+            "name": "params_struct",
+            "base": "",
+            "fields": [
+                {"name": "id",            "type": "uint64"},
+                {"name": "recover_delay", "type": "uint64"}
+            ]
         }
     ],
     "types": [],
     "actions": [
         {"name": "recover",         "type": "recover"},
         {"name": "applyowner",      "type": "account"},
-        {"name": "cancelowner",     "type": "account"}
+        {"name": "cancelowner",     "type": "account"},
+        {"name": "setparams",       "type": "setparams"}
     ],
     "events": [],
     "tables": [
@@ -38,6 +52,14 @@
             "indexes": [{
                 "name": "primary",
                 "unique": "true",
+                "orders": [
+                    {"field": "id", "order": "asc"}
+                ]
+            }]
+        },{
+            "name": "params",          "type": "params_struct",
+            "indexes": [{
+                "name": "primary", "unique": "true",
                 "orders": [
                     {"field": "id", "order": "asc"}
                 ]
