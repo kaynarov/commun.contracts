@@ -172,6 +172,15 @@ BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {
     produce_block();
     BOOST_CHECK_EQUAL(err.no_opus("opus1"), community.setsysparams( _token_code, community.sysparams()
         ("remove_opuses", std::set<name>{"opus1", "opus2"} )));
+    BOOST_CHECK_EQUAL(err.community_exists, community.setsysparams( _token_code, community.sysparams()
+        ("community_name", "community_name" )));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
+        ("community_name", "new_community_name" )));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.community_exists, community.setsysparams( _token_code, community.sysparams()
+        ("community_name", "new_community_name" )));
+    BOOST_CHECK_EQUAL(success(), community.setsysparams( _token_code, community.sysparams()
+        ("community_name", "community_name" )));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(follow_hide_test, commun_list_tester) try {
