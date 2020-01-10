@@ -86,6 +86,7 @@ public:
         const string freezer_not_exists = amsg("freezer account does not exist");
         const string not_reserve_symbol = amsg("invalid reserve token symbol");
 
+        const string no_changes = amsg("No params changed");
         const string min_transfer_fee_points_negative = amsg("min_transfer_fee_points cannot be negative");
         const string min_transfer_fee_points_zero = amsg("min_transfer_fee_points cannot be 0 if transfer_fee set");
         const string transfer_fee_gt_100 = amsg("transfer_fee can't be greater than 100%");
@@ -115,7 +116,11 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(init_balance, token._symbol), ""));
 
     BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(999999, point._symbol), 10000, fee * cfg::_100percent));
+    
+    BOOST_CHECK_EQUAL(err.no_changes, point.setparams(_golos, point.args()));
     BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0)));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.no_changes, point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0)));
     BOOST_CHECK_EQUAL(err.no_reserve, point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
     BOOST_CHECK_EQUAL(err.no_reserve, token.transfer(_carol, _code, asset(reserve_no_fee, token._symbol), point_code_str));
     BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(reserve_no_fee, token._symbol), cfg::restock_prefix + point_code_str));
