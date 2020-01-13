@@ -16,8 +16,10 @@ if os.path.basename(include_path) != "include":
 contract_path = os.path.dirname(include_path)
 contract_name = os.path.basename(contract_path)
 abi_path = contract_path + "/abi/" + contract_name + ".abi"
-with open(abi_path) as abifile:
-    abi = json.load(abifile)
+
+if os.path.exists(abi_path):
+    with open(abi_path) as abifile:
+        abi = json.load(abifile)
 
 event_prefix = "_event {"
 table_prefix = '// DOCS_TABLE: '

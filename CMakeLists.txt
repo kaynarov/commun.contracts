@@ -56,6 +56,7 @@ add_subdirectory(commun.point)
 add_subdirectory(commun.gallery)
 add_subdirectory(commun.emit)
 add_subdirectory(commun.ctrl)
+add_subdirectory(commun.recover)
 
 if (APPLE)
    set(OPENSSL_ROOT "/usr/local/opt/openssl")

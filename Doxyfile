@@ -788,6 +788,7 @@ INPUT                  = commun.point \
                          commun.social \
                          commun.gallery \
                          commun.publication \
+                         commun.recover \
                          include/commun/doxygen.hpp
 
 # This tag can be used to specify the character encoding of the source files
