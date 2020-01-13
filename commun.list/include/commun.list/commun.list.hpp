@@ -22,7 +22,7 @@ public:
         \param community_name a name of the new community
 
         \signreq
-            — <i>most validators</i> .
+            — <i>majority of validators</i> .
     */
     [[eosio::action]] void create(symbol_code commun_code, std::string community_name);
 
@@ -37,7 +37,7 @@ public:
         All parameters are optionally. So, each of them can be set via separate calling of this action.
 
         \signreq
-            — <i>most validators</i> .
+            — <i>majority of validators</i> .
 
         \note
         The parameters \a permission and \a required_threshold can also be used for adjust default permissions as follows:
@@ -70,7 +70,7 @@ public:
         All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
 
         \signreq
-            — <i>most validators</i> .
+            — <i>majority of validators</i> .
 
         \note
         The parameters \a permission and \a required_threshold can be used by leaders for adjust default permissions as follows:
@@ -103,7 +103,7 @@ public:
         Depending on the \a required_threshold set, a number of signatures required to complete a multisig transaction may be vary. For example, setting threshold=3 is considered to be obtained if the signature is affixed with at least three leaders.
 
         \signreq
-            — <i>most community leaders</i> .
+            — <i>majority of community leaders</i> .
     */
     [[eosio::action]] void setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
@@ -124,7 +124,7 @@ public:
         This action does not store any state in DB, it only checks an authority and community presence.
 
         \signreq
-            — <i>most community leaders</i> .
+            — <i>majority of community leaders</i> .
     */
     [[eosio::action]] void setinfo(symbol_code commun_code,
         optional<std::string> description, optional<std::string> language, optional<std::string> rules,
