@@ -7,7 +7,11 @@ import community
 import pymongo
 import json
 import eehelper as ee
+import time
 from testnet import Asset
+
+recoverKey='5J24gjEWSEQFgtngPJNeSKvFsnmAG8qJVJRgQwnmXoAhxcchxee'
+recoverPublic='GLS71iAcPXAqzruvh1EFu28S89Cy8GoYNQXKSQ6UuaBYFuB7usyCB'
 
 techKey    ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
 clientKey  ='5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN'
@@ -544,6 +548,8 @@ class PointTestCase(unittest.TestCase):
             [ ({'msg_type':'ApplyTrx', 'id':transferTrx}, {'block_num':transferBlock, 'actions':transferTrace, 'except':ee.Missing()}),
             ], transferBlock)
 
+
+
 class CtrlTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -968,6 +974,73 @@ class CtrlTestCase(unittest.TestCase):
             ], trxBlock)
 
         self.assertEqual(appLeaders, self.getLeadersWeights(''))
+
+
+
+class RecoverTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        result = json.loads(testnet.cleos('get table c.recover c.recover params'))
+        if len(result['rows']) == 0 or result['rows'][0]['recover_delay'] != 3:
+            testnet.pushAction('c.recover', 'setparams', 'c.recover', {
+                    'recover_delay': 3
+            }, providebw='c.recover/tech', keys=[techKey])
+        testnet.updateAuth('c.recover', 'recover', 'active', [recoverPublic], [],
+                providebw='c.recover/tech', keys=[techKey])
+
+    def setUp(self):
+        (private, public) = testnet.createKey()
+        account = testnet.createRandomAccount(public, keys=[techKey])
+        testnet.updateAuth(account, 'owner', '', [public], ['c.recover@cyber.code'],
+                providebw=account+'/tech', keys=[techKey, private])
+
+        (self.alice, self.aliceKey) = (account, private)
+
+
+    def test_unavailableRecover(self):
+        (bobKey, bobPublic) = testnet.createKey()
+        bob = testnet.createRandomAccount(bobPublic, keys=[techKey])
+
+        (private2, public2) = testnet.createKey()
+        with self.assertRaisesRegex(Exception, 'Key recovery for this account is not available'):
+            community.recover(bob, active_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+
+    def test_recoverActiveAuthority(self):
+        (alice, aliceKey) = (self.alice, self.aliceKey)
+
+        (private2, public2) = testnet.createKey()
+        community.recover(alice, active_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+        # Check new active key with `checkwin` action
+        testnet.pushAction('cyber', 'checkwin', alice, {},
+                providebw=alice+'/tech', keys=[techKey, private2])
+
+
+    def test_applyOwnerRecover(self):
+        (alice, aliceKey) = (self.alice, self.aliceKey)
+
+        (private2, public2) = testnet.createKey()
+        community.recover(alice, owner_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+        time.sleep(4)
+        community.applyOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        # Check new owner key with `checkwin` action
+        testnet.pushAction('cyber', 'checkwin', alice+'@owner', {},
+                providebw=alice+'/tech', keys=[techKey, private2])
+
+
+    def test_cancelOwnerRecover(self):
+        (alice, aliceKey) = (self.alice, self.aliceKey)
+
+        (private2, public2) = testnet.createKey()
+        community.recover(alice, owner_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+        community.cancelOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        with self.assertRaisesRegex(Exception, "Request for change owner key doesn't exists"):
+            community.applyOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
 
 
 if __name__ == '__main__':

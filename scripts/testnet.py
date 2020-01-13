@@ -241,7 +241,8 @@ def getAccount(account):
     return acc
 
 def updateAuth(account, permission, parent, keyList, accounts, *, providebw=None, keys=None):
-    return pushAction('cyber', 'updateauth', account, {
+    actor = account + ('@owner' if permission == 'owner' else '')
+    return pushAction('cyber', 'updateauth', actor, {
         'account': account,
         'permission': permission,
         'parent': parent,
