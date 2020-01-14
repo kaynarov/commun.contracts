@@ -403,7 +403,7 @@ public:
         \brief The \ref setrecover action is used to create dApp authority before danger operations which can cause dApp leaders lose access to \a c.ctrl multisignature transactions.
 
         \signreq
-            — <i>most validators</i> .
+            — <i>majority of validators</i> .
     */
     [[eosio::action]] void setrecover();
 

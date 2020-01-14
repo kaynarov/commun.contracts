@@ -35,5 +35,5 @@
 /**
  * \defgroup gallery_events Events
  * \ingroup gallery
- * \details The Events section contains description of events occurring in \a commun.gallery, information about which is sent to the Event Engine.
+ * \details The Events section contains description of events occurring in \a c.gallery, information about which is sent to the Event Engine.
  */
