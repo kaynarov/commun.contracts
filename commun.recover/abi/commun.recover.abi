@@ -21,7 +21,7 @@
             "name": "account",
             "base": "",
             "fields": [
-                {"name": "account",      "type": "name"},
+                {"name": "account",      "type": "name"}
             ]
         }
     ],
@@ -29,7 +29,7 @@
     "actions": [
         {"name": "recover",         "type": "recover"},
         {"name": "applyowner",      "type": "account"},
-        {"name": "cancelowner",     "type": "account"},
+        {"name": "cancelowner",     "type": "account"}
     ],
     "events": [],
     "tables": [
