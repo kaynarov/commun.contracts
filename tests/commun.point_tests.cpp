@@ -40,7 +40,7 @@ public:
         BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
         BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
         BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(999999, point._symbol), 10000, fee * cfg::_100percent));
-        BOOST_CHECK_EQUAL(success(), point.setparams(_golos, 0, 0));
+        BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0))); 
         BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
         BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(supply, point._symbol), "issue"));
     }
@@ -86,15 +86,18 @@ public:
         const string freezer_not_exists = amsg("freezer account does not exist");
         const string not_reserve_symbol = amsg("invalid reserve token symbol");
 
+        const string no_changes = amsg("No params changed");
         const string min_transfer_fee_points_negative = amsg("min_transfer_fee_points cannot be negative");
         const string min_transfer_fee_points_zero = amsg("min_transfer_fee_points cannot be 0 if transfer_fee set");
         const string transfer_fee_gt_100 = amsg("transfer_fee can't be greater than 100%");
+        const string fee_gt_100 = amsg("fee can't be greater than 100%");
 
         const string invalid_symbol = amsg("invalid symbol name");
         const string asset_string_format = amsg("wrong asset string format");
         const string asset_overflow = amsg("asset amount overflow");
         const string min_order_negative = amsg("minimum amount cannot be negative");
         const string min_order = amsg("converted value is lesser than minimum order");
+        const string fee_only = amsg("the entire amount is spent on fee");
     } err;
 };
 
@@ -103,31 +106,44 @@ BOOST_AUTO_TEST_SUITE(commun_point_tests)
 BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     BOOST_TEST_MESSAGE("Basic point tests");
     int64_t supply = 25000;
-    int64_t reserve = 100000;
+    int64_t reserve_no_fee = 100000;
     int64_t init_balance = 10000;
     double fee = 0.01;
+    int64_t reserve = reserve_no_fee * (1.0 - fee);
+    int64_t restock_fee = reserve_no_fee - reserve;
     BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
-    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(reserve_no_fee, token._symbol), ""));
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(init_balance, token._symbol), ""));
 
     BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(999999, point._symbol), 10000, fee * cfg::_100percent));
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, 0, 0));
+    
+    BOOST_CHECK_EQUAL(err.no_changes, point.setparams(_golos, point.args()));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0)));
+    produce_block();
+    BOOST_CHECK_EQUAL(err.no_changes, point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0)));
     BOOST_CHECK_EQUAL(err.no_reserve, point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
-    BOOST_CHECK_EQUAL(err.no_reserve, token.transfer(_carol, _code, asset(reserve, token._symbol), point_code_str));
-    BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
+    BOOST_CHECK_EQUAL(err.no_reserve, token.transfer(_carol, _code, asset(reserve_no_fee, token._symbol), point_code_str));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(reserve_no_fee, token._symbol), cfg::restock_prefix + point_code_str));
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
 
-    int64_t price = 5000;
+    int64_t price_no_fee = 5000;
+    int64_t price = price_no_fee * (1.0 - fee);
+    int64_t buy_fee = price_no_fee - price;
     int64_t amount = price * supply / reserve;
     supply += amount;
     reserve += price;
     BOOST_TEST_MESSAGE("--- alice buys " << amount  << " for " << price);
     BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code, _alice));
-    BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(price, token._symbol), point_code_str));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(price_no_fee, token._symbol), point_code_str));
     BOOST_CHECK_EQUAL(point.get_amount(_alice), amount);
 
+    BOOST_CHECK_EQUAL(point.get_stats()["reserve"].as<asset>().get_amount(), reserve);
+    BOOST_CHECK_EQUAL(point.get_stats()["supply"].as<asset>().get_amount(), supply);
+
     int64_t amount_sent = amount / 2;
-    int64_t price_sent = (amount_sent * reserve / supply) * (1.0 - fee);
+    int64_t price_sent_no_fee = (amount_sent * reserve / supply);
+    int64_t price_sent = price_sent_no_fee * (1.0 - fee);
+    int64_t sell_fee_bob = price_sent_no_fee - price_sent;
     BOOST_TEST_MESSAGE("--- alice sends " << amount_sent  << " to bob ");
     BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _bob, asset(amount_sent, point._symbol)));
     BOOST_TEST_MESSAGE("--- bob sells " << amount_sent << " for " << price_sent);
@@ -137,10 +153,13 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_point_tester) try {
     supply -= amount_sent;
     reserve -= price_sent;
     int64_t amount_sell = amount / 4;
-    int64_t price_sell = (amount_sell * reserve / supply) * (1.0 - fee);
+    int64_t price_sell_no_fee = amount_sell * reserve / supply;
+    int64_t price_sell = price_sell_no_fee * (1.0 - fee);
+    int64_t sell_fee_alice = price_sell_no_fee - price_sell;
     BOOST_TEST_MESSAGE("--- alice sells " << amount_sell << " for " << price_sell);
     BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _code, asset(amount_sell, point._symbol)));
-    CHECK_MATCHING_OBJECT(token.get_account(_alice), mvo()("balance", asset(price_sell + (init_balance - price), token._symbol).to_string()));
+    CHECK_MATCHING_OBJECT(token.get_account(_alice), mvo()("balance", asset(price_sell + (init_balance - price_no_fee), token._symbol).to_string()));
+    CHECK_MATCHING_OBJECT(token.get_account(cfg::null_name), mvo()("balance", asset(restock_fee + buy_fee + sell_fee_alice + sell_fee_bob, token._symbol).to_string()));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(cw05_test, commun_point_tester) try {
@@ -155,7 +174,7 @@ BOOST_FIXTURE_TEST_CASE(cw05_test, commun_point_tester) try {
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(balance, token._symbol), ""));
 
     BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(999999, point._symbol), 5000, 0));
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, 0, 0));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0)));
     BOOST_CHECK_EQUAL(success(), token.transfer(_golos, _code, asset(reserve, token._symbol), cfg::restock_prefix + point_code_str));
     BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(supply, point._symbol), std::string(point_code_str) + " issue"));
 
@@ -345,9 +364,75 @@ BOOST_FIXTURE_TEST_CASE(transfer_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1000, token._symbol), ""));
 } FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(fee_tests, commun_point_tester) try {
+    BOOST_TEST_MESSAGE("fee tests");
+    int64_t init_supply = 25000;
+    int64_t restock_amount = 100000;
+    
+    int64_t burnt = 0;
+    int64_t supply = 0;
+    int64_t reserve = 0;
+    double fee = 0.01;
+    
+    BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1000000, token._symbol)));
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(restock_amount, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.create(_golos, asset(0, point._symbol), asset(999999, point._symbol), 10000, fee * cfg::_100percent));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(restock_amount, token._symbol), cfg::restock_prefix + point_code_str));
+    BOOST_CHECK_EQUAL(success(), point.issue(_golos, asset(init_supply, point._symbol), std::string(point_code_str) + " issue"));
+    int64_t added = restock_amount * (1.0 - fee);
+    burnt += restock_amount - added;
+    reserve += added;
+    supply += init_supply;
+    BOOST_CHECK_EQUAL(point.get_stats()["reserve"].as<asset>().get_amount(), reserve);
+    BOOST_CHECK_EQUAL(point.get_stats()["supply"].as<asset>().get_amount(), supply);
+    CHECK_MATCHING_OBJECT(token.get_account(cfg::null_name), mvo()("balance", asset(burnt, token._symbol).to_string()));
+    
+    BOOST_CHECK_EQUAL(err.fee_gt_100, point.setparams(_golos, point.args()("fee", cfg::_100percent + 1)));
+    
+    produce_block();
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("fee", 0)));
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(restock_amount, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(restock_amount, token._symbol), cfg::restock_prefix + point_code_str));
+    reserve += restock_amount;
+    BOOST_CHECK_EQUAL(point.get_stats()["reserve"].as<asset>().get_amount(), reserve);
+    CHECK_MATCHING_OBJECT(token.get_account(cfg::null_name), mvo()("balance", asset(burnt, token._symbol).to_string()));
+    
+    produce_block();
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("fee", cfg::_100percent)));
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(restock_amount, token._symbol), ""));
+    BOOST_CHECK_EQUAL(err.fee_only, token.transfer(_alice, _code, asset(restock_amount, token._symbol), cfg::restock_prefix + point_code_str));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("fee", cfg::_100percent / 2)));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(restock_amount, token._symbol), cfg::restock_prefix + point_code_str));
+    burnt += restock_amount / 2;
+    reserve += restock_amount / 2;
+    BOOST_CHECK_EQUAL(point.get_stats()["reserve"].as<asset>().get_amount(), reserve);
+    CHECK_MATCHING_OBJECT(token.get_account(cfg::null_name), mvo()("balance", asset(burnt, token._symbol).to_string()));
+    
+    fee = 0.1;
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("fee", int64_t(fee * cfg::_100percent))));
+    
+    int64_t init_amount = 20000;
+    BOOST_CHECK_EQUAL(success(), token.issue(_commun, _alice, asset(init_amount, token._symbol), ""));
+    BOOST_CHECK_EQUAL(success(), point.open(_alice, point_code, _alice));
+    BOOST_CHECK_EQUAL(success(), token.transfer(_alice, _code, asset(init_amount, token._symbol), point_code_str));
+    
+    int64_t fee_amount = init_amount * fee;
+    burnt += fee_amount;
+    int64_t points = (init_amount - fee_amount) * supply / reserve;
+    supply += points;
+    reserve += init_amount - fee_amount;
+    BOOST_CHECK_EQUAL(point.get_stats()["reserve"].as<asset>().get_amount(), reserve);
+    CHECK_MATCHING_OBJECT(token.get_account(cfg::null_name), mvo()("balance", asset(burnt, token._symbol).to_string()));
+    BOOST_CHECK_EQUAL(point.get_amount(_alice), points);
+    
+    BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _code, asset(points, point._symbol)));
+    CHECK_MATCHING_OBJECT(token.get_account(_alice), mvo()("balance", asset((points * reserve / supply) * (1.0 - fee), token._symbol).to_string()));
+    
+} FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(transfer_fee_tests, commun_point_tester) try {
     BOOST_TEST_MESSAGE("transfer with fee tests");
-    BOOST_CHECK_EQUAL(err.no_symbol, point.setparams(_golos, cfg::_100percent, 1));
+    BOOST_CHECK_EQUAL(err.no_symbol, point.setparams(_golos, point.args()("transfer_fee", cfg::_100percent)("min_transfer_fee_points", 1)));
 
     BOOST_CHECK_EQUAL(success(), token.create(_commun, asset(1+1000, token._symbol)));
 
@@ -359,15 +444,15 @@ BOOST_FIXTURE_TEST_CASE(transfer_fee_tests, commun_point_tester) try {
         ("min_transfer_fee_points", cfg::def_min_transfer_fee_points)
     );
 
-    BOOST_CHECK_EQUAL(err.min_transfer_fee_points_negative, point.setparams(_golos, 10000, -1));
-    BOOST_CHECK_EQUAL(err.min_transfer_fee_points_zero, point.setparams(_golos, 10000, 0));
-    BOOST_CHECK_EQUAL(err.transfer_fee_gt_100, point.setparams(_golos, cfg::_100percent+1, 1));
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, cfg::_100percent, 1));
+    BOOST_CHECK_EQUAL(err.min_transfer_fee_points_negative, point.setparams(_golos, point.args()("transfer_fee", 10000)("min_transfer_fee_points", -1)));
+    BOOST_CHECK_EQUAL(err.min_transfer_fee_points_zero, point.setparams(_golos, point.args()("transfer_fee", 10000)("min_transfer_fee_points", 0)));
+    BOOST_CHECK_EQUAL(err.transfer_fee_gt_100, point.setparams(_golos, point.args()("transfer_fee", cfg::_100percent + 1)("min_transfer_fee_points", 1)));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", cfg::_100percent)("min_transfer_fee_points", 1)));
     CHECK_MATCHING_OBJECT(point.get_params(), mvo()
         ("transfer_fee", cfg::_100percent)
         ("min_transfer_fee_points", 1)
     );
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, 10*cfg::_1percent, 1));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", 10 * cfg::_1percent)("min_transfer_fee_points", 1)));
 
     BOOST_CHECK_EQUAL(success(), token.issue(_commun, _carol, asset(1, token._symbol), ""));
     BOOST_CHECK_EQUAL(success(), token.transfer(_carol, _code, asset(1, token._symbol), cfg::restock_prefix + point_code_str));
@@ -381,16 +466,16 @@ BOOST_FIXTURE_TEST_CASE(transfer_fee_tests, commun_point_tester) try {
     BOOST_CHECK_EQUAL(point.get_amount(_bob), 500);
     BOOST_CHECK_EQUAL(point.get_supply(), 450+500);
 
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, 0, 0));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0)));
     BOOST_CHECK_EQUAL(success(), point.transfer(_bob, _alice, asset(500, point._symbol)));
     BOOST_CHECK_EQUAL(point.get_amount(_alice), 450+500);
     BOOST_CHECK_EQUAL(point.get_amount(_bob), 0);
     BOOST_CHECK_EQUAL(point.get_supply(), 450+500);
 
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, cfg::_1percent, 1));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", cfg::_1percent)("min_transfer_fee_points", 1)));
     BOOST_CHECK_EQUAL(err.overdrawn_balance, point.transfer(_alice, _bob, asset(450+500, point._symbol)));
 
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, cfg::_1percent, 300));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", cfg::_1percent)("min_transfer_fee_points", 300)));
     BOOST_CHECK_EQUAL(success(), point.transfer(_alice, _bob, asset(1, point._symbol)));
     BOOST_CHECK_EQUAL(point.get_amount(_alice), 450+500-301);
     BOOST_CHECK_EQUAL(point.get_amount(_bob), 1);

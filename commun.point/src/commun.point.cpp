@@ -82,23 +82,26 @@ void point::create(name issuer, asset initial_supply, asset maximum_supply, int1
     };});
 }
 
-void point::setparams(symbol_code commun_code, uint16_t transfer_fee, int64_t min_transfer_fee_points) {
+#define SET_PARAM(PARAM) if (PARAM && (p.PARAM != *PARAM)) { p.PARAM = *PARAM; _empty = false; }
+void point::setparams(symbol_code commun_code, std::optional<uint16_t> fee, std::optional<uint16_t> transfer_fee, std::optional<int64_t> min_transfer_fee_points) {
     params params_table(_self, _self.value);
     const auto& param = params_table.get(commun_code.raw(), "symbol does not exist");
     require_auth(param.issuer);
-
-    check(transfer_fee <= config::_100percent, "transfer_fee can't be greater than 100%");
-
-    check(min_transfer_fee_points >= 0, "min_transfer_fee_points cannot be negative");
-    if (transfer_fee) {
-        check(min_transfer_fee_points > 0, "min_transfer_fee_points cannot be 0 if transfer_fee set");
-    }
+    
+    check(!fee || *fee <= config::_100percent, "fee can't be greater than 100%");
+    check(!transfer_fee || *transfer_fee <= config::_100percent, "transfer_fee can't be greater than 100%");
+    check(!min_transfer_fee_points || *min_transfer_fee_points >= 0, "min_transfer_fee_points cannot be negative");
 
     params_table.modify(param, eosio::same_payer, [&](auto& p) {
-        p.transfer_fee = transfer_fee;
-        p.min_transfer_fee_points = min_transfer_fee_points;
+        bool _empty = true;
+        SET_PARAM(fee);
+        SET_PARAM(transfer_fee);
+        SET_PARAM(min_transfer_fee_points);
+        eosio::check(!_empty, "No params changed");
+        check(!p.transfer_fee || p.min_transfer_fee_points > 0, "min_transfer_fee_points cannot be 0 if transfer_fee set");
     });
 }
+#undef SET_PARAM
 
 void point::setfreezer(name freezer) {
     require_auth(_self);
@@ -198,10 +201,17 @@ void point::on_reserve_transfer(name from, name to, asset quantity, std::string 
 
         params params_table(_self, _self.value);
         const auto& param = params_table.get(commun_code.raw(), "point with symbol does not exist");
-
+        
         stats stats_table(_self, commun_code.raw());
         auto& stat = stats_table.get(commun_code.raw(), "SYSTEM: point with symbol does not exist");
-
+        
+        if (param.fee) {
+            auto initial = quantity.amount;
+            quantity.amount = safe_pct(quantity.amount, config::_100percent - param.fee);
+            check(quantity.amount > 0, "the entire amount is spent on fee");
+            burn_the_fee(asset(initial - quantity.amount, stat.reserve.symbol), commun_code, true);
+        }
+        
         asset add_tokens(0, stat.supply.symbol);
         if (!restock) {
             add_tokens = calc_token_quantity(param, stat, quantity);
@@ -361,24 +371,31 @@ void point::do_transfer(name from, name to, const asset &quantity, const string 
         sub_balance(from, quantity);
 
         asset fee_quantity(0, config::reserve_token);
-        auto sub_reserve = calc_reserve_quantity(param, stat, quantity, &fee_quantity);
-        check(sub_reserve.amount > 0, "these points cost zero tokens");
+        auto sent_quantity = calc_reserve_quantity(param, stat, quantity, &fee_quantity);
+        auto sub_reserve = sent_quantity + fee_quantity;
+        check(sent_quantity.amount > 0, "these points cost zero tokens");
         check(!min_order || min_order->symbol == config::reserve_token, "invalid reserve token symbol");
-        check(!min_order || sub_reserve >= *min_order, "converted value is lesser than minimum order");
+        check(!min_order || sent_quantity >= *min_order, "converted value is lesser than minimum order");
         stats_table.modify(stat, same_payer, [&](auto& s) {
             s.reserve -= sub_reserve;
             s.supply -= quantity;
             send_currency_event(s, param);
         });
-
-        INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
-            {_self, from, sub_reserve, quantity.symbol.code().to_string() + " sold"});
-        notify_balance_change(param.issuer, vague_asset(-sub_reserve.amount));
-        send_exchange_event(sub_reserve);
         if (fee_quantity.amount) {
-            send_fee_event(fee_quantity);
+            burn_the_fee(fee_quantity, quantity.symbol.code(), false);
         }
+        INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
+            {_self, from, sent_quantity, quantity.symbol.code().to_string() + " sold"});
+        notify_balance_change(param.issuer, vague_asset(-sub_reserve.amount));
+        send_exchange_event(sent_quantity);
     }
+}
+
+void point::burn_the_fee(const asset& quantity, symbol_code commun_code, bool buying_points) {
+    check(quantity.amount > 0, "SYSTEM: nothing to burn");
+    INLINE_ACTION_SENDER(eosio::token, transfer)(config::token_name, {_self, config::active_name},
+        {_self, config::null_name, quantity, (buying_points ? "buying " : "selling ") + commun_code.to_string() + " fee"});
+    send_fee_event(quantity);
 }
 
 } /// namespace commun

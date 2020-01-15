@@ -417,7 +417,7 @@ BOOST_FIXTURE_TEST_CASE(leaders_reward_test, commun_ctrl_tester) try {
     supply  = 5000000000000;
     reserve = 50000000000;
     init();
-    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, 0, 0));
+    BOOST_CHECK_EQUAL(success(), point.setparams(_golos, point.args()("transfer_fee", 0)("min_transfer_fee_points", 0)));
     
     produce_block();
     BOOST_CHECK_EQUAL(success(), point.open(_bob, point_code));
