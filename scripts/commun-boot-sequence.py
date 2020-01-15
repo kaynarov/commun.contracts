@@ -62,6 +62,9 @@ _communAccounts = [
     ('c.social',  'commun.social',        None,                [
             ('clients',      [], ['c@clients'], [':pin',':unpin',':block',':unblock',':updatemeta',':deletemeta']),
         ]),
+    ('c.recover', 'commun.recover',       None,                [
+            ('recover',      ['GLS71iAcPXAqzruvh1EFu28S89Cy8GoYNQXKSQ6UuaBYFuB7usyCB'], [], ['c.recover:recover']),
+        ]),
 ]
 
 communAccounts = []
@@ -166,6 +169,13 @@ def configureCommun():
     c = getAccount('c')
     updateAuth('c', 'active', 'owner', [], ['c@lead.smajor', 'c@lead.recover', 'c@owner'])
 
+def OpenNullCMN():
+    pushAction('cyber.token', 'open', 'c', {
+        "owner": "cyber.null",
+        "symbol": Symbol(4, 'CMN'),
+        "ram_payer": "c"
+    })
+
 # -------------------- Argument parser ----------------------------------------
 # Command Line Arguments
 
@@ -191,3 +201,4 @@ importKeys()
 createCommunAccounts()
 installContracts()
 configureCommun()
+OpenNullCMN()

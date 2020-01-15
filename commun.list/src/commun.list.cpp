@@ -31,6 +31,17 @@ void commun_list::setappparams(optional<uint8_t> leaders_num, optional<uint8_t> 
     eosio::check(!res.first, "No params changed");
 }
 
+uint64_t commun_list::validate_name(tables::community& community_tbl, const std::string& community_name) {
+    check(!community_name.empty(), "Community name should not be empty.");
+    check((community_name.front() != ' ') && (community_name.back() != ' '), "Community name should not start or end with space.");
+
+    auto community_hash256 = eosio::sha256(community_name.c_str(), community_name.size());
+    auto community_hash = *(reinterpret_cast<const uint64_t *>(community_hash256.extract_as_byte_array().data()));
+    auto community_index = community_tbl.get_index<"byhash"_n>();
+    check(community_index.find(community_hash) == community_index.end(), "community exists");
+    return community_hash;
+}
+
 void commun_list::create(symbol_code commun_code, std::string community_name) {
     require_auth(_self);
 
@@ -41,14 +52,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
     tables::community community_tbl(_self, _self.value);
 
     check(community_tbl.find(commun_code.raw()) == community_tbl.end(), "community token exists");
-
-    check(!community_name.empty(), "Community name should not be empty.");
-    check((community_name.front() != ' ') && (community_name.back() != ' '), "Community name should not start or end with space.");
-
-    auto community_hash256 = eosio::sha256(community_name.c_str(), community_name.size());
-    auto community_hash = *(reinterpret_cast<const uint64_t *>(community_hash256.extract_as_byte_array().data()));
-    auto community_index = community_tbl.get_index<"byhash"_n>();
-    check(community_index.find(community_hash) == community_index.end(), "community exists");
+    auto community_hash = validate_name(community_tbl, community_name);
 
     community_tbl.emplace(_self, [&](auto& item) {
         item.commun_symbol = commun_symbol;
@@ -75,7 +79,7 @@ void commun_list::create(symbol_code commun_code, std::string community_name) {
 #define SET_PARAM(PARAM) if (PARAM) { c.PARAM = *PARAM; _empty = false; }
 #define PERC(VAL) (config::_1percent * VAL)
 
-void commun_list::setsysparams(symbol_code commun_code,
+void commun_list::setsysparams(symbol_code commun_code, optional<std::string> community_name,
         optional<name> permission, optional<uint8_t> required_threshold, 
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> extra_reward_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
@@ -91,6 +95,10 @@ void commun_list::setsysparams(symbol_code commun_code,
 
     community_tbl.modify(community, eosio::same_payer, [&](auto& c) {
         bool _empty = !c.control_param.update(permission, required_threshold);
+        if (community_name) {
+            c.community_hash = validate_name(community_tbl, *community_name);
+            _empty = false;
+        }
         SET_PARAM(collection_period);
         SET_PARAM(moderation_period);
         SET_PARAM(extra_reward_period);

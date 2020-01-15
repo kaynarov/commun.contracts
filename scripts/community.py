@@ -34,6 +34,24 @@ def createCommunityUser(community, creator, creatorKey, clientKey, *, buyPointsO
                 providebw=account+'/'+creator, keys=[private, creatorKey])
     return (account, private)
 
+def recover(account, active_key=None, owner_key=None, *, provider=None, keys=None):
+    args = {'account':account}
+    if active_key:
+        args['active_key'] = active_key
+    if owner_key:
+        args['owner_key'] = owner_key
+
+    return pushAction('c.recover', 'recover', 'c.recover@recover', args,
+            providebw='c.recover/'+provider if provider else None, keys=keys)
+
+def applyOwner(account, providebw=None, keys=None):
+    return pushAction('c.recover', 'applyowner', account, {'account': account},
+            providebw=providebw, keys=keys)
+
+def cancelOwner(account, providebw=None, keys=None):
+    return pushAction('c.recover', 'cancelowner', account, {'account': account},
+            providebw=providebw, keys=keys)
+
 def getUnusedPointSymbol():
     while True:
         point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6)) 
@@ -138,7 +156,6 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
             'account': owner_account})
 
     pushTrx(trx, keys=[creator_key])
-
 
     # 1. Buy some value of CMN tokens (for testing purposes c.issuer@issue)
     trx = Trx()

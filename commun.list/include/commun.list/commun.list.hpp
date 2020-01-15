@@ -11,6 +11,7 @@ using std::optional;
  * \ingroup list_class
  */
 class commun_list: public contract {
+    uint64_t validate_name(tables::community& community_tbl, const std::string& community_name);
 public:
     using contract::contract;
 
@@ -21,7 +22,7 @@ public:
         \param community_name a name of the new community
 
         \signreq
-            — <i>most validators</i> .
+            — <i>majority of validators</i> .
     */
     [[eosio::action]] void create(symbol_code commun_code, std::string community_name);
 
@@ -36,7 +37,7 @@ public:
         All parameters are optionally. So, each of them can be set via separate calling of this action.
 
         \signreq
-            — <i>most validators</i> .
+            — <i>majority of validators</i> .
 
         \note
         The parameters \a permission and \a required_threshold can also be used for adjust default permissions as follows:
@@ -51,6 +52,7 @@ public:
         \brief The \ref setsysparams action is used to set up the system parameters for a separate community.
 
         \param commun_code a point symbol of the community
+        \param community_name new community name
         \param permission permission for multisig transaction, for which the threshold is set. If this parameter is set, but not stored in DB, it will be placed in that DB. If \a required_threshold is set, the \a permission should be set too
         \param required_threshold threshold at which a multisig transaction is considered approved. If this parameter is set to «0», the \a permission will be removed. If \a permission is set, the threshold should be set too
         \param collection_period mosaic collection period (in seconds). Default value is 604800 (calculated as 7×24×60×60)
@@ -68,7 +70,7 @@ public:
         All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
 
         \signreq
-            — <i>most validators</i> .
+            — <i>majority of validators</i> .
 
         \note
         The parameters \a permission and \a required_threshold can be used by leaders for adjust default permissions as follows:
@@ -77,7 +79,7 @@ public:
         <center> <i> lead.minor = leaders_num×1/3+1 </i> </center>
         Default permissions are calculated as parts of \a leaders_num. The \a required_threshold parameter sets absolute count of leaders when adding a permission or changing its default value. Unlike \a setappparams, the \a setsysparams action allows leaders to add or remove the authorities.
     */
-    [[eosio::action]] void setsysparams(symbol_code commun_code,
+    [[eosio::action]] void setsysparams(symbol_code commun_code, optional<std::string> community_name,
         optional<name> permission, optional<uint8_t> required_threshold,
         optional<int64_t> collection_period, optional<int64_t> moderation_period, optional<int64_t> extra_reward_period,
         optional<uint16_t> gems_per_day, optional<uint16_t> rewarded_mosaic_num,
@@ -101,7 +103,7 @@ public:
         Depending on the \a required_threshold set, a number of signatures required to complete a multisig transaction may be vary. For example, setting threshold=3 is considered to be obtained if the signature is affixed with at least three leaders.
 
         \signreq
-            — <i>most community leaders</i> .
+            — <i>majority of community leaders</i> .
     */
     [[eosio::action]] void setparams(symbol_code commun_code,
         optional<uint8_t> leaders_num, optional<uint8_t> max_votes, 
@@ -122,7 +124,7 @@ public:
         This action does not store any state in DB, it only checks an authority and community presence.
 
         \signreq
-            — <i>most community leaders</i> .
+            — <i>majority of community leaders</i> .
     */
     [[eosio::action]] void setinfo(symbol_code commun_code,
         optional<std::string> description, optional<std::string> language, optional<std::string> rules,

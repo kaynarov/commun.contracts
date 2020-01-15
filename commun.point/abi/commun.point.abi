@@ -53,8 +53,9 @@
             "base": "",
             "fields": [
                 { "type": "symbol_code",  "name": "commun_code" },
-                { "type": "uint16",       "name": "transfer_fee" },
-                { "type": "int64",        "name": "min_transfer_fee_points" }
+                { "type": "uint16?",      "name": "fee" },
+                { "type": "uint16?",      "name": "transfer_fee" },
+                { "type": "int64?",       "name": "min_transfer_fee_points" }
             ]
         },{
             "name": "issue_args",

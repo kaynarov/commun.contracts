@@ -57,8 +57,11 @@ public:
         \brief The \ref setparams action is used by a point issuer to set the parameters of the issued point. These settings can be updated after issuing the point.
 
         \param commun_code the point symbol code
-        \param transfer_fee commission (in percent) charged from the amount of point transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is «10» that corresponds to «0,1» (\%)
-        \param min_transfer_fee_points minimum number of points transferred as fee. Such number of points will be debited from the account, even if the calculated fee is less than this value. Default value is «1» that corresponds to one smallest part of point (i.e. 0,001 point)
+        \param fee commission (in percent) charged from the amount of CMN tokens when buying and selling points.
+        \param transfer_fee commission (in percent) charged from the amount of point transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is «10» that corresponds to «0.1» (%)
+        \param min_transfer_fee_points minimum number of points transferred as fee. Such number of points will be debited from the account, even if the calculated fee is less than this value. Default value is «1» that corresponds to one smallest part of point (i.e. 0.001 point)
+
+        All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action. At least one of these parameters must be set.
 
         <b>Requirements:</b>
             - the point should be created before calling this action;
@@ -69,7 +72,7 @@ public:
             — <i>the point issuer</i> .
     */
     [[eosio::action]]
-    void setparams(symbol_code commun_code, uint16_t transfer_fee, int64_t min_transfer_fee_points);
+    void setparams(symbol_code commun_code, std::optional<uint16_t> fee, std::optional<uint16_t> transfer_fee, std::optional<int64_t> min_transfer_fee_points);
 
     /**
         \brief The \ref setfreezer action is used to set contract account, so, this account will have ability to «freeze» the points or the CMN tokens on its balance.
@@ -372,6 +375,8 @@ struct structures {
     }
 
     void do_transfer(name from, name to, const asset& quantity, const string& memo);
+    
+    void burn_the_fee(const asset& quantity, symbol_code commun_code, bool buying_points);
 
     /**
       \brief The structure representing the event related to change of point state. Such event occurs if at least one of the two values (supply or reserve) changes during execution of the actions \ref create, \ref issue and \ref retire as well as during the reserve tokens transfer via performing \ref transfer.

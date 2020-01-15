@@ -7,7 +7,11 @@ import community
 import pymongo
 import json
 import eehelper as ee
+import time
 from testnet import Asset
+
+recoverKey='5J24gjEWSEQFgtngPJNeSKvFsnmAG8qJVJRgQwnmXoAhxcchxee'
+recoverPublic='GLS71iAcPXAqzruvh1EFu28S89Cy8GoYNQXKSQ6UuaBYFuB7usyCB'
 
 techKey    ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
 clientKey  ='5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN'
@@ -350,14 +354,21 @@ class PointTestCase(unittest.TestCase):
         pointParam = community.getPointParam(self.point)
         pointStat = community.getPointStat(self.point)
         alicePoints = community.getPointBalance(self.point, alice)
-
+        
+        if pointParam['fee'] != 0:
+            totalQuantity = tokenQuantity
+            tokenQuantity = totalQuantity * (10000-pointParam['fee']) // 10000
+            feeQuantity = totalQuantity - tokenQuantity
+        else:
+            feeQuantity = Asset(0, CMN)
+        
         newReserve = pointStat['reserve'] + tokenQuantity
         q = pow(1.0 + tokenQuantity.amount/pointStat['reserve'].amount, pointParam['cw']/10000)
         newSupply = pointStat['supply'] * q
         pointQuantity = newSupply - pointStat['supply']
 
         # Buy community points through transfer tokens to 'c.point' account
-        buyArgs = {'from':alice, 'to':'c.point', 'quantity':str(tokenQuantity), 'memo':self.point}
+        buyArgs = {'from':alice, 'to':'c.point', 'quantity':str(tokenQuantity+feeQuantity), 'memo':self.point}
         buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
 
         buyTrx = buyResult['transaction_id']
@@ -369,6 +380,9 @@ class PointTestCase(unittest.TestCase):
                 'args': buyArgs,
                 'events': ee.AllItems(
                     {
+                        'code': 'c.point', 'event': 'fee',
+                        'args': {'amount': str(feeQuantity)}
+                    }, {
                         'code': 'c.point', 'event': 'balance',
                         'args': {'account': alice, 'balance': str(alicePoints+pointQuantity)}
                     }, {
@@ -441,13 +455,13 @@ class PointTestCase(unittest.TestCase):
                         'args': {'account': alice, 'balance': str(alicePoints-sellPoints)}
                     }, {
                         'code': 'c.point', 'event': 'currency',
-                        'args': {'supply': str(pointStat['supply']-sellPoints), 'reserve': str(pointStat['reserve']-tokenQuantity)}
-                    }, {
-                        'code': 'c.point', 'event': 'exchange',
-                        'args': {'amount': str(tokenQuantity)}
+                        'args': {'supply': str(pointStat['supply']-sellPoints), 'reserve': str(pointStat['reserve']-(tokenQuantity+feeQuantity))}
                     }, {
                         'code': 'c.point', 'event': 'fee',
                         'args': {'amount': str(feeQuantity)}
+                    }, {
+                        'code': 'c.point', 'event': 'exchange',
+                        'args': {'amount': str(tokenQuantity)}
                     })
             }, {
                 'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
@@ -456,11 +470,15 @@ class PointTestCase(unittest.TestCase):
             }, {
                 'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
                 'auth': [{'actor': 'c.point', 'permission': 'active'}],
+                'args': {'from':'c.point','to':'cyber.null','quantity':str(feeQuantity),'memo':'selling %s fee'%self.point},
+            }, {
+                'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
+                'auth': [{'actor': 'c.point', 'permission': 'active'}],
                 'args': {'from':'c.point','to':alice,'quantity':str(tokenQuantity),'memo':'%s sold'%self.point},
             }, {
                 'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
                 'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': pointParam['issuer'], 'diff': '-%d '%tokenQuantity.amount}
+                'args': {'who': pointParam['issuer'], 'diff': '-%d '%(tokenQuantity.amount+feeQuantity.amount)}
             },
         ]
 
@@ -529,6 +547,8 @@ class PointTestCase(unittest.TestCase):
         self.eeHelper.waitEvents(
             [ ({'msg_type':'ApplyTrx', 'id':transferTrx}, {'block_num':transferBlock, 'actions':transferTrace, 'except':ee.Missing()}),
             ], transferBlock)
+
+
 
 class CtrlTestCase(unittest.TestCase):
     @classmethod
@@ -727,6 +747,14 @@ class CtrlTestCase(unittest.TestCase):
         alicePoints = community.getPointBalance(self.point, alice)
 
         tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+        
+        if pointParam['fee'] != 0:
+            totalQuantity = tokenQuantity
+            tokenQuantity = totalQuantity * (10000-pointParam['fee']) // 10000
+            feeQuantity = totalQuantity - tokenQuantity
+        else:
+            feeQuantity = Asset(0, CMN)
+        
         newReserve = pointStat['reserve'] + tokenQuantity
         q = pow(1.0 + tokenQuantity.amount/pointStat['reserve'].amount, pointParam['cw']/10000)
         newSupply = pointStat['supply'] * q
@@ -737,11 +765,11 @@ class CtrlTestCase(unittest.TestCase):
         appLeaders = self.getLeadersWeights('')
         appLeaders[self.appLeader2] += 4*(pointStat['reserve']+tokenQuantity).amount//10 - 4*pointStat['reserve'].amount//10
 
-        trxResult = community.buyCommunityPoints(alice, tokenQuantity, point, aliceKey, clientKey)
+        trxResult = community.buyCommunityPoints(alice, tokenQuantity+feeQuantity, point, aliceKey, clientKey)
         trxId = trxResult['transaction_id']
         trxBlock = trxResult['processed']['block_num']
 
-        args = {'from': alice, 'to': 'c.point', 'quantity': str(tokenQuantity), 'memo': point}
+        args = {'from': alice, 'to': 'c.point', 'quantity': str(tokenQuantity+feeQuantity), 'memo': point}
         trxTrace = [
             {
                 'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
@@ -802,7 +830,7 @@ class CtrlTestCase(unittest.TestCase):
         leaders = self.getLeadersWeights(point)
         leaders[self.leader1] += 3*(alicePoints-sellPoints).amount//10 - 3*alicePoints.amount//10
         appLeaders = self.getLeadersWeights('')
-        appLeaders[self.appLeader2] += 4*(pointStat['reserve']-tokenQuantity).amount//10 - 4*pointStat['reserve'].amount//10
+        appLeaders[self.appLeader2] += 4*(pointStat['reserve']-totalQuantity).amount//10 - 4*pointStat['reserve'].amount//10
 
         # Sell community points through transfer them to 'c.point' account
         trxArgs = {'from':alice, 'to':'c.point', 'quantity':str(sellPoints), 'memo':''}
@@ -828,7 +856,7 @@ class CtrlTestCase(unittest.TestCase):
             }, {
                 'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
                 'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': pointParam['issuer'], 'diff': '-%d '%tokenQuantity.amount},
+                'args': {'who': pointParam['issuer'], 'diff': '-%d '%(tokenQuantity.amount+feeQuantity.amount)},
                 'events': ee.AllItems(
                     {
                         'code': 'c.ctrl','event': 'leaderstate',
@@ -946,6 +974,73 @@ class CtrlTestCase(unittest.TestCase):
             ], trxBlock)
 
         self.assertEqual(appLeaders, self.getLeadersWeights(''))
+
+
+
+class RecoverTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        result = json.loads(testnet.cleos('get table c.recover c.recover params'))
+        if len(result['rows']) == 0 or result['rows'][0]['recover_delay'] != 3:
+            testnet.pushAction('c.recover', 'setparams', 'c.recover', {
+                    'recover_delay': 3
+            }, providebw='c.recover/tech', keys=[techKey])
+        testnet.updateAuth('c.recover', 'recover', 'active', [recoverPublic], [],
+                providebw='c.recover/tech', keys=[techKey])
+
+    def setUp(self):
+        (private, public) = testnet.createKey()
+        account = testnet.createRandomAccount(public, keys=[techKey])
+        testnet.updateAuth(account, 'owner', '', [public], ['c.recover@cyber.code'],
+                providebw=account+'/tech', keys=[techKey, private])
+
+        (self.alice, self.aliceKey) = (account, private)
+
+
+    def test_unavailableRecover(self):
+        (bobKey, bobPublic) = testnet.createKey()
+        bob = testnet.createRandomAccount(bobPublic, keys=[techKey])
+
+        (private2, public2) = testnet.createKey()
+        with self.assertRaisesRegex(Exception, 'Key recovery for this account is not available'):
+            community.recover(bob, active_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+
+    def test_recoverActiveAuthority(self):
+        (alice, aliceKey) = (self.alice, self.aliceKey)
+
+        (private2, public2) = testnet.createKey()
+        community.recover(alice, active_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+        # Check new active key with `checkwin` action
+        testnet.pushAction('cyber', 'checkwin', alice, {},
+                providebw=alice+'/tech', keys=[techKey, private2])
+
+
+    def test_applyOwnerRecover(self):
+        (alice, aliceKey) = (self.alice, self.aliceKey)
+
+        (private2, public2) = testnet.createKey()
+        community.recover(alice, owner_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+        time.sleep(4)
+        community.applyOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        # Check new owner key with `checkwin` action
+        testnet.pushAction('cyber', 'checkwin', alice+'@owner', {},
+                providebw=alice+'/tech', keys=[techKey, private2])
+
+
+    def test_cancelOwnerRecover(self):
+        (alice, aliceKey) = (self.alice, self.aliceKey)
+
+        (private2, public2) = testnet.createKey()
+        community.recover(alice, owner_key=public2, provider='tech', keys=[recoverKey,techKey])
+
+        community.cancelOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
+
+        with self.assertRaisesRegex(Exception, "Request for change owner key doesn't exists"):
+            community.applyOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
 
 
 if __name__ == '__main__':
