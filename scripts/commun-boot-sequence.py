@@ -62,6 +62,9 @@ _communAccounts = [
     ('c.social',  'commun.social',        None,                [
             ('clients',      [], ['c@clients'], [':pin',':unpin',':block',':unblock',':updatemeta',':deletemeta']),
         ]),
+    ('c.recover', 'commun.recover',       None,                [
+            ('recover',      ['GLS71iAcPXAqzruvh1EFu28S89Cy8GoYNQXKSQ6UuaBYFuB7usyCB'], [], ['c.recover:recover']),
+        ]),
 ]
 
 communAccounts = []

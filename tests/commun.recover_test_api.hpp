@@ -13,6 +13,10 @@ struct commun_recover_api: base_contract_api {
     commun_recover_api(golos_tester* tester, name code)
         :   base_contract_api(tester, code) {}
 
+    action_result setparams(name signer, mvo params) {
+        return push(N(setparams), signer, params);
+    }
+
     action_result recover(name account, std::optional<public_key_type> active_key, std::optional<public_key_type> owner_key) {
         auto a = args()("account", account);
         if (active_key.has_value() && active_key.value() != public_key_type()) a["active_key"] = active_key.value();
