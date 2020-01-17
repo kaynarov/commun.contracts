@@ -73,7 +73,7 @@ public:
     action_result push_and_check_action(account_name, action_name, account_name, const variant_object&);
     action_result push_action(account_name code, action_name name, account_name signer, const variant_object& data);
     action_result push_action_msig_tx(account_name code, action_name name,
-        std::vector<permission_level> perms, std::vector<account_name> signers, const variant_object& data);
+        std::vector<permission_level> perms, std::vector<account_name> signers, const variant_object& data, bool produce=true);
     action_result push_tx(signed_transaction&& tx, bool produce_and_check=true);
     action_result push_tx(const std::vector<action_data> actions, const std::vector<account_name> signers, bool produce_and_check=true);
     void delegate_authority(account_name from, std::vector<account_name> to,

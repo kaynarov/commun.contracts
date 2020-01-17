@@ -40,16 +40,16 @@ public:
         install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
         install_contract(cfg::gallery_name, contracts::gallery_wasm(), contracts::gallery_abi());
         install_contract(_code, contracts::emit_wasm(), contracts::emit_abi());
-        
+
         set_authority(cfg::control_name, N(changepoints), create_code_authority({cfg::point_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(changepoints), N(changepoints));
 
         set_authority(cfg::emit_name, cfg::reward_perm_name, create_code_authority({_code}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, cfg::reward_perm_name, N(issuereward));
-        
+
         set_authority(cfg::emit_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::emit_name, cfg::emit_name, N(init), N(init));
-        
+
         set_authority(cfg::control_name, N(init), create_code_authority({cfg::list_name}), "active");
         link_authority(cfg::control_name, cfg::control_name, N(init), N(init));
 
@@ -114,7 +114,7 @@ BOOST_FIXTURE_TEST_CASE(init_tests, commun_emit_tester) try {
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", cfg::_1percent * 2)));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", cfg::_1percent * 55)));
     BOOST_CHECK_EQUAL(err.wrong_annual_rate, community.setparams( _golos, point_code, community.args()("emission_rate", cfg::_1percent * 22)));
-    
+
     BOOST_CHECK_EQUAL(err.wrong_leaders_prop, community.setparams( _golos, point_code, community.args()("leaders_percent", cfg::_100percent+1)));
     BOOST_CHECK_EQUAL(err.wrong_leaders_prop, community.setparams( _golos, point_code, community.args()("leaders_percent", 0)));
     BOOST_CHECK_EQUAL(err.wrong_leaders_prop, community.setparams( _golos, point_code, community.args()("leaders_percent", cfg::_1percent * 11)));
@@ -153,8 +153,8 @@ BOOST_FIXTURE_TEST_CASE(issuereward_tests, commun_emit_tester) try {
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
     BOOST_CHECK_EQUAL(init_supply, point.get_supply());
     produce_block();
-    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point_code, cfg::gallery_name));
-    BOOST_CHECK_EQUAL(success(), point.open(cfg::control_name, point_code, cfg::control_name));
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name));
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::control_name));
     BOOST_CHECK_EQUAL(success(), emit.issuereward(point_code, cfg::gallery_name));
     auto new_supply = point.get_supply();
     BOOST_CHECK(new_supply > init_supply);
@@ -180,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE(basic_tests, commun_emit_tester) try {
     BOOST_CHECK_EQUAL(success(), community.setparams( _golos, point_code, community.args()
         ("emission_rate", uint16_t(annual_rate * cfg::_100percent))
         ("leaders_percent", uint16_t(leaders_rate*cfg::_100percent))));
-    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name, point_code, cfg::gallery_name));
+    BOOST_CHECK_EQUAL(success(), point.open(cfg::gallery_name));
 
     int64_t cont_emission = supply * int64_t(std::log(1.0 + annual_rate) * cfg::_100percent) / cfg::_100percent;
     int64_t period_amount = cont_emission * cfg::def_reward_mosaics_period / seconds_per_year;

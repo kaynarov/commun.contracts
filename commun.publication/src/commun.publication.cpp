@@ -296,11 +296,10 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
 }
 
 uint16_t publication::get_gems_per_period(symbol_code commun_code) {
-    static const int64_t seconds_per_day = 24 * 60 * 60;
     auto& community = commun_list::get_community(commun_code);
     int64_t mosaic_active_period = community.collection_period + community.moderation_period + community.extra_reward_period;
     uint16_t gems_per_day = community.gems_per_day;
-    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
+    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, config::seconds_per_day), 1);
 }
 
 int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight) {
