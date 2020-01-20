@@ -208,14 +208,8 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaic = mosaics_table.find(tracery);
-    if (mosaic == mosaics_table.end()) {
-        require_client_auth("Message does not exist");
-        return;
-    }
-    if (mosaic->status != gallery_types::mosaic::ACTIVE) {
-        require_client_auth("Mosaic is inactive");
-        return;
-    }
+    eosio::check(mosaic != mosaics_table.end(), "Message does not exist.");
+    eosio::check(mosaic->status == gallery_types::mosaic::ACTIVE, "Message is inactive.");
     if (eosio::current_time_point() > mosaic->collection_end_date) {
         require_client_auth("Collection period is over");
         return;
