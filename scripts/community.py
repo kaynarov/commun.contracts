@@ -54,7 +54,7 @@ def cancelOwner(account, providebw=None, keys=None):
 
 def getUnusedPointSymbol():
     while True:
-        point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6)) 
+        point = ''.join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for i in range(6))
         if getPointParam(point) == None:
             return point
 
@@ -77,7 +77,64 @@ def getPointBalance(point, account):
     if res:
         res = Asset.fromdb(res['balance'])
     return res
-    
+
+
+def transferPoints(sender, recipient, amount, memo='', *, keys=None):
+    args = {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}
+    return pushAction('c.point', 'transfer', sender, args, providebw=sender+'/c@providebw', keys=keys)
+
+def lockPoints(owner, period, *, keys=None):
+    args = {'owner':owner, 'period':period}
+    return pushAction('c.point', 'globallock', owner, args, providebw=owner+'/c@providebw', keys=keys)
+
+def enableSafe(owner, unlock, delay, trusted = "", *, keys=None):
+    args = {'owner':owner, 'unlock':unlock, 'delay':delay, 'trusted':trusted}
+    return pushAction('c.point', 'enablesafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+
+def disableSafe(owner, modId, point, *, keys=None, signer=None):
+    actor = [owner, signer] if signer else owner
+    args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
+    return pushAction('c.point', 'disablesafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+
+def unlockSafe(owner, modId, unlock, *, keys=None, signer=None):
+    actor = [owner, signer] if signer else owner
+    provide = [owner+'/c@providebw', signer+'/c@providebw'] if signer else owner+'/c@providebw'
+    args = {'owner':owner, 'mod_id':modId, 'unlock':unlock}
+    return pushAction('c.point', 'unlocksafe', actor, args, providebw=provide, keys=keys)
+
+def lockSafe(owner, lock, *, keys=None):
+    args = {'owner':owner, 'lock':lock}
+    return pushAction('c.point', 'locksafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+
+def modifySafe(owner, modId, point, delay = None, trusted = None, *, keys=None, signer=None):
+    actor = [owner, signer] if signer else owner
+    args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
+    if delay is not None: args["delay"] = delay
+    if trusted is not None: args["trusted"] = trusted
+    return pushAction('c.point', 'modifysafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+
+def applySafeMod(owner, modId, *, keys=None, signer=None):
+    actor = [owner, signer] if signer else owner
+    args = {'owner':owner, 'mod_id':modId}
+    return pushAction('c.point', 'applysafemod', actor, args, providebw=owner+'/c@providebw', keys=keys)
+
+def cancelSafeMod(owner, modId, *, keys=None):
+    args = {'owner':owner, 'mod_id':modId}
+    return pushAction('c.point', 'cancelsafemod', owner, args, providebw=owner+'/c@providebw', keys=keys)
+
+
+def getPointGlobalLock(account):
+    return mongoClient["_CYBERWAY_c_point"]["lock"].find_one({"_SERVICE_.scope":account})
+
+def getPointSafe(point, account):
+    res = mongoClient["_CYBERWAY_c_point"]["safe"].find_one({"unlocked._sym":point,"_SERVICE_.scope":account})
+    if res:
+        res["unlocked"] = Asset.fromdb(res['unlocked'])
+    return res
+
+def getPointSafeMod(point, account, modId):
+    return mongoClient["_CYBERWAY_c_point"]["safemod"].find_one({"id":modId,"commun_code":point,"_SERVICE_.scope":account})
+
 
 def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, providebw=None, keys=None):
     (proposer, proposerKey) = leaders[0]
@@ -241,8 +298,8 @@ def unvoteLeader(commun_code, voter, leader, *, providebw=None, keys=None):
 def createPost(commun_code, author, permlink, category, header, body, *, providebw=None, keys=None):
     return pushAction('c.gallery', 'create', author, {
             'commun_code':commun_code,
-            'message_id':{'author':author, 'permlink':permlink}, 
-            'parent_id':{'author':"", 'permlink':category}, 
+            'message_id':{'author':author, 'permlink':permlink},
+            'parent_id':{'author':"", 'permlink':category},
             'header':header,
             'body':body,
             'tags':[],

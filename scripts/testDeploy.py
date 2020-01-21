@@ -354,14 +354,14 @@ class PointTestCase(unittest.TestCase):
         pointParam = community.getPointParam(self.point)
         pointStat = community.getPointStat(self.point)
         alicePoints = community.getPointBalance(self.point, alice)
-        
+
         if pointParam['fee'] != 0:
             totalQuantity = tokenQuantity
             tokenQuantity = totalQuantity * (10000-pointParam['fee']) // 10000
             feeQuantity = totalQuantity - tokenQuantity
         else:
             feeQuantity = Asset(0, CMN)
-        
+
         newReserve = pointStat['reserve'] + tokenQuantity
         q = pow(1.0 + tokenQuantity.amount/pointStat['reserve'].amount, pointParam['cw']/10000)
         newSupply = pointStat['supply'] * q
@@ -549,6 +549,341 @@ class PointTestCase(unittest.TestCase):
             ], transferBlock)
 
 
+    def test_globalPointsLock(self):
+        params = {}
+
+        (alice, alicePrivate) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+
+        (bob, bobPrivate) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+
+        alicePoints = community.getPointBalance(self.point, alice)
+        bobPoints = community.getPointBalance(self.point, bob)
+        transferPointsA = alicePoints * random.uniform(0.1, 0.9)
+        transferPointsB = bobPoints * random.uniform(0.1, 0.9)
+
+        # Alice locks points (for example, after recovery)
+        period = 30
+        community.lockPoints(alice, period//2, keys=[alicePrivate, clientKey])
+        # Period can be increased but not decreased
+        lockResult = community.lockPoints(alice, period, keys=[alicePrivate, clientKey])
+        with self.assertRaisesRegex(Exception, 'new unlock time must be greater than current'):
+            community.lockPoints(alice, period - 3 - 1, keys=[alicePrivate, clientKey])
+
+        # Alice can't transfer, retire or withdraw points when locked
+        with self.assertRaisesRegex(Exception, 'balance locked in safe'):
+            community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey])
+        community.transferPoints(bob, alice, transferPointsB, keys=[bobPrivate, clientKey])
+
+        # Unlock time is visible in db
+        globalLock = community.getPointGlobalLock(alice)
+        print('Alices lock: %s' % globalLock)
+
+        # When current time >= unlock time then Alice allowed to transfer, etc…
+        lockBlock = lockResult['processed']['block_num']
+        targetBlock = lockBlock + (period + 2) // 3
+        self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {})], targetBlock)
+        community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey])
+
+
+class PointSafeTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        point = community.getUnusedPointSymbol()
+        owner = community.createCommunity(
+            community_name = point,
+            creator_auth = client,
+            creator_key = clientKey,
+            maximum_supply = Asset.fromstr('100000000.000 %s'%point),
+            reserve_amount = Asset.fromstr('1000000.0000 CMN'))
+
+        (user, userPrivate) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+
+        self.point = point
+        self.owner = owner
+
+    def setUp(self):
+        self.eeHelper = ee.EEHelper(self)
+        (self.alice, self.alicePrivate) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+
+        (self.bob, self.bobPrivate) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+
+        self.alicePoints = community.getPointBalance(self.point, self.alice)
+        self.bobPoints = community.getPointBalance(self.point, self.bob)
+
+        pointParam = community.getPointParam(self.point)
+        self.feePct = pointParam['transfer_fee']
+        self.minFee = Asset(pointParam['min_transfer_fee_points'], pointParam['max_supply'].symbol)
+
+    def tearDown(self):
+        self.eeHelper.tearDown()
+
+    def calcFee(self, toTransfer):
+        return max(toTransfer * self.feePct // 10000, self.minFee)
+
+    def waitBlock(self, targetBlock):
+        self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {})], targetBlock + 1)
+
+    def test_FullStory(self):
+        (bob, bobPrivate, bobPoints) = (self.bob, self.bobPrivate, self.bobPoints)
+        (alice, alicePrivate, alicePoints) = (self.alice, self.alicePrivate, self.alicePoints)
+        keys = [bobPrivate, clientKey]
+
+        # Bob enables safe with initial unlocked value (can be 0) and delay (each point can have individual)
+        delay = 30
+        unlock = bobPoints // 5
+        community.enableSafe(bob, unlock=unlock, delay=delay, keys=keys)
+        # Now his transfers (out) limited with "unlocked" value (retire/withdraw also limited)
+        toTransfer = unlock // 2
+        community.transferPoints(bob, alice, toTransfer, keys=keys)
+        unlock -= toTransfer + self.calcFee(toTransfer)
+
+        toTransfer = unlock * 2 // 3
+        community.transferPoints(bob, alice, toTransfer, keys=keys)
+        unlock -= toTransfer + self.calcFee(toTransfer)
+
+        one = Asset(1, bobPoints.symbol)
+        with self.assertRaisesRegex(Exception, 'overdrawn safe unlocked balance'):
+            community.transferPoints(bob, alice, unlock + one, keys=keys)
+        fee = self.calcFee(unlock)
+        toTransfer = unlock - fee # it's not precise, but will be enough
+        community.transferPoints(bob, alice, toTransfer, keys=keys)
+        community.transferPoints(alice, bob, alicePoints // 5, keys=[alicePrivate, clientKey])
+        # Safe state is visible in db
+        safe = community.getPointSafe(self.point, bob)
+        print('Bobs safe: %s' % safe)
+
+        # Bob can unlock balance, but he should wait "delay" seconds before apply safe mod
+        # unlocked value can be > than current balance
+        # unique (per account) mod_id should be specified (used later to apply/cancel)
+        unlockRes = community.unlockSafe(bob, modId="unlock123", unlock=bobPoints*2, keys=keys)
+        reqUnlockBlock = unlockRes['processed']['block_num']
+
+        # Bob also can change safe settings or disable safe, this also requires to wait for "delay" seconds
+        community.modifySafe(bob, point=self.point, modId="modify543", delay=delay//2, keys=keys)
+        community.modifySafe(bob, point=self.point, modId="modify1", delay=1, keys=keys)
+        testnet.wait(5)
+        disableRes = community.disableSafe(bob, point=self.point, modId="disable24", keys=keys)
+
+        # Active safe mods are visible in db
+        mod1 = community.getPointSafeMod(self.point, bob, "unlock123")
+        mod2 = community.getPointSafeMod(self.point, bob, "modify543")
+        mod3 = community.getPointSafeMod(self.point, bob, "disable24")
+        print('Bobs safe mods:\n  %s\n  %s\n  %s' % (mod1, mod2, mod3))
+
+        # Delayed mods can be cancelled anytime
+        community.cancelSafeMod(bob, "modify1", keys=keys)
+        # Mod can be applied after delay
+        targetBlock = reqUnlockBlock + (delay + 2) // 3
+        self.waitBlock(targetBlock)
+        community.applySafeMod(bob, "unlock123", keys=keys)
+        community.transferPoints(bob, alice, bobPoints // 2, keys=keys)
+
+        # Bob can instantly lock unlocked points if he decides it's too much (0 means lock all unlocked)
+        community.lockSafe(bob, bobPoints, keys=keys)
+        zero = Asset(0, bobPoints.symbol)
+        community.lockSafe(bob, zero, keys=keys)
+        with self.assertRaisesRegex(Exception, 'overdrawn safe unlocked balance'):
+            community.transferPoints(bob, alice, one, keys=keys)
+
+        # Bob disables safe to remove all restrictions
+        disableBlock = disableRes['processed']['block_num'] + (delay + 2) // 3
+        if disableBlock > targetBlock:
+            self.waitBlock(disableBlock)
+
+        community.applySafeMod(bob, "disable24", keys=keys)
+        community.transferPoints(bob, alice, one, keys=keys)
+
+        # He can't re-enable safe if there mods
+        with self.assertRaisesRegex(Exception, "Can't enable safe with existing delayed mods"):
+            community.enableSafe(bob, unlock=unlock, delay=delay*2, keys=keys)
+
+        # Bob cancels mod and re-enables his safe
+        community.cancelSafeMod(bob, "modify543", keys=keys)
+        community.enableSafe(bob, unlock=zero, delay=delay*2, trusted=alice, keys=keys)
+        testnet.wait(2*3)
+
+        # If safe have trusted account set, then his signature added to action allows to instantly
+        # unlock, modify, disable or apply mod. mod id must be empty in this case (except for apply mod)
+        with self.assertRaisesRegex(Exception, 'overdrawn safe unlocked balance'):
+            community.transferPoints(bob, alice, one, keys=keys)
+        toUnlock = one + self.minFee
+        community.unlockSafe(bob, modId="", unlock=toUnlock, keys=[bobPrivate, alicePrivate, clientKey], signer=alice)
+        community.transferPoints(bob, alice, one, keys=keys)
+
+    def test_enableDisableSafe(self):
+        (bob, bobPrivate, bobPoints) = (self.bob, self.bobPrivate, self.bobPoints)
+        (alice, alicePrivate, alicePoints) = (self.alice, self.alicePrivate, self.alicePoints)
+        keys = [bobPrivate, clientKey]
+
+        # enable safe with 0-unlocked (all funds locked, no outgoing transfers allowed)
+        delay = 30
+        unlock = Asset(0, bobPoints.symbol)
+        community.enableSafe(bob, unlock=unlock, delay=delay, keys=keys)
+        one = Asset(1, bobPoints.symbol)
+        with self.assertRaisesRegex(Exception, 'overdrawn safe unlocked balance'):
+            community.transferPoints(bob, alice, one, keys=keys)
+        # incoming transfers are accepted
+        community.transferPoints(alice, bob, one, keys=[alicePrivate, clientKey])
+        # Safe state is visible in db
+        safe = community.getPointSafe(self.point, bob)
+        print('Bobs safe: %s' % safe)
+
+        # disable safe using delayed mod
+        disableRes = community.disableSafe(bob, point=self.point, modId="disable24", keys=keys)
+        # apply mod after delay
+        disableBlock = disableRes['processed']['block_num'] + (delay + 2) // 3
+        self.waitBlock(disableBlock)
+        community.applySafeMod(bob, "disable24", keys=keys)
+        community.transferPoints(bob, alice, one, keys=keys)
+
+    def test_unlockSafe(self):
+        (bob, bobPrivate, bobPoints) = (self.bob, self.bobPrivate, self.bobPoints)
+        (alice, alicePrivate, alicePoints) = (self.alice, self.alicePrivate, self.alicePoints)
+        keys = [bobPrivate, clientKey]
+        zero = Asset(0, bobPoints.symbol)
+        one = Asset(1, bobPoints.symbol)
+
+        # enable safe with all funds locked
+        delay = 30
+        community.enableSafe(bob, unlock=zero, delay=delay, keys=keys)
+        with self.assertRaisesRegex(Exception, 'overdrawn safe unlocked balance'):
+            community.transferPoints(bob, alice, one, keys=keys)
+        # can unlock some value using delayed mod
+        # !! take care about the a fee if want to transfer all unlocked
+        toTransfer = bobPoints // 4
+        unlock = toTransfer + self.calcFee(toTransfer)
+        unlockRes = community.unlockSafe(bob, modId="unlock1", unlock=unlock, keys=keys)
+        # apply mod after delay
+        unlockBlock = unlockRes['processed']['block_num'] + (delay + 2) // 3
+        self.waitBlock(unlockBlock)
+        community.applySafeMod(bob, "unlock1", keys=keys)
+        community.transferPoints(bob, alice, toTransfer, keys=keys)
+
+        # can unlock more than have
+        community.unlockSafe(bob, modId="unlock.x5", unlock=bobPoints*5, keys=keys)
+        # several mods can co-exist
+        testnet.wait(5)
+        community.unlockSafe(bob, modId="unlock.oth", unlock=one, keys=keys)
+
+    def test_lockSafe(self):
+        (bob, bobPrivate, bobPoints) = (self.bob, self.bobPrivate, self.bobPoints)
+        (alice, alicePrivate, alicePoints) = (self.alice, self.alicePrivate, self.alicePoints)
+        keys = [bobPrivate, clientKey]
+
+        # enable safe with some funds unlocked
+        delay = 30
+        unlock = bobPoints // 2
+        community.enableSafe(bob, unlock=unlock, delay=delay, keys=keys)
+        # can transfer while have unlocked
+        community.transferPoints(bob, alice, unlock // 2, keys=keys)
+        # can instantly lock to reduce unlocked
+        community.lockSafe(bob, unlock // 3, keys=keys)
+        # can pass zero-value asset to lock all unlocked
+        zero = Asset(0, bobPoints.symbol)
+        community.lockSafe(bob, zero, keys=keys)
+        with self.assertRaisesRegex(Exception, 'overdrawn safe unlocked balance'):
+            one = Asset(1, bobPoints.symbol)
+            community.transferPoints(bob, alice, one, keys=keys)
+
+    def test_modifySafe(self):
+        (bob, bobPrivate, bobPoints) = (self.bob, self.bobPrivate, self.bobPoints)
+        (alice, alicePrivate, alicePoints) = (self.alice, self.alicePrivate, self.alicePoints)
+        keys = [bobPrivate, clientKey]
+
+        # enable safe
+        delay = 30
+        unlock = bobPoints // 2
+        community.enableSafe(bob, unlock=unlock, delay=delay, trusted=alice, keys=keys)
+
+        # can change delay and/or trusted account using delayed mod
+        newDelay = delay // 2
+        modifyRes = community.modifySafe(bob, point=self.point, modId="set.delay", delay=newDelay, keys=keys)
+        community.modifySafe(bob, point=self.point, modId="set.trusted", trusted=self.owner, keys=keys)
+        community.modifySafe(bob, point=self.point, modId="del.trusted", trusted="", keys=keys)
+
+        # wait and apply
+        modifyBlock = modifyRes['processed']['block_num'] + (delay + 2) // 3
+        self.waitBlock(modifyBlock)
+        community.applySafeMod(bob, "set.delay", keys=keys)
+
+        # delay changed, mods cerated starting from this time will have new delay
+        modifyRes = community.modifySafe(bob, point=self.point, modId="modify.both", delay=delay*2, trusted="", keys=keys)
+        modifyBlock = modifyRes['processed']['block_num'] + (newDelay + 2) // 3
+        self.waitBlock(modifyBlock)
+        community.applySafeMod(bob, "modify.both", keys=keys)
+
+        # !!! existing mods can still be applied if not cancelled (and waited theirs delay)
+        # but only if there is actual change
+        with self.assertRaisesRegex(Exception, "Change has no effect and can be cancelled"):
+            community.applySafeMod(bob, "del.trusted", keys=keys)
+        community.applySafeMod(bob, "set.trusted", keys=keys)
+
+    def test_cancelSafeMod(self):
+        (bob, bobPrivate, bobPoints) = (self.bob, self.bobPrivate, self.bobPoints)
+        (alice, alicePrivate, alicePoints) = (self.alice, self.alicePrivate, self.alicePoints)
+        keys = [bobPrivate, clientKey]
+
+        # enable safe
+        delay = 30
+        unlock = bobPoints // 2
+        community.enableSafe(bob, unlock=unlock, delay=delay, keys=keys)
+
+        # schedule some mods
+        community.unlockSafe(bob, modId="unlock123", unlock=bobPoints*2, keys=keys)
+        testnet.wait(5)
+        disableRes = community.disableSafe(bob, point=self.point, modId="disable24", keys=keys)
+        testnet.wait(5)
+        community.modifySafe(bob, point=self.point, modId="modify543", delay=delay//2, keys=keys)
+
+        # Delayed mods can be cancelled anytime
+        community.cancelSafeMod(bob, "modify543", keys=keys)
+
+        # Active safe mods are visible in db
+        mod1 = community.getPointSafeMod(self.point, bob, "unlock123")
+        mod2 = community.getPointSafeMod(self.point, bob, "disable24")
+        mod3 = community.getPointSafeMod(self.point, bob, "modify543")
+        print('Bobs safe mods:\n  %s\n  %s\n  %s' % (mod1, mod2, mod3))
+
+        # disable safe applying mod
+        disableBlock = disableRes['processed']['block_num'] + (delay + 2) // 3
+        self.waitBlock(disableBlock)
+        community.applySafeMod(bob, "disable24", keys=keys)
+
+        # Must cancel all active mods (for given point) before re-enable safe
+        with self.assertRaisesRegex(Exception, "Can't enable safe with existing delayed mods"):
+            community.enableSafe(bob, unlock=unlock, delay=delay, keys=keys)
+        community.cancelSafeMod(bob, "unlock123", keys=keys)
+        community.enableSafe(bob, unlock=unlock, delay=delay, keys=keys)
+
+    def test_trustedSafe(self):
+        (bob, bobPrivate, bobPoints) = (self.bob, self.bobPrivate, self.bobPoints)
+        (alice, alicePrivate, alicePoints) = (self.alice, self.alicePrivate, self.alicePoints)
+        keys = [bobPrivate, clientKey]
+
+        # enable safe with all funds locked
+        delay = 100500
+        community.enableSafe(bob, unlock=Asset(0, bobPoints.symbol), delay=delay, trusted=alice, keys=keys)
+        toTransfer = bobPoints // 2
+        with self.assertRaisesRegex(Exception, 'overdrawn safe unlocked balance'):
+            community.transferPoints(bob, alice, toTransfer, keys=keys)
+
+        # If safe have trusted account set, then his signature added to action allows to instantly (without delay)
+        # unlock, modify, disable or apply mod.
+        # !!! mod id must be empty in this case (except for apply mod)
+        unlock = toTransfer + self.calcFee(toTransfer)
+        community.unlockSafe(bob, modId="", unlock=unlock, keys=[bobPrivate, alicePrivate, clientKey], signer=alice)
+        community.transferPoints(bob, alice, toTransfer, keys=keys)
+
 
 class CtrlTestCase(unittest.TestCase):
     @classmethod
@@ -602,11 +937,11 @@ class CtrlTestCase(unittest.TestCase):
             (alice, aliceKey) = community.createCommunityUser(
                     creator='tech', creatorKey=techKey, clientKey=clientKey,
                     community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
-    
+
             alicePoints = community.getPointBalance(point, alice)
             leaders = self.getLeadersWeights(point)
             leaders[leader] += (30*alicePoints.amount)//100
-    
+
             trxResult = community.voteLeader(point, alice, leader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
             trxId = trxResult['transaction_id']
             trxBlock = trxResult['processed']['block_num']
@@ -625,7 +960,7 @@ class CtrlTestCase(unittest.TestCase):
             self.eeHelper.waitEvents(
                 [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
                 ], trxBlock)
-    
+
             self.assertEqual(leaders, self.getLeadersWeights(point))
 
 
@@ -637,11 +972,11 @@ class CtrlTestCase(unittest.TestCase):
                     creator='tech', creatorKey=techKey, clientKey=clientKey,
                     community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
             community.voteLeader(point, alice, leader, 3000, providebw=alice+'/tech', keys=[aliceKey,techKey])
-    
+
             alicePoints = community.getPointBalance(point, alice)
             leaders = self.getLeadersWeights(point)
             leaders[leader] -= (30*alicePoints.amount)//100
-    
+
             trxResult = community.unvoteLeader(point, alice, leader, providebw=alice+'/tech', keys=[aliceKey,techKey])
             trxId = trxResult['transaction_id']
             trxBlock = trxResult['processed']['block_num']
@@ -660,7 +995,7 @@ class CtrlTestCase(unittest.TestCase):
             self.eeHelper.waitEvents(
                 [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
                 ], trxBlock)
-   
+
             self.assertEqual(leaders, self.getLeadersWeights(point))
 
 
@@ -731,7 +1066,7 @@ class CtrlTestCase(unittest.TestCase):
         self.eeHelper.waitEvents(
             [ ({'msg_type':'ApplyTrx', 'id':trxId}, {'block_num':trxBlock, 'actions':trxTrace, 'except':ee.Missing()}),
             ], trxBlock)
-   
+
         self.assertEqual(leaders, self.getLeadersWeights(point))
 
 
@@ -747,14 +1082,14 @@ class CtrlTestCase(unittest.TestCase):
         alicePoints = community.getPointBalance(self.point, alice)
 
         tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
-        
+
         if pointParam['fee'] != 0:
             totalQuantity = tokenQuantity
             tokenQuantity = totalQuantity * (10000-pointParam['fee']) // 10000
             feeQuantity = totalQuantity - tokenQuantity
         else:
             feeQuantity = Asset(0, CMN)
-        
+
         newReserve = pointStat['reserve'] + tokenQuantity
         q = pow(1.0 + tokenQuantity.amount/pointStat['reserve'].amount, pointParam['cw']/10000)
         newSupply = pointStat['supply'] * q
@@ -941,7 +1276,7 @@ class CtrlTestCase(unittest.TestCase):
         appLeaders[appLeader] += 3*(aliceTokens.amount - tokenQuantity.amount)//10 - 3*aliceTokens.amount//10
 
         args = {'owner': alice, 'quantity': str(tokenQuantity)}
-        trxResult = testnet.pushAction('c.point', 'withdraw', alice, args, 
+        trxResult = testnet.pushAction('c.point', 'withdraw', alice, args,
                providebw=alice+'/tech', keys=[aliceKey,techKey])
         trxId = trxResult['transaction_id']
         trxBlock = trxResult['processed']['block_num']

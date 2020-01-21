@@ -520,8 +520,8 @@ void point::delay_safe_change(
             d.commun_code = scode;
             d.date = eosio::current_time_point() + eosio::seconds(safe.delay);
             d.unlock = unlock.amount;
-                d.delay = delay;
-                d.trusted = trusted;
+            d.delay = delay;
+            d.trusted = trusted;
         });
     }
 }
