@@ -196,6 +196,18 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
             'type': 'ban',
             'requirement': 'lead.minor'})
 
+    trx.addAction('cyber', 'linkauth', owner_account, {
+            'account': owner_account,
+            'code': 'c.list',
+            'type': 'ban',
+            'requirement': 'lead.minor'})
+
+    trx.addAction('cyber', 'linkauth', owner_account, {
+            'account': owner_account,
+            'code': 'c.list',
+            'type': 'unban',
+            'requirement': 'lead.minor'})
+
     trx.addAction('cyber', 'updateauth', owner_account, {
             'account': owner_account,
             'permission': 'transferperm',

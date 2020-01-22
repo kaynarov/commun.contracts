@@ -186,7 +186,6 @@ public:
         \brief The \ref ban action is used by a leader to ban (to block) a user in providebw service. To pay for the resources (bandwidth) used by an account, one more action \a providebw can be added to the transaction. Such service requires that the transaction should be signed by two persons — by those who performs an action and who pays for used bandwidth. So, a leader can ban a user who uses this service for personal gain.
 
         \param commun_code a point symbol of the community in which the user is banned
-        \param leader account of the leader banning the user
         \param account user account is to be banned
         \param reason text explaining the reason for banning (it is required parameter)
 
@@ -195,13 +194,12 @@ public:
         \signreq
             — the \a leader account .
     */
-    [[eosio::action]] void ban(symbol_code commun_code, name leader, name account, std::string reason);
+    [[eosio::action]] void ban(symbol_code commun_code, name account, std::string reason);
 
     /**
         \brief The \ref unban action is used by a leader to unban (to allow) a user in providebw service.
 
         \param commun_code a point symbol of the community in which the user is unbanned
-        \param leader account of the leader unbanning the user
         \param account user account is to be unbanned
         \param reason text explaining the reason for unbanning (it is required parameter)
 
@@ -210,7 +208,7 @@ public:
         \signreq
             — the \a leader account .
     */
-    [[eosio::action]] void unban(symbol_code commun_code, name leader, name account, std::string reason);
+    [[eosio::action]] void unban(symbol_code commun_code, name account, std::string reason);
 
     static auto& get_community(symbol_code commun_code) {
         static tables::community community_tbl(config::list_name, config::list_name.value);
