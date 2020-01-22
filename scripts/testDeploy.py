@@ -259,7 +259,7 @@ class CommunityLeaderTests(unittest.TestCase):
                 leaders=self.smajor_approvers,
                 clientKey=clientKey)
 
-    def test_banPostWithMinorAuthority(self):
+    def test_banPostUsingMinorAuthority(self):
         (private, public) = testnet.createKey()
         author = testnet.createRandomAccount(public, keys=techKey)
         community.openBalance(author, self.point, 'tech', keys=techKey)
@@ -274,6 +274,32 @@ class CommunityLeaderTests(unittest.TestCase):
         trx.addAction('c.gallery', 'ban', self.owner+'@lead.minor', {
                 'commun_code': self.point,
                 'message_id': {'author': author, 'permlink': permlink}})
+
+        community.createAndExecProposal(
+                commun_code=self.point,
+                permission='lead.minor',
+                trx=trx,
+                leaders=self.minor_approvers,
+                clientKey=clientKey)
+
+
+    def test_banUserUsingMinorAuthority(self):
+        (user, userPrivate) = community.createCommunityUser(
+                creator='tech', creatorKey=techKey, clientKey=clientKey,
+                community=self.point)
+
+        # the leader cannot individually block the user
+        with self.assertRaisesRegex(Exception, 'Missing required authority'):
+            (leader,leaderKey) = next(iter(self.leaders.items()))
+            print('leader:', leader)
+            testnet.pushAction('c.list', 'ban', leader, 
+                    {'commun_code': self.point, 'account': user, 'reason': 'Spammer'},
+                    providebw=leader+'/tech', keys=[leaderKey, techKey])
+
+        # ...but leaders can block the user using `lead.minor` consensus
+        trx = testnet.Trx()
+        trx.addAction('c.list', 'ban', self.owner+'@lead.minor',
+                {'commun_code': self.point, 'account': user, 'reason': 'Bad user'})
 
         community.createAndExecProposal(
                 commun_code=self.point,
