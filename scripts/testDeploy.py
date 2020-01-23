@@ -8,7 +8,11 @@ import pymongo
 import json
 import eehelper as ee
 import time
+from datetime import datetime, timedelta
 from testnet import Asset
+
+def from_time_point_sec(s):
+    return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.000')
 
 recoverKey='5J24gjEWSEQFgtngPJNeSKvFsnmAG8qJVJRgQwnmXoAhxcchxee'
 recoverPublic='GLS71iAcPXAqzruvh1EFu28S89Cy8GoYNQXKSQ6UuaBYFuB7usyCB'
@@ -1341,21 +1345,32 @@ class CtrlTestCase(unittest.TestCase):
 class RecoverTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        self.recover_delay = 3
         result = json.loads(testnet.cleos('get table c.recover c.recover params'))
-        if len(result['rows']) == 0 or result['rows'][0]['recover_delay'] != 3:
+        if len(result['rows']) == 0 or result['rows'][0]['recover_delay'] != self.recover_delay:
             testnet.pushAction('c.recover', 'setparams', 'c.recover', {
-                    'recover_delay': 3
+                    'recover_delay': self.recover_delay
             }, providebw='c.recover/tech', keys=[techKey])
         testnet.updateAuth('c.recover', 'recover', 'active', [recoverPublic], [],
                 providebw='c.recover/tech', keys=[techKey])
 
+        self.point = community.getUnusedPointSymbol()
+        self.owner = community.createCommunity(
+            community_name = self.point,
+            creator_auth = client,
+            creator_key = clientKey,
+            maximum_supply = Asset.fromstr('100000000.000 %s'%self.point),
+            reserve_amount = Asset.fromstr('1000000.0000 CMN'))
+
     def setUp(self):
         (private, public) = testnet.createKey()
-        account = testnet.createRandomAccount(public, keys=[techKey])
-        testnet.updateAuth(account, 'owner', '', [public], ['c.recover@cyber.code'],
-                providebw=account+'/tech', keys=[techKey, private])
+        (self.alice, self.aliceKey) = community.createCommunityUser(
+            creator='tech', creatorKey=techKey, clientKey=clientKey,
+            community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(10000.0000, 200000.0000)))
 
-        (self.alice, self.aliceKey) = (account, private)
+        testnet.updateAuth(self.alice, 'owner', '', [public], ['c.recover@cyber.code'],
+                providebw=self.alice+'/tech', keys=[techKey, self.aliceKey])
+        self.aliceOwner = private
 
 
     def test_unavailableRecover(self):
@@ -1369,13 +1384,19 @@ class RecoverTestCase(unittest.TestCase):
 
     def test_recoverActiveAuthority(self):
         (alice, aliceKey) = (self.alice, self.aliceKey)
+        self.assertEqual(None, community.getPointGlobalLock(alice))
 
         (private2, public2) = testnet.createKey()
-        community.recover(alice, active_key=public2, provider='tech', keys=[recoverKey,techKey])
+        result = community.recover(alice, active_key=public2, provider='tech', keys=[recoverKey,techKey])
+        recover_time = from_time_point_sec(result['processed']['block_time'])
 
         # Check new active key with `checkwin` action
         testnet.pushAction('cyber', 'checkwin', alice, {},
                 providebw=alice+'/tech', keys=[techKey, private2])
+
+        # Check global lock time
+        globalLockTo = from_time_point_sec(community.getPointGlobalLock(alice)['unlocks'])
+        self.assertEqual(globalLockTo, recover_time + timedelta(seconds=self.recover_delay))
 
 
     def test_applyOwnerRecover(self):

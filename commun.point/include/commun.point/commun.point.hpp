@@ -381,6 +381,17 @@ public:
         return accountstable.find(commun_code.raw()) != accountstable.end();
     }
 
+    static inline time_point_sec get_global_lock_time(name account) {
+        lock_singleton lock(config::point_name, account.value);
+        return lock.get_or_default().unlocks;
+    }
+
+    static inline bool get_global_lock_state(name account, uint32_t period=0) {
+        auto unlock_time = get_global_lock_time(account);
+        time_point_sec time{eosio::current_time_point() + eosio::seconds(period)};
+        return time <= unlock_time;
+    }
+
 private:
 
 struct structures {

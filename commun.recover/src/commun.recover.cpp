@@ -1,6 +1,7 @@
 #include <eosio/permission.hpp>
 #include <cyber.bios/cyber.bios.hpp>
 #include <commun.recover/commun.recover.hpp>
+#include <commun.point/commun.point.hpp>
 #include <commun/config.hpp>
 
 using namespace commun;
@@ -41,6 +42,8 @@ void commun_recover::recover(name account, std::optional<public_key> active_key,
             (const char*)0, 0, packed_requested.data(), packed_requested.size(), eosio::microseconds());
     eosio::check(res > 0, "Key recovery for this account is not available");
 
+    const auto &params = getParams();
+
     if (change_active) {
         cyber::authority auth;
         auth.threshold = 1;
@@ -51,12 +54,19 @@ void commun_recover::recover(name account, std::optional<public_key> active_key,
             "cyber"_n, "updateauth"_n,
             std::make_tuple(account, cfg::active_name, cfg::owner_name, auth)
         ).send();
+
+        if (false == commun::point::get_global_lock_state(account, params.recover_delay)) {
+            action(
+                permission_level{account, cfg::owner_name},
+                "c.point"_n, "globallock"_n,
+                std::make_tuple(account, params.recover_delay)
+            ).send();
+        }
     }
 
     if (change_owner) {
-        auto recover_delay = getParams().recover_delay;
         auto owner_request = tables::owner_request_table(_self, account.value);
-        auto change_time = eosio::current_time_point() + eosio::seconds(recover_delay);
+        auto change_time = eosio::current_time_point() + eosio::seconds(params.recover_delay);
         owner_request.set({change_time, owner_key.value()}, _self);
     }
 }
