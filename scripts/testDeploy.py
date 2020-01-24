@@ -48,9 +48,11 @@ class DeployTests(unittest.TestCase):
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
         body = testnet.randomText(1024)
-        community.createPost('CATS', author, permlink, 'cats', header, body, providebw=author+'/c@providebw', keys=[private, clientKey])
+        community.createPost('CATS', author, permlink, 'cats', header, body,
+                providebw=[author+'/c@providebw','c.gallery/c@providebw'], client='c.gallery@clients', keys=[private, clientKey])
 
-        community.upvotePost('CATS', voter, author, permlink, providebw=voter+'/c@providebw', keys=[private2, clientKey])
+        community.upvotePost('CATS', voter, author, permlink,
+                providebw=[voter+'/c@providebw','c.gallery/c@providebw'], client='c.gallery@clients', keys=[private2, clientKey])
 
 
     def test_glsProvideBW(self):
@@ -272,7 +274,8 @@ class CommunityLeaderTests(unittest.TestCase):
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
         body = testnet.randomText(1024)
-        community.createPost(self.point, author, permlink, 'cats', header, body, providebw=author+'/c@providebw', keys=[private, clientKey])
+        community.createPost(self.point, author, permlink, 'cats', header, body,
+                providebw=[author+'/c@providebw','c.gallery/c@providebw'], client='c.gallery@clients', keys=[private, clientKey])
 
         trx = testnet.Trx()
         trx.addAction('c.gallery', 'ban', self.owner+'@lead.minor', {

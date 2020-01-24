@@ -307,8 +307,9 @@ def unvoteLeader(commun_code, voter, leader, *, providebw=None, keys=None):
         }, providebw=providebw, keys=keys)
 
 
-def createPost(commun_code, author, permlink, category, header, body, *, providebw=None, keys=None):
-    return pushAction('c.gallery', 'create', author, {
+def createPost(commun_code, author, permlink, category, header, body, *, client=None, providebw=None, keys=None):
+    actors=[author,client] if client else [author]
+    return pushAction('c.gallery', 'create', actors, {
             'commun_code':commun_code,
             'message_id':{'author':author, 'permlink':permlink},
             'parent_id':{'author':"", 'permlink':category},
@@ -318,8 +319,9 @@ def createPost(commun_code, author, permlink, category, header, body, *, provide
             'metadata':''
         }, providebw=providebw, keys=keys)
 
-def upvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):
-    return pushAction('c.gallery', 'upvote', voter, {
+def upvotePost(commun_code, voter, author, permlink, *, client=None, providebw=None, keys=None):
+    actors=[voter,client] if client else [voter]
+    return pushAction('c.gallery', 'upvote', actors, {
             'commun_code':commun_code,
             'voter':voter,
             'message_id':{'author':author, 'permlink':permlink}

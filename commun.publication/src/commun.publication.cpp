@@ -27,6 +27,7 @@ void publication::create(
     std::optional<uint16_t> weight
 ) {
     require_auth(message_id.author);
+    require_client_auth();
     auto& community = commun_list::get_community(commun_code);
     
     eosio::check(!weight.has_value() || community.custom_gem_size_enabled, "custom gem size disabled.");
@@ -100,6 +101,7 @@ void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
     require_auth(message_id.author);
+    require_client_auth();
     if (check_mssg_exists(commun_code, message_id)) {
         update_mosaic(_self, commun_code, message_id.tracery());
     }
@@ -158,12 +160,14 @@ void publication::unlock(symbol_code commun_code, name leader, mssgid_t message_
 
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
     require_auth(voter);
+    require_client_auth();
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, false);
 }
 
 void publication::downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
     require_auth(voter);
+    require_client_auth();
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, true);
 }
