@@ -1,7 +1,21 @@
 #include <commun.recover_test_api.hpp>
+#include <commun.point_test_api.hpp>
 #include "contracts.hpp"
 #include <commun/config.hpp>
 
+namespace std {
+
+  template<class _Traits>
+    basic_ostream<char, _Traits>&
+    operator<<(basic_ostream<char, _Traits>& __out, const fc::time_point& __s)
+    { return (__out << static_cast<std::string>(__s)); }
+
+  template<class _Traits>
+    basic_ostream<char, _Traits>&
+    operator<<(basic_ostream<char, _Traits>& __out, const fc::time_point_sec& __s)
+    { return (__out << static_cast<fc::time_point>(__s)); }
+
+}  // namespace std
 
 namespace cfg = commun::config;
 using namespace eosio::testing;
@@ -10,18 +24,24 @@ using namespace fc;
 
 static const int64_t block_interval = cfg::block_interval_ms / 1000;
 
+static const auto point_code_str = "GLS";
+static const auto _point = symbol(3, point_code_str);
+
 class commun_recover_tester : public golos_tester {
 protected:
     commun_recover_api recover;
+    commun_point_api point;
 
 public:
     commun_recover_tester()
         : golos_tester(cfg::recover_name)
         , recover(this, cfg::recover_name)
+        , point(this, cfg::point_name, _point)
     {
-        create_accounts({cfg::recover_name, _alice, _bob});
+        create_accounts({cfg::recover_name, cfg::point_name, _alice, _bob});
         produce_block();
         install_contract(cfg::recover_name, contracts::recover_wasm(), contracts::recover_abi());
+        install_contract(cfg::point_name, contracts::point_wasm(), contracts::point_abi());
 
         set_authority(_alice, cfg::owner_name,
             authority(1, {{.key = get_public_key(_alice, "owner"), .weight = 1}},
@@ -79,6 +99,42 @@ BOOST_FIXTURE_TEST_CASE(recover_active_authority, commun_recover_tester) try {
     
     BOOST_CHECK_EQUAL(success(), recover.recover(_alice, get_public_key(_alice, "active2"), public_key_type()));
     BOOST_CHECK_EQUAL(success(), check_auth(_alice, cfg::active_name, get_private_key(_alice, "active2")));
+} FC_LOG_AND_RETHROW()
+
+
+BOOST_FIXTURE_TEST_CASE(point_global_lock_integration, commun_recover_tester) try {
+    BOOST_TEST_MESSAGE("point_global_lock_integration");
+    time_point unlock_time;
+
+    // 1. No global lock
+    BOOST_CHECK(point.get_global_lock(_alice).is_null());
+
+    BOOST_CHECK_EQUAL(success(), recover.recover(_alice, get_public_key(_alice, "active"), public_key_type()));
+    unlock_time = control->pending_block_time() + fc::seconds(cfg::def_recover_delay);
+    BOOST_CHECK_EQUAL(unlock_time, point.get_global_lock(_alice)["unlocks"].as_time_point());
+
+    produce_block();
+
+    // 2. Global lock earlier then current_time plus recover_delay
+    BOOST_CHECK_EQUAL(success(), point.global_lock(_alice, cfg::def_recover_delay));
+    unlock_time = control->pending_block_time() + fc::seconds(cfg::def_recover_delay);
+    BOOST_CHECK_EQUAL(unlock_time, point.get_global_lock(_alice)["unlocks"].as_time_point());
+
+    produce_blocks(5);
+    BOOST_CHECK_EQUAL(success(), recover.recover(_alice, get_public_key(_alice, "active"), public_key_type()));
+    unlock_time = control->pending_block_time() + fc::seconds(cfg::def_recover_delay);
+    BOOST_CHECK_EQUAL(unlock_time, point.get_global_lock(_alice)["unlocks"].as_time_point());
+
+    // 3. Global lock later then current_time plus recover_delay
+    BOOST_CHECK_EQUAL(success(), point.global_lock(_alice, cfg::def_recover_delay+1200));
+    unlock_time = control->pending_block_time() + fc::seconds(cfg::def_recover_delay+1200);
+    BOOST_CHECK_EQUAL(unlock_time, point.get_global_lock(_alice)["unlocks"].as_time_point());
+
+    produce_blocks(5);
+    BOOST_CHECK_EQUAL(success(), recover.recover(_alice, get_public_key(_alice, "active"), public_key_type()));
+    // unlock_time has not changed
+    BOOST_CHECK_EQUAL(unlock_time, point.get_global_lock(_alice)["unlocks"].as_time_point());
+
 } FC_LOG_AND_RETHROW()
 
 

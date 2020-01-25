@@ -200,17 +200,15 @@ void commun_list::unhide(symbol_code commun_code, name follower) {
     check_community_exists(commun_code);
 }
 
-void commun_list::ban(symbol_code commun_code, name leader, name account, std::string reason) {
-    require_auth(leader);
-    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+void commun_list::ban(symbol_code commun_code, name account, std::string reason) {
+    require_auth(point::get_issuer(commun_code));
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     check_community_exists(commun_code);
 }
 
-void commun_list::unban(symbol_code commun_code, name leader, name account, std::string reason) {
-    require_auth(leader);
-    eosio::check(control::in_the_top(commun_code, leader), (leader.to_string() + " is not a leader").c_str());
+void commun_list::unban(symbol_code commun_code, name account, std::string reason) {
+    require_auth(point::get_issuer(commun_code));
     eosio::check(is_account(account), "Account not exists.");
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     check_community_exists(commun_code);

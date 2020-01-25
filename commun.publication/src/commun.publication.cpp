@@ -27,6 +27,7 @@ void publication::create(
     std::optional<uint16_t> weight
 ) {
     require_auth(message_id.author);
+    require_client_auth();
     auto& community = commun_list::get_community(commun_code);
     
     eosio::check(!weight.has_value() || community.custom_gem_size_enabled, "custom gem size disabled.");
@@ -100,6 +101,7 @@ void publication::update(symbol_code commun_code, mssgid_t message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
     require_auth(message_id.author);
+    require_client_auth();
     if (check_mssg_exists(commun_code, message_id)) {
         update_mosaic(_self, commun_code, message_id.tracery());
     }
@@ -158,12 +160,14 @@ void publication::unlock(symbol_code commun_code, name leader, mssgid_t message_
 
 void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
     require_auth(voter);
+    require_client_auth();
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, false);
 }
 
 void publication::downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
     require_auth(voter);
+    require_client_auth();
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, true);
 }
@@ -208,14 +212,8 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaic = mosaics_table.find(tracery);
-    if (mosaic == mosaics_table.end()) {
-        require_client_auth("Message does not exist");
-        return;
-    }
-    if (mosaic->status != gallery_types::mosaic::ACTIVE) {
-        require_client_auth("Mosaic is inactive");
-        return;
-    }
+    eosio::check(mosaic != mosaics_table.end(), "Message does not exist.");
+    eosio::check(mosaic->status == gallery_types::mosaic::ACTIVE, "Message is inactive.");
     if (eosio::current_time_point() > mosaic->collection_end_date) {
         require_client_auth("Collection period is over");
         return;
@@ -296,11 +294,10 @@ accparams::const_iterator publication::get_acc_param(accparams& accparams_table,
 }
 
 uint16_t publication::get_gems_per_period(symbol_code commun_code) {
-    static const int64_t seconds_per_day = 24 * 60 * 60;
     auto& community = commun_list::get_community(commun_code);
     int64_t mosaic_active_period = community.collection_period + community.moderation_period + community.extra_reward_period;
     uint16_t gems_per_day = community.gems_per_day;
-    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, seconds_per_day), 1);
+    return std::max<int64_t>(safe_prop(gems_per_day, mosaic_active_period, config::seconds_per_day), 1);
 }
 
 int64_t publication::get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight) {
