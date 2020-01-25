@@ -37,7 +37,7 @@ public:
         \param issuer account issuing the point
         \param initial_supply number of points supplied initially. These points are on the issuer's balance sheet. The initial_supply parameter must be at most maximum_supply
         \param maximum_supply maximum allowable number of points supplied
-        \param cw connector weight showing the exchange rate between the point and the CMN token, calculated by the specified formula. This parameter should take value from «0» to «10 000» inclusive («0» and «10 000» equal to «0,00 \%» and «100,00 \%» correspondingly)
+        \param cw connector weight showing the exchange rate between the point and the CMN token, calculated by the specified formula. This parameter should take value from "0" to "10 000" inclusive ("0" and "10 000" equal to "0,00 \%" and "100,00 \%" correspondingly)
         \param fee amount of commission that should be charged from a user when exchanging created points for CMN tokens. This parameter is set in the same way as \a cw one
 
         The asset type is a structure value containing the fields:
@@ -61,15 +61,15 @@ public:
 
         \param commun_code the point symbol code
         \param fee commission (in percent) charged from the amount of CMN tokens when buying and selling points.
-        \param transfer_fee commission (in percent) charged from the amount of point transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the «from» account. Default value is «10» that corresponds to «0.1» (%)
-        \param min_transfer_fee_points minimum number of points transferred as fee. Such number of points will be debited from the account, even if the calculated fee is less than this value. Default value is «1» that corresponds to one smallest part of point (i.e. 0.001 point)
+        \param transfer_fee commission (in percent) charged from the amount of point transfer. This parameter should be at least min_transfer_fee_points. The commission and the amount transferred are debited from balance of the "from" account. Default value is "10" that corresponds to "0,1" (%)
+        \param min_transfer_fee_points minimum number of points transferred as fee. Such number of points will be debited from the account, even if the calculated fee is less than this value. Default value is "1" that corresponds to one smallest part of point (i.e. 0,001 point)
 
         All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action. At least one of these parameters must be set.
 
         <b>Requirements:</b>
             - the point should be created before calling this action;
-            - the \a min_transfer_fee_points parameter should take the value «0» if \a transfer_fee is set to «0» (\%);
-            - no fee is charged on transfer if the «from» (or «to») account is either a point issuer or one of the commun contracts.
+            - the \a min_transfer_fee_points parameter should take the value "0" if \a transfer_fee is set to "0" (\%);
+            - no fee is charged on transfer if the "from" (or "to") account is either a point issuer or one of the commun contracts.
 
         \signreq
             — <i>the point issuer</i> .
@@ -78,7 +78,7 @@ public:
     void setparams(symbol_code commun_code, std::optional<uint16_t> fee, std::optional<uint16_t> transfer_fee, std::optional<int64_t> min_transfer_fee_points);
 
     /**
-        \brief The \ref setfreezer action is used to set contract account, so, this account will have ability to «freeze» the points or the CMN tokens on its balance.
+        \brief The \ref setfreezer action is used to set contract account, so, this account will have ability to "freeze" the points or the CMN tokens on its balance.
 
         \param freezer a freezer account
 
@@ -110,7 +110,7 @@ public:
     void issue(name to, asset quantity, string memo);
 
     /**
-        \brief The \ref retire action is used for taking a certain number of points out of circulation («burning» the points). These points can be withdrawn from balance of the \a issuer account as well as from balance of any other account.
+        \brief The \ref retire action is used for taking a certain number of points out of circulation ("burning" the points). These points can be withdrawn from balance of the \a issuer account as well as from balance of any other account.
 
         \param from account from the balance of which points are withdrawn
         \param quantity number of retiring points. This parameter should be positive
@@ -134,7 +134,7 @@ public:
         \param quantity amount of points to be transferred. This value should be positive
         \param memo memo text that clarifies a meaning of the points transfer. This text should not exceed 256 symbols including blanks.
 
-        Exchanging points for tokens can be applied when voting for leaders of the commun application. In this case, the \a memo field should be left blank. The obtained CMN tokens will be «frozen», and weight of the account will be increased in accordance with their number.
+        Exchanging points for tokens can be applied when voting for leaders of the commun application. In this case, the \a memo field should be left blank. The obtained CMN tokens will be "frozen", and weight of the account will be increased in accordance with their number.
 
         When this action is called, the information about \a balance, \a currency, \a exchange and \a fee events is sent to the event engine.
 
@@ -195,48 +195,49 @@ public:
     void withdraw(name owner, asset quantity);
 
     /**
-        \brief The \ref enablesafe action enables a safe on given balance and sets it's initial parameters.
+        \brief The \ref enablesafe action enables a safe on given balance and sets its initial parameters.
 
         \param owner account name of safe owner
-        \param unlock amount of points to initially unlock in the safe; must be >= 0 with correct point symbol
-        \param delay duration of locked period in seconds; must be greater than 0
-        \param trusted name of trusted account; if empty then no trusted account set, otherwise account must exist and can't be equal to \a owner
+        \param unlock amount of points to initially unlock in the safe. This parameter must be greater than or equal to "0" and have correct point symbol
+        \param delay duration of locked period (in seconds). This parameter must be greater than "0"
+        \param trusted name of trusted account; empty value means no trusted account set, otherwise account must exist and its name can't be equal to \a owner
 
-        Balance owner calls this action to enable safe for points with symbol provided in asset, and to set it's initial parameters. Safe must not exist when calling this action. Action enables safe instantly.
-        When enabled, safe locks all points except \a unlock amount. Locked points still can be used to create mosaics, gems, vote, etc…, but can't be transferred. When owner transfers points, the unlocked amount reduces by appropriate value. Balance owner can't transfer more points than he unlocked. Points obtained from incoming transfer/issue automaticaly locked.
+        The balance owner calls this action to enable a safe for points with symbol provided in asset and set its initial parameters. The safe must not exist when this action is called. The action provides security instantly.
+
+        When enabled, the safe locks all points except \a unlock amount. Locked points can still be used to create mosaics, gems, votes, etc., but they cannot be transferred. When \a owner transfers points, the unlocked amount is reduced by a corresponding value. The balance owner can not transfer more points than he unlocked. Points obtained from incoming transfer/issue are automatically locked.
 
         \signreq
-            - \a owner account.
+            — the \a owner account.
      */
     [[eosio::action]] void enablesafe(name owner, asset unlock, uint32_t delay, name trusted);
 
     /**
-        \brief The \ref disablesafe action disables a safe on given balance and sets it's initial parameters.
+        \brief The \ref disablesafe action disables a safe on given balance and sets its initial parameters.
 
         \param owner account name of safe owner
-        \param commun_code symbol code of point for which disabling the safe
-        \param mod_id named id of the current safe change; it's required to provide the same value to find delayed disable when apply or cancel it; must be empty name if disable instantly (see below)
+        \param commun_code symbol code of the point for which the safe is disabling
+        \param mod_id named identifier of the current safe change. It is required to provide the same value to find delayed disable when apply or cancel it. The name must be empty ("") if disable instantly
 
-        Balance owner calls this action to disable his safe for \a commun_code points. Safe must be enabled when calling this action. Action disables safe with delay set previously. If trusted account was set earlier and action contains his authorization, then disable safe instantly.
+        The balance owner calls this action to disable his safe for \a commun_code points. The safe must be enabled when calling this action. The action disables the safe with a delay set previously. If a trusted account has already been set and action contains his authorization, the safe is disabled instantly.
 
         \signreq
-            - \a owner account
-            - optionaly also trusted account from the currently active safe parameters
+            — the \a owner account (required)  
+            — the trusted account from the currently active safe parameters (optional).
      */
     [[eosio::action]] void disablesafe(name owner, symbol_code commun_code, name mod_id);
 
     /**
-        \brief The \ref unlocksafe action unlocks some funds in the safe.
+        \brief The \ref unlocksafe action unlocks some funds in a safe.
 
         \param owner account name of safe owner
-        \param unlock amount of points to unlock in the safe, must be greater than 0; may be greater than balance
-        \param mod_id id of the current change; it's used to find delayed unlock when apply or cancel it; must be empty name if unlocking instantly (see below)
+        \param unlock amount of points to unlock in the safe. This parameter must be greater than "0", it may exceeds balance
+        \param mod_id identifier of the current change. It is used to find delayed unlock when apply or cancel it. The name must be empty ("") if unlocking instantly
 
-        Balance owner calls this action to increase amount of unlocked points in the safe. Points unlock with delay set previously. If trusted account was set earlier and action contains his authorization, then points unlock instantly, otherwise unlock should be applied after delay using \ref applysafemod action.
+        The balance owner calls this action to increase amount of unlocked points in the safe. Points are unlocked with a delay set previously. If a trusted account has already been set and the action contains his authorization, then the points are unlocked instantly, otherwise unlock should be applied after a delay using the \ref applysafemod action.
 
         \signreq
-            - \a owner account
-            - optionaly also trusted account from the currently active safe parameters
+            — the \a owner account (required)  
+            — the trusted account from the currently active safe parameters (optional).
      */
     [[eosio::action]] void unlocksafe(name owner, asset unlock, name mod_id);
 
@@ -244,70 +245,70 @@ public:
         \brief The \ref locksafe action locks previously unlocked points.
 
         \param owner account name of safe owner
-        \param lock amount of unlocked points to lock in the safe, set to 0 (with correct symbol) to lock all, otherwise must be greater than 0 and not greater than amount of currently unlocked points
+        \param lock amount of unlocked points to lock in the safe. To lock all points, it is required to specify "0" (and correct point symbol), otherwise this parameter must be greater than "0" and not greater than amount of currently unlocked points
 
-        Balance owner calls this action to lock points previously unlocked with \ref enablesafe or \ref unlocksafe (followed by \ref applysafemod). Action instantly reduces amount of unlocked points by value provided in \a lock.
+        The balance owner calls this action to lock points previously unlocked with \ref enablesafe or \ref unlocksafe (followed by \ref applysafemod). The action instantly reduces amount of unlocked points by value provided in \a lock.
 
         \signreq
-            - \a owner account.
+            — the \a owner account.
      */
     [[eosio::action]] void locksafe(name owner, asset lock);
 
     /**
-        \brief The \ref modifysafe action changes delay and/or trusted account of the safe.
+        \brief The \ref modifysafe action changes delay and/or trusted account of a safe.
 
         \param owner account name of safe owner
-        \param commun_code symbol code of points for which changing safe parameters
-        \param mod_id id of the current change; it's used to find delayed change when apply or cancel it; must be empty name if changing instantly (see below)
-        \param delay optional new duration of locked period in seconds, must be greater than 0; must be set if no \a trusted set; if set in instant change, must differ from the current value
-        \param trusted optional name of trusted account; set empty name to remove trusted account; must be set if no \a delay set; if set in instant change, must differ from the current value
+        \param commun_code symbol code of points for which safe parameters are changing
+        \param mod_id identifier of the current change. It is used to find delayed change when apply or cancel it. The name must be empty ("") if changing instantly
+        \param delay new duration of locked period (optional, in seconds). This parameter must be greater than "0". It must be specified if no \a trusted account set. The parameter value must be different from the current one if an instant change is set
+        \param trusted name of trusted account (optional). To remove trusted account it needs to set an empty name. The name must be specify if no \a delay set. The parameter must differ from the current value if set in instant change
 
-        Balance owner calls this action to change some safe parameters. Safe must be enabled earlier. Change delayed by the current value of `delay` parameter. If trusted account was set earlier and action contains his authorization, then new parameters apply instantly, otherwise it should applied after delay using \ref applysafemod action.
+        The balance owner calls this action to change some safe parameters. The safe must be enabled earlier. The change is delayed by the current value of the \a delay parameter. If a trusted account has already been set and the action contains his authorization, the new parameters are applied instantly. Otherwise they should applied after a delay using \ref applysafemod action.
 
         \signreq
-            - \a owner account
-            - optionaly also trusted account from the currently active parameters
+            — the \a owner account (required)  
+            — the trusted account from the currently active parameters (optional).
      */
     [[eosio::action]] void modifysafe(name owner, symbol_code commun_code, name mod_id,
         std::optional<uint32_t> delay, std::optional<name> trusted);
 
     /**
-        \brief The \ref applysafemod action applies delayed change of the safe: points unlock or new parameters.
+        \brief The \ref applysafemod action applies delayed change of a safe (points unlock or new parameters).
 
         \param owner account name of safe owner
-        \param mod_id id of the change to apply
+        \param mod_id identifier of the change to apply
 
-        Balance owner calls this action to apply delayed points unlock or change of the safe parameters. If current safe parameters have trusted account and action contains his authorization, then new parameters apply instantly, otherwise it can be applied only after delay.
+        The balance owner calls this action to apply delayed points unlock or change of the safe parameters. If current safe parameters have trusted account and the action contains his authorization, then new parameters are applied instantly. Otherwise they can be applied only after a delay.
 
         \signreq
-            - \a owner account
-            - optionaly also trusted account from the currently active parameters
+            — the \a owner account (required)  
+            — the trusted account from the currently active parameters (optional).
      */
     [[eosio::action]] void applysafemod(name owner, name mod_id);
 
     /**
-        \brief The \ref cancelsafemod action cancels delayed change of the safe (points unlock or new parameters).
+        \brief The \ref cancelsafemod action cancels delayed change of a safe (points unlock or new parameters).
 
         \param owner account name of safe owner
-        \param mod_id id of the change to cancel
+        \param mod_id identifier of the change to cancel
 
-        Balance owner calls this action to instantly cancel delayed points unlock or change of the safe parameters.
+        The balance owner calls this action to instantly cancel delayed points unlock or change of the safe parameters.
 
         \signreq
-            - \a owner account.
+            — the \a owner account.
      */
     [[eosio::action]] void cancelsafemod(name owner, name mod_id);
 
     /**
-        \brief The \ref globallock action locks all points (freezing still allowed) and delayed mods to given period of time.
+        \brief The \ref globallock action locks all points (except for "frozen" ones) and delayed mods to given period of time.
 
         \param owner account name of points owner
-        \param period lock duration in seconds, can't reduce existing global lock duration, must be greater than 0
+        \param period lock duration (in seconds). This parameter can not reduce existing global lock duration. Its value must be greater than "0"
 
-        Balance owner (or authorized recovery contract) calls this action to instantly lock all his points and prevent delayed mods execution for a given period of time. Global lock has higher priority than safe unlocked points.
+        The balance owner (or authorized recovery contract) calls this action to instantly lock all of his points and prevent delayed mods execution for a specified period of time. Global lock has higher priority than safe unlocked points.
 
         \signreq
-            - \a owner account.
+            — the \a owner account.
      */
     [[eosio::action]] void globallock(name owner, uint32_t period); // Can also add "deletelock" to free storage
 
