@@ -12,10 +12,13 @@
 #ifdef UNIT_TEST_ENV
 #   include <eosio/chain/types.hpp>
 using eosio::chain::name;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
 template <typename T, T... Str>
 inline name operator ""_n() {
-   return name({Str...});
+    return name({Str...});
 }
+#pragma clang diagnostic pop
 #else
 using eosio::name;
 #endif
@@ -23,7 +26,7 @@ using eosio::name;
 namespace commun { namespace config {
 
 // contracts
-static const auto dapp_name = N(c);
+static const auto dapp_name = N(c); // can't compile "c"_n
 static const auto list_name = "c.list"_n;
 static const auto emit_name = "c.emit"_n;
 static const auto control_name = "c.ctrl"_n;
@@ -53,7 +56,10 @@ static const auto client_permission_name = "clientperm"_n;
 static constexpr auto _1percent = 100;
 static constexpr auto _100percent = 100 * _1percent;
 static constexpr auto block_interval_ms = 3000;//1000 / 2;
-static constexpr int64_t blocks_per_year = int64_t(365)*24*60*60*1000/block_interval_ms;
+static constexpr int64_t seconds_per_minute = 60;
+static constexpr int64_t seconds_per_hour = seconds_per_minute * 60;
+static constexpr int64_t seconds_per_day = seconds_per_hour * 24;
+static constexpr int64_t blocks_per_year = int64_t(365)*seconds_per_day*1000/block_interval_ms;
 
 #ifndef UNIT_TEST_ENV
     static constexpr auto reserve_token = eosio::symbol("CMN", 4);

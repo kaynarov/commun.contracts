@@ -85,7 +85,8 @@ base_tester::action_result golos_tester::push_action_msig_tx(
     action_name name,
     vector<permission_level> perms,
     vector<account_name> signers,
-    const variant_object& data
+    const variant_object& data,
+    bool produce/*=true*/
 ) {
     auto& abi = _abis[code];
     action act;
@@ -102,7 +103,7 @@ base_tester::action_result golos_tester::push_action_msig_tx(
     for (const auto& a : signers) {
         tx.sign(get_private_key(a, "active"), control->get_chain_id());
     }
-    return push_tx(std::move(tx));
+    return push_tx(std::move(tx), produce);
 }
 
 base_tester::action_result golos_tester::push_tx(signed_transaction&& tx, bool produce_and_check) {

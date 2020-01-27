@@ -49,6 +49,8 @@ Such a goal can be achieved if the following conditions are met:
 
  * \a Point — main payment unit used for payments within a separate community. Point is not a token and can not be used in exchange trading. Points are used as coins to encourage community members and applied only within the community.
 
+ * \a Safe — functionality allowing a user to manipulate funds in order to preserve them, namely to lock funds and withdrawal operations on them, including transfer, selling points to bay tokens. Access to funds is possible only after they are unlocked by the safe owner.
+
  * <i>Token CMN</i> (abbr. from Commun) or <i>System token</i> — main coin registered in the system of CyberWay and introduced to exchange of funds between communities, as well as between Commun and Cyberway blockchain.
 
  * \a Tracery — mosaic identifier, which is a hash sum generated from post author name and publication title.

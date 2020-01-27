@@ -23,9 +23,12 @@ struct mssgid {
 
 struct commun_posting_api: base_contract_api {
     symbol_code commun_code;
-    commun_posting_api(golos_tester* tester, name code, symbol_code comn_code)
+    account_name client;
+    commun_posting_api(golos_tester* tester, name code, symbol_code comn_code, account_name cli)
     :   base_contract_api(tester, code)
-    ,   commun_code(comn_code) {}
+    ,   commun_code(comn_code)
+    ,   client(cli)
+    {}
     
     action_result push_maybe_msig(account_name act, account_name actor, mvo a, account_name client) {
         return client ?
@@ -41,8 +44,7 @@ struct commun_posting_api: base_contract_api {
         std::string body = "body",
         std::vector<std::string> tags = {"tag"},
         std::string metadata = "metadata",
-        std::optional<uint16_t> weight = std::optional<uint16_t>(), 
-        account_name client = account_name()
+        std::optional<uint16_t> weight = std::optional<uint16_t>()
     ) {
         auto a = args()
             ("commun_code", commun_code)
@@ -65,8 +67,7 @@ struct commun_posting_api: base_contract_api {
         std::string title,
         std::string body,
         std::vector<std::string> tags,
-        std::string metadata,
-        account_name client = account_name()
+        std::string metadata
     ) {
         auto a = args()
             ("commun_code", commun_code)
@@ -158,19 +159,19 @@ struct commun_posting_api: base_contract_api {
     }
     
     action_result vote(bool damn, account_name voter, mssgid message_id, 
-                       std::optional<uint16_t> weight = std::optional<uint16_t>(), account_name client = account_name()) {
+                       std::optional<uint16_t> weight = std::optional<uint16_t>()) {
         auto act = damn ? N(downvote) : N(upvote);
         auto a = get_vote_args(voter, message_id, weight);
         return push_maybe_msig(act, voter, a, client);
     }
 
     action_result upvote(account_name voter, mssgid message_id, 
-                         std::optional<uint16_t> weight = std::optional<uint16_t>(), account_name client = account_name()) {
-        return vote(false, voter, message_id, weight, client);
+                         std::optional<uint16_t> weight = std::optional<uint16_t>()) {
+        return vote(false, voter, message_id, weight);
     }
     action_result downvote(account_name voter, mssgid message_id, 
-                         std::optional<uint16_t> weight = std::optional<uint16_t>(), account_name client = account_name()) {
-        return vote(true, voter, message_id, weight, client);
+                         std::optional<uint16_t> weight = std::optional<uint16_t>()) {
+        return vote(true, voter, message_id, weight);
     }
     action_result unvote(account_name voter, mssgid message_id, account_name client = account_name()) {
         auto a = args()

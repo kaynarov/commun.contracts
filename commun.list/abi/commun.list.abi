@@ -308,10 +308,6 @@
                     "type": "symbol_code"
                 },
                 {
-                    "name": "leader",
-                    "type": "name"
-                },
-                {
                     "name": "account",
                     "type": "name"
                 },
