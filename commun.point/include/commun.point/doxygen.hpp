@@ -37,7 +37,7 @@
  
  * User has two ways for doing that one:
  * - get a signature of trusted account to instantly perform an action
- * - create a \a mod and after some time get a signature of trusted account. Once the action is signed, it is permed without waiting for the delay expires.
+ * - create a \a mod and after some time get a signature of trusted account. Once the action is signed, it is immediately executed without waiting for the delay expires.
 
  * There are two almost independent parts: per-point safes and global lock. Both of them limit the balance reductions (transfer out, retire withdraw), yet allow to freeze the points (create gems/vote).
 
@@ -45,7 +45,7 @@
 
  * User calls the [unlocksafe][3] action so that he is able to unlock more points. This puts him into the delayed \a mod, which can be canceled anytime or applied after a delay. Straight after applying, the unlocked amount is increased by the value stored in \a mod.
 
- * User can "lock" some points instantly in order to reduce the unlocked value (execute [locksafe][4] action). To modify the safe options, user may call the [modifysafe][5] action, which creates delayed \a mod to apply after delay. Similar delayed \a mod cerated to disable safe ([disablesafe][2] action).
+ * User can "lock" some points instantly in order to reduce the unlocked value (execute [locksafe][4] action). To modify the safe options, user may call the [modifysafe][5] action, which creates delayed \a mod to apply after delay. Similar delayed \a mod created to disable safe ([disablesafe][2] action).
 
  * User can set trusted account in safe options. This allows to apply any of the delayed actions or \a mod instantly in the event of action being signed by both balance owner and trusted account.
 
