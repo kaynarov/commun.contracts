@@ -11,14 +11,23 @@ using namespace eosio;
 using std::optional;
 
 
-//// DOCS_TABLE: dapp
+/**
+    \brief DB record containing information about user requests for change owner authority.
+    \ingroup recover_tables
+*/
+// DOCS_TABLE: owner_request
 struct [[eosio::table]] owner_request {
-    time_point change_time;
-    public_key owner_key;
+    time_point change_time;        //!< time when it will be permissible to change the owner key
+    public_key owner_key;          //!< new owner key
 };
 
+/**
+    \brief DB record containing global parameters for contract.
+    \ingroup recover_tables
+*/
+// DOCS_TABLE: params
 struct [[eosio::table]] params {
-    uint64_t recover_delay = config::def_recover_delay;
+    uint64_t recover_delay = config::def_recover_delay;  //!< delay (in seconds) for setting the owner key in specified value
 };
 
 }
