@@ -282,6 +282,10 @@
                 {
                     "name": "cover_image",
                     "type": "string?"
+                },
+                {
+                    "name": "theme",
+                    "type": "string?"
                 }
             ]
         },
