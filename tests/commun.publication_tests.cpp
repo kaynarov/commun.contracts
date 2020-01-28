@@ -363,17 +363,26 @@ BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.create(msg));
 
     BOOST_CHECK_EQUAL(err.client_action, post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason"));
-    BOOST_CHECK_EQUAL(err.simple_no_message, post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason", _client));
+    // mosaic doesn't exist in cashout window, but we have signature from the client
+    BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), {N(brucelee), "notexist"}, "the reason", _client));
 
     BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
     BOOST_CHECK_EQUAL(err.reason_empty, post.report(N(chucknorris), msg, "", _client));
 
     BOOST_CHECK_EQUAL(success(), post.lock(N(jackiechan), msg, "the reason"));
-    BOOST_CHECK_EQUAL(err.simple_inactive, post.report(N(chucknorris), msg, "the reason", _client));
+    BOOST_CHECK_EQUAL(err.already_locked, post.report(N(chucknorris), msg, "the reason", _client));
     BOOST_CHECK_EQUAL(success(), post.unlock(N(jackiechan), msg, "the reason"));
     BOOST_CHECK_EQUAL(err.already_locked, post.report(N(chucknorris), msg, "the reason", _client));
 
     BOOST_CHECK_EQUAL(success(), post.update(msg, "headernew", "bodynew", {{"tagnew"}}, "metadatanew"));
+    BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
+
+    // ban archived mosaic
+    produce_block(fc::seconds(cfg::def_collection_period + cfg::def_moderation_period + cfg::def_extra_reward_period - block_interval));
+    produce_block();
+    BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
+    BOOST_CHECK_EQUAL(success(), post.create({N(jackiechan), "it-is-a-done"}, {N(alice), "alice-in-blockchains"}));
+    BOOST_CHECK_EQUAL(uint8_t(ARCHIVED), get_mosaic(_code, _point, msg.tracery())["status"].as<uint8_t>());
     BOOST_CHECK_EQUAL(success(), post.report(N(chucknorris), msg, "the reason", _client));
 
 } FC_LOG_AND_RETHROW()
