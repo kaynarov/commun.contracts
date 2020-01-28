@@ -271,32 +271,35 @@ public:
     // TODO: removed from MVP
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
-    // TODO: removed from MVP
-    //     \brief The reblog action is used by user to create a reblog on the post/comment
+    /**
+         \brief The reblog action is used by user to create a reblog on the post/comment
 
-    //     \param commun_code symbol of community POINT.
-    //     \param rebloger account of rebloger
-    //     \param message_id post to reblog
-    //     \param header header of the reblog
-    //     \param body body of the reblog
+         \param commun_code symbol of community POINT.
+         \param rebloger account of rebloger
+         \param message_id post to reblog
+         \param header header of the reblog
+         \param body body of the reblog
 
-    //     Action do not stores any state in DB, it only checks input parameters.
+         Action do not stores any state in DB, it only checks input parameters.
 
-    //     Performing the action requires rebloger signature.
-    //     If also client signature provided, it doesn't check the presence of message.
+         Performing the action requires rebloger signature.
+         If also client signature provided, it doesn't check the presence of message.
+    */
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
 
-    // TODO: removed from MVP
-    //     \brief The erasereblog action is used by user to erase the reblog of the post/comment
 
-    //     \param commun_code symbol of community POINT.
-    //     \param rebloger account of rebloger
-    //     \param message_id post to reblog
+    /**
+         \brief The erasereblog action is used by user to erase the reblog of the post/comment
 
-    //     Action do not stores any state in DB, it only checks input parameters.
+         \param commun_code symbol of community POINT.
+         \param rebloger account of rebloger
+         \param message_id post to reblog
 
-    //     Performing the action requires rebloger signature.
-    //     If also client signature provided, it doesn't check the presence of message.
+         Action do not stores any state in DB, it only checks input parameters.
+
+         Performing the action requires rebloger signature.
+         If also client signature provided, it doesn't check the presence of message.
+    */
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     // TODO: removed from MVP
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);

@@ -379,54 +379,54 @@ BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
 } FC_LOG_AND_RETHROW()
 
 // TODO: remove from MVP
-// BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
-//     BOOST_TEST_MESSAGE("Reblog message testing.");
+ BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
+     BOOST_TEST_MESSAGE("Reblog message testing.");
 
-//     init();
-//     std::string str256(256, 'a');
+     init();
+     std::string str256(256, 'a');
 
-//     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
+     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
 
-//     BOOST_CHECK_EQUAL(err.client_action, post.reblog(N(chucknorris), account_name(), {N(brucelee), "permlink"},
-//         "header",
-//         "body"));
+     BOOST_CHECK_EQUAL(err.client_action, post.reblog(N(chucknorris), account_name(), {N(brucelee), "permlink"},
+         "header",
+         "body"));
 
-//     BOOST_CHECK_EQUAL(err.own_reblog, post.reblog(N(brucelee), _client, {N(brucelee), "permlink"},
-//         "header",
-//         "body"));
-//     BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
-//         str256,
-//         "body"));
-//     BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
-//         "header",
-//         ""));
-//     BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
-//         "header",
-//         "body"));
-//     BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
-//         "header",
-//         "body"));
-//     BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
-//         "header",
-//         "body"));
-//     BOOST_CHECK_EQUAL(success(), post.reblog(N(jackiechan), _client, {N(brucelee), "permlink"},
-//         "",
-//         ""));
-//     BOOST_CHECK_EQUAL(success(), post.reblog(_golos, _client, {N(brucelee), "permlink"},
-//         "",
-//         "body"));
+     BOOST_CHECK_EQUAL(err.own_reblog, post.reblog(N(brucelee), _client, {N(brucelee), "permlink"},
+         "header",
+         "body"));
+     BOOST_CHECK_EQUAL(err.wrong_title_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
+         str256,
+         "body"));
+     BOOST_CHECK_EQUAL(err.wrong_reblog_body_length, post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
+         "header",
+         ""));
+     BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
+         "header",
+         "body"));
+     BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "test"},
+         "header",
+         "body"));
+     BOOST_CHECK_EQUAL(success(), post.reblog(N(chucknorris), _client, {N(brucelee), "permlink"},
+         "header",
+         "body"));
+     BOOST_CHECK_EQUAL(success(), post.reblog(N(jackiechan), _client, {N(brucelee), "permlink"},
+         "",
+         ""));
+     BOOST_CHECK_EQUAL(success(), post.reblog(_golos, _client, {N(brucelee), "permlink"},
+         "",
+         "body"));
 
-//     BOOST_CHECK_EQUAL(err.client_action, post.erase_reblog(N(chucknorris), account_name(),
-//         {N(brucelee), "notexist"}));
-//     BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog(N(brucelee), _client,
-//         {N(brucelee), "permlink"}));
-//     BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
-//         {N(brucelee), "notexist"}));
-//     BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
-//         {N(brucelee), "notexist"}));
-//     BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
-//         {N(brucelee), "permlink"}));
-// } FC_LOG_AND_RETHROW()
+     BOOST_CHECK_EQUAL(err.client_action, post.erase_reblog(N(chucknorris), account_name(),
+         {N(brucelee), "notexist"}));
+     BOOST_CHECK_EQUAL(err.own_reblog_erase, post.erase_reblog(N(brucelee), _client,
+         {N(brucelee), "permlink"}));
+     BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
+         {N(brucelee), "notexist"}));
+     BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
+         {N(brucelee), "notexist"}));
+     BOOST_CHECK_EQUAL(success(), post.erase_reblog(N(chucknorris), _client,
+         {N(brucelee), "permlink"}));
+ } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     BOOST_TEST_MESSAGE("Upvote testing.");
