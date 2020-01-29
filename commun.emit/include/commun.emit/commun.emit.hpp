@@ -93,8 +93,8 @@ public:
      
      * The first mosaics having the highest SUM will be awarded (default is 10 mosaics).
      
-     * \signreq  
-            — <i>trusted community client</i> .
+     * \signreq
+     *      — the \a c.list contract account .
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
@@ -120,7 +120,9 @@ public:
      * - prcnt — share of points determined by the \a def_leaders_percent hardcoded value. It takes the value of \a def_leaders_percent when the request comes from \a c.ctrl and (100 - \a def_leaders_percent) when it comes from \a c.gallery.
      
      * \signreq  
-            — <i>trusted community client</i> .
+            — the \a c.list contract account
+            or
+            - the \a c.gallery contract account .
      */
     [[eosio::action]] void issuereward(symbol_code commun_code, name to_contract);
 

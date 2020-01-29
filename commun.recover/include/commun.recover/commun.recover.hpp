@@ -25,7 +25,7 @@ public:
     At least one of the arguments must be non-empty and change the parameter value.
 
     \signreq
-        — <i>majority of validators</i>.
+        — <i>majority of Commun dApp leaders</i> .
     */
     [[eosio::action]] void setparams(std::optional<uint64_t> recover_delay);
 

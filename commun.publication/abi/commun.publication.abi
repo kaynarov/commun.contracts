@@ -604,6 +604,14 @@
     "type": "claim_args"
   },
   {
+    "name": "reblog",
+    "type": "reblog"
+  },
+  {
+    "name": "erasereblog",
+    "type": "erasereblog"
+  },
+  {
     "name": "ban",
     "type": "ban_args"
   }
