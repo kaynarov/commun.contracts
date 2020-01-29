@@ -387,7 +387,6 @@ BOOST_FIXTURE_TEST_CASE(report_message, commun_publication_tester) try {
 
 } FC_LOG_AND_RETHROW()
 
-// TODO: remove from MVP
  BOOST_FIXTURE_TEST_CASE(reblog_message, commun_publication_tester) try {
      BOOST_TEST_MESSAGE("Reblog message testing.");
 
