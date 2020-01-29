@@ -197,7 +197,7 @@ public:
         This action does not store any state in DB, it only checks input parameters.
 
         \signreq
-            — <i>majority of community leaders</i> .
+            — <i>minority of community leaders</i> .
     */
     [[eosio::action]] void ban(symbol_code commun_code, name account, std::string reason);
 
@@ -211,7 +211,7 @@ public:
         This action does not store any state in DB, it only checks input parameters.
 
         \signreq
-            — <i>majority of community leaders</i> .
+            — <i>minority of community leaders</i> .
     */
     [[eosio::action]] void unban(symbol_code commun_code, name account, std::string reason);
 

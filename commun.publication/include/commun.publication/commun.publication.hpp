@@ -329,7 +329,7 @@ public:
         Collected reward to the author of the banned message and voted users will not be paid.
 
         \signreq
-            — <i>majority of community leaders</i> .
+            — <i>minority of community leaders</i> .
     */
     void ban(symbol_code commun_code, mssgid_t message_id);
 
