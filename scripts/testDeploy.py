@@ -10,6 +10,8 @@ import eehelper as ee
 import time
 from datetime import datetime, timedelta
 from testnet import Asset
+from jsonprinter import Items, JsonPrinter
+from console import ColoredConsole
 
 def from_time_point_sec(s):
     return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.000')
@@ -348,6 +350,38 @@ class CommunityLeaderTests(unittest.TestCase):
                 providebw=self.owner+'/c@providebw')
 
 
+class TrxPrinter:
+    def __init__(self, replacer=None):
+        authItems = Items() \
+                .add('actor', color=137).add('permission', color=95)
+        
+        actionItems = Items().line() \
+                .add('account', 'name', color=20).line() \
+                .add('authorization', color=128, items=Items().others(atnewline=False, items=authItems)).line() \
+                .add('args', color=34, _items=None, optional=True).line() \
+                .add('data', hide=False, max_length=16, color=248).line() \
+                .others(atnewline=False, color=250)
+        
+        self.trxItems = Items().line() \
+                .add('delay_sec', 'expiration').line() \
+                .add('ref_block_num', 'ref_block_prefix').line() \
+                .add('max_net_usage_words', 'max_cpu_usage_ms', 'max_ram_kbytes', 'max_storage_kbytes').line() \
+                .add('actions', items=Items().others(atnewline=False, items=actionItems)).line() \
+                .add('context_free_actions', 'context_free_data').line() \
+                .add('transaction_extensions').line() \
+                .add('signatures').line()
+
+        #self.printer = JsonPrinter(ColoredConsole(), replacer=replacer, defaultItem=Items().others(atnewline=True).line())
+        self.printer = JsonPrinter(ColoredConsole(), replacer=replacer)
+
+    def formatTrx(self, data):
+        trx = json.loads(data)
+        for action in trx['actions']:
+            args = testnet.cleos('convert unpack_action_data {account} {name} {data}'.format(**action), output=False)
+            action['args'] = json.loads(args)
+        self.printer.format(self.trxItems, trx)
+        self.printer.console.newline()
+
 class PointTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -366,8 +400,46 @@ class PointTestCase(unittest.TestCase):
         self.point = point
         self.owner = owner
 
+        self.initialAccounts = {self.owner: 'point_issuer'}
+
+    def replace(self, string):
+        result = self.accounts.get(string, None)
+        return result
+
+    def formatEvent(self, i, selector, predicat, msg):
+        self.trxPrinter.printer.format(Items().others(atnewline=True).line(), selector)
+        print()
+
+        authItems = Items() \
+                .add('actor', 'permission')
+        eventItems = Items().line() \
+                .add('code', 'event').line() \
+                .add('args').line() \
+                .add('data').line()
+        actionItems = Items().line() \
+                .add('receiver', 'code', 'action').line() \
+                .add('auth', items=Items().others(items=authItems)).line() \
+                .add('args').line() \
+                .add('data').line() \
+                .add('events', items=Items().others(items=eventItems)).line()
+        msgItems = Items().line() \
+                .add('msg_channel', 'msg_type').line() \
+                .add('id').line() \
+                .add('block_num', 'block_time').line() \
+                .add('actions', items=Items().others(items=actionItems)).line()
+        for i in msgItems.items:
+            if i[0] == 'msg_type' or i[0] == 'id':
+                i[1]['color'] = 127
+#        self.trxPrinter.printer.format(Items().others(atnewline=True).line(), msg)
+        self.trxPrinter.printer.format(msgItems, msg)
+        print()
+#        print('formatEvent:', i, selector, msg)
+
     def setUp(self):
+        self.trxPrinter = TrxPrinter(self)
         self.eeHelper = ee.EEHelper(self)
+        self.accounts = self.initialAccounts.copy()
+        testnet.jsonPrinter = self.trxPrinter
 
     def tearDown(self):
         self.eeHelper.tearDown()
@@ -379,6 +451,8 @@ class PointTestCase(unittest.TestCase):
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+
+        self.accounts[alice] = 'Alice'
 
         tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
         community.issueCommunToken(alice, str(tokenQuantity), clientKey)
@@ -402,7 +476,11 @@ class PointTestCase(unittest.TestCase):
 
         # Buy community points through transfer tokens to 'c.point' account
         buyArgs = {'from':alice, 'to':'c.point', 'quantity':str(tokenQuantity+feeQuantity), 'memo':self.point}
-        buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+        testnet.jsonPrinter.printer.console.textColor(20)
+        print("<Alice> ({alice}) buy some {point} points through transfer {quantity} to 'c.point' account".
+                format(alice=alice, point=self.point, quantity=buyArgs['quantity'], c=testnet.jsonPrinter.printer.console))
+        testnet.jsonPrinter.printer.console.textColor()
+        buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
 
         buyTrx = buyResult['transaction_id']
         buyBlock = buyResult['processed']['block_num']

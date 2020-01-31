@@ -152,6 +152,7 @@ class EEHelper():
                 if self.checkContains(selector, msg):
                     self._assertContains('events[%d]'%i, predicat, msg)
                     print('Found message for %d event: %s' % (i, selector))
+                    self.tcase.formatEvent(i, selector, predicat, msg)
                     i += 1
                     lines = []
                     break
