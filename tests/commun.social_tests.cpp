@@ -106,6 +106,16 @@ BOOST_FIXTURE_TEST_CASE(update_meta_test, commun_social_tester) try {
     meta.telegram   = "telegram";
     meta.whatsapp   = "whatsapp";
     meta.wechat     = "wechat";
+    meta.first_name = "John";
+    meta.last_name  = "Snow";
+    meta.country    = "Mordor";
+    meta.city       = "Minas Ithil";
+    meta.birth_date = fc::time_point_sec::from_iso_string("2001-01-01T00:00:00");
+    meta.instagram  = "john.snow";
+    meta.linkedin   = "snow.john";
+    meta.twitter    = "Sauron";
+    meta.github     = "TTT Soft";
+    meta.website_url = "https://myurl.com";
     BOOST_CHECK_EQUAL(success(), social.updatemeta("dave"_n, meta, _client));
 } FC_LOG_AND_RETHROW()
 

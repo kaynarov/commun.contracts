@@ -42,7 +42,7 @@ public:
 
         This action is unavailable for user and can be called only internally.
         \signreq
-            — <i>trusted community client</i> .
+            — the \a c.list contract account .
     */
     void init(symbol_code commun_code);
 
@@ -69,7 +69,8 @@ public:
         \param weight weight of points «frozen» for creating the message. This parameter is optional and specified only when creating a post
 
         \signreq
-            — account from the field \a message_id.author .
+            — account from the field \a message_id.author ;
+            — <i>trusted community client</i> .
     */
     void create(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
         std::string header, std::string body, std::vector<std::string> tags, std::string metadata,
@@ -86,7 +87,8 @@ public:
         \param metadata metadata of the message (recommended format is JSON. The data is not stored in DB)
 
         \signreq
-            — account from the field \a message_id.author .
+            — account from the field \a message_id.author ;
+            — <i>trusted community client</i> .
 
         \note
         Community leaders can lock a message even after it has been corrected regardless of whether it was previously locked temporarily or not. However, the message can not be locked again if the \ref update is also signed by the trusted community client because the message is not checked by leaders in this case.
@@ -144,8 +146,8 @@ public:
         It can only be performed if the message state is active, that is, user opinions are collected.
 
         \signreq
-            — the \a reporter account;  
-            — <i>trusted community client</i> (optional) .
+            — the \a reporter account ;
+            — <i>trusted community client</i> .
 
         \note
         A message content is not checked for suspicion by leaders if the action is also signed by the <i>trusted community client</i>.
@@ -190,7 +192,7 @@ public:
 
         \signreq
             — the \a voter account ;  
-            — <i>trusted community client</i> (optional) .
+            — <i>trusted community client</i> .
 
         \note
         If the action is also signed by the <i>trusted community client</i>, then the action does not check whether or not:
@@ -214,7 +216,7 @@ public:
 
         \signreq
             — the \a voter account ;  
-            — <i>trusted community client</i> (optional) .
+            — <i>trusted community client</i> .
 
         \note
         If the action is also signed by the <i>trusted community client</i>, then the action does not check whether or not:
@@ -271,32 +273,43 @@ public:
     // TODO: removed from MVP
     void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
-    // TODO: removed from MVP
-    //     \brief The reblog action is used by user to create a reblog on the post/comment
+    /**
+         \brief The reblog action is used by user to create a reblog on the post/comment
 
-    //     \param commun_code symbol of community POINT.
-    //     \param rebloger account of rebloger
-    //     \param message_id post to reblog
-    //     \param header header of the reblog
-    //     \param body body of the reblog
+         \param commun_code symbol of community POINT.
+         \param rebloger account of rebloger
+         \param message_id post to reblog
+         \param header header of the reblog
+         \param body body of the reblog
 
-    //     Action do not stores any state in DB, it only checks input parameters.
+         Action do not stores any state in DB, it only checks input parameters.
 
-    //     Performing the action requires rebloger signature.
-    //     If also client signature provided, it doesn't check the presence of message.
+         Performing the action requires rebloger signature.
+         If also client signature provided, it doesn't check the presence of message.
+
+         \signreq
+            — the \a rebloger account ;
+            — <i>trusted community client</i> .
+    */
     void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
 
-    // TODO: removed from MVP
-    //     \brief The erasereblog action is used by user to erase the reblog of the post/comment
 
-    //     \param commun_code symbol of community POINT.
-    //     \param rebloger account of rebloger
-    //     \param message_id post to reblog
+    /**
+         \brief The erasereblog action is used by user to erase the reblog of the post/comment
 
-    //     Action do not stores any state in DB, it only checks input parameters.
+         \param commun_code symbol of community POINT.
+         \param rebloger account of rebloger
+         \param message_id post to reblog
 
-    //     Performing the action requires rebloger signature.
-    //     If also client signature provided, it doesn't check the presence of message.
+         Action do not stores any state in DB, it only checks input parameters.
+
+         Performing the action requires rebloger signature.
+         If also client signature provided, it doesn't check the presence of message.
+
+         \signreq
+            — the \a rebloger account ;
+            — <i>trusted community client</i> .
+    */
     void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
     // TODO: removed from MVP
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
@@ -316,7 +329,7 @@ public:
         Collected reward to the author of the banned message and voted users will not be paid.
 
         \signreq
-            — <i>a community leader</i> .
+            — <i>minority of community leaders</i> .
     */
     void ban(symbol_code commun_code, mssgid_t message_id);
 

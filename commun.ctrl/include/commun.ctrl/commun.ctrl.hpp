@@ -146,7 +146,7 @@ public:
      *
      * This action is unavailable for user and can be called only internally.
      * \signreq
-            — the \a c.ctrl contract account .
+            — the \a c.list contract account .
      */
     [[eosio::action]] void init(symbol_code commun_code);
 
@@ -303,7 +303,8 @@ public:
         \param diff a relative change of points amount.
 
         When this action is called, event information is stored in \a leaderstate and sent to the event engine.
-        \nosignreq
+        \signreq
+            - the \a c.point contract account .
     */
     [[eosio::action]] void changepoints(name who, asset diff);
     void on_points_transfer(name from, name to, asset quantity, std::string memo);
@@ -403,7 +404,7 @@ public:
         \brief The \ref setrecover action is used to create dApp authority before danger operations which can cause dApp leaders lose access to \a c.ctrl multisignature transactions.
 
         \signreq
-            — <i>majority of validators</i> .
+            — <i>majority of Commun dApp leaders</i> .
     */
     [[eosio::action]] void setrecover();
 

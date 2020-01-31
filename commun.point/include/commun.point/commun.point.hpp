@@ -83,7 +83,7 @@ public:
         \param freezer a freezer account
 
         \signreq
-            — <i>trusted community client</i> .
+            — <i>majority of Commun dApp leaders</i> .
     */
     [[eosio::action]]
     void setfreezer(name freezer);

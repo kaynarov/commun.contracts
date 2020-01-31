@@ -147,7 +147,8 @@ BOOST_FIXTURE_TEST_CASE(setinfo_test, commun_list_tester) try {
         ("language", "language")
         ("rules", "rules")
         ("avatar_image", "avatar_image")
-        ("cover_image", "cover_image")));
+        ("cover_image", "cover_image")
+        ("theme", "theme")));
 } FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(setsysparams_test, commun_list_tester) try {
