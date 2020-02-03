@@ -8,10 +8,11 @@ import pymongo
 import json
 import eehelper as ee
 import time
+from copy import deepcopy
 from datetime import datetime, timedelta
 from testnet import Asset
-from jsonprinter import Items, JsonPrinter
-from console import ColoredConsole
+from jsonprinter import Item, Items, JsonPrinter
+from console import Console, ColoredConsole
 
 def from_time_point_sec(s):
     return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.000')
@@ -371,7 +372,6 @@ class TrxPrinter:
                 .add('transaction_extensions').line() \
                 .add('signatures').line()
 
-        #self.printer = JsonPrinter(ColoredConsole(), replacer=replacer, defaultItem=Items().others(atnewline=True).line())
         self.printer = JsonPrinter(ColoredConsole(), replacer=replacer)
 
     def formatTrx(self, data):
@@ -381,6 +381,9 @@ class TrxPrinter:
             action['args'] = json.loads(args)
         self.printer.format(self.trxItems, trx)
         self.printer.console.newline()
+
+    def formatReceipt(self, receipt):
+        pass
 
 class PointTestCase(unittest.TestCase):
     @classmethod
@@ -406,34 +409,54 @@ class PointTestCase(unittest.TestCase):
         result = self.accounts.get(string, None)
         return result
 
-    def formatEvent(self, i, selector, predicat, msg):
-        self.trxPrinter.printer.format(Items().others(atnewline=True).line(), selector)
-        print()
+    def __processItem(self, mItem, items, predicat, data, mapping):
+        subitem = items[mItem.index]
+        if mItem.mapping is None:
+            subitem.setFlags(color=92,hide=None)
+        else:
+            itms = subitem.get('items',None)
+            if itms is None: itms = Items()
+            else: itms = deepcopy(itms)
+            subitem.setFlags(items=itms,hide=None,color=0)
+            self.processMapping(itms, None, data[mItem.index], mItem.mapping)
 
-        authItems = Items() \
+    def processMapping(self, items, predicat, data, mapping):
+        if isinstance(mapping, dict):
+            for key,mItem in mapping.items():
+                self.__processItem(mItem, items, predicat, data, mapping)
+        elif isinstance(mapping, list):
+            for mItem in mapping:
+                self.__processItem(mItem, items, predicat, data, mapping)
+        pass
+
+    def formatEvent(self, i, selector, predicat, msg, mapping):
+        flags={'color': 248}
+        authItems = Items(**flags) \
                 .add('actor', 'permission')
-        eventItems = Items().line() \
+
+        eventItems = Items(**flags).line() \
                 .add('code', 'event').line() \
-                .add('args').line() \
-                .add('data').line()
-        actionItems = Items().line() \
+                .add('args', items=Items(**flags)).line() \
+                .add('data', hide=True).line()
+
+        actionItems = Items(**flags).line() \
                 .add('receiver', 'code', 'action').line() \
                 .add('auth', items=Items().others(items=authItems)).line() \
-                .add('args').line() \
-                .add('data').line() \
-                .add('events', items=Items().others(items=eventItems)).line()
-        msgItems = Items().line() \
+                .add('args', items=Items(**flags)).line() \
+                .add('data', hide=True).line() \
+                .add('events', hide=False, items=Items(hide=False, items=eventItems)).line()
+
+        _msgItems = Items().line() \
                 .add('msg_channel', 'msg_type').line() \
                 .add('id').line() \
                 .add('block_num', 'block_time').line() \
-                .add('actions', items=Items().others(items=actionItems)).line()
-        for i in msgItems.items:
-            if i[0] == 'msg_type' or i[0] == 'id':
-                i[1]['color'] = 127
-#        self.trxPrinter.printer.format(Items().others(atnewline=True).line(), msg)
+                .add('actions', items=Items(hide=False, items=actionItems)).line()
+
+        msgItems = deepcopy(_msgItems)
+        self.processMapping(msgItems, predicat, msg, mapping)
+
         self.trxPrinter.printer.format(msgItems, msg)
         print()
-#        print('formatEvent:', i, selector, msg)
 
     def setUp(self):
         self.trxPrinter = TrxPrinter(self)
@@ -515,7 +538,7 @@ class PointTestCase(unittest.TestCase):
         ]
 
         self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':buyTrx}, {'block_num':buyBlock, 'actions':buyTrace, 'except':ee.Missing()}),
+            [ ({'msg_type':'ApplyTrx', 'id':buyTrx, 'block_num':buyBlock}, {'actions':buyTrace, 'except':ee.Missing()}),
             ], buyBlock)
 
 
@@ -528,6 +551,8 @@ class PointTestCase(unittest.TestCase):
 
 #        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
 #        community.issueCommunToken(alice, str(tokenQuantity), clientKey)
+
+        self.accounts[alice] = 'Alice'
 
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
@@ -551,7 +576,7 @@ class PointTestCase(unittest.TestCase):
 
         # Sell community points through transfer them to 'c.point' account
         sellArgs = {'from':alice, 'to':'c.point', 'quantity':str(sellPoints), 'memo':''}
-        sellResult = testnet.pushAction('c.point', 'transfer', alice, sellArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+        sellResult = testnet.pushAction('c.point', 'transfer', alice, sellArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
 
         sellTrx = sellResult['transaction_id']
         sellBlock = sellResult['processed']['block_num']
@@ -594,7 +619,7 @@ class PointTestCase(unittest.TestCase):
         ]
 
         self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':sellTrx}, {'block_num':sellBlock, 'actions':sellTrace, 'except':ee.Missing()}),
+            [ ({'msg_type':'ApplyTrx', 'id':sellTrx, 'block_num':sellBlock}, {'actions':sellTrace, 'except':ee.Missing()}),
             ], sellBlock)
 
 
@@ -610,6 +635,9 @@ class PointTestCase(unittest.TestCase):
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
 
+        self.accounts[alice] = 'Alice'
+        self.accounts[bob] = 'Bob'
+
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
         pointStat = community.getPointStat(self.point)
@@ -621,7 +649,7 @@ class PointTestCase(unittest.TestCase):
 
         # Transfer community points to other user (not issuer or `c`-account)
         transferArgs = {'from':alice, 'to':bob, 'quantity':str(transferPoints), 'memo':''}
-        transferResult = testnet.pushAction('c.point', 'transfer', alice, transferArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+        transferResult = testnet.pushAction('c.point', 'transfer', alice, transferArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
 
         transferTrx = transferResult['transaction_id']
         transferBlock = transferResult['processed']['block_num']
@@ -656,7 +684,7 @@ class PointTestCase(unittest.TestCase):
         ]
 
         self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':transferTrx}, {'block_num':transferBlock, 'actions':transferTrace, 'except':ee.Missing()}),
+            [ ({'msg_type':'ApplyTrx', 'id':transferTrx, 'block_num':transferBlock}, {'actions':transferTrace, 'except':ee.Missing()}),
             ], transferBlock)
 
 
