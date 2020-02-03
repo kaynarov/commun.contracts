@@ -1,4 +1,5 @@
 add_contract(commun.publication commun.publication src/commun.publication.cpp)
+install_contract(commun.publication)
 target_include_directories(commun.publication.wasm
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include

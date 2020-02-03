@@ -1,4 +1,5 @@
 add_contract(commun.emit commun.emit src/commun.emit.cpp)
+install_contract(commun.emit)
 target_include_directories(commun.emit.wasm
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include/commun.emit

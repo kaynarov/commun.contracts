@@ -1,4 +1,5 @@
 add_contract(commun.social commun.social src/commun.social.cpp)
+install_contract(commun.social)
 target_include_directories(commun.social.wasm
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include/commun.social

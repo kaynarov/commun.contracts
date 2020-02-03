@@ -1,4 +1,5 @@
 add_contract(commun.point commun.point src/commun.point.cpp)
+install_contract(commun.point)
 target_include_directories(commun.point.wasm
    PUBLIC
    ${TOKEN_INCLUDE_PATH}
