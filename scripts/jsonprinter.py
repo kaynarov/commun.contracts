@@ -112,18 +112,17 @@ class JsonPrinter:
                     firstItem = False
                 printed.add(name)
             elif not flags.get('optional', False):
-                self.console.backColor(202)
-                self.__printItem('"%s": '%name, '???', intend+self.shift*' ', flags, firstItem=firstItem)
-                self.console.backColor()
+                self.__printItem('"%s": '%name, '???', intend+self.shift*' ', flags, backColor=202, firstItem=firstItem)
                 firstItem = False
             else:
                 pass
 
 
-        for name,value in data.items():
-            if name in printed: continue
-            self.__printItem('"%s": '%name, data[name], intend+self.shift*' ', items.default, firstItem=firstItem)
-            firstItem = False
+        if not items.default.get('hide', False):
+            for name,value in data.items():
+                if name in printed: continue
+                self.__printItem('"%s": '%name, data[name], intend+self.shift*' ', items.default, firstItem=firstItem)
+                firstItem = False
 
         if items.newline: self.console.newline(intend)
         self.console.print('}')
@@ -140,14 +139,16 @@ class JsonPrinter:
         if items.newline: self.console.newline(intend)
         self.console.print(']')
 
-    def __printItem(self, name, value, intend, flags, firstItem=False):
+    def __printItem(self, name, value, intend, flags, backColor=None, firstItem=False):
         if not firstItem: self.console.print(', ')
         if flags.get('atnewline', False): self.console.newline(intend)
 
         color = flags.get('color', None)
         items = flags.get('items', Items())
+        if backColor: self.console.backColor(backColor)
         if color: self.console.textColor(color)
         self.console.print(name)
         self.format(items, value, intend)
+        if backColor: self.console.backColor()
         if color: self.console.textColor()
 

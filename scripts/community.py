@@ -77,48 +77,48 @@ def getPointBalance(point, account):
     return res
 
 
-def transferPoints(sender, recipient, amount, memo='', *, keys=None):
+def transferPoints(sender, recipient, amount, memo='', **kwargs):
     args = {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}
-    return pushAction('c.point', 'transfer', sender, args, providebw=sender+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'transfer', sender, args, providebw=sender+'/c@providebw', **kwargs)
 
-def lockPoints(owner, period, *, keys=None):
+def lockPoints(owner, period, **kwargs):
     args = {'owner':owner, 'period':period}
-    return pushAction('c.point', 'globallock', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'globallock', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def enableSafe(owner, unlock, delay, trusted = "", *, keys=None):
+def enableSafe(owner, unlock, delay, trusted="", **kwargs):
     args = {'owner':owner, 'unlock':unlock, 'delay':delay, 'trusted':trusted}
-    return pushAction('c.point', 'enablesafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'enablesafe', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def disableSafe(owner, modId, point, *, keys=None, signer=None):
+def disableSafe(owner, modId, point, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
-    return pushAction('c.point', 'disablesafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'disablesafe', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def unlockSafe(owner, modId, unlock, *, keys=None, signer=None):
+def unlockSafe(owner, modId, unlock, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     provide = [owner+'/c@providebw', signer+'/c@providebw'] if signer else owner+'/c@providebw'
     args = {'owner':owner, 'mod_id':modId, 'unlock':unlock}
-    return pushAction('c.point', 'unlocksafe', actor, args, providebw=provide, keys=keys)
+    return pushAction('c.point', 'unlocksafe', actor, args, providebw=provide, **kwargs)
 
-def lockSafe(owner, lock, *, keys=None):
+def lockSafe(owner, lock, **kwargs):
     args = {'owner':owner, 'lock':lock}
-    return pushAction('c.point', 'locksafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'locksafe', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def modifySafe(owner, modId, point, delay = None, trusted = None, *, keys=None, signer=None):
+def modifySafe(owner, modId, point, delay=None, trusted=None, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
     if delay is not None: args["delay"] = delay
     if trusted is not None: args["trusted"] = trusted
-    return pushAction('c.point', 'modifysafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'modifysafe', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def applySafeMod(owner, modId, *, keys=None, signer=None):
+def applySafeMod(owner, modId, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId}
-    return pushAction('c.point', 'applysafemod', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'applysafemod', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def cancelSafeMod(owner, modId, *, keys=None):
+def cancelSafeMod(owner, modId, **kwargs):
     args = {'owner':owner, 'mod_id':modId}
-    return pushAction('c.point', 'cancelsafemod', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'cancelsafemod', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
 
 def getPointGlobalLock(account):

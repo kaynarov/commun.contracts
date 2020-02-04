@@ -119,28 +119,34 @@ class JSONEncoder(json.JSONEncoder):
 def jsonArg(a):
     return " '" + json.dumps(a, cls=JSONEncoder) + "' "
 
+class CleosException(subprocess.CalledProcessError):
+    def __init__(self, returncode, cmd, output=None, stderr=None):
+        super().__init__(returncode, cmd, output, stderr)
+
+    def __str__(self):
+        return super().__str__() + ' with output:\n' + self.output + '\n'
+
+    @staticmethod
+    def fromCalledProcessError(err):
+        return CleosException(err.returncode, err.cmd, err.output, err.stderr)
+
+
 def _cleos(arguments, *, output=False, retry=None):
     cmd = cleosCmd + arguments
-    if output:
-        print("cleos: " + cmd)
-    msg = '' if retry is None else '*** Retry: {retry}\n'.format(retry=retry)
+    if output and jsonPrinter: jsonPrinter.formatCleosCmd(cmd) #print("cleos: " + cmd)
     while True:
       (exception, traceback) = (None, None)
       try:
-        result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
-#        if output and jsonPrinter: jsonPrinter.format(result)
-        return result
-        #return subprocess.check_output(cmd, shell=True, universal_newlines=True)
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
       except subprocess.CalledProcessError as e:
+        if output and jsonPrinter: jsonPrinter.formatError(e)
         import sys
         (exception, traceback) = (e, sys.exc_info()[2])
 
-      msg += str(exception) + ' with output:\n' + exception.output + '\n'
       if retry is None or retry <= 1:
-        raise Exception(msg).with_traceback(traceback)
-      else:
-        retry -= 1
-        msg += '*** Retry: {retry}\n'.format(retry=retry)
+          raise CleosException.fromCalledProcessError(exception).with_traceback(traceback)
+      else: retry -= 1
+
 
 def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None, **kwargs):
     #if len(kwargs) != 0: raise Exception("Unparsed arguments "+str(kwargs))
@@ -151,11 +157,18 @@ def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None, **
     if keys:
         trx = _cleos(arguments + additional + ' --skip-sign --dont-broadcast', **kwargs)
         if kwargs.get('output',False) and jsonPrinter: jsonPrinter.formatTrx(trx)
-        if isinstance(keys, str):
-            keys=[keys]
+        if isinstance(keys, str): keys=[keys]
         for k in keys:
             trx = _cleos("sign '%s' --private-key %s 2>/dev/null" % (trx, k), output=False)
-        return _cleos("push transaction -j --skip-sign '%s'" % trx, output=False, retry=retry)
+
+        try:
+            result = _cleos("push transaction -j --skip-sign '%s'" % trx, output=False, retry=retry)
+            if kwargs.get('output', False) and jsonPrinter: jsonPrinter.formatReceipt(result)
+            return result
+        except Exception as err:
+            if kwargs.get('output', False) and jsonPrinter:
+                jsonPrinter.formatError(err)
+            raise
     else:
         return _cleos(arguments + additional, retry=retry, **kwargs)
     

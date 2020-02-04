@@ -8,6 +8,7 @@ import pymongo
 import json
 import eehelper as ee
 import time
+from testcase import TestCase
 from copy import deepcopy
 from datetime import datetime, timedelta
 from testnet import Asset
@@ -351,43 +352,12 @@ class CommunityLeaderTests(unittest.TestCase):
                 providebw=self.owner+'/c@providebw')
 
 
-class TrxPrinter:
-    def __init__(self, replacer=None):
-        authItems = Items() \
-                .add('actor', color=137).add('permission', color=95)
-        
-        actionItems = Items().line() \
-                .add('account', 'name', color=20).line() \
-                .add('authorization', color=128, items=Items().others(atnewline=False, items=authItems)).line() \
-                .add('args', color=34, _items=None, optional=True).line() \
-                .add('data', hide=False, max_length=16, color=248).line() \
-                .others(atnewline=False, color=250)
-        
-        self.trxItems = Items().line() \
-                .add('delay_sec', 'expiration').line() \
-                .add('ref_block_num', 'ref_block_prefix').line() \
-                .add('max_net_usage_words', 'max_cpu_usage_ms', 'max_ram_kbytes', 'max_storage_kbytes').line() \
-                .add('actions', items=Items().others(atnewline=False, items=actionItems)).line() \
-                .add('context_free_actions', 'context_free_data').line() \
-                .add('transaction_extensions').line() \
-                .add('signatures').line()
 
-        self.printer = JsonPrinter(ColoredConsole(), replacer=replacer)
-
-    def formatTrx(self, data):
-        trx = json.loads(data)
-        for action in trx['actions']:
-            args = testnet.cleos('convert unpack_action_data {account} {name} {data}'.format(**action), output=False)
-            action['args'] = json.loads(args)
-        self.printer.format(self.trxItems, trx)
-        self.printer.console.newline()
-
-    def formatReceipt(self, receipt):
-        pass
-
-class PointTestCase(unittest.TestCase):
+class PointTestCase(TestCase):
     @classmethod
     def setUpClass(self):
+        super().setUpClass()
+
         point = community.getUnusedPointSymbol()
         owner = community.createCommunity(
             community_name = point,
@@ -396,84 +366,22 @@ class PointTestCase(unittest.TestCase):
             maximum_supply = Asset.fromstr('100000000.000 %s'%point),
             reserve_amount = Asset.fromstr('1000000.0000 CMN'))
 
+        buyPointsOn = '%.4f CMN'%(random.uniform(100000.0000, 200000.0000))
         (user, userPrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+                community=point, buyPointsOn=buyPointsOn)
 
         self.point = point
         self.owner = owner
 
-        self.initialAccounts = {self.owner: 'point_issuer'}
-
-    def replace(self, string):
-        result = self.accounts.get(string, None)
-        return result
-
-    def __processItem(self, mItem, items, predicat, data, mapping):
-        subitem = items[mItem.index]
-        if mItem.mapping is None:
-            subitem.setFlags(color=92,hide=None)
-        else:
-            itms = subitem.get('items',None)
-            if itms is None: itms = Items()
-            else: itms = deepcopy(itms)
-            subitem.setFlags(items=itms,hide=None,color=0)
-            self.processMapping(itms, None, data[mItem.index], mItem.mapping)
-
-    def processMapping(self, items, predicat, data, mapping):
-        if isinstance(mapping, dict):
-            for key,mItem in mapping.items():
-                self.__processItem(mItem, items, predicat, data, mapping)
-        elif isinstance(mapping, list):
-            for mItem in mapping:
-                self.__processItem(mItem, items, predicat, data, mapping)
-        pass
-
-    def formatEvent(self, i, selector, predicat, msg, mapping):
-        flags={'color': 248}
-        authItems = Items(**flags) \
-                .add('actor', 'permission')
-
-        eventItems = Items(**flags).line() \
-                .add('code', 'event').line() \
-                .add('args', items=Items(**flags)).line() \
-                .add('data', hide=True).line()
-
-        actionItems = Items(**flags).line() \
-                .add('receiver', 'code', 'action').line() \
-                .add('auth', items=Items().others(items=authItems)).line() \
-                .add('args', items=Items(**flags)).line() \
-                .add('data', hide=True).line() \
-                .add('events', hide=False, items=Items(hide=False, items=eventItems)).line()
-
-        _msgItems = Items().line() \
-                .add('msg_channel', 'msg_type').line() \
-                .add('id').line() \
-                .add('block_num', 'block_time').line() \
-                .add('actions', items=Items(hide=False, items=actionItems)).line()
-
-        msgItems = deepcopy(_msgItems)
-        self.processMapping(msgItems, predicat, msg, mapping)
-
-        self.trxPrinter.printer.format(msgItems, msg)
-        print()
-
-    def setUp(self):
-        self.trxPrinter = TrxPrinter(self)
-        self.eeHelper = ee.EEHelper(self)
-        self.accounts = self.initialAccounts.copy()
-        testnet.jsonPrinter = self.trxPrinter
-
-    def tearDown(self):
-        self.eeHelper.tearDown()
+        self.accounts[self.owner] = 'point_issuer'
 
     # This test checks notifications when user sells community points
     def test_buyPoints(self):
-        params = {}
-
+        buyPointsOn = '%.4f CMN'%(random.uniform(1000.0000, 2000.0000))
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+                community=self.point, buyPointsOn=buyPointsOn)
 
         self.accounts[alice] = 'Alice'
 
@@ -499,10 +407,10 @@ class PointTestCase(unittest.TestCase):
 
         # Buy community points through transfer tokens to 'c.point' account
         buyArgs = {'from':alice, 'to':'c.point', 'quantity':str(tokenQuantity+feeQuantity), 'memo':self.point}
-        testnet.jsonPrinter.printer.console.textColor(20)
+        #testnet.jsonPrinter.printer.console.textColor(20)
         print("<Alice> ({alice}) buy some {point} points through transfer {quantity} to 'c.point' account".
-                format(alice=alice, point=self.point, quantity=buyArgs['quantity'], c=testnet.jsonPrinter.printer.console))
-        testnet.jsonPrinter.printer.console.textColor()
+                format(alice=alice, point=self.point, quantity=buyArgs['quantity']))
+        #testnet.jsonPrinter.printer.console.textColor()
         buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
 
         buyTrx = buyResult['transaction_id']
@@ -544,7 +452,6 @@ class PointTestCase(unittest.TestCase):
 
     # This test checks notifications when user sells community points
     def test_sellPoints(self):
-        params = {}
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
@@ -625,8 +532,6 @@ class PointTestCase(unittest.TestCase):
 
     # This test checks notifications when user transfers community points
     def test_transferPoints(self):
-        params = {}
-
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
@@ -689,8 +594,6 @@ class PointTestCase(unittest.TestCase):
 
 
     def test_globalPointsLock(self):
-        params = {}
-
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
@@ -699,33 +602,46 @@ class PointTestCase(unittest.TestCase):
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
 
+        self.accounts[alice] = 'Alice'
+        self.accounts[bob] = 'Bob'
+
         alicePoints = community.getPointBalance(self.point, alice)
         bobPoints = community.getPointBalance(self.point, bob)
         transferPointsA = alicePoints * random.uniform(0.1, 0.9)
         transferPointsB = bobPoints * random.uniform(0.1, 0.9)
 
         # Alice locks points (for example, after recovery)
-        period = 30
-        community.lockPoints(alice, period//2, keys=[alicePrivate, clientKey])
+        period = 10
+        community.lockPoints(alice, period//2, keys=[alicePrivate, clientKey], output=True)
         # Period can be increased but not decreased
-        lockResult = community.lockPoints(alice, period, keys=[alicePrivate, clientKey])
+        lockResult = community.lockPoints(alice, period, keys=[alicePrivate, clientKey], output=True)
         with self.assertRaisesRegex(Exception, 'new unlock time must be greater than current'):
             community.lockPoints(alice, period - 3 - 1, keys=[alicePrivate, clientKey])
 
         # Alice can't transfer, retire or withdraw points when locked
         with self.assertRaisesRegex(Exception, 'balance locked in safe'):
-            community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey])
-        community.transferPoints(bob, alice, transferPointsB, keys=[bobPrivate, clientKey])
+            community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
+        community.transferPoints(bob, alice, transferPointsB, keys=[bobPrivate, clientKey], output=True)
 
         # Unlock time is visible in db
         globalLock = community.getPointGlobalLock(alice)
-        print('Alices lock: %s' % globalLock)
+
+        serviceItems = Items().add('scope', 'rev', 'payer').others(hide=True)
+        items = Items() \
+                .add('_id', 'id', hide=True) \
+                .add('unlocks') \
+                .add('_SERVICE_', items=serviceItems)
+        print('Alices lock: ', end='')
+        self.jsonPrinter.format(items, globalLock)
+        print()
+        #print('Alices lock: %s' % globalLock)
 
         # When current time >= unlock time then Alice allowed to transfer, etc…
         lockBlock = lockResult['processed']['block_num']
         targetBlock = lockBlock + (period + 2) // 3
         self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {})], targetBlock)
-        community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey])
+
+        community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
 
 
 class PointSafeTestCase(unittest.TestCase):
