@@ -61,6 +61,10 @@ class Missing:
         return 'Missing'+str(self.values)
 
 
+class Any():
+    pass
+
+
 
 def AssertException(data={}):
     return {'code':3050003, 'name': 'eosio_assert_message_exception', 
@@ -170,6 +174,8 @@ class EEHelper():
     def _assertContains(self, path, templ, value, mapItem, msg=None):
         if templ is None:
             self.tcase.assertIs(value, None, '%s' % path)
+        elif type(templ) is Any:
+            pass
         elif type(templ) is Exactly:
             self.tcase.assertEqual(value, templ.value, '%s' % path)
         elif type(templ) is Save:

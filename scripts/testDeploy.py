@@ -27,6 +27,14 @@ client     ='c.com@c.com'
 
 CMN = testnet.Symbol(4, 'CMN')
 
+class DataItems(Items):
+    def __init__(self, *serviceFields, **kwargs):
+        super().__init__()
+        serviceItems = Items().add(*serviceFields).others(hide=True)
+        self.add('_SERVICE_', items=serviceItems)
+        self.add('_id', hide=True)
+        self.others(**kwargs)
+
 class DeployTests(unittest.TestCase):
 
     def test_createCommunity(self):
@@ -626,20 +634,13 @@ class PointTestCase(TestCase):
         # Unlock time is visible in db
         globalLock = community.getPointGlobalLock(alice)
 
-        serviceItems = Items().add('scope', 'rev', 'payer').others(hide=True)
-        items = Items() \
-                .add('_id', 'id', hide=True) \
-                .add('unlocks') \
-                .add('_SERVICE_', items=serviceItems)
-        print('Alices lock: ', end='')
-        self.jsonPrinter.format(items, globalLock)
-        print()
-        #print('Alices lock: %s' % globalLock)
+        items = DataItems('scope', 'rev').add('unlocks').others(hide=True)
+        print('Alices lock:', self.jsonPrinter.format(items, globalLock))
 
         # When current time >= unlock time then Alice allowed to transfer, etc…
         lockBlock = lockResult['processed']['block_num']
         targetBlock = lockBlock + (period + 2) // 3
-        self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {})], targetBlock)
+        self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {'block_num':ee.Any(), 'block_time':ee.Any()})], targetBlock)
 
         community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
 
