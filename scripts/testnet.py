@@ -9,6 +9,14 @@ import time
 from pymongo import MongoClient
 import pymongo
 
+class TrxLogger:
+    def formatCleosCmd(self, cmd, output=False): print('cleos:', cmd)
+    def formatTrx(self, trx): pass
+    def formatReceipt(self, receipt): pass
+    def formatError(self, error): pass
+
+trxLogger=TrxLogger()
+
 params = {
     'cleos_path': os.environ.get("CLEOS", "cleos"),
     'nodeos_url': os.environ.get("CYBERWAY_URL", "http://localhost:8888"),
@@ -117,43 +125,59 @@ class JSONEncoder(json.JSONEncoder):
 def jsonArg(a):
     return " '" + json.dumps(a, cls=JSONEncoder) + "' "
 
-def _cleos(arguments, *, output=True, retry=None):
+class CleosException(subprocess.CalledProcessError):
+    def __init__(self, returncode, cmd, output=None, stderr=None):
+        super().__init__(returncode, cmd, output, stderr)
+
+    def __str__(self):
+        return super().__str__() + ' with output:\n' + self.output + '\n'
+
+    @staticmethod
+    def fromCalledProcessError(err):
+        return CleosException(err.returncode, err.cmd, err.output, err.stderr)
+
+
+def _cleos(arguments, *, output=False, retry=None, logger=None):
     cmd = cleosCmd + arguments
-    if output:
-        print("cleos: " + cmd)
-    msg = '' if retry is None else '*** Retry: {retry}\n'.format(retry=retry)
+    if logger: logger.formatCleosCmd(cmd, output=output)
     while True:
       (exception, traceback) = (None, None)
       try:
         return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
-        #return subprocess.check_output(cmd, shell=True, universal_newlines=True)
       except subprocess.CalledProcessError as e:
+        if logger: logger.formatError(e)
         import sys
         (exception, traceback) = (e, sys.exc_info()[2])
 
-      msg += str(exception) + ' with output:\n' + exception.output + '\n'
       if retry is None or retry <= 1:
-        raise Exception(msg).with_traceback(traceback)
-      else:
-        retry -= 1
-        msg += '*** Retry: {retry}\n'.format(retry=retry)
+          raise CleosException.fromCalledProcessError(exception).with_traceback(traceback)
+      else: retry -= 1
 
-def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None):
+
+def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None, **kwargs):
+    #if len(kwargs) != 0: raise Exception("Unparsed arguments "+str(kwargs))
     if type(providebw) == type([]):
         additional += ''.join(' --bandwidth-provider ' + provider for provider in providebw)
     else:
         additional += ' --bandwidth-provider ' + providebw if providebw else ''
     if keys:
-        trx = _cleos(arguments + additional + ' --skip-sign --dont-broadcast')
-        if isinstance(keys, str):
-            keys=[keys]
+        trx = _cleos(arguments + additional + ' --skip-sign --dont-broadcast', logger=trxLogger, **kwargs)
+        if kwargs.get('output',False) and trxLogger: trxLogger.formatTrx(trx)
+        if isinstance(keys, str): keys=[keys]
         for k in keys:
-            trx = _cleos("sign '%s' --private-key %s 2>/dev/null" % (trx, k), output=False)
-        return _cleos("push transaction -j --skip-sign '%s'" % trx, output=False, retry=retry)
+            trx = _cleos("sign '%s' --private-key %s 2>/dev/null" % (trx, k))
+
+        try:
+            result = _cleos("push transaction -j --skip-sign '%s'" % trx, retry=retry)
+            if kwargs.get('output', False) and trxLogger: trxLogger.formatReceipt(result)
+            return result
+        except Exception as err:
+            if kwargs.get('output', False) and trxLogger: trxLogger.formatError(err)
+            raise
     else:
-        return _cleos(arguments + additional, retry=retry)
+        return _cleos(arguments + additional, retry=retry, logger=trxLogger if kwargs.get('output',False) else None, **kwargs)
     
-def pushAction(code, action, actor, args, *, additional='', delay=None, expiration=None, providebw=None, keys=None, retry=None):
+def pushAction(code, action, actor, args, *, additional='', delay=None, expiration=None, **kwargs):
     additional += ' --delay-sec %d' % delay if delay else ''
     additional += ' --expiration %d' % expiration if expiration else ''
     if type(actor) == type([]):
@@ -161,7 +185,14 @@ def pushAction(code, action, actor, args, *, additional='', delay=None, expirati
     else:
         additional += ' -p ' + actor
     cmd = 'push action -j {code} {action} {args}'.format(code=code, action=action, args=jsonArg(args))
-    return json.loads(cleos(cmd, additional=additional, providebw=providebw, keys=keys, retry=retry))
+    result = json.loads(cleos(cmd, additional=additional, **kwargs))
+#    if trxLogger: trxLogger.format(result)
+    return result
+
+
+def unpackActionData(code, action, data):
+    args = _cleos('convert unpack_action_data {code} {action} {data}'.format(code=code, action=action, data=data))
+    return json.loads(args)
 
 
 def pushTrx(trx, *, additional='', keys=None):
@@ -224,13 +255,13 @@ def createAuthority(keys, accounts):
         accountsList.extend([{'weight':1,'permission':{'actor':d[0],'permission':d[1]}}])
     return {'threshold': 1, 'keys': keysList, 'accounts': accountsList, 'waits':[]}
 
-def createAccount(creator, account, owner_auth, active_auth=None, *, providebw=None, keys=None):
+def createAccount(creator, account, owner_auth, active_auth=None, **kwargs):
     if active_auth is None:
         active_auth = owner_auth
     creator_auth = parseAuthority(creator)
     additional = '' if creator_auth['permission'] is None else ' -p {auth}'.format(auth=creator)
     return cleos('create account {creator} {acc} {owner} {active}'.format(creator=creator_auth['actor'], acc=account, owner=owner_auth, active=active_auth), 
-            providebw=providebw, keys=keys, additional=additional)
+            additional=additional, **kwargs)
 
 def getAccount(account):
     acc = json.loads(cleos('get account -j {acc}'.format(acc=account)))
@@ -290,14 +321,12 @@ def createKey():
 def importPrivateKey(private):
     cleos("wallet import --name test --private-key %s" % private)
 
-def createRandomAccount(owner_auth, active_auth=None, *, creator='tech', providebw=None, keys=None):
+def createRandomAccount(owner_auth, active_auth=None, *, creator='tech', **kwargs):
     while True:
         name = randomName()
-        try:
-            getAccount(name)
-        except:
-            break
-    createAccount(creator, name, owner_auth, active_auth, providebw=providebw, keys=keys)
+        try: getAccount(name)
+        except: break
+    createAccount(creator, name, owner_auth, active_auth, **kwargs)
     return name
 
 def getResourceUsage(account):
@@ -309,24 +338,24 @@ def getResourceUsage(account):
         'storage': info['storage_limit']['used']
     }
 
-def msigPropose(proposer, proposal_name, requested_permissions, trx, providebw=None, keys=None):
+def msigPropose(proposer, proposal_name, requested_permissions, trx, **kwargs):
     pushAction('cyber.msig', 'propose', proposer, {
             'proposer': proposer,
             'proposal_name': proposal_name,
             'requested': requested_permissions,
             'trx': trx
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def msigApprove(approver, proposer, proposal_name, providebw=None, keys=None):
+def msigApprove(approver, proposer, proposal_name, **kwargs):
     pushAction('cyber.msig', 'approve', approver, {
             'proposer': proposer,
             'proposal_name': proposal_name,
             'level': {'actor': approver, 'permission': 'active'}
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def msigExec(executer, proposer, proposal_name, providebw=None, keys=None):
+def msigExec(executer, proposer, proposal_name, **kwargs):
     pushAction('cyber.msig', 'exec', proposer, {
             'executer': executer,
             'proposer': proposer,
             'proposal_name': proposal_name
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)

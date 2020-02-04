@@ -8,8 +8,12 @@ import pymongo
 import json
 import eehelper as ee
 import time
+from testcase import TestCase
+from copy import deepcopy
 from datetime import datetime, timedelta
 from testnet import Asset
+from jsonprinter import Item, Items, JsonPrinter
+from console import Console, ColoredConsole
 
 def from_time_point_sec(s):
     return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.000')
@@ -22,6 +26,14 @@ clientKey  ='5JdhhMMJdb1KEyCatAynRLruxVvi7mWPywiSjpLYqKqgsT4qjsN'
 client     ='c.com@c.com'
 
 CMN = testnet.Symbol(4, 'CMN')
+
+class DataItems(Items):
+    def __init__(self, *serviceFields, **kwargs):
+        super().__init__()
+        serviceItems = Items().add(*serviceFields).others(hide=True)
+        self.add('_SERVICE_', items=serviceItems)
+        self.add('_id', hide=True)
+        self.others(**kwargs)
 
 class DeployTests(unittest.TestCase):
 
@@ -154,7 +166,7 @@ class CommunLeaderTests(unittest.TestCase):
 
         # trying setcode using cyber.msig without setrecover
         with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
-            testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, proposer+'/c@providebw', [proposerKey, clientKey])
+            testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # setrecover adds leaders to lead.recover authority
         trx_setRecover = testnet.Trx()
@@ -168,18 +180,18 @@ class CommunLeaderTests(unittest.TestCase):
                 providebw='c.ctrl/c@providebw')
 
         # trying setcode again
-        testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, proposer+'/c@providebw', [proposerKey, clientKey])
+        testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # trying setcode with not enough approvers
         for (approver, approverKey) in self.smajor_approvers[:-1]:
-            testnet.msigApprove(approver, proposer, 'recovery', approver+'/c@providebw', [approverKey, clientKey])
+            testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey])
         with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
-            testnet.msigExec(proposer, proposer, 'recovery', proposer+'/c@providebw', [proposerKey, clientKey])
+            testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # trying setcode with enough approvers
         (approver, approverKey) = self.smajor_approvers[-1]
-        testnet.msigApprove(approver, proposer, 'recovery', approver+'/c@providebw', [approverKey, clientKey])
-        testnet.msigExec(proposer, proposer, 'recovery', proposer+'/c@providebw', [proposerKey, clientKey])
+        testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey])
+        testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # checking duplicated setrecover not fails
         community.createAndExecProposal(
@@ -348,9 +360,12 @@ class CommunityLeaderTests(unittest.TestCase):
                 providebw=self.owner+'/c@providebw')
 
 
-class PointTestCase(unittest.TestCase):
+
+class PointTestCase(TestCase):
     @classmethod
     def setUpClass(self):
+        super().setUpClass()
+
         point = community.getUnusedPointSymbol()
         owner = community.createCommunity(
             community_name = point,
@@ -359,26 +374,24 @@ class PointTestCase(unittest.TestCase):
             maximum_supply = Asset.fromstr('100000000.000 %s'%point),
             reserve_amount = Asset.fromstr('1000000.0000 CMN'))
 
+        buyPointsOn = '%.4f CMN'%(random.uniform(100000.0000, 200000.0000))
         (user, userPrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=point, buyPointsOn='%.4f CMN'%(random.uniform(100000.0000, 200000.0000)))
+                community=point, buyPointsOn=buyPointsOn)
 
         self.point = point
         self.owner = owner
 
-    def setUp(self):
-        self.eeHelper = ee.EEHelper(self)
-
-    def tearDown(self):
-        self.eeHelper.tearDown()
+        self.accounts[self.owner] = 'point_issuer'
 
     # This test checks notifications when user sells community points
     def test_buyPoints(self):
-        params = {}
-
+        buyPointsOn = '%.4f CMN'%(random.uniform(1000.0000, 2000.0000))
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+                community=self.point, buyPointsOn=buyPointsOn)
+
+        self.accounts[alice] = 'Alice'
 
         tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
         community.issueCommunToken(alice, str(tokenQuantity), clientKey)
@@ -402,7 +415,11 @@ class PointTestCase(unittest.TestCase):
 
         # Buy community points through transfer tokens to 'c.point' account
         buyArgs = {'from':alice, 'to':'c.point', 'quantity':str(tokenQuantity+feeQuantity), 'memo':self.point}
-        buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+        #testnet.jsonPrinter.printer.console.textColor(20)
+        print("<Alice> ({alice}) buy some {point} points through transfer {quantity} to 'c.point' account".
+                format(alice=alice, point=self.point, quantity=buyArgs['quantity']))
+        #testnet.jsonPrinter.printer.console.textColor()
+        buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
 
         buyTrx = buyResult['transaction_id']
         buyBlock = buyResult['processed']['block_num']
@@ -437,19 +454,20 @@ class PointTestCase(unittest.TestCase):
         ]
 
         self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':buyTrx}, {'block_num':buyBlock, 'actions':buyTrace, 'except':ee.Missing()}),
+            [ ({'msg_type':'ApplyTrx', 'id':buyTrx, 'block_num':buyBlock}, {'actions':buyTrace, 'except':ee.Missing()}),
             ], buyBlock)
 
 
     # This test checks notifications when user sells community points
     def test_sellPoints(self):
-        params = {}
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
 
 #        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
 #        community.issueCommunToken(alice, str(tokenQuantity), clientKey)
+
+        self.accounts[alice] = 'Alice'
 
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
@@ -473,7 +491,7 @@ class PointTestCase(unittest.TestCase):
 
         # Sell community points through transfer them to 'c.point' account
         sellArgs = {'from':alice, 'to':'c.point', 'quantity':str(sellPoints), 'memo':''}
-        sellResult = testnet.pushAction('c.point', 'transfer', alice, sellArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+        sellResult = testnet.pushAction('c.point', 'transfer', alice, sellArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
 
         sellTrx = sellResult['transaction_id']
         sellBlock = sellResult['processed']['block_num']
@@ -516,14 +534,12 @@ class PointTestCase(unittest.TestCase):
         ]
 
         self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':sellTrx}, {'block_num':sellBlock, 'actions':sellTrace, 'except':ee.Missing()}),
+            [ ({'msg_type':'ApplyTrx', 'id':sellTrx, 'block_num':sellBlock}, {'actions':sellTrace, 'except':ee.Missing()}),
             ], sellBlock)
 
 
     # This test checks notifications when user transfers community points
     def test_transferPoints(self):
-        params = {}
-
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
@@ -531,6 +547,9 @@ class PointTestCase(unittest.TestCase):
         (bob, bobPrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+
+        self.accounts[alice] = 'Alice'
+        self.accounts[bob] = 'Bob'
 
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
@@ -543,7 +562,7 @@ class PointTestCase(unittest.TestCase):
 
         # Transfer community points to other user (not issuer or `c`-account)
         transferArgs = {'from':alice, 'to':bob, 'quantity':str(transferPoints), 'memo':''}
-        transferResult = testnet.pushAction('c.point', 'transfer', alice, transferArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey])
+        transferResult = testnet.pushAction('c.point', 'transfer', alice, transferArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
 
         transferTrx = transferResult['transaction_id']
         transferBlock = transferResult['processed']['block_num']
@@ -578,13 +597,11 @@ class PointTestCase(unittest.TestCase):
         ]
 
         self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':transferTrx}, {'block_num':transferBlock, 'actions':transferTrace, 'except':ee.Missing()}),
+            [ ({'msg_type':'ApplyTrx', 'id':transferTrx, 'block_num':transferBlock}, {'actions':transferTrace, 'except':ee.Missing()}),
             ], transferBlock)
 
 
     def test_globalPointsLock(self):
-        params = {}
-
         (alice, alicePrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
@@ -593,33 +610,39 @@ class PointTestCase(unittest.TestCase):
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
 
+        self.accounts[alice] = 'Alice'
+        self.accounts[bob] = 'Bob'
+
         alicePoints = community.getPointBalance(self.point, alice)
         bobPoints = community.getPointBalance(self.point, bob)
         transferPointsA = alicePoints * random.uniform(0.1, 0.9)
         transferPointsB = bobPoints * random.uniform(0.1, 0.9)
 
         # Alice locks points (for example, after recovery)
-        period = 30
-        community.lockPoints(alice, period//2, keys=[alicePrivate, clientKey])
+        period = 10
+        community.lockPoints(alice, period//2, keys=[alicePrivate, clientKey], output=True)
         # Period can be increased but not decreased
-        lockResult = community.lockPoints(alice, period, keys=[alicePrivate, clientKey])
+        lockResult = community.lockPoints(alice, period, keys=[alicePrivate, clientKey], output=True)
         with self.assertRaisesRegex(Exception, 'new unlock time must be greater than current'):
             community.lockPoints(alice, period - 3 - 1, keys=[alicePrivate, clientKey])
 
         # Alice can't transfer, retire or withdraw points when locked
         with self.assertRaisesRegex(Exception, 'balance locked in safe'):
-            community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey])
-        community.transferPoints(bob, alice, transferPointsB, keys=[bobPrivate, clientKey])
+            community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
+        community.transferPoints(bob, alice, transferPointsB, keys=[bobPrivate, clientKey], output=True)
 
         # Unlock time is visible in db
         globalLock = community.getPointGlobalLock(alice)
-        print('Alices lock: %s' % globalLock)
+
+        items = DataItems('scope', 'rev').add('unlocks').others(hide=True)
+        print('Alices lock:', self.jsonPrinter.format(items, globalLock))
 
         # When current time >= unlock time then Alice allowed to transfer, etc…
         lockBlock = lockResult['processed']['block_num']
         targetBlock = lockBlock + (period + 2) // 3
-        self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {})], targetBlock)
-        community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey])
+        self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {'block_num':ee.Any(), 'block_time':ee.Any()})], targetBlock)
+
+        community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
 
 
 class PointSafeTestCase(unittest.TestCase):

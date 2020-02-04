@@ -34,7 +34,7 @@ def createCommunityUser(community, creator, creatorKey, clientKey, *, buyPointsO
                 providebw=account+'/'+creator, keys=[private, creatorKey])
     return (account, private)
 
-def recover(account, active_key=None, owner_key=None, *, provider=None, keys=None):
+def recover(account, active_key=None, owner_key=None, provider=None, **kwargs):
     args = {'account':account}
     if active_key: args['active_key'] = active_key
     if owner_key: args['owner_key'] = owner_key
@@ -42,15 +42,13 @@ def recover(account, active_key=None, owner_key=None, *, provider=None, keys=Non
     providebw = ['c.recover/'+provider] if provider else None
     if active_key and provider: providebw.append(account+'/'+provider)
 
-    return pushAction('c.recover', 'recover', 'c.recover@recover', args, providebw=providebw, keys=keys)
+    return pushAction('c.recover', 'recover', 'c.recover@recover', args, providebw=providebw, **kwargs)
 
-def applyOwner(account, providebw=None, keys=None):
-    return pushAction('c.recover', 'applyowner', account, {'account': account},
-            providebw=providebw, keys=keys)
+def applyOwner(account, **kwargs):
+    return pushAction('c.recover', 'applyowner', account, {'account': account}, **kwargs)
 
-def cancelOwner(account, providebw=None, keys=None):
-    return pushAction('c.recover', 'cancelowner', account, {'account': account},
-            providebw=providebw, keys=keys)
+def cancelOwner(account, **kwargs):
+    return pushAction('c.recover', 'cancelowner', account, {'account': account}, **kwargs)
 
 def getUnusedPointSymbol():
     while True:
@@ -79,48 +77,48 @@ def getPointBalance(point, account):
     return res
 
 
-def transferPoints(sender, recipient, amount, memo='', *, keys=None):
+def transferPoints(sender, recipient, amount, memo='', **kwargs):
     args = {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}
-    return pushAction('c.point', 'transfer', sender, args, providebw=sender+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'transfer', sender, args, providebw=sender+'/c@providebw', **kwargs)
 
-def lockPoints(owner, period, *, keys=None):
+def lockPoints(owner, period, **kwargs):
     args = {'owner':owner, 'period':period}
-    return pushAction('c.point', 'globallock', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'globallock', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def enableSafe(owner, unlock, delay, trusted = "", *, keys=None):
+def enableSafe(owner, unlock, delay, trusted="", **kwargs):
     args = {'owner':owner, 'unlock':unlock, 'delay':delay, 'trusted':trusted}
-    return pushAction('c.point', 'enablesafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'enablesafe', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def disableSafe(owner, modId, point, *, keys=None, signer=None):
+def disableSafe(owner, modId, point, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
-    return pushAction('c.point', 'disablesafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'disablesafe', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def unlockSafe(owner, modId, unlock, *, keys=None, signer=None):
+def unlockSafe(owner, modId, unlock, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     provide = [owner+'/c@providebw', signer+'/c@providebw'] if signer else owner+'/c@providebw'
     args = {'owner':owner, 'mod_id':modId, 'unlock':unlock}
-    return pushAction('c.point', 'unlocksafe', actor, args, providebw=provide, keys=keys)
+    return pushAction('c.point', 'unlocksafe', actor, args, providebw=provide, **kwargs)
 
-def lockSafe(owner, lock, *, keys=None):
+def lockSafe(owner, lock, **kwargs):
     args = {'owner':owner, 'lock':lock}
-    return pushAction('c.point', 'locksafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'locksafe', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def modifySafe(owner, modId, point, delay = None, trusted = None, *, keys=None, signer=None):
+def modifySafe(owner, modId, point, delay=None, trusted=None, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
     if delay is not None: args["delay"] = delay
     if trusted is not None: args["trusted"] = trusted
-    return pushAction('c.point', 'modifysafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'modifysafe', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def applySafeMod(owner, modId, *, keys=None, signer=None):
+def applySafeMod(owner, modId, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId}
-    return pushAction('c.point', 'applysafemod', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'applysafemod', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def cancelSafeMod(owner, modId, *, keys=None):
+def cancelSafeMod(owner, modId, **kwargs):
     args = {'owner':owner, 'mod_id':modId}
-    return pushAction('c.point', 'cancelsafemod', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'cancelsafemod', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
 
 def getPointGlobalLock(account):
@@ -277,37 +275,37 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
 
     return owner_account
 
-def openBalance(owner, commun_code, payer, *, providebw=None, keys=None):
+def openBalance(owner, commun_code, payer, **kwargs):
     return pushAction('c.point', 'open', payer, {
             'owner':owner,
             'commun_code':commun_code,
             'ram_payer':payer
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def regLeader(commun_code, leader, url, *, providebw=None, keys=None):
+def regLeader(commun_code, leader, url, **kwargs):
     return pushAction('c.ctrl', 'regleader', leader, {
             'commun_code': commun_code,
             'leader': leader,
             'url': url
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def voteLeader(commun_code, voter, leader, pct, *, providebw=None, keys=None):
+def voteLeader(commun_code, voter, leader, pct, **kwargs):
     return pushAction('c.ctrl', 'voteleader', voter, {
             'commun_code': commun_code,
             'voter': parseAuthority(voter)['actor'],
             'leader': leader,
             'pct': pct
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def unvoteLeader(commun_code, voter, leader, *, providebw=None, keys=None):
+def unvoteLeader(commun_code, voter, leader, **kwargs):
     return pushAction('c.ctrl', 'unvotelead', voter, {
             'commun_code': commun_code,
             'voter': voter,
             'leader': leader,
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
 
-def createPost(commun_code, author, permlink, category, header, body, *, client=None, providebw=None, keys=None):
+def createPost(commun_code, author, permlink, category, header, body, *, client=None, **kwargs):
     actors=[author,client] if client else [author]
     return pushAction('c.gallery', 'create', actors, {
             'commun_code':commun_code,
@@ -317,27 +315,27 @@ def createPost(commun_code, author, permlink, category, header, body, *, client=
             'body':body,
             'tags':[],
             'metadata':''
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def upvotePost(commun_code, voter, author, permlink, *, client=None, providebw=None, keys=None):
+def upvotePost(commun_code, voter, author, permlink, *, client=None, **kwargs):
     actors=[voter,client] if client else [voter]
     return pushAction('c.gallery', 'upvote', actors, {
             'commun_code':commun_code,
             'voter':voter,
             'message_id':{'author':author, 'permlink':permlink}
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def downvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):
+def downvotePost(commun_code, voter, author, permlink, **kwargs):
     return pushAction('c.gallery', 'downvote', voter, {
             'commun_code':commun_code,
             'voter':voter,
             'message_id':{'author':author, 'permlink':permlink}
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def unvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):
+def unvotePost(commun_code, voter, author, permlink, **kwargs):
     return pushAction('c.gallery', 'unvote', voter, {
             'commun_code':commun_code,
             'voter':voter,
             'message_id':{'author':author, 'permlink':permlink}
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
