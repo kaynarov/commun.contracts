@@ -85,9 +85,9 @@ class JsonPrinter:
 
     def format(self, items, data, intend=''):
         if isinstance(data, dict):
-            self.__formatDict(items, data, intend)
+            return self.__formatDict(items, data, intend)
         elif isinstance(data, list):
-            self.__formatList(items, data, intend)
+            return self.__formatList(items, data, intend)
         else:
             if isinstance(data, str):
                 if self.replacer:
@@ -97,58 +97,64 @@ class JsonPrinter:
                     _data = json.dumps(data if len(data) <= self.maxstrlength else data[0:self.maxstrlength-3]+'...')
                 else: _data = json.dumps(data)
             else: _data = json.dumps(data)
-            self.console.textStyle(self.console.BOLD)
-            self.console.print(_data)
-            self.console.textStyle()
+            return self.console.textStyle(self.console.BOLD) + _data + self.console.textStyle()
 
     def __formatDict(self, items, data, intend):
-        self.console.print('{')
+        result = '{'
         firstItem = True
+        hasHidden = False
         printed = set()
         for name,flags in items.ITEMS.items():
             if name in data:
                 if not flags.get('hide', False):
-                    self.__printItem('"%s": '%name, data[name], intend+self.shift*' ', flags, firstItem=firstItem)
+                    result += self.__printItem('"%s": '%name, data[name], intend+self.shift*' ', flags, firstItem=firstItem)
                     firstItem = False
+                else: hasHidden = True
                 printed.add(name)
             elif not flags.get('optional', False):
-                self.__printItem('"%s": '%name, '???', intend+self.shift*' ', flags, backColor=202, firstItem=firstItem)
+                result += self.__printItem('"%s": '%name, '???', intend+self.shift*' ', flags, backColor=202, firstItem=firstItem)
                 firstItem = False
             else:
                 pass
 
 
-        if not items.default.get('hide', False):
-            for name,value in data.items():
-                if name in printed: continue
-                self.__printItem('"%s": '%name, data[name], intend+self.shift*' ', items.default, firstItem=firstItem)
+        for name,value in data.items():
+            if name in printed: continue
+            if not items.default.get('hide', False):
+                result += self.__printItem('"%s": '%name, data[name], intend+self.shift*' ', items.default, firstItem=firstItem)
                 firstItem = False
+            else: hasHidden = True; break
 
-        if items.newline: self.console.newline(intend)
-        self.console.print('}')
+        if hasHidden: result += '...'
+        if items.newline: result += '\n'+intend
+        result += '}'
+        return result
 
     def __formatList(self, items, data, intend):
-        self.console.print('[')
+        result = '['
         firstItem = True
         for i,item in enumerate(data):
             flags = items.ITEMS.get(i, items.default)
             if not flags.get('hide', False):
-                self.__printItem('', item, intend+self.shift*' ', flags, firstItem=firstItem)
+                result += self.__printItem('', item, intend+self.shift*' ', flags, firstItem=firstItem)
                 firstItem = False
 
-        if items.newline: self.console.newline(intend)
-        self.console.print(']')
+        if items.newline: result += '\n'+intend
+        result += ']'
+        return result
 
     def __printItem(self, name, value, intend, flags, backColor=None, firstItem=False):
-        if not firstItem: self.console.print(', ')
-        if flags.get('atnewline', False): self.console.newline(intend)
+        result = ''
+        if not firstItem: result += ', '
+        if flags.get('atnewline', False): result += '\n'+intend
 
         color = flags.get('color', None)
         items = flags.get('items', Items())
-        if backColor: self.console.backColor(backColor)
-        if color: self.console.textColor(color)
-        self.console.print(name)
-        self.format(items, value, intend)
-        if backColor: self.console.backColor()
-        if color: self.console.textColor()
+        if backColor: result += self.console.backColor(backColor)
+        if color: result += self.console.textColor(color)
+        if name: result += name
+        result += self.format(items, value, intend)
+        if backColor: result += self.console.backColor()
+        if color: result += self.console.textColor()
+        return result
 
