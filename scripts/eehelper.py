@@ -130,8 +130,9 @@ class MapItem:
         return '({index}, {mapping})'.format(index=self.index, mapping=str(self.mapping))
 
 class EEHelper():
-    def __init__(self, tcase):
+    def __init__(self, tcase, eventFormatter=None):
         self.tcase = tcase
+        self.eventFormatter = eventFormatter
         self.eventsFd = open("events.dump", "r")
         self.resetEvents()
 
@@ -165,7 +166,8 @@ class EEHelper():
                     mapItem = MapItem()
                     self._assertContains('events[%d]'%i, predicat, msg, mapItem)
                     print('Found message for %d event: %s' % (i, selector))
-                    self.tcase.formatEvent(i, selector, predicat, msg, mapItem.mapping)
+                    if self.eventFormatter:
+                        self.eventFormatter.formatEvent(i, selector, predicat, msg, mapItem.mapping)
                     i += 1
                     lines = []
                     break

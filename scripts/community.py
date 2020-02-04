@@ -34,7 +34,7 @@ def createCommunityUser(community, creator, creatorKey, clientKey, *, buyPointsO
                 providebw=account+'/'+creator, keys=[private, creatorKey])
     return (account, private)
 
-def recover(account, active_key=None, owner_key=None, **kwargs):
+def recover(account, active_key=None, owner_key=None, provider=None, **kwargs):
     args = {'account':account}
     if active_key: args['active_key'] = active_key
     if owner_key: args['owner_key'] = owner_key
@@ -42,7 +42,7 @@ def recover(account, active_key=None, owner_key=None, **kwargs):
     providebw = ['c.recover/'+provider] if provider else None
     if active_key and provider: providebw.append(account+'/'+provider)
 
-    return pushAction('c.recover', 'recover', 'c.recover@recover', args, **kwargs)
+    return pushAction('c.recover', 'recover', 'c.recover@recover', args, providebw=providebw, **kwargs)
 
 def applyOwner(account, **kwargs):
     return pushAction('c.recover', 'applyowner', account, {'account': account}, **kwargs)

@@ -166,7 +166,7 @@ class CommunLeaderTests(unittest.TestCase):
 
         # trying setcode using cyber.msig without setrecover
         with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
-            testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, proposer+'/c@providebw', [proposerKey, clientKey])
+            testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # setrecover adds leaders to lead.recover authority
         trx_setRecover = testnet.Trx()
@@ -180,18 +180,18 @@ class CommunLeaderTests(unittest.TestCase):
                 providebw='c.ctrl/c@providebw')
 
         # trying setcode again
-        testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, proposer+'/c@providebw', [proposerKey, clientKey])
+        testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # trying setcode with not enough approvers
         for (approver, approverKey) in self.smajor_approvers[:-1]:
-            testnet.msigApprove(approver, proposer, 'recovery', approver+'/c@providebw', [approverKey, clientKey])
+            testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey])
         with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
-            testnet.msigExec(proposer, proposer, 'recovery', proposer+'/c@providebw', [proposerKey, clientKey])
+            testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # trying setcode with enough approvers
         (approver, approverKey) = self.smajor_approvers[-1]
-        testnet.msigApprove(approver, proposer, 'recovery', approver+'/c@providebw', [approverKey, clientKey])
-        testnet.msigExec(proposer, proposer, 'recovery', proposer+'/c@providebw', [proposerKey, clientKey])
+        testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey])
+        testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
         # checking duplicated setrecover not fails
         community.createAndExecProposal(

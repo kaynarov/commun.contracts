@@ -9,7 +9,13 @@ import time
 from pymongo import MongoClient
 import pymongo
 
-jsonPrinter=None
+class TrxLogger:
+    def formatCleosCmd(self, cmd, output=False): print('cleos:', cmd)
+    def formatTrx(self, trx): pass
+    def formatReceipt(self, receipt): pass
+    def formatError(self, error): pass
+
+trxLogger=TrxLogger()
 
 params = {
     'cleos_path': os.environ.get("CLEOS", "cleos"),
@@ -131,15 +137,15 @@ class CleosException(subprocess.CalledProcessError):
         return CleosException(err.returncode, err.cmd, err.output, err.stderr)
 
 
-def _cleos(arguments, *, output=False, retry=None):
+def _cleos(arguments, *, output=False, retry=None, logger=None):
     cmd = cleosCmd + arguments
-    if output and jsonPrinter: jsonPrinter.formatCleosCmd(cmd) #print("cleos: " + cmd)
+    if logger: logger.formatCleosCmd(cmd, output=output)
     while True:
       (exception, traceback) = (None, None)
       try:
         return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
       except subprocess.CalledProcessError as e:
-        if output and jsonPrinter: jsonPrinter.formatError(e)
+        if logger: logger.formatError(e)
         import sys
         (exception, traceback) = (e, sys.exc_info()[2])
 
@@ -155,22 +161,21 @@ def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None, **
     else:
         additional += ' --bandwidth-provider ' + providebw if providebw else ''
     if keys:
-        trx = _cleos(arguments + additional + ' --skip-sign --dont-broadcast', **kwargs)
-        if kwargs.get('output',False) and jsonPrinter: jsonPrinter.formatTrx(trx)
+        trx = _cleos(arguments + additional + ' --skip-sign --dont-broadcast', logger=trxLogger, **kwargs)
+        if kwargs.get('output',False) and trxLogger: trxLogger.formatTrx(trx)
         if isinstance(keys, str): keys=[keys]
         for k in keys:
-            trx = _cleos("sign '%s' --private-key %s 2>/dev/null" % (trx, k), output=False)
+            trx = _cleos("sign '%s' --private-key %s 2>/dev/null" % (trx, k))
 
         try:
-            result = _cleos("push transaction -j --skip-sign '%s'" % trx, output=False, retry=retry)
-            if kwargs.get('output', False) and jsonPrinter: jsonPrinter.formatReceipt(result)
+            result = _cleos("push transaction -j --skip-sign '%s'" % trx, retry=retry)
+            if kwargs.get('output', False) and trxLogger: trxLogger.formatReceipt(result)
             return result
         except Exception as err:
-            if kwargs.get('output', False) and jsonPrinter:
-                jsonPrinter.formatError(err)
+            if kwargs.get('output', False) and trxLogger: trxLogger.formatError(err)
             raise
     else:
-        return _cleos(arguments + additional, retry=retry, **kwargs)
+        return _cleos(arguments + additional, retry=retry, logger=trxLogger if kwargs.get('output',False) else None, **kwargs)
     
 def pushAction(code, action, actor, args, *, additional='', delay=None, expiration=None, **kwargs):
     additional += ' --delay-sec %d' % delay if delay else ''
@@ -181,8 +186,13 @@ def pushAction(code, action, actor, args, *, additional='', delay=None, expirati
         additional += ' -p ' + actor
     cmd = 'push action -j {code} {action} {args}'.format(code=code, action=action, args=jsonArg(args))
     result = json.loads(cleos(cmd, additional=additional, **kwargs))
-#    if jsonPrinter: jsonPrinter.format(result)
+#    if trxLogger: trxLogger.format(result)
     return result
+
+
+def unpackActionData(code, action, data):
+    args = _cleos('convert unpack_action_data {code} {action} {data}'.format(code=code, action=action, data=data))
+    return json.loads(args)
 
 
 def pushTrx(trx, *, additional='', keys=None):
