@@ -304,7 +304,67 @@
             ]
         },
         {
+            "name": "unfollow",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "follower",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "hide",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "follower",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "unhide",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "follower",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "ban",
+            "base": "",
+            "fields": [
+                {
+                    "name": "commun_code",
+                    "type": "symbol_code"
+                },
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "reason",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "unban",
             "base": "",
             "fields": [
                 {
@@ -330,11 +390,11 @@
         {"name": "setparams", "type": "setparams"},
         {"name": "setinfo", "type": "setinfo"},
         {"name": "follow", "type": "follow"},
-        {"name": "unfollow", "type": "follow"},
-        {"name": "hide", "type": "follow"},
-        {"name": "unhide", "type": "follow"},
+        {"name": "unfollow", "type": "unfollow"},
+        {"name": "hide", "type": "hide"},
+        {"name": "unhide", "type": "unhide"},
         {"name": "ban", "type": "ban"},
-        {"name": "unban", "type": "ban"}
+        {"name": "unban", "type": "unban"}
     ],
     "events": [],
     "tables": [

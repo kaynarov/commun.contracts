@@ -10,14 +10,17 @@ using namespace eosio;
  * \brief This class implements the operation logic of the \a c.emit contract.
  * \ingroup emission_class
  */
-class emit: public contract {
+class
+/// @cond
+[[eosio::contract("commun.emit")]]
+/// @endcond
+emit: public contract {
 struct structures {
-
     /**
      * \brief The structure represents the record form in the DB statistical table and contains information about a reward recipient.
      * \ingroup emission_tables
      */
-    struct reward_receiver final {
+    struct reward_struct final {
         name contract;   //!< Name of the contract receiving the reward
         time_point time; //!< Time (in seconds) when the contract was rewarded
     };
@@ -28,16 +31,16 @@ struct structures {
      *
      * The structure contains information about the latest recipients of rewards in community.
      */
-    struct [[eosio::table]] stat {
+    struct stat_struct {
         uint64_t id;  //!< Community identifier, unique primary key
-        std::vector<reward_receiver> reward_receivers; //!< List of rewards receivers
+        std::vector<reward_struct> reward_receivers; //!< List of rewards receivers
 
-        const reward_receiver& get_reward_receiver(name to_contract) const {
-            return get_reward_receiver<const reward_receiver>(reward_receivers, to_contract);
+        const reward_struct& get_reward_receiver(name to_contract) const {
+            return get_reward_receiver<const reward_struct>(reward_receivers, to_contract);
         }
 
-        reward_receiver& get_reward_receiver(name to_contract) {
-            return get_reward_receiver<reward_receiver>(reward_receivers, to_contract);
+        reward_struct& get_reward_receiver(name to_contract) {
+            return get_reward_receiver<reward_struct>(reward_receivers, to_contract);
         }
 
         int64_t last_reward_passed_seconds(name to_contract) const {
@@ -57,7 +60,7 @@ struct structures {
         }
     };
 };
-    using stats = eosio::multi_index<"stat"_n, structures::stat>;
+    using stats [[using eosio: order("id","asc"), scope_type("symbol_code")]] = eosio::multi_index<"stat"_n, structures::stat_struct>;
 
     static int64_t get_continuous_rate(int64_t annual_rate);
 

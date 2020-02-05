@@ -16,7 +16,35 @@
             ]
         },
         {
+            "name": "unpin",
+            "base": "",
+            "fields": [
+                {
+                    "name": "pinner",
+                    "type": "name"
+                },
+                {
+                    "name": "pinning",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "block",
+            "base": "",
+            "fields": [
+                {
+                    "name": "blocker",
+                    "type": "name"
+                },
+                {
+                    "name": "blocking",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "unblock",
             "base": "",
             "fields": [
                 {
@@ -129,6 +157,7 @@
         }
     ],
     "types": [],
+    "events": [],
     "actions": [
         {
             "name": "pin",
@@ -136,7 +165,7 @@
         },
         {
             "name": "unpin",
-            "type": "pin"
+            "type": "unpin"
         },
         {
             "name": "block",
@@ -144,7 +173,7 @@
         },
         {
             "name": "unblock",
-            "type": "block"
+            "type": "unblock"
         },
         {
             "name": "updatemeta",

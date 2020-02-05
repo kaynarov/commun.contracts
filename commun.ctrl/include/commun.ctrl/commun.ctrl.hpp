@@ -23,7 +23,7 @@ using share_type = int64_t;
   \ingroup control_tables
 */
 // DOCS_TABLE: leader_info
-struct [[eosio::table]] leader_info {
+struct leader_info {
     name name;       //!< a leader name
     bool active;     //!< \a true if the leader is active; default is \a true
 
@@ -40,8 +40,8 @@ struct [[eosio::table]] leader_info {
     }
 };
 
-using leader_weight_idx = indexed_by<"byweight"_n, const_mem_fun<leader_info, uint64_t, &leader_info::weight_key>>;
-using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx>;
+using leader_weight_idx [[using eosio: non_unique, order("total_weight","desc")]] = indexed_by<"byweight"_n, const_mem_fun<leader_info, uint64_t, &leader_info::weight_key>>;
+using leader_tbl [[using eosio: scope_type("symbol_code"), order("name","asc"), contract("commun.ctrl")]] = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx>;
 
 /**
   \brief For each user who voted for a leader, a separate record is created in the database containing their names and strength of the vote. 
@@ -49,7 +49,7 @@ using leader_tbl = eosio::multi_index<"leader"_n, leader_info, leader_weight_idx
   \ingroup control_tables
  */
 // DOCS_TABLE: leader_voter
-struct [[eosio::table]] leader_voter {
+struct leader_voter {
     uint64_t id;
     name voter; //!< a voter name
     name leader; //!< a leader name
@@ -61,18 +61,17 @@ struct [[eosio::table]] leader_voter {
     key_t by_leader()const { return std::make_tuple(leader, voter); }
 };
 
-using leadervote_id_idx = eosio::indexed_by<"leadervoteid"_n, eosio::const_mem_fun<leader_voter, uint64_t, &leader_voter::primary_key> >;
-using leadervote_byvoter_idx = eosio::indexed_by<"byvoter"_n, eosio::const_mem_fun<leader_voter, leader_voter::key_t, &leader_voter::by_voter> >;
-using leadervote_byleader_idx = eosio::indexed_by<"byleader"_n, eosio::const_mem_fun<leader_voter, leader_voter::key_t, &leader_voter::by_leader> >;
+using leadervote_byvoter_idx [[using eosio: order("voter","asc"), order("leader","asc")]] = eosio::indexed_by<"byvoter"_n, eosio::const_mem_fun<leader_voter, leader_voter::key_t, &leader_voter::by_voter> >;
+using leadervote_byleader_idx [[using eosio: order("leader","asc"), order("voter","asc")]] = eosio::indexed_by<"byleader"_n, eosio::const_mem_fun<leader_voter, leader_voter::key_t, &leader_voter::by_leader> >;
 
-using leader_vote_tbl = eosio::multi_index<"leadervote"_n, leader_voter, leadervote_id_idx, leadervote_byvoter_idx, leadervote_byleader_idx>;
+using leader_vote_tbl [[using eosio: scope_type("symbol_code"), order("id","asc"), contract("commun.ctrl")]] = eosio::multi_index<"leadervote"_n, leader_voter, leadervote_byvoter_idx, leadervote_byleader_idx>;
 
 /**
   \brief DB record containing information about a proposed transaction which needs to be signed by the accounts specified in this transaction.
   \ingroup control_tables
  */
 // DOCS_TABLE: proposal
-struct [[eosio::table]] proposal {
+struct proposal {
     name proposal_name; //!< a name of proposed transaction. This is a primary key
     symbol_code commun_code; //!< symbol of the community whose leaders have to sign the transaction. It may be a company name whose representatives are entitled to sign the transaction
     name permission; //!< a level of permission required to sign the transaction. A person signing the transaction should have a permission level not lower than specified one
@@ -81,7 +80,7 @@ struct [[eosio::table]] proposal {
     uint64_t primary_key()const { return proposal_name.value; }
 };
 
-using proposals = eosio::multi_index< "proposal"_n, proposal>;
+using proposals [[using eosio: order("proposal_name","asc"), contract("commun.ctrl")]] = eosio::multi_index< "proposal"_n, proposal>;
 
 /**
   \brief The type of structure that is formed and stored in the approval_info when a leader sends an approval.
@@ -97,41 +96,45 @@ struct approval {
   \ingroup control_tables
  */
 // DOCS_TABLE: proposal
-struct [[eosio::table]] approvals_info {
+struct approvals_info {
     name proposal_name; //!< a name of proposed multi-signature transaction
     std::vector<approval> provided_approvals; //!< the list of approvals received from certain leaders
     uint64_t primary_key()const { return proposal_name.value; }
 };
 
-using approvals = eosio::multi_index< "approvals"_n, approvals_info>;
+using approvals [[using eosio: order("proposal_name","asc"), contract("commun.ctrl")]] = eosio::multi_index< "approvals"_n, approvals_info>;
 
 /**
   \brief DB record containing the account name whose approval for performing a multi-signature transaction is to be revoked.
   \ingroup control_tables
  */
 // DOCS_TABLE: invalidation
-struct [[eosio::table]] invalidation {
+struct invalidation {
     name account; //!< the account whose signature in transaction is to be invalidated
     time_point last_invalidation_time; //!< the time when the previous signature of this account was invalidated
 
     uint64_t primary_key() const { return account.value; }
 };
 
-using invalidations = eosio::multi_index< "invals"_n, invalidation>;
+using invalidations [[using eosio: order("account","asc"), contract("commun.ctrl")]] = eosio::multi_index< "invals"_n, invalidation>;
 
 /**
  * \brief This class implements the \a c.ctrl contract functionality.
  * \ingroup control_class
  */
-class control: public contract {
-    // DOCS_TABLE: stat
-    struct [[eosio::table]] stat {
+class
+/// @cond
+[[eosio::contract("commun.ctrl")]]
+/// @endcond
+control: public contract {
+    // DOCS_TABLE: stat_struct
+    struct stat_struct {
         uint64_t id;
         int64_t retained = 0;
         uint64_t primary_key() const { return id; }
     };
 
-    using stats = eosio::multi_index<"stat"_n, stat>;
+    using stats [[using eosio: scope_type("symbol_code"), order("id","asc")]] = eosio::multi_index<"stat"_n, stat_struct>;
     
 public:
     control(name self, name code, datastream<const char*> ds)
@@ -420,10 +423,10 @@ private:
 
       \ingroup control_events
     */
-    struct leaderstate_event {
+    struct [[eosio::event]] leaderstate_event {
         symbol_code commun_code; //!< a point symbol of the community to which the leader belongs
-        name name; //!< the leader name
-        uint64_t total_weight; //!< total \a weight of the leader
+        name leader; //!< the leader name
+        uint64_t weight; //!< total \a weight of the leader
         bool active; //!< \a true if the leader is active
     };
 

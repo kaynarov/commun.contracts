@@ -24,6 +24,8 @@ namespace commun {
 using std::string;
 using structures::opus_info;
 
+#define GALLERY_LIBRARY contract("commun.gallery"), contract("commun.publication")
+
 namespace gallery_types {
     using providers_t = std::vector<std::pair<name, int64_t> >;
 
@@ -42,9 +44,9 @@ namespace gallery_types {
      * - HIDDEN — Post has been removed by the author. Mosaic of the post may still exist, since it takes some time to destroy the gems. If the post has collected the sympathy of users, then rewards to these users will be paid;
      * - BANNED_AND_HIDDEN — Post has been removed and blocked by leaders (no rewards will be paid).
      */
-    struct mosaic {
+    struct mosaic_struct {
 
-        mosaic() = default;
+        mosaic_struct() = default;
         uint64_t tracery; //!< The mosaic tracery, used as primary key
         name creator;     //!< The mosaic creator
         
@@ -111,7 +113,7 @@ namespace gallery_types {
      *
      * The table contains data that uniquely identifies and represents a gem in mosaic.
      */
-    struct gem {
+    struct gem_struct {
         uint64_t id; //!< Unique gem identifier
         uint64_t tracery; //!< Mosaic tracery containing the gem
         time_point claim_date; //!< Date when the gem can be broken down. The gem cannot be destroyed until this date. Also, points spent on voting for the mosaic cannot be returned back until this date(such implementation excludes voting for another mosaic with the same points).
@@ -139,7 +141,7 @@ namespace gallery_types {
      *
      * The user account name can be found in the scope field of the table. Each created table has two additional fields — code of the table and scope indicating the owner of points.
      */
-    struct [[eosio::table]] inclusion {
+    struct inclusion_struct {
         asset quantity; //!< Total number of «frozen» user points
             // just an idea:
             // use as inclusion not only points, but also other gems. 
@@ -155,7 +157,7 @@ namespace gallery_types {
      *
      * The table contains statistic information about total number of unclaimed (blocked) points for all users related to a mosaic.
      */
-    struct [[eosio::table]] stat {
+    struct stat_struct {
         uint64_t id; //!< Mosaic identifier
         int64_t unclaimed = 0; //!< Total number of unclaimed points for all users related to the mosaic
         int64_t retained = 0; //!< Total amount of retained reward related to unclaimed points
@@ -164,7 +166,7 @@ namespace gallery_types {
         uint64_t primary_key()const { return id; }
     };
     
-    struct [[eosio::table]] provision {
+    struct provision_struct {
         uint64_t id;
         name grantor;
         name recipient;
@@ -178,35 +180,42 @@ namespace gallery_types {
         key_t by_key()const { return std::make_tuple(grantor, recipient); }
     };
     
-    struct [[eosio::table]] advice {
+    struct advice_struct {
         name leader;
         std::set<uint64_t> favorites;
         uint64_t primary_key()const { return leader.value; }
     };
     
-    using mosaic_id_index = eosio::indexed_by<"mosaicid"_n, eosio::const_mem_fun<gallery_types::mosaic, uint64_t, &gallery_types::mosaic::primary_key> >;
-    using mosaic_comm_index = eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_comm_rating_t, &gallery_types::mosaic::by_comm_rating> >;
-    using mosaic_lead_index = eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_lead_rating_t, &gallery_types::mosaic::by_lead_rating> >;
-    using mosaic_coll_end_index = eosio::indexed_by<"bydate"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_date_t, &gallery_types::mosaic::by_date> >;
-    using mosaic_status_index = eosio::indexed_by<"bystatus"_n, eosio::const_mem_fun<gallery_types::mosaic, gallery_types::mosaic::by_status_t, &gallery_types::mosaic::by_status> >;
-    using mosaics = eosio::multi_index<"mosaic"_n, gallery_types::mosaic, mosaic_id_index, mosaic_comm_index, mosaic_lead_index, mosaic_coll_end_index, mosaic_status_index>;
-    
-    using gem_id_index = eosio::indexed_by<"gemid"_n, eosio::const_mem_fun<gallery_types::gem, uint64_t, &gallery_types::gem::primary_key> >;
-    using gem_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::key_t, &gallery_types::gem::by_key> >;
-    using gem_creator_index = eosio::indexed_by<"bycreator"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::key_t, &gallery_types::gem::by_creator> >;
-    using gem_claim_index = eosio::indexed_by<"byclaim"_n, eosio::const_mem_fun<gallery_types::gem, gallery_types::gem::by_claim_t, &gallery_types::gem::by_claim> >;
-    using gem_claim_joint_index = eosio::indexed_by<"byclaimjoint"_n, eosio::const_mem_fun<gallery_types::gem, time_point, &gallery_types::gem::by_claim_joint> >;
-    using gems = eosio::multi_index<"gem"_n, gallery_types::gem, gem_id_index, gem_key_index, gem_creator_index, gem_claim_index, gem_claim_joint_index>;
-    
-    using inclusions = eosio::multi_index<"inclusion"_n, gallery_types::inclusion>;
-    
-    using prov_id_index = eosio::indexed_by<"provid"_n, eosio::const_mem_fun<gallery_types::provision, uint64_t, &gallery_types::provision::primary_key> >;
-    using prov_key_index = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::provision, gallery_types::provision::key_t, &gallery_types::provision::by_key> >;
-    using provs = eosio::multi_index<"provision"_n, gallery_types::provision, prov_id_index, prov_key_index>;
+    using mosaic_comm_index [[using eosio: non_unique, order("status","asc"), order("comm_rating","desc"), order("lead_rating","desc")]] =
+        eosio::indexed_by<"bycommrating"_n, eosio::const_mem_fun<gallery_types::mosaic_struct, gallery_types::mosaic_struct::by_comm_rating_t, &gallery_types::mosaic_struct::by_comm_rating> >;
+    using mosaic_lead_index [[using eosio: non_unique, order("lead_rating","desc"), order("comm_rating","desc")]] =
+        eosio::indexed_by<"byleadrating"_n, eosio::const_mem_fun<gallery_types::mosaic_struct, gallery_types::mosaic_struct::by_lead_rating_t, &gallery_types::mosaic_struct::by_lead_rating> >;
+    using mosaic_coll_end_index [[using eosio: non_unique, order("deactivated_xor_locked","desc"), order("collection_end_date","asc")]] =
+        eosio::indexed_by<"bydate"_n, eosio::const_mem_fun<gallery_types::mosaic_struct, gallery_types::mosaic_struct::by_date_t, &gallery_types::mosaic_struct::by_date> >;
+    using mosaic_status_index [[using eosio: non_unique, order("status","desc"), order("collection_end_date","asc")]] =
+        eosio::indexed_by<"bystatus"_n, eosio::const_mem_fun<gallery_types::mosaic_struct, gallery_types::mosaic_struct::by_status_t, &gallery_types::mosaic_struct::by_status> >;
 
-    using advices = eosio::multi_index<"advice"_n, gallery_types::advice>;
+    using mosaics [[using eosio: order("tracery","asc"), scope_type("symbol_code"), GALLERY_LIBRARY]] = eosio::multi_index<"mosaic"_n, gallery_types::mosaic_struct, mosaic_comm_index, mosaic_lead_index, mosaic_coll_end_index, mosaic_status_index>;
+    
+    using gem_key_index [[using eosio: order("tracery","asc"), order("owner","asc"), order("creator","asc")]] =
+        eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::gem_struct, gallery_types::gem_struct::key_t, &gallery_types::gem_struct::by_key> >;
+    using gem_creator_index [[using eosio: order("tracery","asc"), order("creator","asc"), order("owner","asc")]] =
+        eosio::indexed_by<"bycreator"_n, eosio::const_mem_fun<gallery_types::gem_struct, gallery_types::gem_struct::key_t, &gallery_types::gem_struct::by_creator> >;
+    using gem_claim_index [[using eosio: non_unique, order("owner","asc"), order("claim_date","asc")]] =
+        eosio::indexed_by<"byclaim"_n, eosio::const_mem_fun<gallery_types::gem_struct, gallery_types::gem_struct::by_claim_t, &gallery_types::gem_struct::by_claim> >;
+    using gem_claim_joint_index [[using eosio: non_unique, order("claim_date","asc")]] =
+        eosio::indexed_by<"byclaimjoint"_n, eosio::const_mem_fun<gallery_types::gem_struct, time_point, &gallery_types::gem_struct::by_claim_joint> >;
 
-    using stats = eosio::multi_index<"stat"_n, gallery_types::stat>;
+    using gems [[using eosio: order("id","asc"), scope_type("symbol_code"), GALLERY_LIBRARY]] = eosio::multi_index<"gem"_n, gallery_types::gem_struct, gem_key_index, gem_creator_index, gem_claim_index, gem_claim_joint_index>;
+    
+    using inclusions [[using eosio: order("quantity._sym","asc"), GALLERY_LIBRARY]] = eosio::multi_index<"inclusion"_n, gallery_types::inclusion_struct>;
+    
+    using prov_key_index [[using eosio: order("grantor","asc"), order("recipient","asc")]] = eosio::indexed_by<"bykey"_n, eosio::const_mem_fun<gallery_types::provision_struct, gallery_types::provision_struct::key_t, &gallery_types::provision_struct::by_key> >;
+    using provs [[using eosio: order("id","asc"), scope_type("symbol_code"), GALLERY_LIBRARY]] = eosio::multi_index<"provision"_n, gallery_types::provision_struct, prov_key_index>;
+
+    using advices [[using eosio: scope_type("symbol_code"), order("leader","asc"), GALLERY_LIBRARY]] = eosio::multi_index<"advice"_n, gallery_types::advice_struct>;
+
+    using stats [[using eosio: scope_type("symbol_code"), order("id","asc"), GALLERY_LIBRARY]] = eosio::multi_index<"stat"_n, gallery_types::stat_struct>;
     
 namespace events {
     
@@ -214,7 +223,7 @@ namespace events {
      * \brief The structure represents a mosaic destruction event. The mosaic is destroyed after destruction of the last gem belonging to this mosaic.
      * \ingroup gallery_events
      */
-    struct mosaic_chop {
+    struct [[using eosio: event("mosaicchop"), GALLERY_LIBRARY]] mosaic_chop_event {
         symbol_code commun_code; //!< Point symbol
         uint64_t tracery; //!< Tracery that breaks down
     };
@@ -223,7 +232,7 @@ namespace events {
      * \brief The structure represents a mosaic state change event. Such event is sent when a mosaic state changes.
      * \ingroup gallery_events
      */
-    struct mosaic_state {
+    struct [[using eosio: event("mosaicstate"), GALLERY_LIBRARY]] mosaic_state_event {
         uint64_t tracery; //!< Mosaic tracery
         name creator; //!< Mosaic creator
         time_point collection_end_date; //!< End date of collecting user opinions
@@ -238,7 +247,7 @@ namespace events {
      * \brief The structure represents a gem state change event. Gem for a mosaic is automatically created when an author creates the mosaic. A state of the gem changes when a user votes.
      * \ingroup gallery_events
      */
-    struct gem_state {
+    struct [[using eosio: event("gemstate"), GALLERY_LIBRARY]] gem_state_event {
         uint64_t tracery; //!< Mosaic tracery
         name owner; //!< Mosaic owner
         name creator;
@@ -252,7 +261,7 @@ namespace events {
      * \brief The structure represents a gem destruction event. Mosaic breaks down after rewarding it, when users can take back their points.
      * \ingroup gallery_events
      */
-    struct gem_chop {
+    struct [[using eosio: event("gemchop"), GALLERY_LIBRARY]] gem_chop_event {
         uint64_t tracery; //!< Mosaic tracery
         name owner; //!< Mosaic owner
         name creator;
@@ -264,7 +273,7 @@ namespace events {
      * \brief The structure represents the event about the selected best mosaics to be rewarded. The number of selected mosaics is determined by the \a rewarded_mosaic_num parameter in the \a c.list contract and defaults to 10.
      * \ingroup gallery_events
      */
-    struct mosaic_top {
+    struct [[using eosio: event("mosaictop"), GALLERY_LIBRARY]] mosaic_top_event {
         symbol_code commun_code; //!< Point symbol
         uint64_t tracery; //!< Mosaic tracery
         uint16_t place; //!< Place where the mosaic is located
@@ -276,7 +285,7 @@ namespace events {
      * \brief The structure represents an event about the current number of «frozen» user points.
      * \ingroup gallery_events
      */
-    struct inclusion_state {
+    struct [[using eosio: event("inclstate"), GALLERY_LIBRARY]] inclusion_state_event {
         name account; //!< User account that changed the current number of «frozen» points. The event occurred due to this account action.
         asset quantity; //!< Current number of «frozen» points belonging to the account
     };
@@ -286,8 +295,8 @@ namespace events {
 
 template<typename T>
 class gallery_base {
-    void send_mosaic_event(name _self, symbol commun_symbol, const gallery_types::mosaic& mosaic) {
-        gallery_types::events::mosaic_state data {
+    void send_mosaic_event(name _self, symbol commun_symbol, const gallery_types::mosaic_struct& mosaic) {
+        gallery_types::events::mosaic_state_event data {
             .tracery = mosaic.tracery,
             .creator = mosaic.creator,
             .collection_end_date = mosaic.collection_end_date,
@@ -301,15 +310,15 @@ class gallery_base {
     }
     
     void send_mosaic_chop_event(name _self, symbol_code commun_code, uint64_t tracery) {
-        gallery_types::events::mosaic_chop data {
+        gallery_types::events::mosaic_chop_event data {
             .commun_code = commun_code,
             .tracery = tracery
         };
         eosio::event(_self, "mosaicchop"_n, data).send();
     }
     
-    void send_gem_event(name _self, symbol commun_symbol, const gallery_types::gem& gem) {
-        gallery_types::events::gem_state data {
+    void send_gem_event(name _self, symbol commun_symbol, const gallery_types::gem_struct& gem) {
+        gallery_types::events::gem_state_event data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
@@ -321,8 +330,8 @@ class gallery_base {
         eosio::event(_self, "gemstate"_n, data).send();
     }
     
-    void send_chop_event(name _self, const gallery_types::gem& gem, asset reward, asset unfrozen) {
-        gallery_types::events::gem_chop data {
+    void send_chop_event(name _self, const gallery_types::gem_struct& gem, asset reward, asset unfrozen) {
+        gallery_types::events::gem_chop_event data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
@@ -332,8 +341,8 @@ class gallery_base {
         eosio::event(_self, "gemchop"_n, data).send();
     }
     
-    void send_top_event(name _self, symbol_code commun_code, const gallery_types::mosaic& mosaic, uint16_t place) {
-        gallery_types::events::mosaic_top data {
+    void send_top_event(name _self, symbol_code commun_code, const gallery_types::mosaic_struct& mosaic, uint16_t place) {
+        gallery_types::events::mosaic_top_event data {
             .commun_code = commun_code,
             .tracery = mosaic.tracery,
             .place = place,
@@ -344,7 +353,7 @@ class gallery_base {
     }
     
     void send_inclusion_event(name _self, name account, asset quantity) {
-        gallery_types::events::inclusion_state data {
+        gallery_types::events::inclusion_state_event data {
             .account = account,
             .quantity = quantity
         };
@@ -552,7 +561,7 @@ private:
             }
             
             gems_table.emplace(creator, [&]( auto &item ) {
-                item = gallery_types::gem {
+                item = gallery_types::gem_struct {
                     .id = gems_table.available_primary_key(),
                     .tracery = tracery,
                     .claim_date = claim_date,
@@ -756,13 +765,13 @@ private:
         auto now = eosio::current_time_point();
         auto max_collection_end_date = now - (eosio::seconds(community.moderation_period) + eosio::seconds(community.extra_reward_period));
 
-        auto mosaic_by_status = mosaics_by_status_idx.lower_bound(std::make_tuple(gallery_types::mosaic::ACTIVE, time_point()));
+        auto mosaic_by_status = mosaics_by_status_idx.lower_bound(std::make_tuple(gallery_types::mosaic_struct::ACTIVE, time_point()));
         for (size_t i = 0; i < config::auto_deactivate_num && mosaic_by_status != mosaics_by_status_idx.end(); i++, ++mosaic_by_status) {
-            if (mosaic_by_status->collection_end_date >= now || mosaic_by_status->status != gallery_types::mosaic::ACTIVE) {
+            if (mosaic_by_status->collection_end_date >= now || mosaic_by_status->status != gallery_types::mosaic_struct::ACTIVE) {
                 break;
             }
             mosaics_by_status_idx.modify(mosaic_by_status, name(), [&](auto& item) {
-                item.status = gallery_types::mosaic::MODERATE;
+                item.status = gallery_types::mosaic_struct::MODERATE;
             });
         }
 
@@ -771,10 +780,10 @@ private:
             if (mosaic_by_date->collection_end_date >= max_collection_end_date) {
                 break;
             }
-            check(mosaic_by_date->status != gallery_types::mosaic::LOCKED, "SYSTEM: deactivate_old_mosaics, incorrect status value");
+            check(mosaic_by_date->status != gallery_types::mosaic_struct::LOCKED, "SYSTEM: deactivate_old_mosaics, incorrect status value");
             mosaics_by_date_idx.modify(mosaic_by_date, name(), [&](auto& item) {
-                if (item.status < gallery_types::mosaic::ARCHIVED) {
-                    item.status = gallery_types::mosaic::ARCHIVED;
+                if (item.status < gallery_types::mosaic_struct::ARCHIVED) {
+                    item.status = gallery_types::mosaic_struct::ARCHIVED;
                 }
                 item.deactivated_xor_locked = true;
             });
@@ -822,10 +831,10 @@ protected:
 
         std::map<uint64_t, ranked_mosaic> ranked_mosaics;
 
-        for (auto by_comm_itr = by_comm_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic::ACTIVE), MAXINT64, MAXINT64));
+        for (auto by_comm_itr = by_comm_idx.lower_bound(std::make_tuple(uint8_t(gallery_types::mosaic_struct::ACTIVE), MAXINT64, MAXINT64));
                                                    (mosaic_num < by_comm_max) &&
                                                    (by_comm_itr != by_comm_idx.end()) &&
-                                                   (by_comm_itr->status == gallery_types::mosaic::ACTIVE) &&
+                                                   (by_comm_itr->status == gallery_types::mosaic_struct::ACTIVE) &&
                                                    (by_comm_itr->comm_rating > 0); by_comm_itr++, mosaic_num++) {
             ranked_mosaics[by_comm_itr->tracery] = ranked_mosaic {
                 .comm_rating = by_comm_itr->comm_rating,
@@ -930,7 +939,7 @@ protected:
         
         auto now = eosio::current_time_point();
         
-        mosaics_table.emplace(creator, [&]( auto &item ) { item = gallery_types::mosaic {
+        mosaics_table.emplace(creator, [&]( auto &item ) { item = gallery_types::mosaic_struct {
             .tracery = tracery,
             .creator = creator,
             .opus = opus,
@@ -960,7 +969,7 @@ protected:
         check(eosio::current_time_point() <= mosaic->collection_end_date, "collection period is over");
         check(!mosaic->banned(), "mosaic banned");
         check(!mosaic->hidden(), "mosaic hidden");
-        check(mosaic->status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
+        check(mosaic->status == gallery_types::mosaic_struct::ACTIVE, "mosaic is inactive");
         
         emit::maybe_issue_reward(commun_code, _self);
         const auto& op = community.get_opus(mosaic->opus);
@@ -1058,7 +1067,7 @@ protected:
             });
         }
         else if(enable) { // !exists
-            provs_table.emplace(grantor, [&] (auto &item) { item = gallery_types::provision {
+            provs_table.emplace(grantor, [&] (auto &item) { item = gallery_types::provision_struct {
                 .id = provs_table.available_primary_key(),
                 .grantor = grantor,
                 .recipient = recipient,
@@ -1098,7 +1107,7 @@ protected:
         }
         else {
             eosio::check(!favorites.empty(), "no changes in favorites");
-            advices_table.emplace(leader, [&] (auto &item) { item = gallery_types::advice {
+            advices_table.emplace(leader, [&] (auto &item) { item = gallery_types::advice_struct {
                 .leader = leader,
                 .favorites = favorites
             };});
@@ -1116,7 +1125,7 @@ protected:
         gallery_types::mosaics mosaics_table(_self, commun_code.raw());
         auto& mosaic = mosaics_table.get(tracery, "mosaic doesn't exist");
         require_auth(mosaic.creator);
-        eosio::check(mosaic.status == gallery_types::mosaic::ACTIVE, "mosaic is inactive");
+        eosio::check(mosaic.status == gallery_types::mosaic_struct::ACTIVE, "mosaic is inactive");
         mosaics_table.modify(mosaic, eosio::same_payer, [&](auto& m) {
             m.lock_date = time_point();
         });
@@ -1142,9 +1151,9 @@ protected:
         auto mosaic = mosaics_table.find(tracery);
         eosio::check(mosaic != mosaics_table.end(), "mosaic doesn't exist");
         eosio::check(!mosaic->banned(), "mosaic is already banned");
-        eosio::check(mosaic->status != gallery_types::mosaic::ARCHIVED, "mosaic is archived");
+        eosio::check(mosaic->status != gallery_types::mosaic_struct::ARCHIVED, "mosaic is archived");
         mosaics_table.modify(mosaic, name(), [&](auto& item) {
-            item.status = item.hidden() ? gallery_types::mosaic::BANNED_AND_HIDDEN : gallery_types::mosaic::BANNED;
+            item.status = item.hidden() ? gallery_types::mosaic_struct::BANNED_AND_HIDDEN : gallery_types::mosaic_struct::BANNED;
         });
     }
     
@@ -1154,15 +1163,19 @@ protected:
         require_auth(mosaic.creator);
         eosio::check(!mosaic.hidden(), "mosaic is already hidden");
         mosaics_table.modify(mosaic, name(), [&](auto& item) {
-            item.status = item.banned() ? gallery_types::mosaic::BANNED_AND_HIDDEN : gallery_types::mosaic::HIDDEN;
+            item.status = item.banned() ? gallery_types::mosaic_struct::BANNED_AND_HIDDEN : gallery_types::mosaic_struct::HIDDEN;
         });
     }
 };
 
-class gallery : public gallery_base<gallery>, public contract {
+class
+/// @cond
+[[eosio::contract("commun.gallery")]]
+/// @endcond
+gallery : public gallery_base<gallery>, public contract {
 public:
     using contract::contract;
-    static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic& mosaic) {};
+    static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic_struct& mosaic) {};
 
     [[eosio::action]] void init(symbol_code commun_code) {
         require_auth(_self);

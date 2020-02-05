@@ -16,7 +16,7 @@ using std::optional;
     \ingroup recover_tables
 */
 // DOCS_TABLE: owner_request
-struct [[eosio::table]] owner_request {
+struct owner_request {
     time_point change_time;        //!< time when it will be permissible to change the owner key
     public_key owner_key;          //!< new owner key
 };
@@ -25,8 +25,8 @@ struct [[eosio::table]] owner_request {
     \brief DB record containing global parameters for contract.
     \ingroup recover_tables
 */
-// DOCS_TABLE: params
-struct [[eosio::table]] params {
+// DOCS_TABLE: params_struct
+struct params_struct {
     uint64_t recover_delay = config::def_recover_delay;  //!< delay (in seconds) for setting the owner key in specified value
 };
 
@@ -35,7 +35,7 @@ struct [[eosio::table]] params {
 namespace commun::tables {
     using namespace eosio;
 
-    using owner_request_table = eosio::singleton<"ownerrequest"_n, structures::owner_request>;
+    using owner_request_table [[using eosio: order("id","asc"), contract("commun.recover")]] = eosio::singleton<"ownerrequest"_n, structures::owner_request>;
 
-    using params_table = eosio::singleton<"params"_n, structures::params>;
+    using params_table [[using eosio: order("id","asc"), contract("commun.recover")]] = eosio::singleton<"params"_n, structures::params_struct>;
 }

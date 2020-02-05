@@ -1,4 +1,5 @@
-add_contract_with_abi(commun.recover abi/commun.recover.abi src/commun.recover.cpp)
+add_contract(commun.recover commun.recover src/commun.recover.cpp)
+install_contract(commun.recover)
 target_include_directories(commun.recover.wasm
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/../cyberway.contracts/cyber.bios/include

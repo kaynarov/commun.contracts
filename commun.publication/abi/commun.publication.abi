@@ -1,28 +1,6 @@
 {
   "version": "cyberway::abi/1.1",
   "types": [
-    {
-      "new_type_name": "base_t",
-      "type": "int64"
-    },{
-      "new_type_name": "wide_t",
-      "type": "int128"
-    },{
-      "new_type_name": "index_t",
-      "type": "uint64"
-    },{
-      "new_type_name": "enum_t",
-      "type": "uint8"
-    },{
-      "new_type_name": "counter_t",
-      "type": "uint64"
-    },{
-      "new_type_name": "percent_t",
-      "type": "uint16"
-    },{
-      "new_type_name": "signed_percent_t",
-      "type": "int16"
-    }
   ],
   "structs": [
           {
@@ -106,20 +84,6 @@
         {
             "name": "permlink",
             "type": "string"
-        }
-    ]
-  },
-  {
-    "name": "value",
-    "base": "",
-    "fields": [
-        {
-            "name": "kind",
-            "type": "enum_t"
-        },
-        {
-            "name": "idx",
-            "type": "index_t"
         }
     ]
   },
@@ -336,7 +300,50 @@
     ]
   },
   {
-    "name": "vote",
+    "name": "unlock",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
+        "name": "leader",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "reason",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "name": "upvote",
+    "base": "",
+    "fields": [
+      {
+        "name": "commun_code",
+        "type": "symbol_code"
+      },
+      {
+        "name": "voter",
+        "type": "name"
+      },
+      {
+        "name": "message_id",
+        "type": "mssgid"
+      },
+      {
+        "name": "weight",
+        "type": "uint16?"
+      }
+    ]
+  },{
+    "name": "downvote",
     "base": "",
     "fields": [
       {
@@ -372,16 +379,6 @@
       {
         "name": "message_id",
         "type": "mssgid"
-      }
-    ]
-  },
-  {
-    "name": "posting_state",
-    "base": "",
-    "fields": [
-      {
-        "name": "id",
-        "type": "uint64"
       }
     ]
   },
@@ -429,53 +426,17 @@
         }
     ]
   },{
-            "name": "modifygem_args",
+            "name": "claim",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "mssgid",                 "name": "message_id" },
                 { "type": "name",                   "name": "gem_owner" },
-                { "type": "name?",                  "name": "gem_creator" }
-            ]
-        },{
-            "name": "claim_args",
-            "base": "modifygem_args",
-            "fields": [
+                { "type": "name?",                  "name": "gem_creator" },
                 { "type": "bool?",                  "name": "eager" }
             ]
         },{
-            "name": "transfer_args",
-            "base": "modifygem_args",
-            "fields": [
-                { "type": "name",                   "name": "recipient"  }
-            ]
-        },{
-            "name": "setproviders_args",
-            "base": "",
-            "fields": [
-                { "type": "symbol_code",            "name": "commun_code" },
-                { "type": "name",                   "name": "recipient" },
-                { "type": "name[]",                 "name": "providers" }
-            ]
-        },{
-            "name": "provide_args",
-            "base": "",
-            "fields": [
-                { "type": "name",                   "name": "grantor" },
-                { "type": "name",                   "name": "recipient" },
-                { "type": "asset",                  "name": "quantity" },
-                { "type": "uint16?",                "name": "fee" }
-            ]
-        },{
-            "name": "advise_args",
-            "base": "",
-            "fields": [
-                { "type": "symbol_code",            "name": "commun_code" },
-                { "type": "name",                   "name": "leader" },
-                { "type": "mssgid[]",               "name": "favorites" }
-            ]
-        },{
-            "name": "ban_args",
+            "name": "ban",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
@@ -585,15 +546,15 @@
   },
   {
     "name": "unlock",
-    "type": "lock"
+    "type": "unlock"
   },
   {
     "name": "upvote",
-    "type": "vote"
+    "type": "upvote"
   },
   {
     "name": "downvote",
-    "type": "vote"
+    "type": "downvote"
   },
   {
     "name": "unvote",
@@ -601,7 +562,7 @@
   },
   {
     "name": "claim",
-    "type": "claim_args"
+    "type": "claim"
   },
   {
     "name": "reblog",
@@ -613,7 +574,7 @@
   },
   {
     "name": "ban",
-    "type": "ban_args"
+    "type": "ban"
   }
   ],
   "tables": [
@@ -719,5 +680,6 @@
   }
   ],
   "error_messages": [],
-  "abi_extensions": []
+  "abi_extensions": [],
+  "variants": []
 }

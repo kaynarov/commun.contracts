@@ -2,14 +2,14 @@
     "version": "cyberway::abi/1.1",
     "structs": [
         {
-            "name": "issuereward_args",
+            "name": "issuereward",
             "base": "",
             "fields": [
                 { "type": "symbol_code",    "name": "commun_code" },
                 { "type": "name",           "name": "to_contract" }
             ]
         },{
-            "name": "init_args",
+            "name": "init",
             "base": "",
             "fields": [
                 { "type": "symbol_code",    "name": "commun_code" }
@@ -34,14 +34,14 @@
     "actions": [
         {
             "name": "init",
-            "type": "init_args"
+            "type": "init"
         },
         {
             "name": "issuereward",
-            "type": "issuereward_args"
+            "type": "issuereward"
         }
     ],
-
+    "events": [],
     "tables": [
             {
             "name": "stat",

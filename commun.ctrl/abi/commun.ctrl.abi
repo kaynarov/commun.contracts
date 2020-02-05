@@ -32,7 +32,28 @@
                 {"type": "uint16?", "name": "count"}
             ]
         }, {
-            "name": "leader_name",
+            "name": "unregleader",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "commun_code"},
+                {"type": "name",   "name": "leader"}
+            ]
+        }, {
+            "name": "stopleader",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "commun_code"},
+                {"type": "name",   "name": "leader"}
+            ]
+        }, {
+            "name": "startleader",
+            "base": "",
+            "fields": [
+                {"type": "symbol_code", "name": "commun_code"},
+                {"type": "name",   "name": "leader"}
+            ]
+        }, {
+            "name": "claim",
             "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
@@ -88,12 +109,8 @@
                 {"type": "uint16", "name": "pct"}
             ]
         }, {
-            "name": "multisig_acc",
-            "base": "",
-            "fields": [
-                {"type": "name", "name": "name"}]
-        }, {
             "name": "leaderstate_event",
+            "base": "",
             "fields": [
                 {"type": "symbol_code", "name": "commun_code"},
                 {"type": "name", "name": "leader"},
@@ -405,13 +422,13 @@
             "type": "clearvotes"
         }, {
             "name": "unregleader",
-            "type": "leader_name"
+            "type": "unregleader"
         }, {
             "name": "startleader",
-            "type": "leader_name"
+            "type": "startleader"
         }, {
             "name": "stopleader",
-            "type": "leader_name"
+            "type": "stopleader"
         }, {
             "name": "voteleader",
             "type": "voteleader"
@@ -420,7 +437,7 @@
             "type": "unvotelead"
         }, {
             "name": "claim",
-            "type": "leader_name"
+            "type": "claim"
         }, {
             "name": "emit",
             "type": "emit"
@@ -534,5 +551,6 @@
             ]
         }
     ],
-    "abi_extensions": []
+    "abi_extensions": [],
+    "variants": []
 }
