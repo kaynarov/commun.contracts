@@ -18,8 +18,8 @@ void publication::emit(symbol_code commun_code) {
 
 void publication::create(
     symbol_code commun_code,
-    mssgid_t message_id,
-    mssgid_t parent_id,
+    mssgid message_id,
+    mssgid parent_id,
     std::string header,
     std::string body,
     std::vector<std::string> tags,
@@ -97,7 +97,7 @@ void publication::create(
     create_mosaic(_self, message_id.author, tracery, opus_name, quantity, community.author_percent, providers);    
 }
 
-void publication::update(symbol_code commun_code, mssgid_t message_id,
+void publication::update(symbol_code commun_code, mssgid message_id,
         std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata) {
     require_auth(message_id.author);
@@ -107,14 +107,14 @@ void publication::update(symbol_code commun_code, mssgid_t message_id,
     }
 }
 
-void publication::settags(symbol_code commun_code, name leader, mssgid_t message_id,
+void publication::settags(symbol_code commun_code, name leader, mssgid message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason) {
     control::require_leader_auth(commun_code, leader);
     eosio::check(!add_tags.empty() || !remove_tags.empty(), "No changes in tags.");
     check_mssg_exists(commun_code, message_id);
 }
 
-void publication::remove(symbol_code commun_code, mssgid_t message_id) {
+void publication::remove(symbol_code commun_code, mssgid message_id) {
     require_auth(message_id.author);
     if (check_mssg_exists(commun_code, message_id)) {
         auto tracery = message_id.tracery();
@@ -135,7 +135,7 @@ void publication::remove(symbol_code commun_code, mssgid_t message_id) {
     }
 }
 
-void publication::report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason) {
+void publication::report(symbol_code commun_code, name reporter, mssgid message_id, std::string reason) {
     require_auth(reporter);
     require_client_auth();
     eosio::check(!reason.empty(), "Reason cannot be empty.");
@@ -151,33 +151,33 @@ void publication::report(symbol_code commun_code, name reporter, mssgid_t messag
     }
 }
 
-void publication::lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+void publication::lock(symbol_code commun_code, name leader, mssgid message_id, string reason) {
     control::require_leader_auth(commun_code, leader);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     set_lock_status(_self, commun_code, message_id.tracery(), true);
 }
 
-void publication::unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason) {
+void publication::unlock(symbol_code commun_code, name leader, mssgid message_id, string reason) {
     control::require_leader_auth(commun_code, leader);
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     set_lock_status(_self, commun_code, message_id.tracery(), false);
 }
 
-void publication::upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
+void publication::upvote(symbol_code commun_code, name voter, mssgid message_id, std::optional<uint16_t> weight) {
     require_auth(voter);
     require_client_auth();
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, false);
 }
 
-void publication::downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight) {
+void publication::downvote(symbol_code commun_code, name voter, mssgid message_id, std::optional<uint16_t> weight) {
     require_auth(voter);
     require_client_auth();
     eosio::check(!weight.has_value() || (*weight <= config::_100percent), "weight can't be more than 100%.");
     set_vote(commun_code, voter, message_id, weight, true);
 }
 
-void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_id) {
+void publication::unvote(symbol_code commun_code, name voter, mssgid message_id) {
     require_auth(voter);
     if (check_mssg_exists(commun_code, message_id)) {
         eosio::check(voter != message_id.author, "author can't unvote");
@@ -187,24 +187,24 @@ void publication::unvote(symbol_code commun_code, name voter, mssgid_t message_i
     }
 }
 
-void publication::hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator) {
+void publication::hold(symbol_code commun_code, mssgid message_id, name gem_owner, std::optional<name> gem_creator) {
     require_auth(gem_owner);
     hold_gem(_self, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner));
 }
 
-void publication::transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient) {
+void publication::transfer(symbol_code commun_code, mssgid message_id, name gem_owner, std::optional<name> gem_creator, name recipient) {
     require_auth(gem_owner);
     require_auth(recipient);
     transfer_gem(_self, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), recipient);
 }
 
-void publication::claim(symbol_code commun_code, mssgid_t message_id, name gem_owner, 
+void publication::claim(symbol_code commun_code, mssgid message_id, name gem_owner, 
                         std::optional<name> gem_creator, std::optional<bool> eager) {
     
     claim_gem(_self, message_id.tracery(), commun_code, gem_owner, gem_creator.value_or(gem_owner), eager.value_or(false));
 }
 
-void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& message_id, std::optional<uint16_t> weight, bool damn) {
+void publication::set_vote(symbol_code commun_code, name voter, const mssgid& message_id, std::optional<uint16_t> weight, bool damn) {
     eosio::check(voter != message_id.author, "author can't vote");
     if (weight.has_value() && *weight == 0) {
         require_client_auth("Weight equal to 0");   // empty votes are allowed only with a client signature
@@ -244,7 +244,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid_t& 
     add_to_mosaic(_self, tracery, quantity, damn, voter, providers);
 }
 
-void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body) {
+void publication::reblog(symbol_code commun_code, name rebloger, mssgid message_id, std::string header, std::string body) {
     require_auth(rebloger);
     require_client_auth();
 
@@ -256,7 +256,7 @@ void publication::reblog(symbol_code commun_code, name rebloger, mssgid_t messag
     );
 }
 
-void publication::erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id) {
+void publication::erasereblog(symbol_code commun_code, name rebloger, mssgid message_id) {
     require_auth(rebloger);
     require_client_auth();
 
@@ -276,7 +276,7 @@ bool publication::validate_permlink(std::string permlink) {
     return true;
 }
 
-bool publication::check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id) {
+bool publication::check_mssg_exists(symbol_code commun_code, const mssgid& message_id) {
     vertices vertices_table(_self, commun_code.raw());
     if (vertices_table.find(message_id.tracery()) == vertices_table.end()) {
         require_client_auth("Message does not exist");
@@ -370,7 +370,7 @@ void publication::provide(name grantor, name recipient, asset quantity, std::opt
     provide_points(_self, grantor, recipient, quantity, fee);
 }
 
-void publication::advise(symbol_code commun_code, name leader, std::set<mssgid_t> favorites) {
+void publication::advise(symbol_code commun_code, name leader, std::set<mssgid> favorites) {
     control::require_leader_auth(commun_code, leader);
     std::set<uint64_t> favorite_mosaics;
     for (const auto& m : favorites) {
@@ -379,7 +379,7 @@ void publication::advise(symbol_code commun_code, name leader, std::set<mssgid_t
     advise_mosaics(_self, commun_code, leader, favorite_mosaics);
 }
 
-void publication::ban(symbol_code commun_code, mssgid_t message_id) {
+void publication::ban(symbol_code commun_code, mssgid message_id) {
     require_auth(point::get_issuer(commun_code));
     ban_mosaic(_self, commun_code, message_id.tracery());
 }

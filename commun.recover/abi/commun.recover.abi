@@ -18,7 +18,13 @@
                 {"name": "owner_key",    "type": "public_key?"}
             ]
         },{
-            "name": "account",
+            "name": "applyowner",
+            "base": "",
+            "fields": [
+                {"name": "account",      "type": "name"}
+            ]
+        },{
+            "name": "cancelowner",
             "base": "",
             "fields": [
                 {"name": "account",      "type": "name"}
@@ -41,8 +47,8 @@
     "types": [],
     "actions": [
         {"name": "recover",         "type": "recover"},
-        {"name": "applyowner",      "type": "account"},
-        {"name": "cancelowner",     "type": "account"},
+        {"name": "applyowner",      "type": "applyowner"},
+        {"name": "cancelowner",     "type": "cancelowner"},
         {"name": "setparams",       "type": "setparams"}
     ],
     "events": [],

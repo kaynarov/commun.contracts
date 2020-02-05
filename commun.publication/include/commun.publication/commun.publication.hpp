@@ -72,7 +72,7 @@ public:
             — account from the field \a message_id.author ;
             — <i>trusted community client</i> .
     */
-    [[eosio::action]] void create(symbol_code commun_code, mssgid_t message_id, mssgid_t parent_id,
+    [[eosio::action]] void create(symbol_code commun_code, mssgid message_id, mssgid parent_id,
         std::string header, std::string body, std::vector<std::string> tags, std::string metadata,
         std::optional<uint16_t> weight);
 
@@ -93,7 +93,7 @@ public:
         \note
         Community leaders can lock a message even after it has been corrected regardless of whether it was previously locked temporarily or not. However, the message can not be locked again if the \ref update is also signed by the trusted community client because the message is not checked by leaders in this case.
     */
-    [[eosio::action]] void update(symbol_code commun_code, mssgid_t message_id, std::string header, std::string body,
+    [[eosio::action]] void update(symbol_code commun_code, mssgid message_id, std::string header, std::string body,
         std::vector<std::string> tags, std::string metadata);
 
     /**
@@ -116,7 +116,7 @@ public:
         \note
         Changes to tags of a message are not checked by leaders if the \ref settags action is signed by the <i>trusted community client</i>.
     */
-    [[eosio::action]] void settags(symbol_code commun_code, name leader, mssgid_t message_id,
+    [[eosio::action]] void settags(symbol_code commun_code, name leader, mssgid message_id,
         std::vector<std::string> add_tags, std::vector<std::string> remove_tags, std::string reason);
 
     /**
@@ -132,7 +132,7 @@ public:
         \note
         Deleting a message and updating the corresponding records in DB are not checked if the \ref remove action is also signed by the <i>trusted community client</i>.
     */
-    [[eosio::action]] void remove(symbol_code commun_code, mssgid_t message_id);
+    [[eosio::action]] void remove(symbol_code commun_code, mssgid message_id);
 
     /**
         \brief The \ref report action is used by a user to notify community leaders about undesirable or suspicious message content.
@@ -152,7 +152,7 @@ public:
         \note
         A message content is not checked for suspicion by leaders if the action is also signed by the <i>trusted community client</i>.
     */
-    [[eosio::action]] void report(symbol_code commun_code, name reporter, mssgid_t message_id, std::string reason);
+    [[eosio::action]] void report(symbol_code commun_code, name reporter, mssgid message_id, std::string reason);
 
     /**
         \brief The \ref lock action is used by a leader to temporarily lock a message that is considered undesirable.
@@ -167,7 +167,7 @@ public:
         \signreq
             — the \a leader account .
     */
-    [[eosio::action]] void lock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
+    [[eosio::action]] void lock(symbol_code commun_code, name leader, mssgid message_id, string reason);
 
     /**
         \brief The \ref unlock action is used by a leader to unlock a message which was previously locked.
@@ -180,7 +180,7 @@ public:
         \signreq
             — the \a leader account .
     */
-    [[eosio::action]] void unlock(symbol_code commun_code, name leader, mssgid_t message_id, string reason);
+    [[eosio::action]] void unlock(symbol_code commun_code, name leader, mssgid message_id, string reason);
 
     /**
         \brief The \ref upvote action is used by a community member to cast a vote in the form of «upvote» for a message.
@@ -204,7 +204,7 @@ public:
 
         In this case the action also does not store anything in DB.
     */
-    [[eosio::action]] void upvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
+    [[eosio::action]] void upvote(symbol_code commun_code, name voter, mssgid message_id, std::optional<uint16_t> weight);
 
     /**
         \brief The \ref downvote action is used by a community member to cast a vote in the form of «downvote» for a message.
@@ -228,7 +228,7 @@ public:
 
         In this case the action also does not store anything in DB.
     */
-    [[eosio::action]] void downvote(symbol_code commun_code, name voter, mssgid_t message_id, std::optional<uint16_t> weight);
+    [[eosio::action]] void downvote(symbol_code commun_code, name voter, mssgid message_id, std::optional<uint16_t> weight);
 
     /**
         \brief The \ref unvote action is used by a community member to revoke a vote cast previously for a message.
@@ -246,7 +246,7 @@ public:
         - the message exists;  
         - the vote exists.
     */
-    [[eosio::action]] void unvote(symbol_code commun_code, name voter, mssgid_t message_id);
+    [[eosio::action]] void unvote(symbol_code commun_code, name voter, mssgid message_id);
 
     /**
         \brief The \ref claim action allows a user to get back the points previously allocated and «frozen» by her/him for a message, as well as expected share of reward accumulated for this message.
@@ -266,12 +266,12 @@ public:
         User gets points and a reward.
         \nosignreq
     */
-    [[eosio::action]] void claim(symbol_code commun_code, mssgid_t message_id, name gem_owner,
+    [[eosio::action]] void claim(symbol_code commun_code, mssgid message_id, name gem_owner,
         std::optional<name> gem_creator, std::optional<bool> eager);
     // TODO: removed from MVP
-    void hold(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator);
+    void hold(symbol_code commun_code, mssgid message_id, name gem_owner, std::optional<name> gem_creator);
     // TODO: removed from MVP
-    void transfer(symbol_code commun_code, mssgid_t message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
+    void transfer(symbol_code commun_code, mssgid message_id, name gem_owner, std::optional<name> gem_creator, name recipient);
 
     /**
          \brief The reblog action is used by user to create a reblog on the post/comment
@@ -291,7 +291,7 @@ public:
             — the \a rebloger account ;
             — <i>trusted community client</i> .
     */
-    [[eosio::action]] void reblog(symbol_code commun_code, name rebloger, mssgid_t message_id, std::string header, std::string body);
+    [[eosio::action]] void reblog(symbol_code commun_code, name rebloger, mssgid message_id, std::string header, std::string body);
 
 
     /**
@@ -310,14 +310,14 @@ public:
             — the \a rebloger account ;
             — <i>trusted community client</i> .
     */
-    [[eosio::action]] void erasereblog(symbol_code commun_code, name rebloger, mssgid_t message_id);
+    [[eosio::action]] void erasereblog(symbol_code commun_code, name rebloger, mssgid message_id);
     // TODO: removed from MVP
     void setproviders(symbol_code commun_code, name recipient, std::vector<name> providers);
 
     // TODO: removed from MVP
     void provide(name grantor, name recipient, asset quantity, std::optional<uint16_t> fee);
     // TODO: removed from MVP
-    void advise(symbol_code commun_code, name leader, std::set<mssgid_t> favorites);
+    void advise(symbol_code commun_code, name leader, std::set<mssgid> favorites);
     //TODO: void checkadvice (symbol_code commun_code, name leader);
 
     /**
@@ -331,7 +331,7 @@ public:
         \signreq
             — <i>minority of community leaders</i> .
     */
-    [[eosio::action]] void ban(symbol_code commun_code, mssgid_t message_id);
+    [[eosio::action]] void ban(symbol_code commun_code, mssgid message_id);
 
     void ontransfer(name from, name to, asset quantity, std::string memo) {
         on_points_transfer(_self, from, to, quantity, memo);
@@ -342,9 +342,9 @@ private:
     accparams::const_iterator get_acc_param(accparams& accparams_table, symbol_code commun_code, name account);
     uint16_t get_gems_per_period(symbol_code commun_code);
     static int64_t get_amount_to_freeze(int64_t balance, int64_t frozen, uint16_t gems_per_period, std::optional<uint16_t> weight);
-    void set_vote(symbol_code commun_code, name voter, const mssgid_t &message_id, std::optional<uint16_t> weight, bool damn);
+    void set_vote(symbol_code commun_code, name voter, const mssgid &message_id, std::optional<uint16_t> weight, bool damn);
     bool validate_permlink(std::string permlink);
-    bool check_mssg_exists(symbol_code commun_code, const mssgid_t& message_id);
+    bool check_mssg_exists(symbol_code commun_code, const mssgid& message_id);
     void require_client_auth(const std::string& s = "Action enable only for client");
 };
 

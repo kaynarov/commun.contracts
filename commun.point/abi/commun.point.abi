@@ -59,14 +59,14 @@
                 { "type": "time_point_sec", "name": "unlocks" }
             ]
         },{
-            "name": "close_args",
+            "name": "close",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
                 { "type": "symbol_code",  "name": "commun_code" }
             ]
         },{
-            "name": "create_args",
+            "name": "create",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "issuer" },
@@ -76,7 +76,7 @@
                 { "type": "int16",        "name": "fee" }
             ]
         },{
-            "name": "setparams_args",
+            "name": "setparams",
             "base": "",
             "fields": [
                 { "type": "symbol_code",  "name": "commun_code" },
@@ -85,7 +85,7 @@
                 { "type": "int64?",       "name": "min_transfer_fee_points" }
             ]
         },{
-            "name": "issue_args",
+            "name": "issue",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "to" },
@@ -93,7 +93,7 @@
                 { "type": "string",       "name": "memo" }
             ]
         },{
-            "name": "open_args",
+            "name": "open",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
@@ -101,13 +101,13 @@
                 { "type": "name?",        "name": "ram_payer" }
             ]
         },{
-            "name": "setfreezer_args",
+            "name": "setfreezer",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "freezer" }
             ]
         },{
-            "name": "retire_args",
+            "name": "retire",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "from" },
@@ -115,7 +115,7 @@
                 { "type": "string",       "name": "memo" }
             ]
         },{
-            "name": "transfer_args",
+            "name": "transfer",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "from" },
@@ -124,14 +124,14 @@
                 { "type": "string",       "name": "memo" }
             ]
         },{
-            "name": "withdraw_args",
+            "name": "withdraw",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
                 { "type": "asset",        "name": "quantity" }
             ]
         },{
-            "name": "enablesafe_args",
+            "name": "enablesafe",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
@@ -140,7 +140,7 @@
                 { "type": "name",         "name": "trusted" }
             ]
         },{
-            "name": "disablesafe_args",
+            "name": "disablesafe",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
@@ -148,7 +148,7 @@
                 { "type": "name",         "name": "mod_id" }
             ]
         },{
-            "name": "unlocksafe_args",
+            "name": "unlocksafe",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
@@ -156,14 +156,14 @@
                 { "type": "name",         "name": "mod_id" }
             ]
         },{
-            "name": "locksafe_args",
+            "name": "locksafe",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
                 { "type": "asset",        "name": "lock" }
             ]
         },{
-            "name": "modifysafe_args",
+            "name": "modifysafe",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
@@ -173,21 +173,21 @@
                 { "type": "name?",        "name": "trusted" }
             ]
         },{
-            "name": "applysafemod_args",
+            "name": "applysafemod",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
                 { "type": "name",         "name": "mod_id" }
             ]
         },{
-            "name": "cancelsafemod_args",
+            "name": "cancelsafemod",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
                 { "type": "name",         "name": "mod_id" }
             ]
         },{
-            "name": "globallock_args",
+            "name": "globallock",
             "base": "",
             "fields": [
                 { "type": "name",         "name": "owner" },
@@ -235,40 +235,40 @@
     "actions": [
         {
             "name": "close",
-            "type": "close_args"
+            "type": "close"
         },{
             "name": "create",
-            "type": "create_args"
+            "type": "create"
         },{
             "name": "setparams",
-            "type": "setparams_args"
+            "type": "setparams"
         },{
             "name": "setfreezer",
-            "type": "setfreezer_args"
+            "type": "setfreezer"
         },{
             "name": "issue",
-            "type": "issue_args"
+            "type": "issue"
         },{
             "name": "open",
-            "type": "open_args"
+            "type": "open"
         },{
             "name": "retire",
-            "type": "retire_args"
+            "type": "retire"
         },{
             "name": "transfer",
-            "type": "transfer_args"
+            "type": "transfer"
         },{
             "name": "withdraw",
-            "type": "withdraw_args"
+            "type": "withdraw"
         },
-        { "name": "enablesafe",    "type": "enablesafe_args" },
-        { "name": "disablesafe",   "type": "disablesafe_args" },
-        { "name": "unlocksafe",    "type": "unlocksafe_args" },
-        { "name": "locksafe",      "type": "locksafe_args" },
-        { "name": "modifysafe",    "type": "modifysafe_args" },
-        { "name": "applysafemod",  "type": "applysafemod_args" },
-        { "name": "cancelsafemod", "type": "cancelsafemod_args" },
-        { "name": "globallock",    "type": "globallock_args" }
+        { "name": "enablesafe",    "type": "enablesafe" },
+        { "name": "disablesafe",   "type": "disablesafe" },
+        { "name": "unlocksafe",    "type": "unlocksafe" },
+        { "name": "locksafe",      "type": "locksafe" },
+        { "name": "modifysafe",    "type": "modifysafe" },
+        { "name": "applysafemod",  "type": "applysafemod" },
+        { "name": "cancelsafemod", "type": "cancelsafemod" },
+        { "name": "globallock",    "type": "globallock" }
     ],
     "tables": [
         {

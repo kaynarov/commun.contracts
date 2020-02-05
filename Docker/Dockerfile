@@ -32,6 +32,15 @@ RUN cd commun.contracts/cyberway.contracts \
         -Dcyberway.cdt_DIR=/opt/cyberway.cdt/lib/cmake/cyberway.cdt \
         -DEOSIO_ROOT=/opt/cyberway \
     && cmake --build build --target install \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.list/commun.list.abi ./commun.list/abi/commun.list.abi \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.point/commun.point.abi ./commun.point/abi/commun.point.abi \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.emit/commun.emit.abi ./commun.emit/abi/commun.emit.abi \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.ctrl/commun.ctrl.abi ./commun.ctrl/abi/commun.ctrl.abi \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.gallery/commun.gallery.abi ./commun.gallery/abi/commun.gallery.abi \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.publication/commun.publication.abi ./commun.publication/abi/commun.publication.abi \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.social/commun.social.abi ./commun.social/abi/commun.social.abi \
+    && /opt/cyberway.cdt/bin/cyberway-abidiff /opt/commun.contracts/commun.recover/commun.recover.abi ./commun.recover/abi/commun.recover.abi \
+    && echo "abidiff check passed" \
     && doxygen Doxyfile
 
 FROM ubuntu:18.04

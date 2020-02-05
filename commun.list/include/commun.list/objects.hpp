@@ -109,7 +109,7 @@ struct dapp {
  */
 struct emission_receiver {
     name     contract; //!< Emission receiver
-    uint64_t period;   //!< Period of reward
+    int64_t period;    //!< Period of reward
     uint16_t percent;  //!< Percent of emission
 };
 

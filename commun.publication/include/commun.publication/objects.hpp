@@ -11,22 +11,22 @@
 namespace commun { 
 using namespace eosio;
 
-struct mssgid_t {
-    mssgid_t() = default;
+struct mssgid {
+    mssgid() = default;
 
     name author;
     std::string permlink;
 
-    bool operator==(const mssgid_t& value) const {
+    bool operator==(const mssgid& value) const {
         return author == value.author &&
                permlink == value.permlink;
     }
 
     // for set
-    friend bool operator<(const mssgid_t& a, const mssgid_t& b) {
+    friend bool operator<(const mssgid& a, const mssgid& b) {
         return std::tie(a.author, a.permlink) < std::tie(b.author, b.permlink);
     }
-    friend bool operator>(const mssgid_t& a, const mssgid_t& b) {
+    friend bool operator>(const mssgid& a, const mssgid& b) {
         return std::tie(a.author, a.permlink) > std::tie(b.author, b.permlink);
     }
 

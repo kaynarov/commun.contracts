@@ -223,7 +223,7 @@ namespace events {
      * \brief The structure represents a mosaic destruction event. The mosaic is destroyed after destruction of the last gem belonging to this mosaic.
      * \ingroup gallery_events
      */
-    struct [[using eosio: event("mosaicchop"), GALLERY_LIBRARY]] mosaic_chop {
+    struct [[using eosio: event("mosaicchop"), GALLERY_LIBRARY]] mosaic_chop_event {
         symbol_code commun_code; //!< Point symbol
         uint64_t tracery; //!< Tracery that breaks down
     };
@@ -232,7 +232,7 @@ namespace events {
      * \brief The structure represents a mosaic state change event. Such event is sent when a mosaic state changes.
      * \ingroup gallery_events
      */
-    struct [[using eosio: event("mosaicstate"), GALLERY_LIBRARY]] mosaic_state {
+    struct [[using eosio: event("mosaicstate"), GALLERY_LIBRARY]] mosaic_state_event {
         uint64_t tracery; //!< Mosaic tracery
         name creator; //!< Mosaic creator
         time_point collection_end_date; //!< End date of collecting user opinions
@@ -247,7 +247,7 @@ namespace events {
      * \brief The structure represents a gem state change event. Gem for a mosaic is automatically created when an author creates the mosaic. A state of the gem changes when a user votes.
      * \ingroup gallery_events
      */
-    struct [[using eosio: event("gemstate"), GALLERY_LIBRARY]] gem_state {
+    struct [[using eosio: event("gemstate"), GALLERY_LIBRARY]] gem_state_event {
         uint64_t tracery; //!< Mosaic tracery
         name owner; //!< Mosaic owner
         name creator;
@@ -261,7 +261,7 @@ namespace events {
      * \brief The structure represents a gem destruction event. Mosaic breaks down after rewarding it, when users can take back their points.
      * \ingroup gallery_events
      */
-    struct [[using eosio: event("gemchop"), GALLERY_LIBRARY]] gem_chop {
+    struct [[using eosio: event("gemchop"), GALLERY_LIBRARY]] gem_chop_event {
         uint64_t tracery; //!< Mosaic tracery
         name owner; //!< Mosaic owner
         name creator;
@@ -273,7 +273,7 @@ namespace events {
      * \brief The structure represents the event about the selected best mosaics to be rewarded. The number of selected mosaics is determined by the \a rewarded_mosaic_num parameter in the \a c.list contract and defaults to 10.
      * \ingroup gallery_events
      */
-    struct [[using eosio: event("mosaictop"), GALLERY_LIBRARY]] mosaic_top {
+    struct [[using eosio: event("mosaictop"), GALLERY_LIBRARY]] mosaic_top_event {
         symbol_code commun_code; //!< Point symbol
         uint64_t tracery; //!< Mosaic tracery
         uint16_t place; //!< Place where the mosaic is located
@@ -285,7 +285,7 @@ namespace events {
      * \brief The structure represents an event about the current number of «frozen» user points.
      * \ingroup gallery_events
      */
-    struct [[using eosio: event("inclstate"), GALLERY_LIBRARY]] inclusion_state {
+    struct [[using eosio: event("inclstate"), GALLERY_LIBRARY]] inclusion_state_event {
         name account; //!< User account that changed the current number of «frozen» points. The event occurred due to this account action.
         asset quantity; //!< Current number of «frozen» points belonging to the account
     };
@@ -296,7 +296,7 @@ namespace events {
 template<typename T>
 class gallery_base {
     void send_mosaic_event(name _self, symbol commun_symbol, const gallery_types::mosaic_struct& mosaic) {
-        gallery_types::events::mosaic_state data {
+        gallery_types::events::mosaic_state_event data {
             .tracery = mosaic.tracery,
             .creator = mosaic.creator,
             .collection_end_date = mosaic.collection_end_date,
@@ -310,7 +310,7 @@ class gallery_base {
     }
     
     void send_mosaic_chop_event(name _self, symbol_code commun_code, uint64_t tracery) {
-        gallery_types::events::mosaic_chop data {
+        gallery_types::events::mosaic_chop_event data {
             .commun_code = commun_code,
             .tracery = tracery
         };
@@ -318,7 +318,7 @@ class gallery_base {
     }
     
     void send_gem_event(name _self, symbol commun_symbol, const gallery_types::gem_struct& gem) {
-        gallery_types::events::gem_state data {
+        gallery_types::events::gem_state_event data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
@@ -331,7 +331,7 @@ class gallery_base {
     }
     
     void send_chop_event(name _self, const gallery_types::gem_struct& gem, asset reward, asset unfrozen) {
-        gallery_types::events::gem_chop data {
+        gallery_types::events::gem_chop_event data {
             .tracery = gem.tracery,
             .owner = gem.owner,
             .creator = gem.creator,
@@ -342,7 +342,7 @@ class gallery_base {
     }
     
     void send_top_event(name _self, symbol_code commun_code, const gallery_types::mosaic_struct& mosaic, uint16_t place) {
-        gallery_types::events::mosaic_top data {
+        gallery_types::events::mosaic_top_event data {
             .commun_code = commun_code,
             .tracery = mosaic.tracery,
             .place = place,
@@ -353,7 +353,7 @@ class gallery_base {
     }
     
     void send_inclusion_event(name _self, name account, asset quantity) {
-        gallery_types::events::inclusion_state data {
+        gallery_types::events::inclusion_state_event data {
             .account = account,
             .quantity = quantity
         };

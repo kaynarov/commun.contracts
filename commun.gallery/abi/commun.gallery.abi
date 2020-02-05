@@ -3,7 +3,7 @@
     "types": [
         {
             "new_type_name": "providers_t",
-            "type"         : "name_int_pair[]"
+            "type"         : "pair_name_int64[]"
         }
     ],
     "structs": [
@@ -77,26 +77,26 @@
                 { "type": "uint64[]",       "name": "favorites" }
             ]
         },{
-            "name": "name_int_pair",
+            "name": "pair_name_int64",
             "base": "",
             "fields": [
                 { "type": "name",           "name": "first" },
                 { "type": "int64",          "name": "second"  }
             ]
         },{
-            "name": "init_args",
+            "name": "init",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" }
             ]
         },{
-            "name": "emit_args",
+            "name": "emit",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" }
             ]
         },{
-            "name": "createmosaic_args",
+            "name": "createmosaic",
             "base": "",
             "fields": [
                 { "type": "name",                   "name": "creator" },
@@ -107,7 +107,7 @@
                 { "type": "providers_t",            "name": "providers" }
             ]
         },{
-            "name": "addtomosaic_args",
+            "name": "addtomosaic",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
@@ -117,52 +117,47 @@
                 { "type": "providers_t",            "name": "providers" }
             ]
         },{
-            "name": "modifygem_args",
+            "name": "claim",
             "base": "",
             "fields": [
                 { "type": "uint64",                 "name": "tracery" },
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "name",                   "name": "gem_owner" },
-                { "type": "name?",                  "name": "gem_creator" }
-            ]
-        },{
-            "name": "claim_args",
-            "base": "modifygem_args",
-            "fields": [
+                { "type": "name?",                  "name": "gem_creator" },
                 { "type": "bool?",                  "name": "eager" }
             ]
         },{
-            "name": "transfer_args",
-            "base": "modifygem_args",
-            "fields": [
-                { "type": "name",                   "name": "recipient"  }
-            ]
-        },{
-            "name": "provide_args",
-            "base": "",
-            "fields": [
-                { "type": "name",                   "name": "grantor" },
-                { "type": "name",                   "name": "recipient" },
-                { "type": "asset",                  "name": "quantity" },
-                { "type": "uint16?",                "name": "fee" }
-            ]
-        },{
-            "name": "advise_args",
-            "base": "",
-            "fields": [
-                { "type": "symbol_code",            "name": "commun_code" },
-                { "type": "name",                   "name": "leader" },
-                { "type": "uint64[]",               "name": "favorites" }
-            ]
-        },{
-            "name": "update_args",
+            "name": "update",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
                 { "type": "uint64",                 "name": "tracery" }
             ]
         },{
-            "name": "lock_args",
+            "name": "ban",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "uint64",                 "name": "tracery" }
+            ]
+        },{
+            "name": "hide",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "uint64",                 "name": "tracery" }
+            ]
+        },{
+            "name": "lock",
+            "base": "",
+            "fields": [
+                { "type": "symbol_code",            "name": "commun_code" },
+                { "type": "name",                   "name": "leader" },
+                { "type": "uint64",                 "name": "tracery" },
+                { "type": "string",                 "name": "reason" }
+            ]
+        },{
+            "name": "unlock",
             "base": "",
             "fields": [
                 { "type": "symbol_code",            "name": "commun_code" },
@@ -231,7 +226,6 @@
             ]
         }
     ],
-    "types": [],
     "events": [
         { "name": "mosaicstate", "type": "mosaic_state_event" },
         { "name": "mosaicchop",  "type": "mosaic_chop_event" },
@@ -243,43 +237,43 @@
     "actions": [
         {
             "name": "init",
-            "type": "init_args"
+            "type": "init"
         },
         {
             "name": "emit",
-            "type": "emit_args"
+            "type": "emit"
         },
         {
             "name": "createmosaic",
-            "type": "createmosaic_args"
+            "type": "createmosaic"
         },
         {
             "name": "addtomosaic",
-            "type": "addtomosaic_args"
+            "type": "addtomosaic"
         },
         {
             "name": "claim",
-            "type": "claim_args"
+            "type": "claim"
         },
         {
             "name": "update",
-            "type": "update_args"
+            "type": "update"
         },
         {
             "name": "lock",
-            "type": "lock_args"
+            "type": "lock"
         },
         {
             "name": "unlock",
-            "type": "lock_args"
+            "type": "unlock"
         },
         {
             "name": "ban",
-            "type": "update_args"
+            "type": "ban"
         },
         {
             "name": "hide",
-            "type": "update_args"
+            "type": "hide"
         }
     ],
     "tables": [
