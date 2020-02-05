@@ -12,7 +12,11 @@ using std::optional;
  * \brief This class implements the \a c.recover contract functionality.
  * \ingroup recover_class
  */
-class [[eosio::contract("commun.recover")]] commun_recover: public contract {
+class
+/// @cond
+[[eosio::contract("commun.recover")]]
+/// @endcond
+commun_recover: public contract {
 public:
     using contract::contract;
 

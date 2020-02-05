@@ -10,7 +10,11 @@ using namespace eosio;
  * \brief This class implements the operation logic of the \a c.emit contract.
  * \ingroup emission_class
  */
-class [[eosio::contract("commun.emit")]] emit: public contract {
+class
+/// @cond
+[[eosio::contract("commun.emit")]]
+/// @endcond
+emit: public contract {
 struct structures {
     /**
      * \brief The structure represents the record form in the DB statistical table and contains information about a reward recipient.

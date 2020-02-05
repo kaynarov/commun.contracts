@@ -10,7 +10,11 @@ using namespace eosio;
  * \brief This class implements \a c.gallery contract behaviour
  * \ingroup gallery_class
  */
-class [[eosio::contract("commun.publication")]] publication : public gallery_base<publication>, public contract {
+class
+/// @cond
+[[eosio::contract("commun.publication")]]
+/// @endcond
+publication : public gallery_base<publication>, public contract {
 
 public:
     using contract::contract;

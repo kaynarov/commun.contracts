@@ -1168,7 +1168,11 @@ protected:
     }
 };
 
-class [[eosio::contract("commun.gallery")]] gallery : public gallery_base<gallery>, public contract {
+class
+/// @cond
+[[eosio::contract("commun.gallery")]]
+/// @endcond
+gallery : public gallery_base<gallery>, public contract {
 public:
     using contract::contract;
     static void deactivate(name self, symbol_code commun_code, const gallery_types::mosaic_struct& mosaic) {};

@@ -122,7 +122,11 @@ using invalidations [[using eosio: order("account","asc"), contract("commun.ctrl
  * \brief This class implements the \a c.ctrl contract functionality.
  * \ingroup control_class
  */
-class [[eosio::contract("commun.ctrl")]] control: public contract {
+class
+/// @cond
+[[eosio::contract("commun.ctrl")]]
+/// @endcond
+control: public contract {
     // DOCS_TABLE: stat_struct
     struct stat_struct {
         uint64_t id;

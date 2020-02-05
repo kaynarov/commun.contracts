@@ -27,7 +27,11 @@ using share_type = int64_t;
  * \brief This class implements the \a c.point contract functionality.
  * \ingroup point_class
  */
-class [[eosio::contract("commun.point")]] point : public contract {
+class
+/// @cond
+[[eosio::contract("commun.point")]]
+/// @endcond
+point : public contract {
 public:
     using contract::contract;
 
