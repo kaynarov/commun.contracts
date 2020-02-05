@@ -2,6 +2,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/system.hpp>
 #include "config.hpp"
+#include <commun/dispatchers.hpp>
 namespace commun {
 
 using namespace eosio;

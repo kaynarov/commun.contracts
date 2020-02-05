@@ -1,6 +1,7 @@
 #pragma once
 #include <commun/upsert.hpp>
 #include <commun/config.hpp>
+#include <commun/dispatchers.hpp>
 
 #include <eosio/time.hpp>
 //#include <eosiolib/eosio.hpp>
@@ -310,7 +311,7 @@ public:
             - the \a c.point contract account .
     */
     [[eosio::action]] void changepoints(name who, asset diff);
-    void on_points_transfer(name from, name to, asset quantity, std::string memo);
+    ON_TRANSFER(COMMUN_POINT) void on_points_transfer(name from, name to, asset quantity, std::string memo);
 
     /**
         \brief The \ref propose action is used to create a multi-signature transaction offer (proposed transaction) requiring permission from leaders.

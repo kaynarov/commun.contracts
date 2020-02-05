@@ -2,7 +2,6 @@
 #include <eosio/event.hpp>
 #include <commun.publication/objects.hpp>
 #include <commun.list/commun.list.hpp>
-#include <commun/dispatchers.hpp>
 
 namespace commun {
 
@@ -385,9 +384,3 @@ void publication::ban(symbol_code commun_code, mssgid message_id) {
 }
 
 } // commun
-
-DISPATCH_WITH_TRANSFER(commun::publication, commun::config::point_name, ontransfer,
-    (init)(emit)(create)(update)(settags)(remove)(report)(lock)(unlock)(upvote)(downvote)(unvote)
-    (claim)(reblog)(erasereblog)
-    // (hold)(transfer)(setproviders)(provide)(advise) // TODO: removed from MVP
-    (ban))
