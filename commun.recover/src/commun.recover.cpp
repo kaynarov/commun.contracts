@@ -101,5 +101,3 @@ void commun_recover::cancelowner(name account) {
     eosio::check(owner_request.exists(), "Request for change owner key doesn't exists");
     owner_request.remove();
 }
-
-EOSIO_DISPATCH(commun::commun_recover, (setparams)(recover)(applyowner)(cancelowner))

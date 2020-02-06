@@ -1,5 +1,6 @@
 #pragma once
 #include "objects.hpp"
+#include <commun/dispatchers.hpp>
 
 namespace commun {
 

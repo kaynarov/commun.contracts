@@ -213,5 +213,3 @@ void commun_list::unban(symbol_code commun_code, name account, std::string reaso
     eosio::check(!reason.empty(), "Reason cannot be empty.");
     check_community_exists(commun_code);
 }
-
-EOSIO_DISPATCH(commun::commun_list, (create)(setappparams)(setsysparams)(setparams)(setinfo)(follow)(unfollow)(hide)(unhide)(ban)(unban))

@@ -599,8 +599,3 @@ void point::globallock(name owner, uint32_t period) {
 }
 
 } /// namespace commun
-
-DISPATCH_WITH_TRANSFER(commun::point, commun::config::token_name, on_reserve_transfer,
-    (create)(setparams)(setfreezer)(issue)(transfer)(withdraw)(open)(close)(retire)
-    (enablesafe)(disablesafe)(unlocksafe)(locksafe)(modifysafe)(applysafemod)(cancelsafemod)(globallock)
-)

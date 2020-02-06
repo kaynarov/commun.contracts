@@ -77,5 +77,3 @@ void emit::issuereward(symbol_code commun_code, name to_contract) {
 }
 
 } // commun
-
-EOSIO_DISPATCH(commun::emit, (init)(issuereward))

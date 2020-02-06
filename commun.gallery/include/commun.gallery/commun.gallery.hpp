@@ -11,6 +11,7 @@
 #include <string>
 #include <cmath>
 #include <eosio/system.hpp>
+#include <commun/dispatchers.hpp>
 #include <commun/util.hpp>
 #include <commun.ctrl/commun.ctrl.hpp>
 #include <commun.point/commun.point.hpp>
@@ -1250,13 +1251,9 @@ public:
         hide_mosaic(_self, commun_code, tracery);
     }
 
-    void ontransfer(name from, name to, asset quantity, std::string memo) {
+    ON_TRANSFER(COMMUN_POINT) void ontransfer(name from, name to, asset quantity, std::string memo) {
         on_points_transfer(_self, from, to, quantity, memo);
     }      
 };
     
 } /// namespace commun
-
-// TODO: removed from MVP
-// #define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(hold)(transfer)(claim)(provide)(advise)(update)(lock)(unlock)(ban)(hide)
-#define GALLERY_ACTIONS (init)(emit)(createmosaic)(addtomosaic)(claim)(update)(lock)(unlock)(ban)(hide)

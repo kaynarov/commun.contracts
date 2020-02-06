@@ -44,5 +44,3 @@ void commun_social::deletemeta(name account) {
     require_auth(account);
     require_auth(_self); // functionality of a client
 }
-
-EOSIO_DISPATCH(commun::commun_social, (pin)(unpin)(block)(unblock)(updatemeta)(deletemeta))

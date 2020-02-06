@@ -1,6 +1,7 @@
 #pragma once
 #include <commun.publication/objects.hpp>
 #include <eosio/transaction.hpp>
+#include <commun/dispatchers.hpp>
 
 namespace commun {
 
@@ -337,7 +338,7 @@ public:
     */
     [[eosio::action]] void ban(symbol_code commun_code, mssgid message_id);
 
-    void ontransfer(name from, name to, asset quantity, std::string memo) {
+    ON_TRANSFER(COMMUN_POINT) void ontransfer(name from, name to, asset quantity, std::string memo) {
         on_points_transfer(_self, from, to, quantity, memo);
     }
 

@@ -13,6 +13,7 @@
 #include <string>
 #include <cmath>
 #include <commun/bancor.hpp>
+#include <commun/dispatchers.hpp>
 #include <commun/util.hpp>
 #include "commun.point/asset_from_string.hpp"
 
@@ -182,6 +183,7 @@ public:
     [[eosio::action]]
     void close(name owner, symbol_code commun_code);
 
+    ON_TRANSFER(CYBER_TOKEN)
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
 
     /**

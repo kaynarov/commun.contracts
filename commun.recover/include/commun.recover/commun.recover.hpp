@@ -2,6 +2,7 @@
 #include "objects.hpp"
 
 #include <eosio/crypto.hpp>
+#include <commun/dispatchers.hpp>
 
 namespace commun {
 
