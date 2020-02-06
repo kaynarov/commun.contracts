@@ -247,11 +247,17 @@ class CommunLeaderTests(TestCase):
                 providebw='c.ctrl/c@providebw', jsonPrinter=self.jsonPrinter)
 
 
-class CommunityLeaderTests(unittest.TestCase):
+class CommunityLeaderTests(TestCase):
     @classmethod
     def setUpClass(self):
+      super().setUpClass()
+      with log_action('Initialize CommunityLeaderTests'):
         point = community.getUnusedPointSymbol()
-        owner = community.createCommunity(
+        owner = testnet.getRandomAccount()
+        self.accounts[owner] = 'Owner'
+
+        community.createCommunity(
+            owner_account = owner,
             community_name = point,
             creator_auth = client,
             creator_key = clientKey,
@@ -261,10 +267,12 @@ class CommunityLeaderTests(unittest.TestCase):
         (voter, voterPrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=point, buyPointsOn='%.4f CMN'%(random.randint(100, 20000)/10000))
+        self.accounts[voter] = 'Voter'
 
         (appLeader, appLeaderPrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community='', leaderUrl=testnet.randomText(16))
+        self.accounts[appLeader] = 'AppLeader'
 
         leaders = {}
         for i in range(3):
@@ -272,6 +280,7 @@ class CommunityLeaderTests(unittest.TestCase):
                     creator='tech', creatorKey=techKey, clientKey=clientKey,
                     community=point, leaderUrl=testnet.randomText(16))
             leaders[leader] = leaderPrivate
+            self.accounts[leader] = 'ComLeader-'+str(i)
 
         for leader in leaders.keys():
             community.voteLeader(commun_code=point, voter=voter, leader=leader, pct = 1000,
@@ -289,21 +298,20 @@ class CommunityLeaderTests(unittest.TestCase):
         self.minor_approvers = approvers[:int(leadersCount*1/3+1)]
 
     def test_setParams(self):
+      with log_action("test_setParams: community leaders can set params using 'c.list:setparams'"):
         trx = testnet.Trx()
         trx.addAction('c.list', 'setparams', self.owner+'@active', {
                 'commun_code': self.point,
                 'author_percent': 5000
             })
-        print(json.dumps(trx.getTrx(), indent=3))
 
         community.createAndExecProposal(
-                commun_code=self.point,
-                permission='lead.smajor',
-                trx=trx,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey)
+                commun_code=self.point, permission='lead.smajor',
+                trx=trx, leaders=self.smajor_approvers,
+                clientKey=clientKey, jsonPrinter=self.jsonPrinter)
 
     def test_setInfo(self):
+      with log_action("test_setInfo: community leaders can set info using 'c.list:setinfo'"):
         trx = testnet.Trx()
         trx.addAction('c.list', 'setinfo', self.owner+'@active', {
                 'commun_code': self.point,
@@ -313,26 +321,26 @@ class CommunityLeaderTests(unittest.TestCase):
                 'avatar_image': 'http://community/avatar.img',
                 'cover_image': 'http://community/cover.img'
             })
-        print(json.dumps(trx.getTrx(), indent=3))
 
         community.createAndExecProposal(
-                commun_code=self.point,
-                permission='lead.smajor',
-                trx=trx,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey)
+                commun_code=self.point, permission='lead.smajor',
+                trx=trx, leaders=self.smajor_approvers,
+                clientKey=clientKey, jsonPrinter=self.jsonPrinter)
 
     def test_banPostUsingMinorAuthority(self):
+      with log_action("test_banPostUsingMinorAuthority: community leaders can ban post using '<Owner>@lead.minor' authority"):
         (private, public) = testnet.createKey()
         author = testnet.createRandomAccount(public, keys=techKey)
         community.openBalance(author, self.point, 'tech', keys=techKey)
         community.buyCommunityPoints(author, '10.0000 CMN', self.point, private, clientKey)
+        self.accounts[author] = 'Author'
 
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
         body = testnet.randomText(1024)
         community.createPost(self.point, author, permlink, 'cats', header, body,
-                providebw=[author+'/c@providebw','c.gallery/c@providebw'], client='c.gallery@clients', keys=[private, clientKey])
+                providebw=[author+'/c@providebw','c.gallery/c@providebw'],
+                client='c.gallery@clients', keys=[private, clientKey], output=True)
 
         trx = testnet.Trx()
         trx.addAction('c.gallery', 'ban', self.owner+'@lead.minor', {
@@ -340,17 +348,17 @@ class CommunityLeaderTests(unittest.TestCase):
                 'message_id': {'author': author, 'permlink': permlink}})
 
         community.createAndExecProposal(
-                commun_code=self.point,
-                permission='lead.minor',
-                trx=trx,
-                leaders=self.minor_approvers,
-                clientKey=clientKey)
+                commun_code=self.point, permission='lead.minor',
+                trx=trx, leaders=self.minor_approvers,
+                clientKey=clientKey, jsonPrinter=self.jsonPrinter)
 
 
     def test_banUserUsingMinorAuthority(self):
+      with log_action("test_banUserUsingMinorAuthority: community leaders can ban user using '<Owner>@lead.minor' authority"):
         (user, userPrivate) = community.createCommunityUser(
                 creator='tech', creatorKey=techKey, clientKey=clientKey,
                 community=self.point)
+        self.accounts[user] = 'User'
 
         # the leader cannot individually block the user
         with self.assertRaisesRegex(Exception, 'Missing required authority'):
@@ -358,7 +366,7 @@ class CommunityLeaderTests(unittest.TestCase):
             print('leader:', leader)
             testnet.pushAction('c.list', 'ban', leader, 
                     {'commun_code': self.point, 'account': user, 'reason': 'Spammer'},
-                    providebw=leader+'/tech', keys=[leaderKey, techKey])
+                    providebw=leader+'/tech', keys=[leaderKey, techKey], output=True)
 
         # ...but leaders can block the user using `lead.minor` consensus
         trx = testnet.Trx()
@@ -366,28 +374,23 @@ class CommunityLeaderTests(unittest.TestCase):
                 {'commun_code': self.point, 'account': user, 'reason': 'Bad user'})
 
         community.createAndExecProposal(
-                commun_code=self.point,
-                permission='lead.minor',
-                trx=trx,
-                leaders=self.minor_approvers,
-                clientKey=clientKey)
+                commun_code=self.point, permission='lead.minor',
+                trx=trx, leaders=self.minor_approvers,
+                clientKey=clientKey, jsonPrinter=self.jsonPrinter)
 
 
     def test_voteAppLeader(self):
+      with log_action("test_voteAppLeader: community leaders can vote/unvote for app leader"):
         trx = testnet.Trx()
         trx.addAction('c.ctrl', 'voteleader', self.owner+'@active', {
                 'commun_code': '',
                 'voter': self.owner,
                 'leader': self.appLeader
             })
-        print(json.dumps(trx.getTrx(), indent=3))
         community.createAndExecProposal(
-                commun_code=self.point,
-                permission='lead.smajor',
-                trx=trx,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey,
-                providebw=self.owner+'/c@providebw')
+                commun_code=self.point, permission='lead.smajor',
+                trx=trx, leaders=self.smajor_approvers, clientKey=clientKey,
+                providebw=self.owner+'/c@providebw', jsonPrinter=self.jsonPrinter)
 
         trx = testnet.Trx()
         trx.addAction('c.ctrl', 'unvotelead', self.owner+'@active', {
@@ -395,14 +398,10 @@ class CommunityLeaderTests(unittest.TestCase):
                 'voter': self.owner,
                 'leader': self.appLeader
             })
-        print(json.dumps(trx.getTrx(), indent=3))
         community.createAndExecProposal(
-                commun_code=self.point,
-                permission='lead.smajor',
-                trx=trx,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey,
-                providebw=self.owner+'/c@providebw')
+                commun_code=self.point, permission='lead.smajor',
+                trx=trx, leaders=self.smajor_approvers, clientKey=clientKey,
+                providebw=self.owner+'/c@providebw', jsonPrinter=self.jsonPrinter)
 
 
 
@@ -1495,8 +1494,5 @@ class RecoverTestCase(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "Request for change owner key doesn't exists"):
             community.applyOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
 
-import sys
-import utils
 if __name__ == '__main__':
-    sys.stdout = utils.PrefixWriter(sys.stdout)
     unittest.main()

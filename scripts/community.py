@@ -2,6 +2,7 @@ from testnet import *
 from utils import log_action
 from jsonprinter import Items
 import testcase
+from copy import deepcopy
 
 
 def issueCommunToken(owner, quantity, clientKey):
@@ -145,7 +146,11 @@ def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, p
       if jsonPrinter:
         requestedAuth = [parseAuthority(lead[0]) for lead in leaders]
         print("Requested authority:", jsonPrinter.format(Items(atnewline=True), requestedAuth))
-        print("Trx:", jsonPrinter.format(testcase.gTrxItems, trx.getTrx()))
+
+        t = deepcopy(trx.getTrx())
+        for action in t['actions']:
+            action['args'] = unpackActionData(action['account'], action['name'], action['data'])
+        print("Trx:", jsonPrinter.format(testcase.gTrxItems, t))
 
       pushAction('c.ctrl', 'propose', proposer, {
             'commun_code': commun_code,

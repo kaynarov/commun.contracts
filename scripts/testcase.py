@@ -1,6 +1,8 @@
 import unittest
 import eehelper as ee
 import testnet
+import sys
+import utils
 
 import json
 from copy import deepcopy, copy
@@ -85,12 +87,15 @@ gTrxItems = initTrxItems()
 class TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.savedStdOut = sys.stdout
+        sys.stdout = utils.PrefixWriter(sys.stdout)
         TestCase.initialAccounts = None
         cls.accounts = {}
         pass
 
     @classmethod
     def tearDownClass(cls):
+        sys.stdout = cls.savedStdOut
         pass
 
     class AccountReplacer:
