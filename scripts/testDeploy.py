@@ -86,9 +86,11 @@ class DeployTests(TestCase):
             testnet.createRandomAccount(public, keys=techKey, output=True)
 
 appLeadersCount = 5
-class CommunLeaderTests(unittest.TestCase):
+class CommunLeaderTests(TestCase):
     @classmethod
     def setUpClass(self):
+      super().setUpClass()
+      with log_action('Initialize CommunLeaderTests'):
         leaderDb = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"]
         leadCursor = leaderDb.find_one({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)])
         min_quantity = 10*leadCursor["total_weight"].to_decimal() if leadCursor else 0
@@ -98,6 +100,7 @@ class CommunLeaderTests(unittest.TestCase):
         voter = testnet.createRandomAccount(voterPublic, keys=techKey)
         community.openBalance(voter, '', 'tech', keys=techKey)
         community.buyCommunityPoints(voter, quantity, '', voterPrivate, clientKey)
+        self.accounts[voter] = 'Voter'
 
         leaders = {}
         for i in range(appLeadersCount):
@@ -109,6 +112,7 @@ class CommunLeaderTests(unittest.TestCase):
             community.voteLeader(commun_code='', voter=voter, leader=leader, pct=1000,
                     providebw=voter+'/tech', keys=[voterPrivate,techKey])
             leaders[leader] = private
+            self.accounts[leader] = 'Leader-'+str(i)
 
         self.leaders = leaders
         approvers = [ (k,v) for k,v in self.leaders.items() ]
@@ -116,10 +120,13 @@ class CommunLeaderTests(unittest.TestCase):
         self.major_approvers = approvers[:int(appLeadersCount*1/2+1)]
         self.minor_approvers = approvers[:int(appLeadersCount*1/3+1)]
 
+    def getTopLeaders(self, count):
+        leaderDb = testnet.mongoClient['_CYBERWAY_c_ctrl']['leader']
+        leadCursor = leaderDb.find({'_SERVICE_.scope':''}, sort=[('total_weight',pymongo.DESCENDING)]).limit(count)
+        return [leader for leader in leadCursor]
+
     def printTopLeaders(self):
-        leaderDb = testnet.mongoClient["_CYBERWAY_c_ctrl"]["leader"]
-        leadCursor = leaderDb.find({"_SERVICE_.scope":""}, sort=[("total_weight",pymongo.DESCENDING)]).limit(appLeadersCount+1)
-        for leader in leadCursor:
+        for leader in self.getTopLeaders(appLeadersCount+1):
             print("{leader} {weight}".format(leader=leader['name'], weight=leader['total_weight']))
 
     def test_canUseActiveAuthority(self):
@@ -130,20 +137,18 @@ class CommunLeaderTests(unittest.TestCase):
                 'memo': ''
             })
 
-        with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
+        with log_action("minor approvers can't use 'c.issuer@active' authority"):
+          with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
             community.createAndExecProposal(
-                    commun_code='',
-                    permission='lead.smajor',
-                    trx=trx,
-                    leaders=self.minor_approvers,
-                    clientKey=clientKey)
+                    commun_code='', permission='lead.smajor',
+                    trx=trx, leaders=self.minor_approvers, clientKey=clientKey,
+                    jsonPrinter=self.jsonPrinter)
 
-        community.createAndExecProposal(
-                commun_code='',
-                permission='lead.smajor',
-                trx=trx,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey)
+        with log_action("smajor approvers can use 'c.issuer@active' authority"):
+          community.createAndExecProposal(
+                commun_code='', permission='lead.smajor',
+                trx=trx, leaders=self.smajor_approvers, clientKey=clientKey,
+                jsonPrinter=self.jsonPrinter)
 
     def test_canIssueCommunityPoints(self):
         issuer = community.getPointParam('CATS')['issuer']
@@ -160,61 +165,87 @@ class CommunLeaderTests(unittest.TestCase):
                 'memo': 'transfer by app leaders'
             })
 
-        community.createAndExecProposal(
-                commun_code='',
-                permission='lead.smajor',
-                trx=trx,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey,
-                providebw=issuer+'/c@providebw')
+        with log_action("Community leaders can issue points any community"):
+          community.createAndExecProposal(
+                commun_code='', permission='lead.smajor',
+                trx=trx, leaders=self.smajor_approvers, clientKey=clientKey,
+                providebw=issuer+'/c@providebw', jsonPrinter=self.jsonPrinter)
 
     def test_setRecover(self):
+      with log_action('test_setRecover'):
+        leaders = [l['name'] for l in self.getTopLeaders(appLeadersCount)]
+        print('Commun leaders:', self.jsonPrinter.format(Items(color=21), leaders))
+
+        actorItems = Items().add('actor',color=21).add('permission')
+        permissionItems = Items().add('permission', items=actorItems).add('weight')
+        authItems = Items().line() \
+                .add('threshold').line() \
+                .add('keys').line() \
+                .add('accounts', items=Items(items=permissionItems,atnewline=True)).line() \
+                .add('waits').line()
+        authorityItems = Items().line() \
+                .add('perm_name', 'parent').line() \
+                .add('required_auth', items=authItems).line()
+
+        with log_action('c@lead.recover authority'):
+            print(self.jsonPrinter.format(authorityItems, testnet.getAccount('c')['permissions']['lead.recover']))
+
+        with log_action('Set recover authority by execute c.ctrl:setrecover'):
+            trx = testnet.Trx()
+            trx.addAction('c.ctrl', 'setrecover', 'c.ctrl', {})
+            community.createAndExecProposal(
+                   commun_code='', permission='lead.smajor',
+                   trx=trx, leaders=self.smajor_approvers, clientKey=clientKey,
+                   providebw='c.ctrl/c@providebw', jsonPrinter=self.jsonPrinter)
+
+        with log_action('c@lead.recover authority'):
+            print(self.jsonPrinter.format(authorityItems, testnet.getAccount('c')['permissions']['lead.recover']))
+
+    def test_setRecover2(self):
+      with log_action("test_setRecover2"):
         # trx which is imitating setcode (requires c.ctrl@active too)
         trx = testnet.Trx()
         trx.addAction('c.ctrl', 'setrecover', 'c.ctrl', {})
 
-        requestedPermissions = []
-        for (approver, approverKey) in self.smajor_approvers:
-            requestedPermissions.append({'actor': approver, 'permission': 'active'})
+
         (proposer, proposerKey) = self.smajor_approvers[0]
+        requestedPermissions = [{'actor':k,'permission':'active'} for (k,v) in self.smajor_approvers]
 
-        # trying setcode using cyber.msig without setrecover
-        with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
-            testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
+        with log_action("trying setcode using cyber.msig without setrecover"):
+            with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
+                testnet.msigPropose(proposer, 'recovery', requestedPermissions[:-1], trx, providebw=proposer+'/c@providebw',
+                        keys=[proposerKey, clientKey], output=True)
 
-        # setrecover adds leaders to lead.recover authority
-        trx_setRecover = testnet.Trx()
-        trx_setRecover.addAction('c.ctrl', 'setrecover', 'c.ctrl', {})
-        community.createAndExecProposal(
-                commun_code='',
-                permission='lead.smajor',
-                trx=trx_setRecover,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey,
-                providebw='c.ctrl/c@providebw')
+        with log_action("setrecover adds leaders to lead.recover authority"):
+            trx_setRecover = testnet.Trx()
+            trx_setRecover.addAction('c.ctrl', 'setrecover', 'c.ctrl', {})
+            community.createAndExecProposal(
+                    commun_code='', permission='lead.smajor',
+                    trx=trx_setRecover, leaders=self.smajor_approvers, clientKey=clientKey,
+                    providebw='c.ctrl/c@providebw', jsonPrinter=self.jsonPrinter)
 
-        # trying setcode again
-        testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
+        with log_action("trying setcode again"):
+            testnet.msigPropose(proposer, 'recovery', requestedPermissions, trx,
+                    providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey],
+                    output=True)
 
-        # trying setcode with not enough approvers
-        for (approver, approverKey) in self.smajor_approvers[:-1]:
-            testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey])
-        with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
-            testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
+        with log_action("trying setcode with not enough approvers"):
+            for (approver, approverKey) in self.smajor_approvers[:-1]:
+                testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey], output=True)
+            with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
+                testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey], output=True)
 
-        # trying setcode with enough approvers
-        (approver, approverKey) = self.smajor_approvers[-1]
-        testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey])
-        testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
+        with log_action("trying setcode with enough approvers"):
+            (approver, approverKey) = self.smajor_approvers[-1]
+            testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey], output=True)
+            testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey], output=True)
 
-        # checking duplicated setrecover not fails
-        community.createAndExecProposal(
-                commun_code='',
-                permission='lead.smajor',
-                trx=trx_setRecover,
-                leaders=self.smajor_approvers,
-                clientKey=clientKey,
-                providebw='c.ctrl/c@providebw')
+        with log_action("checking duplicated setrecover not fails"):
+          community.createAndExecProposal(
+                commun_code='', permission='lead.smajor',
+                trx=trx_setRecover, leaders=self.smajor_approvers, clientKey=clientKey,
+                providebw='c.ctrl/c@providebw', jsonPrinter=self.jsonPrinter)
+
 
 class CommunityLeaderTests(unittest.TestCase):
     @classmethod
@@ -1464,6 +1495,8 @@ class RecoverTestCase(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "Request for change owner key doesn't exists"):
             community.applyOwner(alice, providebw=alice+'/tech', keys=[aliceKey,techKey])
 
-
+import sys
+import utils
 if __name__ == '__main__':
+    sys.stdout = utils.PrefixWriter(sys.stdout)
     unittest.main()
