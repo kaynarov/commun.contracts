@@ -133,7 +133,7 @@ class EEHelper():
     def __init__(self, tcase, eventFormatter=None):
         self.tcase = tcase
         self.eventFormatter = eventFormatter
-        self.eventsFd = open("events.dump", "r")
+        self.eventsFd = open(os.getenv('EVENTS_FILE',"events.dump"), "r")
         self.resetEvents()
 
     def tearDown(self):

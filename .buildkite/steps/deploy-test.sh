@@ -1,9 +1,29 @@
 #/bin/bash
-
 set -euo pipefail
+set -x
 
-IMAGETAG=${BUILDKITE_BRANCH:-master}
+IMAGETAG=stable
+ALL=
+INTERACTIVE=
+LOCAL=
+
+while getopts t:ailh option; do
+case "${option}" in
+    t) IMAGETAG=${OPTARG};;
+    a) ALL=1;;
+    i) INTERACTIVE=1;;
+    l) LOCAL=1;;
+    *) echo "Usage: $0 [OPTIONS]. Where OPTIONS can be:"
+       echo "    -t <IMAGETAG>  tag for cyberway/commun.contracts docker-image"
+       echo "    -a             run all tests"
+       echo "    -i             interactive mode"
+       echo "    -l             use local 'scripts' directory"
+       exit 1;;
+esac
+done
+
 COMMUN_IMAGE=cyberway/commun.contracts:$IMAGETAG
+echo "Use ${COMMUN_IMAGE} image"
 
 if [[ "${IMAGETAG}" == "master" ]]; then
     BUILDTYPE="stable"
@@ -45,7 +65,18 @@ docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c 
 docker run --rm --network commun-deploy_test-net -ti $COMMUN_IMAGE /bin/bash -c \
     '/opt/commun.contracts/scripts/boot-sequence.py'
 
-docker run --rm --network commun-deploy_test-net -v `readlink -f notifier.log`:/events.dump -ti $COMMUN_IMAGE \
-    /bin/bash -c 'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888 MONGODB=mongodb://mongo:27017; python3 -m unittest discover -v --start-directory /opt/commun.contracts/scripts/'
+EXTRA_ARGS=
+if [[ -n "$LOCAL" ]]; then
+    EXTRA_ARGS+=" -v `readlink -f ../cyberway.contracts/build`:/opt/cyberway.contracts/"
+    EXTRA_ARGS+=" -v `readlink -f ../build`:/opt/commun.contracts/"
+    EXTRA_ARGS+=" -v `readlink -f ../scripts`:/opt/commun.contracts/scripts/"
+fi
+if [[ -n "$ALL" ]]; then
+    cmd='python3 -m unittest discover -v --start-directory /opt/commun.contracts/scripts/'
+else
+    cmd="export INTERACTIVE=${INTERACTIVE} EVENTS_FILE=/events.dump; alias cleos='cleos -u http://nodeosd:8888' cd /opt/commun.contracts/scripts; echo; echo 'For run tests use: ./testDeploy.py <class>/<method>'; /bin/bash"
+fi
+docker run --rm --network commun-deploy_test-net -v `readlink -f notifier.log`:/events.dump $EXTRA_ARGS -ti $COMMUN_IMAGE \
+    /bin/bash -c 'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888 MONGODB=mongodb://mongo:27017; '"$cmd"
 
 exit 0
