@@ -1,4 +1,7 @@
 from testnet import *
+from utils import log_action
+from jsonprinter import Items
+import testcase
 
 
 def issueCommunToken(owner, quantity, clientKey):
@@ -134,11 +137,17 @@ def getPointSafeMod(point, account, modId):
     return mongoClient["_CYBERWAY_c_point"]["safemod"].find_one({"id":modId,"commun_code":point,"_SERVICE_.scope":account})
 
 
-def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, providebw=None, keys=None):
+def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, providebw=None, output=None, jsonPrinter=None):
     (proposer, proposerKey) = leaders[0]
     proposal = randomName()
 
-    pushAction('c.ctrl', 'propose', proposer, {
+    with log_action("Account {} create and execute proposal {}".format(proposer, proposal)):
+      if jsonPrinter:
+        requestedAuth = [parseAuthority(lead[0]) for lead in leaders]
+        print("Requested authority:", jsonPrinter.format(Items(atnewline=True), requestedAuth))
+        print("Trx:", jsonPrinter.format(testcase.gTrxItems, trx.getTrx()))
+
+      pushAction('c.ctrl', 'propose', proposer, {
             'commun_code': commun_code,
             'proposer': proposer,
             'proposal_name': proposal,
@@ -146,24 +155,24 @@ def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, p
             'trx': trx
         }, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
 
-    for (leaderName, leaderKey) in leaders:
+      for (leaderName, leaderKey) in leaders:
         pushAction('c.ctrl', 'approve', leaderName, {
                 'proposer': proposer,
                 'proposal_name': proposal,
                 'approver': leaderName
             }, providebw=leaderName+'/c@providebw', keys=[leaderKey, clientKey])
 
-    providebw = [] if providebw is None else (providebw if type(providebw)==type([]) else [providebw])
-    providebw.append(proposer+'/c@providebw')
+      providebw = [] if providebw is None else (providebw if type(providebw)==type([]) else [providebw])
+      providebw.append(proposer+'/c@providebw')
 
-    pushAction('c.ctrl', 'exec', proposer, {
+      pushAction('c.ctrl', 'exec', proposer, {
             'proposer': proposer,
             'proposal_name': proposal,
             'executer': proposer
         }, providebw=providebw, keys=[proposerKey, clientKey])
 
 
-def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=3333, fee=100, owner_account=None):
+def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=3333, fee=100, owner_account=None, output=False):
     symbol = maximum_supply.symbol
     initial_supply = Asset.fromstr(str(maximum_supply))
     initial_supply.amount //= 1000
@@ -172,106 +181,106 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
     (creator_account, creator_permission) = (c['actor'],c['permission'])
     creator_auth = '{acc}@{perm}'.format(acc=creator_account, perm=creator_permission)
 
-    # 0. Create owner account
-    if owner_account:
+    if owner_account is None: owner_account = getRandomAccount()
+    with log_action("0. Create <Owner> account '{}'".format(owner_account)):
         createAccount(creator_auth, owner_account, 'c@active', creator_auth,
-                providebw=creator_account+'/c@providebw', keys=creator_key)
-    else:
-        owner_account = createRandomAccount('c@active', creator_auth, creator=creator_auth,
-                providebw=creator_account+'/c@providebw', keys=creator_key)
+                providebw=creator_account+'/c@providebw', keys=creator_key, output=output)
 
-    trx = Trx()
-    for auth in ('lead.smajor', 'lead.major', 'lead.minor'):
+        trx = Trx()
+        for auth in ('lead.smajor', 'lead.major', 'lead.minor'):
+            trx.addAction('cyber', 'updateauth', owner_account, {
+                    'account': owner_account,
+                    'permission': auth,
+                    'parent': 'active',
+                    'auth': createAuthority([], ['c.ctrl@cyber.code'])})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.gallery',
+                'type': 'ban',
+                'requirement': 'lead.minor'})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.list',
+                'type': 'ban',
+                'requirement': 'lead.minor'})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.list',
+                'type': 'unban',
+                'requirement': 'lead.minor'})
+    
         trx.addAction('cyber', 'updateauth', owner_account, {
                 'account': owner_account,
-                'permission': auth,
+                'permission': 'transferperm',
                 'parent': 'active',
-                'auth': createAuthority([], ['c.ctrl@cyber.code'])})
+                'auth': createAuthority([], ['c.emit@cyber.code'])})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.point',
+                'type': 'transfer',
+                'requirement': 'transferperm'})
+    
+        trx.addAction('cyber', 'providebw', 'c@providebw', {
+                'provider': 'c',
+                'account': owner_account})
+    
+        pushTrx(trx, keys=[creator_key], output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.gallery',
-            'type': 'ban',
-            'requirement': 'lead.minor'})
+    with log_action('1. Buy some value of CMN tokens (for testing purposes c.issuer@issue)'):
+        trx = Trx()
+        trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {
+            'to':'c.issuer',
+            'quantity':reserve_amount,
+            'memo':"Reserve for {c}".format(c=community_name)
+        })
+        trx.addAction('cyber.token', 'transfer', 'c.issuer@issue', {
+            'from':'c.issuer',
+            'to':owner_account,
+            'quantity':reserve_amount,
+            'memo':"Reserve for {c}".format(c=community_name)
+        })
+        trx.addAction('cyber', 'providebw', 'c@providebw', {
+                'provider': 'c',
+                'account': 'c.issuer'})
+        pushTrx(trx, keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.list',
-            'type': 'ban',
-            'requirement': 'lead.minor'})
+    with log_action('2. Create community points'):
+        pushAction('c.point', 'create', 'c.point@clients', {
+            'issuer': owner_account,
+            'initial_supply': initial_supply,
+            'maximum_supply': maximum_supply,
+            'cw': cw,
+            'fee': fee
+        }, providebw='c.point/c@providebw', keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.list',
-            'type': 'unban',
-            'requirement': 'lead.minor'})
+    with log_action('3. Restock CMN tokens for community points'):
+        transfer(owner_account, 'c.point', reserve_amount, 'restock: {code}'.format(code=symbol.code),
+            providebw=owner_account+'/c@providebw', keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'updateauth', owner_account, {
-            'account': owner_account,
-            'permission': 'transferperm',
-            'parent': 'active',
-            'auth': createAuthority([], ['c.emit@cyber.code'])})
+    with log_action('4. Open point balance for c.gallery & c.ctrl'):
+        trx = Trx()
+        for acc in ('c.gallery', 'c.ctrl'):
+            trx.addAction('c.point', 'open', 'c@providebw', {
+                "owner": acc,
+                "commun_code": symbol.code,
+                "ram_payer": "c"
+            })
+        pushTrx(trx, keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.point',
-            'type': 'transfer',
-            'requirement': 'transferperm'})
+    with log_action('5. Register community (c.list:create)'):
+        pushAction('c.list', 'create', 'c.list@clients', {
+                "commun_code": symbol.code,
+                "community_name": community_name
+            }, providebw=['c.list/c@providebw', 'c.emit/c@providebw', 'c.ctrl/c@providebw', 'c.gallery/c@providebw'],
+            keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'providebw', 'c@providebw', {
-            'provider': 'c',
-            'account': owner_account})
-
-    pushTrx(trx, keys=[creator_key])
-
-    # 1. Buy some value of CMN tokens (for testing purposes c.issuer@issue)
-    trx = Trx()
-    trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {
-        'to':'c.issuer',
-        'quantity':reserve_amount,
-        'memo':"Reserve for {c}".format(c=community_name)
-    })
-    trx.addAction('cyber.token', 'transfer', 'c.issuer@issue', {
-        'from':'c.issuer',
-        'to':owner_account,
-        'quantity':reserve_amount,
-        'memo':"Reserve for {c}".format(c=community_name)
-    })
-    trx.addAction('cyber', 'providebw', 'c@providebw', {
-            'provider': 'c',
-            'account': 'c.issuer'})
-    pushTrx(trx, keys=creator_key)
-
-    # 2. Create community points
-    pushAction('c.point', 'create', 'c.point@clients', {
-        'issuer': owner_account,
-        'initial_supply': initial_supply,
-        'maximum_supply': maximum_supply,
-        'cw': cw,
-        'fee': fee
-    }, providebw='c.point/c@providebw', keys=creator_key)
-
-    # 3. Restock CMN tokens for community points
-    transfer(owner_account, 'c.point', reserve_amount, 'restock: {code}'.format(code=symbol.code),
-        providebw=owner_account+'/c@providebw', keys=creator_key)
-
-    # 4. Open point balance for c.gallery & c.ctrl
-    for acc in ('c.gallery', 'c.ctrl'):
-        pushAction('c.point', 'open', 'c@providebw', {
-            "owner": acc,
-            "commun_code": symbol.code,
-            "ram_payer": "c"
-        }, keys=creator_key)
-
-    # 5. Register community (c.list:create)
-    pushAction('c.list', 'create', 'c.list@clients', {
-        "commun_code": symbol.code,
-        "community_name": community_name
-    }, providebw=['c.list/c@providebw', 'c.emit/c@providebw', 'c.ctrl/c@providebw', 'c.gallery/c@providebw'], keys=creator_key)
-
-    # 6. Pass account to community
-    updateAuth(owner_account, 'active', 'owner', [], [owner_account+'@lead.smajor'],
-            providebw=owner_account+'/c@providebw', keys=creator_key)
+    with log_action('6. Pass account to community'):
+        updateAuth(owner_account, 'active', 'owner', [], [owner_account+'@lead.smajor'],
+                providebw=owner_account+'/c@providebw', keys=creator_key, output=output)
 
     return owner_account
 

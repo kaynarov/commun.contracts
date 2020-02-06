@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from testnet import Asset
 from jsonprinter import Item, Items, JsonPrinter
 from console import Console, ColoredConsole
+from utils import log_action
 
 def from_time_point_sec(s):
     return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.000')
@@ -35,41 +36,54 @@ class DataItems(Items):
         self.add('_id', hide=True)
         self.others(**kwargs)
 
-class DeployTests(unittest.TestCase):
+class DeployTests(TestCase):
 
     def test_createCommunity(self):
         point = community.getUnusedPointSymbol()
-        owner = community.createCommunity(
-            community_name = point,
-            creator_auth = client,
-            creator_key = clientKey,
-            maximum_supply = Asset.fromstr('100000000.000 %s'%point),
-            reserve_amount = Asset.fromstr('1000000.0000 CMN'))
+        owner = testnet.getRandomAccount()
+        self.accounts[owner] = 'Owner'
+
+        with log_action("Create community {} owned by {}".format(point, owner)):
+            community.createCommunity(
+                    owner_account = owner,
+                    community_name = point,
+                    creator_auth = client,
+                    creator_key = clientKey,
+                    maximum_supply = Asset.fromstr('100000000.000 %s'%point),
+                    reserve_amount = Asset.fromstr('1000000.0000 CMN'), output=True)
 
     def test_createPost(self):
-        (private, public) = testnet.createKey()
-        author = testnet.createRandomAccount(public, keys=techKey)
-        community.openBalance(author, 'CATS', 'tech', keys=techKey)
-        community.buyCommunityPoints(author, '1000.0000 CMN', 'CATS', private, clientKey)
-
-        (private2, public2) = testnet.createKey()
-        voter = testnet.createRandomAccount(public2, keys=techKey)
-        community.openBalance(voter, 'CATS', 'tech', keys=techKey)
-        community.buyCommunityPoints(voter, '10.0000 CMN', 'CATS', private2, clientKey)
+        with log_action('Initialize test_createPost'):
+            (private, public) = testnet.createKey()
+            author = testnet.createRandomAccount(public, keys=techKey)
+            community.openBalance(author, 'CATS', 'tech', keys=techKey)
+            community.buyCommunityPoints(author, '1000.0000 CMN', 'CATS', private, clientKey)
+            self.accounts[author] = 'Author'
+    
+            (private2, public2) = testnet.createKey()
+            voter = testnet.createRandomAccount(public2, keys=techKey)
+            community.openBalance(voter, 'CATS', 'tech', keys=techKey)
+            community.buyCommunityPoints(voter, '10.0000 CMN', 'CATS', private2, clientKey)
+            self.accounts[voter] = 'Voter'
 
         permlink = testnet.randomPermlink()
         header = testnet.randomText(128)
         body = testnet.randomText(1024)
-        community.createPost('CATS', author, permlink, 'cats', header, body,
-                providebw=[author+'/c@providebw','c.gallery/c@providebw'], client='c.gallery@clients', keys=[private, clientKey])
+        with log_action('Author create the post {}'.format(permlink)):
+            community.createPost('CATS', author, permlink, 'cats', header, body,
+                    providebw=[author+'/c@providebw','c.gallery/c@providebw'],
+                    client='c.gallery@clients', keys=[private, clientKey], output=True)
 
-        community.upvotePost('CATS', voter, author, permlink,
-                providebw=[voter+'/c@providebw','c.gallery/c@providebw'], client='c.gallery@clients', keys=[private2, clientKey])
+        with log_action('Voter upvote the post {}'.format(permlink)):
+            community.upvotePost('CATS', voter, author, permlink,
+                    providebw=[voter+'/c@providebw','c.gallery/c@providebw'],
+                    client='c.gallery@clients', keys=[private2, clientKey], output=True)
 
 
     def test_glsProvideBW(self):
         (private, public) = testnet.createKey()
-        acc = testnet.createRandomAccount(public, keys=techKey)
+        with log_action('gls account can provide bandwidth'):
+            testnet.createRandomAccount(public, keys=techKey, output=True)
 
 appLeadersCount = 5
 class CommunLeaderTests(unittest.TestCase):

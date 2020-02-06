@@ -195,9 +195,9 @@ def unpackActionData(code, action, data):
     return json.loads(args)
 
 
-def pushTrx(trx, *, additional='', keys=None):
+def pushTrx(trx, **kwargs):
     cmd = 'push transaction -j {trx}'.format(trx=jsonArg(trx.getTrx()))
-    return json.loads(cleos(cmd, additional=additional, keys=keys))
+    return json.loads(cleos(cmd, **kwargs))
 
 
 def parseAuthority(auth):
@@ -271,22 +271,21 @@ def getAccount(account):
     acc['permissions'] = perm
     return acc
 
-def updateAuth(account, permission, parent, keyList, accounts, *, providebw=None, keys=None):
+def updateAuth(account, permission, parent, keyList, accounts, **kwargs):
     actor = account + ('@owner' if permission == 'owner' else '')
     return pushAction('cyber', 'updateauth', actor, {
         'account': account,
         'permission': permission,
         'parent': parent,
         'auth': createAuthority(keyList, accounts)
-    }, providebw=providebw, keys=keys)
+    }, **kwargs)
 
-def linkAuth(account, code, action, permission, *, providebw=None, keys=None):
+def linkAuth(account, code, action, permission, **kwargs):
     return cleos('set action permission {acc} {code} {act} {perm}'.format(acc=account, code=code, act=action, perm=permission),
-            providebw=providebw, keys=keys)
+            **kwargs)
 
-def transfer(sender, recipient, amount, memo="", *, providebw=None, keys=None):
-    return pushAction('cyber.token', 'transfer', sender, {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}
-        , providebw=providebw, keys=keys)
+def transfer(sender, recipient, amount, memo="", **kwargs):
+    return pushAction('cyber.token', 'transfer', sender, {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}, **kwargs)
 
 
 
@@ -321,11 +320,15 @@ def createKey():
 def importPrivateKey(private):
     cleos("wallet import --name test --private-key %s" % private)
 
-def createRandomAccount(owner_auth, active_auth=None, *, creator='tech', **kwargs):
+def getRandomAccount():
     while True:
         name = randomName()
         try: getAccount(name)
         except: break
+    return name
+
+def createRandomAccount(owner_auth, active_auth=None, *, creator='tech', **kwargs):
+    name = getRandomAccount()
     createAccount(creator, name, owner_auth, active_auth, **kwargs)
     return name
 
