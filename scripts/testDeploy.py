@@ -409,36 +409,37 @@ class PointTestCase(TestCase):
     @classmethod
     def setUpClass(self):
         super().setUpClass()
-
-        point = community.getUnusedPointSymbol()
-        owner = community.createCommunity(
-            community_name = point,
-            creator_auth = client,
-            creator_key = clientKey,
-            maximum_supply = Asset.fromstr('100000000.000 %s'%point),
-            reserve_amount = Asset.fromstr('1000000.0000 CMN'))
-
-        buyPointsOn = '%.4f CMN'%(random.uniform(100000.0000, 200000.0000))
-        (user, userPrivate) = community.createCommunityUser(
-                creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=point, buyPointsOn=buyPointsOn)
-
-        self.point = point
-        self.owner = owner
-
-        self.accounts[self.owner] = 'point_issuer'
+        with log_action("Initialize PointTestCase"):
+            point = community.getUnusedPointSymbol()
+            owner = community.createCommunity(
+                    community_name = point,
+                    creator_auth = client,
+                    creator_key = clientKey,
+                    maximum_supply = Asset.fromstr('100000000.000 %s'%point),
+                    reserve_amount = Asset.fromstr('1000000.0000 CMN'))
+    
+            buyPointsOn = '%.4f CMN'%(random.uniform(100000.0000, 200000.0000))
+            (user, userPrivate) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=point, buyPointsOn=buyPointsOn)
+    
+            self.point = point
+            self.owner = owner
+    
+            self.accounts[self.owner] = 'point_issuer'
 
     # This test checks notifications when user sells community points
     def test_buyPoints(self):
-        buyPointsOn = '%.4f CMN'%(random.uniform(1000.0000, 2000.0000))
-        (alice, alicePrivate) = community.createCommunityUser(
-                creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn=buyPointsOn)
-
-        self.accounts[alice] = 'Alice'
-
-        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
-        community.issueCommunToken(alice, str(tokenQuantity), clientKey)
+        with log_action("Initialize test_buyPoints"):
+            buyPointsOn = '%.4f CMN'%(random.uniform(1000.0000, 2000.0000))
+            (alice, alicePrivate) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=self.point, buyPointsOn=buyPointsOn)
+    
+            self.accounts[alice] = 'Alice'
+    
+            tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
+            community.issueCommunToken(alice, str(tokenQuantity), clientKey)
 
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
@@ -457,61 +458,57 @@ class PointTestCase(TestCase):
         newSupply = pointStat['supply'] * q
         pointQuantity = newSupply - pointStat['supply']
 
-        # Buy community points through transfer tokens to 'c.point' account
-        buyArgs = {'from':alice, 'to':'c.point', 'quantity':str(tokenQuantity+feeQuantity), 'memo':self.point}
-        #testnet.jsonPrinter.printer.console.textColor(20)
-        print("<Alice> ({alice}) buy some {point} points through transfer {quantity} to 'c.point' account".
-                format(alice=alice, point=self.point, quantity=buyArgs['quantity']))
-        #testnet.jsonPrinter.printer.console.textColor()
-        buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
+        with log_action("Buy community points through transfer tokens to 'c.point' account"):
+            buyArgs = {'from':alice, 'to':'c.point', 'quantity':str(tokenQuantity+feeQuantity), 'memo':self.point}
+            print("<Alice> ({alice}) buy some {point} points through transfer {quantity} to 'c.point' account".
+                    format(alice=alice, point=self.point, quantity=buyArgs['quantity']))
 
-        buyTrx = buyResult['transaction_id']
-        buyBlock = buyResult['processed']['block_num']
-        buyTrace = [
-            {
-                'receiver': 'c.point', 'code': 'cyber.token', 'action': 'transfer',
-                'auth': [{'actor': alice, 'permission': 'active'}],
-                'args': buyArgs,
-                'events': ee.AllItems(
-                    {
-                        'code': 'c.point', 'event': 'fee',
-                        'args': {'amount': str(feeQuantity)}
-                    }, {
-                        'code': 'c.point', 'event': 'balance',
-                        'args': {'account': alice, 'balance': str(alicePoints+pointQuantity)}
-                    }, {
-                        'code': 'c.point', 'event': 'exchange',
-                        'args': {'amount': str(pointQuantity)}
-                    }, {
-                        'code': 'c.point', 'event': 'currency',
-                        'args': {'supply': str(newSupply), 'reserve': str(newReserve)}
-                    })
-            }, {
-                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
-                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': alice, 'diff': str(pointQuantity)},
-            }, {
-                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
-                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': pointParam['issuer'], 'diff': '%d '%tokenQuantity.amount},
-            },
-        ]
-
-        self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':buyTrx, 'block_num':buyBlock}, {'actions':buyTrace, 'except':ee.Missing()}),
-            ], buyBlock)
+            buyResult = testnet.pushAction('cyber.token', 'transfer', alice, buyArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
+    
+            buyTrx = buyResult['transaction_id']
+            buyBlock = buyResult['processed']['block_num']
+            buyTrace = [
+                {
+                    'receiver': 'c.point', 'code': 'cyber.token', 'action': 'transfer',
+                    'auth': [{'actor': alice, 'permission': 'active'}],
+                    'args': buyArgs,
+                    'events': ee.AllItems(
+                        {
+                            'code': 'c.point', 'event': 'fee',
+                            'args': {'amount': str(feeQuantity)}
+                        }, {
+                            'code': 'c.point', 'event': 'balance',
+                            'args': {'account': alice, 'balance': str(alicePoints+pointQuantity)}
+                        }, {
+                            'code': 'c.point', 'event': 'exchange',
+                            'args': {'amount': str(pointQuantity)}
+                        }, {
+                            'code': 'c.point', 'event': 'currency',
+                            'args': {'supply': str(newSupply), 'reserve': str(newReserve)}
+                        })
+                }, {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                    'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                    'args': {'who': alice, 'diff': str(pointQuantity)},
+                }, {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                    'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                    'args': {'who': pointParam['issuer'], 'diff': '%d '%tokenQuantity.amount},
+                },
+            ]
+    
+            self.eeHelper.waitEvents(
+                [ ({'msg_type':'ApplyTrx', 'id':buyTrx, 'block_num':buyBlock}, {'actions':buyTrace, 'except':ee.Missing()}),
+                ], buyBlock)
 
 
     # This test checks notifications when user sells community points
     def test_sellPoints(self):
-        (alice, alicePrivate) = community.createCommunityUser(
-                creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
-
-#        tokenQuantity = Asset.fromstr('%.4f CMN'%(random.uniform(1000.0000, 10000.0000)))
-#        community.issueCommunToken(alice, str(tokenQuantity), clientKey)
-
-        self.accounts[alice] = 'Alice'
+        with log_action("Initialize test_sellPoints"):
+            (alice, alicePrivate) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+            self.accounts[alice] = 'Alice'
 
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
@@ -533,67 +530,68 @@ class PointTestCase(TestCase):
             else:
                 feeQuantity = Asset(0, CMN)
 
-        # Sell community points through transfer them to 'c.point' account
-        sellArgs = {'from':alice, 'to':'c.point', 'quantity':str(sellPoints), 'memo':''}
-        sellResult = testnet.pushAction('c.point', 'transfer', alice, sellArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
-
-        sellTrx = sellResult['transaction_id']
-        sellBlock = sellResult['processed']['block_num']
-        sellTrace = [
-            {
-                'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
-                'auth': [{'actor': alice, 'permission': 'active'}],
-                'args': sellArgs,
-                'events': ee.AllItems(
-                    {
-                        'code': 'c.point', 'event': 'balance',
-                        'args': {'account': alice, 'balance': str(alicePoints-sellPoints)}
-                    }, {
-                        'code': 'c.point', 'event': 'currency',
-                        'args': {'supply': str(pointStat['supply']-sellPoints), 'reserve': str(pointStat['reserve']-(tokenQuantity+feeQuantity))}
-                    }, {
-                        'code': 'c.point', 'event': 'fee',
-                        'args': {'amount': str(feeQuantity)}
-                    }, {
-                        'code': 'c.point', 'event': 'exchange',
-                        'args': {'amount': str(tokenQuantity)}
-                    })
-            }, {
-                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
-                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': alice, 'diff': str(-sellPoints)},
-            }, {
-                'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
-                'auth': [{'actor': 'c.point', 'permission': 'active'}],
-                'args': {'from':'c.point','to':'cyber.null','quantity':str(feeQuantity),'memo':'selling %s fee'%self.point},
-            }, {
-                'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
-                'auth': [{'actor': 'c.point', 'permission': 'active'}],
-                'args': {'from':'c.point','to':alice,'quantity':str(tokenQuantity),'memo':'%s sold'%self.point},
-            }, {
-                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
-                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': pointParam['issuer'], 'diff': '-%d '%(tokenQuantity.amount+feeQuantity.amount)}
-            },
-        ]
-
-        self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':sellTrx, 'block_num':sellBlock}, {'actions':sellTrace, 'except':ee.Missing()}),
-            ], sellBlock)
+        with log_action("Sell community points through transfer them to 'c.point' account"):
+            sellArgs = {'from':alice, 'to':'c.point', 'quantity':str(sellPoints), 'memo':''}
+            sellResult = testnet.pushAction('c.point', 'transfer', alice, sellArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
+    
+            sellTrx = sellResult['transaction_id']
+            sellBlock = sellResult['processed']['block_num']
+            sellTrace = [
+                {
+                    'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
+                    'auth': [{'actor': alice, 'permission': 'active'}],
+                    'args': sellArgs,
+                    'events': ee.AllItems(
+                        {
+                            'code': 'c.point', 'event': 'balance',
+                            'args': {'account': alice, 'balance': str(alicePoints-sellPoints)}
+                        }, {
+                            'code': 'c.point', 'event': 'currency',
+                            'args': {'supply': str(pointStat['supply']-sellPoints), 'reserve': str(pointStat['reserve']-(tokenQuantity+feeQuantity))}
+                        }, {
+                            'code': 'c.point', 'event': 'fee',
+                            'args': {'amount': str(feeQuantity)}
+                        }, {
+                            'code': 'c.point', 'event': 'exchange',
+                            'args': {'amount': str(tokenQuantity)}
+                        })
+                }, {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                    'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                    'args': {'who': alice, 'diff': str(-sellPoints)},
+                }, {
+                    'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
+                    'auth': [{'actor': 'c.point', 'permission': 'active'}],
+                    'args': {'from':'c.point','to':'cyber.null','quantity':str(feeQuantity),'memo':'selling %s fee'%self.point},
+                }, {
+                    'receiver': 'cyber.token', 'code': 'cyber.token', 'action': 'transfer',
+                    'auth': [{'actor': 'c.point', 'permission': 'active'}],
+                    'args': {'from':'c.point','to':alice,'quantity':str(tokenQuantity),'memo':'%s sold'%self.point},
+                }, {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                    'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                    'args': {'who': pointParam['issuer'], 'diff': '-%d '%(tokenQuantity.amount+feeQuantity.amount)}
+                },
+            ]
+    
+            self.eeHelper.waitEvents(
+                [ ({'msg_type':'ApplyTrx', 'id':sellTrx, 'block_num':sellBlock}, {'actions':sellTrace, 'except':ee.Missing()}),
+                ], sellBlock)
 
 
     # This test checks notifications when user transfers community points
     def test_transferPoints(self):
-        (alice, alicePrivate) = community.createCommunityUser(
-                creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
-
-        (bob, bobPrivate) = community.createCommunityUser(
-                creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
-
-        self.accounts[alice] = 'Alice'
-        self.accounts[bob] = 'Bob'
+        with log_action("Initialize test_transferPoints"):
+            (alice, alicePrivate) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+    
+            (bob, bobPrivate) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+    
+            self.accounts[alice] = 'Alice'
+            self.accounts[bob] = 'Bob'
 
         # Calculate CT/CP-quantities after transaction
         pointParam = community.getPointParam(self.point)
@@ -604,89 +602,92 @@ class PointTestCase(TestCase):
         transferPoints = alicePoints * random.uniform(0.1, 0.9)
         feePoints = max(transferPoints*pointParam['transfer_fee']//10000, Asset(pointParam['min_transfer_fee_points'], pointParam['max_supply'].symbol))
 
-        # Transfer community points to other user (not issuer or `c`-account)
-        transferArgs = {'from':alice, 'to':bob, 'quantity':str(transferPoints), 'memo':''}
-        transferResult = testnet.pushAction('c.point', 'transfer', alice, transferArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
-
-        transferTrx = transferResult['transaction_id']
-        transferBlock = transferResult['processed']['block_num']
-        transferTrace = [
-            {
-                'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
-                'auth': [{'actor': alice, 'permission': 'active'}],
-                'args': transferArgs,
-                'events': ee.AllItems(
-                    {
-                        'code': 'c.point', 'event': 'fee',
-                        'args': {'amount': str(feePoints)}
-                    }, {
-                        'code': 'c.point', 'event': 'currency',
-                        'args': {'supply': str(pointStat['supply']-feePoints), 'reserve': str(pointStat['reserve'])}
-                    }, {
-                        'code': 'c.point', 'event': 'balance',
-                        'args': {'account': alice, 'balance': str(alicePoints-transferPoints-feePoints)}
-                    }, {
-                        'code': 'c.point', 'event': 'balance',
-                        'args': {'account': bob, 'balance': str(bobPoints+transferPoints)}
-                    })
-            }, {
-                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
-                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': alice, 'diff': str(-transferPoints-feePoints)}
-            }, {
-                'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
-                'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
-                'args': {'who': bob, 'diff': str(transferPoints)}
-            },
-        ]
-
-        self.eeHelper.waitEvents(
-            [ ({'msg_type':'ApplyTrx', 'id':transferTrx, 'block_num':transferBlock}, {'actions':transferTrace, 'except':ee.Missing()}),
-            ], transferBlock)
+        with log_action("Transfer community points to other user (not issuer or `c`-account)"):
+            transferArgs = {'from':alice, 'to':bob, 'quantity':str(transferPoints), 'memo':''}
+            transferResult = testnet.pushAction('c.point', 'transfer', alice, transferArgs, providebw=alice+'/c@providebw', keys=[alicePrivate, clientKey], output=True)
+    
+            transferTrx = transferResult['transaction_id']
+            transferBlock = transferResult['processed']['block_num']
+            transferTrace = [
+                {
+                    'receiver': 'c.point', 'code': 'c.point', 'action': 'transfer',
+                    'auth': [{'actor': alice, 'permission': 'active'}],
+                    'args': transferArgs,
+                    'events': ee.AllItems(
+                        {
+                            'code': 'c.point', 'event': 'fee',
+                            'args': {'amount': str(feePoints)}
+                        }, {
+                            'code': 'c.point', 'event': 'currency',
+                            'args': {'supply': str(pointStat['supply']-feePoints), 'reserve': str(pointStat['reserve'])}
+                        }, {
+                            'code': 'c.point', 'event': 'balance',
+                            'args': {'account': alice, 'balance': str(alicePoints-transferPoints-feePoints)}
+                        }, {
+                            'code': 'c.point', 'event': 'balance',
+                            'args': {'account': bob, 'balance': str(bobPoints+transferPoints)}
+                        })
+                }, {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                    'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                    'args': {'who': alice, 'diff': str(-transferPoints-feePoints)}
+                }, {
+                    'receiver': 'c.ctrl', 'code': 'c.ctrl', 'action': 'changepoints',
+                    'auth': [{'actor': 'c.ctrl', 'permission': 'changepoints'}],
+                    'args': {'who': bob, 'diff': str(transferPoints)}
+                },
+            ]
+    
+            self.eeHelper.waitEvents(
+                [ ({'msg_type':'ApplyTrx', 'id':transferTrx, 'block_num':transferBlock}, {'actions':transferTrace, 'except':ee.Missing()}),
+                ], transferBlock)
 
 
     def test_globalPointsLock(self):
-        (alice, alicePrivate) = community.createCommunityUser(
-                creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
-
-        (bob, bobPrivate) = community.createCommunityUser(
-                creator='tech', creatorKey=techKey, clientKey=clientKey,
-                community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
-
-        self.accounts[alice] = 'Alice'
-        self.accounts[bob] = 'Bob'
+        with log_action("Initialize test_globalPointsLock"):
+            (alice, alicePrivate) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+    
+            (bob, bobPrivate) = community.createCommunityUser(
+                    creator='tech', creatorKey=techKey, clientKey=clientKey,
+                    community=self.point, buyPointsOn='%.4f CMN'%(random.uniform(1000.0000, 2000.0000)))
+    
+            self.accounts[alice] = 'Alice'
+            self.accounts[bob] = 'Bob'
 
         alicePoints = community.getPointBalance(self.point, alice)
         bobPoints = community.getPointBalance(self.point, bob)
         transferPointsA = alicePoints * random.uniform(0.1, 0.9)
         transferPointsB = bobPoints * random.uniform(0.1, 0.9)
 
-        # Alice locks points (for example, after recovery)
-        period = 10
-        community.lockPoints(alice, period//2, keys=[alicePrivate, clientKey], output=True)
-        # Period can be increased but not decreased
-        lockResult = community.lockPoints(alice, period, keys=[alicePrivate, clientKey], output=True)
-        with self.assertRaisesRegex(Exception, 'new unlock time must be greater than current'):
-            community.lockPoints(alice, period - 3 - 1, keys=[alicePrivate, clientKey])
+        with log_action("Alice locks points (for example, after recovery)"):
+            period = 10
+            community.lockPoints(alice, period//2, keys=[alicePrivate, clientKey], output=True)
 
-        # Alice can't transfer, retire or withdraw points when locked
-        with self.assertRaisesRegex(Exception, 'balance locked in safe'):
+        with log_action("Period can be increased but not decreased"):
+            lockResult = community.lockPoints(alice, period, keys=[alicePrivate, clientKey], output=True)
+            with self.assertRaisesRegex(Exception, 'new unlock time must be greater than current'):
+                community.lockPoints(alice, period - 3 - 1, keys=[alicePrivate, clientKey], output=True)
+
+        with log_action("Alice can't transfer, retire or withdraw points when locked"):
+            with self.assertRaisesRegex(Exception, 'balance locked in safe'):
+                community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
+
+        with log_action("... but Bob can transfer points to Alice"):
+            community.transferPoints(bob, alice, transferPointsB, keys=[bobPrivate, clientKey], output=True)
+
+        with log_action("Unlock time is visible in db"):
+            globalLock = community.getPointGlobalLock(alice)
+            items = DataItems('scope', 'rev').add('unlocks').others(hide=True)
+            print('Alices lock:', self.jsonPrinter.format(items, globalLock))
+
+        with log_action("When current time >= unlock time then Alice allowed to transfer, etc..."):
+            lockBlock = lockResult['processed']['block_num']
+            targetBlock = lockBlock + (period + 2) // 3
+            self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {'block_num':ee.Any(), 'block_time':ee.Any()})], targetBlock)
+    
             community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
-        community.transferPoints(bob, alice, transferPointsB, keys=[bobPrivate, clientKey], output=True)
-
-        # Unlock time is visible in db
-        globalLock = community.getPointGlobalLock(alice)
-
-        items = DataItems('scope', 'rev').add('unlocks').others(hide=True)
-        print('Alices lock:', self.jsonPrinter.format(items, globalLock))
-
-        # When current time >= unlock time then Alice allowed to transfer, etc…
-        lockBlock = lockResult['processed']['block_num']
-        targetBlock = lockBlock + (period + 2) // 3
-        self.eeHelper.waitEvents([({'msg_type':'AcceptBlock','block_num':targetBlock}, {'block_num':ee.Any(), 'block_time':ee.Any()})], targetBlock)
-
-        community.transferPoints(alice, bob, transferPointsA, keys=[alicePrivate, clientKey], output=True)
 
 
 class PointSafeTestCase(unittest.TestCase):
