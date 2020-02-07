@@ -191,7 +191,8 @@ def pushAction(code, action, actor, args, *, additional='', delay=None, expirati
 
 
 def unpackActionData(code, action, data):
-    args = _cleos('convert unpack_action_data {code} {action} {data}'.format(code=code, action=action, data=data))
+    if len(data) == 0: return {}
+    args = _cleos('convert unpack_action_data {code} {action} "{data}"'.format(code=code, action=action, data=data))
     return json.loads(args)
 
 

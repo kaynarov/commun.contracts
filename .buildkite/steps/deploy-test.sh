@@ -1,6 +1,5 @@
 #/bin/bash
 set -euo pipefail
-set -x
 
 IMAGETAG=stable
 ALL=
@@ -74,7 +73,7 @@ fi
 if [[ -n "$ALL" ]]; then
     cmd='python3 -m unittest discover -v --start-directory /opt/commun.contracts/scripts/'
 else
-    cmd="export INTERACTIVE=${INTERACTIVE} EVENTS_FILE=/events.dump; alias cleos='cleos -u http://nodeosd:8888' cd /opt/commun.contracts/scripts; echo; echo 'For run tests use: ./testDeploy.py <class>/<method>'; /bin/bash"
+    cmd="export INTERACTIVE=${INTERACTIVE} EVENTS_FILE=/events.dump; alias cleos='cleos -u http://nodeosd:8888'; cd /opt/commun.contracts/scripts; echo; echo 'For run tests use: ./testDeploy.py <class>/<method>'; /bin/bash"
 fi
 docker run --rm --network commun-deploy_test-net -v `readlink -f notifier.log`:/events.dump $EXTRA_ARGS -ti $COMMUN_IMAGE \
     /bin/bash -c 'export PATH=/opt/cyberway/bin/:$PATH CYBERWAY_URL=http://nodeosd:8888 MONGODB=mongodb://mongo:27017; '"$cmd"
