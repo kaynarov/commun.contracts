@@ -5,27 +5,27 @@ import testcase
 from copy import deepcopy
 
 
-def issueCommunToken(owner, quantity, clientKey):
+def issueCommunToken(owner, quantity, clientKey, **kwargs):
     pushAction('cyber.token', 'issue', 'c.issuer@issue', {
             'to':'c.issuer',
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, providebw='c.issuer/c@providebw', keys=clientKey)
+        }, providebw='c.issuer/c@providebw', keys=clientKey, **kwargs)
     pushAction('cyber.token', 'transfer', 'c.issuer@issue', {
             'from':'c.issuer',
             'to':owner,
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, providebw='c.issuer/c@providebw', keys=clientKey)
+        }, providebw='c.issuer/c@providebw', keys=clientKey, **kwargs)
 
-def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
-    issueCommunToken(owner, quantity, clientKey)
+def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey, **kwargs):
+    issueCommunToken(owner, quantity, clientKey, **kwargs)
     return pushAction('cyber.token', 'transfer', owner, {
             'from':owner,
             'to':'c.point',
             'quantity':quantity,
             'memo':community
-        }, providebw=owner+'/c@providebw', keys=[ownerKey, clientKey])
+        }, providebw=owner+'/c@providebw', keys=[ownerKey, clientKey], **kwargs)
 
 def createCommunityUser(community, creator, creatorKey, clientKey, *, buyPointsOn=None, leaderUrl=None):
     (private, public) = createKey()

@@ -172,7 +172,7 @@ def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None, **
             if kwargs.get('output', False) and trxLogger: trxLogger.formatReceipt(result)
             return result
         except Exception as err:
-            if kwargs.get('output', False) and trxLogger: trxLogger.formatError(err)
+            if kwargs.get('output', True) and trxLogger: trxLogger.formatError(err)
             raise
     else:
         return _cleos(arguments + additional, retry=retry, logger=trxLogger if kwargs.get('output',False) else None, **kwargs)

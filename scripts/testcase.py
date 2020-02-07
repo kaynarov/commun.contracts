@@ -98,6 +98,12 @@ class TestCase(unittest.TestCase):
         sys.stdout = cls.savedStdOut
         pass
 
+    def run(self, result=None):
+        with utils.log_action(str(self)):
+            desc = self.shortDescription()
+            if desc: print(desc)
+            super().run(result)
+
     class AccountReplacer:
         def __init__(self, testcase):
             self.testcase = testcase
