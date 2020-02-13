@@ -17,7 +17,7 @@ steps:
   - wait
 
   - label: ":cop::skin-tone-2: deploy check"
-    command: ".buildkite/steps/deploy-test.sh"
+    command: ".buildkite/steps/deploy-test.sh -t ${BUILDKITE_BRANCH} -a"
     timeout: 20
 
   - wait
