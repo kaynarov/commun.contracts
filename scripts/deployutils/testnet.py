@@ -7,15 +7,22 @@ import random
 import time
 
 from pymongo import MongoClient
+from copy import deepcopy
 import pymongo
+from .prettylog import log_action
+from .jsonprinter import Items
 
 class TrxLogger:
     def formatCleosCmd(self, cmd, output=False): print('cleos:', cmd)
     def formatTrx(self, trx): pass
     def formatReceipt(self, receipt): pass
-    def formatError(self, error): pass
+    def formatError(self, error): print(error)
 
-trxLogger=TrxLogger()
+def setTrxLogger(newLogger):
+    global trxLogger
+    prevTrxLogger = trxLogger
+    trxLogger = newLogger
+    return prevTrxLogger
 
 params = {
     'cleos_path': os.environ.get("CLEOS", "cleos"),
@@ -24,6 +31,7 @@ params = {
 }
 cleosCmd = "{cleos_path} --url {nodeos_url} ".format(**params)
 mongoClient = MongoClient(params["mongodb"])
+trxLogger = TrxLogger()
 
 class Symbol():
     def __init__(self, precision, code):
@@ -162,7 +170,8 @@ def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None, **
         additional += ' --bandwidth-provider ' + providebw if providebw else ''
     if keys:
         trx = _cleos(arguments + additional + ' --skip-sign --dont-broadcast', logger=trxLogger, **kwargs)
-        if kwargs.get('output',False) and trxLogger: trxLogger.formatTrx(trx)
+        if kwargs.get('output',False) and trxLogger:
+            trxLogger.formatTrx(trx)
         if isinstance(keys, str): keys=[keys]
         for k in keys:
             trx = _cleos("sign '%s' --private-key %s 2>/dev/null" % (trx, k))
@@ -175,7 +184,7 @@ def cleos(arguments, *, additional='', providebw=None, keys=None, retry=None, **
             if kwargs.get('output', True) and trxLogger: trxLogger.formatError(err)
             raise
     else:
-        return _cleos(arguments + additional, retry=retry, logger=trxLogger if kwargs.get('output',False) else None, **kwargs)
+        return _cleos(arguments + additional, retry=retry, logger=trxLogger if kwargs.get('output',True) else None, **kwargs)
     
 def pushAction(code, action, actor, args, *, additional='', delay=None, expiration=None, **kwargs):
     additional += ' --delay-sec %d' % delay if delay else ''
@@ -234,6 +243,45 @@ class Trx:
 
     def getTrx(self):
         return self.trx
+
+
+def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, providebw=None, output=None, jsonPrinter=None):
+    (proposer, proposerKey) = leaders[0]
+    proposal = randomName()
+
+    with log_action("Account {} create and execute proposal {}".format(proposer, proposal)):
+      if jsonPrinter:
+        requestedAuth = [parseAuthority(lead[0]) for lead in leaders]
+        print("Requested authority:", jsonPrinter.format(Items(atnewline=True), requestedAuth))
+
+        t = deepcopy(trx.getTrx())
+        for action in t['actions']:
+            action['args'] = unpackActionData(action['account'], action['name'], action['data'])
+        print("Trx:", jsonPrinter.format(initTrxItems(), t))
+
+      pushAction('c.ctrl', 'propose', proposer, {
+            'commun_code': commun_code,
+            'proposer': proposer,
+            'proposal_name': proposal,
+            'permission': permission,
+            'trx': trx
+        }, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
+
+      for (leaderName, leaderKey) in leaders:
+        pushAction('c.ctrl', 'approve', leaderName, {
+                'proposer': proposer,
+                'proposal_name': proposal,
+                'approver': leaderName
+            }, providebw=leaderName+'/c@providebw', keys=[leaderKey, clientKey])
+
+      providebw = [] if providebw is None else (providebw if type(providebw)==type([]) else [providebw])
+      providebw.append(proposer+'/c@providebw')
+
+      pushAction('c.ctrl', 'exec', proposer, {
+            'proposer': proposer,
+            'proposal_name': proposal,
+            'executer': proposer
+        }, providebw=providebw, keys=[proposerKey, clientKey])
 
 
 # --------------------- CYBER functions ---------------------------------------
@@ -363,3 +411,76 @@ def msigExec(executer, proposer, proposal_name, **kwargs):
             'proposer': proposer,
             'proposal_name': proposal_name
         }, **kwargs)
+
+
+
+def initApplyTrxItems(hideUnused=False):
+    flags={'color': 248}
+
+    authItems = Items(**flags) \
+            .add('actor', 'permission')
+
+    eventItems = Items(**flags).line() \
+            .add('code', 'event').line() \
+            .add('args', items=Items(**flags)).line() \
+            .add('data', hide=True).line()
+
+    actionItems = Items(**flags).line() \
+            .add('receiver', 'code', 'action').line() \
+            .add('auth', items=Items().others(items=authItems)).line() \
+            .add('args', items=Items(**flags)).line() \
+            .add('data', hide=True).line() \
+            .add('events', items=Items(hide=hideUnused, items=eventItems)).line()
+
+    applyTrxItems = Items().line() \
+            .add('msg_channel', 'msg_type').line() \
+            .add('id').line() \
+            .add('block_num', 'block_time').line() \
+            .add('actions', items=Items(hide=hideUnused, items=actionItems)).line()
+
+    return applyTrxItems
+
+
+def initAcceptBlockItems():
+    flags={'color': 248}
+
+    acceptBlockItems = Items(**flags).line() \
+            .add('msg_channel', 'msg_type').line() \
+            .add('id').line() \
+            .add('block_num', 'block_time').line() \
+            .add('producer', 'producer_signature').line() \
+            .add('previous').line() \
+            .add('dpos_irreversible_blocknum', 'block_slot', 'scheduled_shuffle_slot', 'scheduled_slot').line() \
+            .add('active_schedule').line() \
+            .add('next_schedule').line() \
+            .add('next_block_time').line() \
+            .add('trxs').line() \
+            .add('events', 'block_extensions').line()
+
+    return acceptBlockItems
+
+
+def initTrxItems():
+    authItems = Items() \
+            .add('actor', color=137).add('permission', color=95)
+    
+    actionItems = Items().line() \
+            .add('account', 'name', color=20).line() \
+            .add('authorization', color=128, items=Items().others(atnewline=False, items=authItems)).line() \
+            .add('args', color=34, _items=None, optional=True).line() \
+            .add('data', hide=False, max_length=16, color=248).line() \
+            .others(atnewline=False, color=250)
+    
+    trxItems = Items().line() \
+            .add('delay_sec', 'expiration').line() \
+            .add('ref_block_num', 'ref_block_prefix').line() \
+            .add('max_net_usage_words', 'max_cpu_usage_ms', 'max_ram_kbytes', 'max_storage_kbytes').line() \
+            .add('actions', items=Items().others(atnewline=False, items=actionItems)).line() \
+            .add('context_free_actions', 'context_free_data').line() \
+            .add('transaction_extensions').line() \
+            .add('signatures').line()
+
+    return trxItems
+
+
+

@@ -5,9 +5,9 @@ class Console:
     UNDERLINE=4
     STRIKE=9
 
-    def textColor(self, color=None): pass
-    def backColor(self, color=None): pass
-    def textStyle(self, style=None): pass
+    def textColor(self, color=None): return ''
+    def backColor(self, color=None): return ''
+    def textStyle(self, style=None): return ''
 
 class ColoredConsole(Console):
     def __init__(self):

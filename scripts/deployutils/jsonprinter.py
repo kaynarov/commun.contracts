@@ -90,6 +90,7 @@ class JsonPrinter:
             return self.__formatList(items, data, intend)
         else:
             if isinstance(data, str):
+                _data = None
                 if self.replacer:
                     _data = self.replacer.replace(data)
                 if _data: _data = '<%s>'%_data

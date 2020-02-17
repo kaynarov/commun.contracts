@@ -1,7 +1,5 @@
-from testnet import *
-from utils import log_action
-from jsonprinter import Items
-import testcase
+from deployutils.testnet import *
+from deployutils import log_action
 from copy import deepcopy
 
 
@@ -136,45 +134,6 @@ def getPointSafe(point, account):
 
 def getPointSafeMod(point, account, modId):
     return mongoClient["_CYBERWAY_c_point"]["safemod"].find_one({"id":modId,"commun_code":point,"_SERVICE_.scope":account})
-
-
-def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, providebw=None, output=None, jsonPrinter=None):
-    (proposer, proposerKey) = leaders[0]
-    proposal = randomName()
-
-    with log_action("Account {} create and execute proposal {}".format(proposer, proposal)):
-      if jsonPrinter:
-        requestedAuth = [parseAuthority(lead[0]) for lead in leaders]
-        print("Requested authority:", jsonPrinter.format(Items(atnewline=True), requestedAuth))
-
-        t = deepcopy(trx.getTrx())
-        for action in t['actions']:
-            action['args'] = unpackActionData(action['account'], action['name'], action['data'])
-        print("Trx:", jsonPrinter.format(testcase.gTrxItems, t))
-
-      pushAction('c.ctrl', 'propose', proposer, {
-            'commun_code': commun_code,
-            'proposer': proposer,
-            'proposal_name': proposal,
-            'permission': permission,
-            'trx': trx
-        }, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
-
-      for (leaderName, leaderKey) in leaders:
-        pushAction('c.ctrl', 'approve', leaderName, {
-                'proposer': proposer,
-                'proposal_name': proposal,
-                'approver': leaderName
-            }, providebw=leaderName+'/c@providebw', keys=[leaderKey, clientKey])
-
-      providebw = [] if providebw is None else (providebw if type(providebw)==type([]) else [providebw])
-      providebw.append(proposer+'/c@providebw')
-
-      pushAction('c.ctrl', 'exec', proposer, {
-            'proposer': proposer,
-            'proposal_name': proposal,
-            'executer': proposer
-        }, providebw=providebw, keys=[proposerKey, clientKey])
 
 
 def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=3333, fee=100, owner_account=None, output=False):

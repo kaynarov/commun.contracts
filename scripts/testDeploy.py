@@ -2,19 +2,17 @@
 
 import random
 import unittest
-import testnet
+import deployutils.testnet as testnet
+import deployutils.eehelper as ee
 import community
 import pymongo
 import json
-import eehelper as ee
 import time
-from testcase import TestCase
 from copy import deepcopy
 from datetime import datetime, timedelta
-from testnet import Asset
-from jsonprinter import Item, Items, JsonPrinter
-from console import Console, ColoredConsole
-from utils import log_action
+
+from deployutils import *
+from deployutils.testnet import Asset
 
 def from_time_point_sec(s):
     return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.000')
@@ -28,10 +26,10 @@ client     ='c.com@c.com'
 
 CMN = testnet.Symbol(4, 'CMN')
 
-class DataItems(Items):
+class DataItems(JsonItems):
     def __init__(self, *serviceFields, **kwargs):
         super().__init__()
-        serviceItems = Items().add(*serviceFields).others(hide=True)
+        serviceItems = JsonItems().add(*serviceFields).others(hide=True)
         self.add('_SERVICE_', items=serviceItems)
         self.add('_id', hide=True)
         self.others(**kwargs)
@@ -172,16 +170,16 @@ class CommunLeaderTests(TestCase):
 
     def test_setRecover(self):
         leaders = [l['name'] for l in self.getTopLeaders(appLeadersCount)]
-        print('Commun leaders:', self.jsonPrinter.format(Items(color=21), leaders))
+        print('Commun leaders:', self.jsonPrinter.format(JsonItems(color=21), leaders))
 
-        actorItems = Items().add('actor',color=21).add('permission')
-        permissionItems = Items().add('permission', items=actorItems).add('weight')
-        authItems = Items().line() \
+        actorItems = JsonItems().add('actor',color=21).add('permission')
+        permissionItems = JsonItems().add('permission', items=actorItems).add('weight')
+        authItems = JsonItems().line() \
                 .add('threshold').line() \
                 .add('keys').line() \
-                .add('accounts', items=Items(items=permissionItems,atnewline=True)).line() \
+                .add('accounts', items=JsonItems(items=permissionItems,atnewline=True)).line() \
                 .add('waits').line()
-        authorityItems = Items().line() \
+        authorityItems = JsonItems().line() \
                 .add('perm_name', 'parent').line() \
                 .add('required_auth', items=authItems).line()
 

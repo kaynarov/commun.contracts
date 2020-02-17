@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 import tempfile
-from testnet import *
+from deployutils.testnet import *
 
 class Struct(object): pass
 
