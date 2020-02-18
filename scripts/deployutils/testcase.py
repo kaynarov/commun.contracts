@@ -1,82 +1,14 @@
-import unittest
-import eehelper as ee
-import testnet
 import sys
-import utils
-
 import json
+import unittest
+
 from copy import deepcopy, copy
-from jsonprinter import Item, Items, JsonPrinter
-from console import Console, ColoredConsole
 
-
-def initApplyTrxItems(hideUnused=False):
-    flags={'color': 248}
-
-    authItems = Items(**flags) \
-            .add('actor', 'permission')
-
-    eventItems = Items(**flags).line() \
-            .add('code', 'event').line() \
-            .add('args', items=Items(**flags)).line() \
-            .add('data', hide=True).line()
-
-    actionItems = Items(**flags).line() \
-            .add('receiver', 'code', 'action').line() \
-            .add('auth', items=Items().others(items=authItems)).line() \
-            .add('args', items=Items(**flags)).line() \
-            .add('data', hide=True).line() \
-            .add('events', items=Items(hide=hideUnused, items=eventItems)).line()
-
-    applyTrxItems = Items().line() \
-            .add('msg_channel', 'msg_type').line() \
-            .add('id').line() \
-            .add('block_num', 'block_time').line() \
-            .add('actions', items=Items(hide=hideUnused, items=actionItems)).line()
-
-    return applyTrxItems
-
-
-def initAcceptBlockItems():
-    flags={'color': 248}
-
-    acceptBlockItems = Items(**flags).line() \
-            .add('msg_channel', 'msg_type').line() \
-            .add('id').line() \
-            .add('block_num', 'block_time').line() \
-            .add('producer', 'producer_signature').line() \
-            .add('previous').line() \
-            .add('dpos_irreversible_blocknum', 'block_slot', 'scheduled_shuffle_slot', 'scheduled_slot').line() \
-            .add('active_schedule').line() \
-            .add('next_schedule').line() \
-            .add('next_block_time').line() \
-            .add('trxs').line() \
-            .add('events', 'block_extensions').line()
-
-    return acceptBlockItems
-
-
-def initTrxItems():
-    authItems = Items() \
-            .add('actor', color=137).add('permission', color=95)
-    
-    actionItems = Items().line() \
-            .add('account', 'name', color=20).line() \
-            .add('authorization', color=128, items=Items().others(atnewline=False, items=authItems)).line() \
-            .add('args', color=34, _items=None, optional=True).line() \
-            .add('data', hide=False, max_length=16, color=248).line() \
-            .others(atnewline=False, color=250)
-    
-    trxItems = Items().line() \
-            .add('delay_sec', 'expiration').line() \
-            .add('ref_block_num', 'ref_block_prefix').line() \
-            .add('max_net_usage_words', 'max_cpu_usage_ms', 'max_ram_kbytes', 'max_storage_kbytes').line() \
-            .add('actions', items=Items().others(atnewline=False, items=actionItems)).line() \
-            .add('context_free_actions', 'context_free_data').line() \
-            .add('transaction_extensions').line() \
-            .add('signatures').line()
-
-    return trxItems
+from .testnet import *
+from .eehelper import EEHelper
+from .prettylog import log_action,PrefixWriter
+from .jsonprinter import Items, JsonPrinter
+from .console import Console, ColoredConsole
 
 
 gApplyTrxItems = initApplyTrxItems()
@@ -88,7 +20,7 @@ class TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.savedStdOut = sys.stdout
-        sys.stdout = utils.PrefixWriter(sys.stdout)
+        sys.stdout = PrefixWriter(sys.stdout)
         TestCase.initialAccounts = None
         cls.accounts = {}
         pass
@@ -99,7 +31,7 @@ class TestCase(unittest.TestCase):
         pass
 
     def run(self, result=None):
-        with utils.log_action(str(self)):
+        with log_action(str(self)):
             desc = self.shortDescription()
             if desc: print(desc)
             super().run(result)
@@ -111,7 +43,7 @@ class TestCase(unittest.TestCase):
         def replace(self, string):
             return self.testcase.accounts.get(string, None)
 
-    class TrxLogger(testnet.TrxLogger):
+    class TrxLogger(TrxLogger):
         def __init__(self, testcase):
             self.testcase = testcase
 
@@ -128,13 +60,12 @@ class TestCase(unittest.TestCase):
 
         self.console = ColoredConsole()
         self.jsonPrinter = JsonPrinter(self.console, replacer=self.AccountReplacer(self))
-        self.eeHelper = ee.EEHelper(self, eventFormatter=self)
+        self.eeHelper = EEHelper(self, eventFormatter=self)
 
-        self.savedTrxLogger = testnet.trxLogger
-        testnet.trxLogger = self.TrxLogger(self)
+        self.savedTrxLogger = setTrxLogger(self)
 
     def tearDown(self):
-        testnet.trxLogger = self.savedTrxLogger
+        setTrxLogger(self.savedTrxLogger)
         self.eeHelper.tearDown()
 
     def formatCleosCmd(self, cmd, output=False):
@@ -143,7 +74,7 @@ class TestCase(unittest.TestCase):
     def formatTrx(self, data):
         trx = json.loads(data)
         for action in trx['actions']:
-            action['args'] = testnet.unpackActionData(action['account'], action['name'], action['data'])
+            action['args'] = unpackActionData(action['account'], action['name'], action['data'])
         print("Send transaction:\n", self.jsonPrinter.format(gTrxItems, trx))
 
     def formatReceipt(self, data):
@@ -156,7 +87,7 @@ class TestCase(unittest.TestCase):
 
     def formatError(self, error):
         print("Executed with error:")
-        if isinstance(error, testnet.CleosException):
+        if isinstance(error, CleosException):
             print('    ', error.output.replace('\n', '\n    '), sep='')
         else:
             print('    ', error.replace('\n', '\n    '), sep='')

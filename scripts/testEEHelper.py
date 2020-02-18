@@ -1,8 +1,10 @@
+#!/usr/bin/python3
+
 import unittest
 import time
 import json
-from testnet import *
-import eehelper as ee
+from deployutils.testnet import *
+import deployutils.eehelper as ee
 
 techKey    ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
 

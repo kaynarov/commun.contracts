@@ -8,9 +8,7 @@
 import unittest
 import time
 import json
-from testnet import *
-
-techKey    ='5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3'
+from .testnet import *
 
 # Class for save element from events with `name` into `params` dictionary
 class Save:

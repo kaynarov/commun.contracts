@@ -4,7 +4,7 @@ import argparse
 import os
 import subprocess
 import sys
-from testnet import *
+from deployutils.testnet import *
 import community
 
 # Command Line Arguments
