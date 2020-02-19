@@ -3,4 +3,4 @@
 	url = https://github.com/cyberway/cyberway.contracts.git
 [submodule "scripts/deployutils"]
 	path = scripts/deployutils
-	url = git@github.com:cyberway/deployutils.git
+	url = https://github.com/cyberway/deployutils.git
