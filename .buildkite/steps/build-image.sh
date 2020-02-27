@@ -1,16 +1,20 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGETAG=${BUILDKITE_BRANCH:-master}
-BRANCHNAME=${BUILDKITE_BRANCH:-master}
+REVISION=$(git rev-parse HEAD)
 
-#if [[ "${IMAGETAG}" == "master" ]]; then
-#    BUILDTYPE="stable"
-#else
-#    BUILDTYPE="latest"
-#fi
+pushd cyberway.contracts
+SYSTEM_CONTRACTS_VERSION=$(git rev-parse HEAD)
+popd
 
-# Build type always latest because create-genesis with such features exists in cyberway/cyberway:latest only
-BUILDTYPE="latest"
+if [[ ${BUILDKITE_BRANCH} == "master" ]]; then
+    BUILDTYPE="stable"
+else
+    BUILDTYPE="latest"
+fi
 
-docker build -t cyberway/commun.contracts:${IMAGETAG} --build-arg branch=${BRANCHNAME} --build-arg buildtype=${BUILDTYPE} -f Docker/Dockerfile .
+CDT_TAG=${CDT_TAG:-$BUILDTYPE}
+CW_TAG=${CW_TAG:-$BUILDTYPE}
+BUILDER_TAG=${BUILDER_TAG:-$BUILDTYPE}
+
+docker build -t cyberway/commun.contracts:${REVISION} --build-arg=cw_tag=${CW_TAG} --build-arg=cdt_tag=${CDT_TAG} --build-arg=builder_tag=${BUILDER_TAG} --build-arg=version=${REVISION} --build-arg=sys_contracts_version=${SYSTEM_CONTRACTS_VERSION} -f Docker/Dockerfile .

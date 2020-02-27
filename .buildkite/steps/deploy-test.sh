@@ -1,7 +1,7 @@
 #/bin/bash
 set -euo pipefail
 
-IMAGETAG=stable
+IMAGETAG=$(git rev-parse HEAD)
 ALL=
 INTERACTIVE=
 LOCAL=
@@ -24,13 +24,17 @@ done
 COMMUN_IMAGE=cyberway/commun.contracts:$IMAGETAG
 echo "Use ${COMMUN_IMAGE} image"
 
-if [[ "${IMAGETAG}" == "master" ]]; then
+docker pull ${COMMUN_IMAGE}
+
+if [[ "${BUILDKITE_BRANCH}" == "master" ]]; then
     BUILDTYPE="stable"
 else
     BUILDTYPE="latest"
 fi
 
-export BUILDTYPE
+CW_TAG=${CW_TAG:-$BUILDTYPE}
+
+export CW_TAG
 export COMMUN_IMAGE
 
 docker stop mongo nodeosd notifier || true

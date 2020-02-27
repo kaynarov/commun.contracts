@@ -1,21 +1,17 @@
-ARG buildtype=stable
-FROM cyberway/cyberway:$buildtype as cyberway
-FROM cyberway/cyberway.cdt:$buildtype as cdt
+ARG cw_tag=stable
+ARG cdt_tag=stable
+ARG builder_tag=stable
 
-FROM cyberway/builder:$buildtype as builder
+FROM cyberway/cyberway:$cw_tag as cyberway
+FROM cyberway/cyberway.cdt:$cdt_tag as cdt
+
+FROM cyberway/builder:$builder_tag as builder
 COPY --from=cdt /opt/cyberway.cdt /opt/cyberway.cdt
 COPY --from=cyberway /opt/cyberway /opt/cyberway
 
-ARG branch=master
-
-# Can't use https api here, because ssh used for CI runners with private repo:
-# ADD https://api.github.com/repos/cyberway/commun.contracts/git/refs/heads/$branch /etc/version.json
-
-# Can't use even ssh here, because there are no ssh keys in docker image (located only on the runner itself). So, we must use COPY here:
 COPY . ./commun.contracts
 
 RUN cd commun.contracts/cyberway.contracts \
-    && echo ":$(git rev-parse HEAD)" > version \
     && cmake -H. -B"build" \
         -GNinja \
         -DCMAKE_BUILD_TYPE=Release \
@@ -24,7 +20,6 @@ RUN cd commun.contracts/cyberway.contracts \
         -DEOSIO_ROOT=/opt/cyberway \
     && cmake --build build --target install \
     && cd .. \
-    && echo "$branch:$(git rev-parse HEAD)" > version \
     && cmake -H. -B"build" \
         -GNinja \
         -DCMAKE_BUILD_TYPE=Release \
@@ -35,17 +30,19 @@ RUN cd commun.contracts/cyberway.contracts \
     && doxygen Doxyfile
 
 FROM ubuntu:18.04
+ARG version=unknown
+ARG sys_contracts_version=unknown
+
+COPY --from=builder /opt/commun.contracts/ /opt/commun.contracts/
+COPY --from=builder /commun.contracts/build/tests/unit_test /opt/commun.contracts/unit_test
+COPY --from=builder /opt/cyberway.contracts/ /opt/cyberway.contracts/
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ca-certificates python3 python3-numpy python3-bson python3-pymongo socat libusb-1.0-0-dev libcurl4-gnutls-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && echo $version > /opt/commun.contracts/version \
+    && echo $sys_contracts_version > /opt/cyberway.contracts/version
 
-COPY --from=builder /commun.contracts/version /opt/commun.contracts/version
-COPY --from=builder /opt/commun.contracts/ /opt/commun.contracts/
-COPY --from=builder /commun.contracts/build/tests/unit_test /opt/commun.contracts/unit_test
-
-COPY --from=builder /commun.contracts/cyberway.contracts/version /opt/cyberway.contracts/version
-COPY --from=builder /opt/cyberway.contracts/ /opt/cyberway.contracts/
 COPY --from=builder /commun.contracts/cyberway.contracts/build/tests/unit_test /opt/cyberway.contracts/unit_test
 COPY --from=builder /commun.contracts/cyberway.contracts/tests/test_contracts /opt/cyberway.contracts/test_contracts
 
