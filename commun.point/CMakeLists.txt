@@ -1,4 +1,4 @@
-add_contract(commun.point commun.point src/commun.point.cpp)
+add_contract_with_checked_abi(commun.point commun.point commun.point.abi src/commun.point.cpp)
 install_contract(commun.point)
 target_include_directories(commun.point.wasm
    PUBLIC

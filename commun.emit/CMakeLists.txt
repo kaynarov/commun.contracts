@@ -1,4 +1,4 @@
-add_contract(commun.emit commun.emit src/commun.emit.cpp)
+add_contract_with_checked_abi(commun.emit commun.emit commun.emit.abi src/commun.emit.cpp)
 install_contract(commun.emit)
 target_include_directories(commun.emit.wasm
    PUBLIC

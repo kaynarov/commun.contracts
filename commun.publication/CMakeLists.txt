@@ -1,4 +1,4 @@
-add_contract(commun.publication commun.publication src/commun.publication.cpp)
+add_contract_with_checked_abi(commun.publication commun.publication commun.publication.abi src/commun.publication.cpp)
 install_contract(commun.publication)
 target_include_directories(commun.publication.wasm
    PUBLIC

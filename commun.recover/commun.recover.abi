@@ -1,0 +1,70 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ", 
+    "version": "cyberway::abi/1.1", 
+    "types": [], 
+    "structs": [{
+            "name": "applyowner", "base": "", 
+            "fields": [
+                {"name": "account", "type": "name"}
+            ]
+        }, {
+            "name": "cancelowner", "base": "", 
+            "fields": [
+                {"name": "account", "type": "name"}
+            ]
+        }, {
+            "name": "owner_request", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "change_time", "type": "time_point"}, 
+                {"name": "owner_key", "type": "public_key"}
+            ]
+        }, {
+            "name": "params_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "recover_delay", "type": "uint64"}
+            ]
+        }, {
+            "name": "recover", "base": "", 
+            "fields": [
+                {"name": "account", "type": "name"}, 
+                {"name": "active_key", "type": "public_key?"}, 
+                {"name": "owner_key", "type": "public_key?"}
+            ]
+        }, {
+            "name": "setparams", "base": "", 
+            "fields": [
+                {"name": "recover_delay", "type": "uint64?"}
+            ]
+        }
+    ], 
+    "actions": [
+        {"name": "applyowner", "type": "applyowner"}, 
+        {"name": "cancelowner", "type": "cancelowner"}, 
+        {"name": "recover", "type": "recover"}, 
+        {"name": "setparams", "type": "setparams"}
+    ], 
+    "events": [], 
+    "tables": [{
+            "name": "ownerrequest", "type": "owner_request", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "params", "type": "params_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ], 
+    "variants": []
+}

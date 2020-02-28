@@ -35,6 +35,17 @@ macro(install_contract TARGET)
    install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.abi DESTINATION ${CMAKE_INSTALL_PREFIX}/${TARGET}/)
 endmacro()
 
+macro(add_contract_with_checked_abi CONTRACT_NAME TARGET ABIFILE)
+    add_contract(${CONTRACT_NAME} ${TARGET} ${ARGN})
+    get_target_property(BINOUTPUT ${TARGET}.wasm BINARY_DIR)
+    add_custom_command(TARGET ${TARGET}.wasm POST_BUILD
+        COMMAND ${PROJECT_SOURCE_DIR}/scripts/deployutils/abiprinter.py <${BINOUTPUT}/${TARGET}.abi >${BINOUTPUT}/${TARGET}.abi.pretty)
+    add_custom_target(${TARGET}.abicheck ALL
+        COMMAND ${CYBERWAY_ABIDIFF} ${CMAKE_CURRENT_SOURCE_DIR}/${ABIFILE} ${BINOUTPUT}/${TARGET}.abi
+        DEPENDS ${TARGET}.wasm ${ABIFILE}
+    )
+endmacro()
+
 macro(add_contract_with_abi TARGET ABIFILE)
    add_executable( ${TARGET}.wasm ${ARGN} )
    target_compile_options( ${TARGET}.wasm PUBLIC -std=c++17)
@@ -44,6 +55,7 @@ endmacro()
 
 set(TOKEN_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cyberway.contracts/cyber.token/include")
 set(TOKEN_HEADER_FILE "cyberway.contracts/cyber.token/include/cyber.token/cyber.token.hpp")
+set(CYBERWAY_ABIDIFF ${CYBERWAY_CDT_ROOT}/bin/cyberway-abidiff)
 
 if (NOT DEFINED TOKEN_CLASS)
     set(TOKEN_CLASS "eosio::token")
