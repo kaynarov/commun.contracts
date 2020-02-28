@@ -1,0 +1,307 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ", 
+    "version": "cyberway::abi/1.1", 
+    "types": [
+        {"new_type_name": "share_type", "type": "int64"}
+    ], 
+    "structs": [{
+            "name": "account_struct", "base": "", 
+            "fields": [
+                {"name": "balance", "type": "asset"}
+            ]
+        }, {
+            "name": "applysafemod", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "mod_id", "type": "name"}
+            ]
+        }, {
+            "name": "balance_event", "base": "", 
+            "fields": [
+                {"name": "account", "type": "name"}, 
+                {"name": "balance", "type": "asset"}
+            ]
+        }, {
+            "name": "cancelsafemod", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "mod_id", "type": "name"}
+            ]
+        }, {
+            "name": "close", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "commun_code", "type": "symbol_code"}
+            ]
+        }, {
+            "name": "create", "base": "", 
+            "fields": [
+                {"name": "issuer", "type": "name"}, 
+                {"name": "initial_supply", "type": "asset"}, 
+                {"name": "maximum_supply", "type": "asset"}, 
+                {"name": "cw", "type": "int16"}, 
+                {"name": "fee", "type": "int16"}
+            ]
+        }, {
+            "name": "currency_event", "base": "", 
+            "fields": [
+                {"name": "supply", "type": "asset"}, 
+                {"name": "reserve", "type": "asset"}, 
+                {"name": "max_supply", "type": "asset"}, 
+                {"name": "cw", "type": "int16"}, 
+                {"name": "fee", "type": "int16"}, 
+                {"name": "issuer", "type": "name"}, 
+                {"name": "transfer_fee", "type": "uint16"}, 
+                {"name": "min_transfer_fee_points", "type": "int64"}
+            ]
+        }, {
+            "name": "disablesafe", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "mod_id", "type": "name"}
+            ]
+        }, {
+            "name": "enablesafe", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "unlock", "type": "asset"}, 
+                {"name": "delay", "type": "uint32"}, 
+                {"name": "trusted", "type": "name"}
+            ]
+        }, {
+            "name": "exchange_event", "base": "", 
+            "fields": [
+                {"name": "amount", "type": "asset"}
+            ]
+        }, {
+            "name": "fee_event", "base": "", 
+            "fields": [
+                {"name": "amount", "type": "asset"}
+            ]
+        }, {
+            "name": "globallock", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "period", "type": "uint32"}
+            ]
+        }, {
+            "name": "globalparam_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "point_freezer", "type": "name"}
+            ]
+        }, {
+            "name": "issue", "base": "", 
+            "fields": [
+                {"name": "to", "type": "name"}, 
+                {"name": "quantity", "type": "asset"}, 
+                {"name": "memo", "type": "string"}
+            ]
+        }, {
+            "name": "lock_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "unlocks", "type": "time_point_sec"}
+            ]
+        }, {
+            "name": "locksafe", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "lock", "type": "asset"}
+            ]
+        }, {
+            "name": "modifysafe", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "mod_id", "type": "name"}, 
+                {"name": "delay", "type": "uint32?"}, 
+                {"name": "trusted", "type": "name?"}
+            ]
+        }, {
+            "name": "open", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "ram_payer", "type": "name?"}
+            ]
+        }, {
+            "name": "param_struct", "base": "", 
+            "fields": [
+                {"name": "max_supply", "type": "asset"}, 
+                {"name": "cw", "type": "int16"}, 
+                {"name": "fee", "type": "int16"}, 
+                {"name": "issuer", "type": "name"}, 
+                {"name": "transfer_fee", "type": "uint16"}, 
+                {"name": "min_transfer_fee_points", "type": "int64"}
+            ]
+        }, {
+            "name": "retire", "base": "", 
+            "fields": [
+                {"name": "from", "type": "name"}, 
+                {"name": "quantity", "type": "asset"}, 
+                {"name": "memo", "type": "string"}
+            ]
+        }, {
+            "name": "safe_struct", "base": "", 
+            "fields": [
+                {"name": "unlocked", "type": "asset"}, 
+                {"name": "trusted", "type": "name"}, 
+                {"name": "delay", "type": "uint32"}
+            ]
+        }, {
+            "name": "safemod_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "name"}, 
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "date", "type": "time_point_sec"}, 
+                {"name": "unlock", "type": "share_type"}, 
+                {"name": "delay", "type": "uint32?"}, 
+                {"name": "trusted", "type": "name?"}
+            ]
+        }, {
+            "name": "setfreezer", "base": "", 
+            "fields": [
+                {"name": "freezer", "type": "name"}
+            ]
+        }, {
+            "name": "setparams", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "fee", "type": "uint16?"}, 
+                {"name": "transfer_fee", "type": "uint16?"}, 
+                {"name": "min_transfer_fee_points", "type": "int64?"}
+            ]
+        }, {
+            "name": "stat_struct", "base": "", 
+            "fields": [
+                {"name": "supply", "type": "asset"}, 
+                {"name": "reserve", "type": "asset"}
+            ]
+        }, {
+            "name": "transfer", "base": "", 
+            "fields": [
+                {"name": "from", "type": "name"}, 
+                {"name": "to", "type": "name"}, 
+                {"name": "quantity", "type": "asset"}, 
+                {"name": "memo", "type": "string"}
+            ]
+        }, {
+            "name": "unlocksafe", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "unlock", "type": "asset"}, 
+                {"name": "mod_id", "type": "name"}
+            ]
+        }, {
+            "name": "withdraw", "base": "", 
+            "fields": [
+                {"name": "owner", "type": "name"}, 
+                {"name": "quantity", "type": "asset"}
+            ]
+        }
+    ], 
+    "actions": [
+        {"name": "applysafemod", "type": "applysafemod"}, 
+        {"name": "cancelsafemod", "type": "cancelsafemod"}, 
+        {"name": "close", "type": "close"}, 
+        {"name": "create", "type": "create"}, 
+        {"name": "disablesafe", "type": "disablesafe"}, 
+        {"name": "enablesafe", "type": "enablesafe"}, 
+        {"name": "globallock", "type": "globallock"}, 
+        {"name": "issue", "type": "issue"}, 
+        {"name": "locksafe", "type": "locksafe"}, 
+        {"name": "modifysafe", "type": "modifysafe"}, 
+        {"name": "open", "type": "open"}, 
+        {"name": "retire", "type": "retire"}, 
+        {"name": "setfreezer", "type": "setfreezer"}, 
+        {"name": "setparams", "type": "setparams"}, 
+        {"name": "transfer", "type": "transfer"}, 
+        {"name": "unlocksafe", "type": "unlocksafe"}, 
+        {"name": "withdraw", "type": "withdraw"}
+    ], 
+    "events": [
+        {"name": "balance", "type": "balance_event"}, 
+        {"name": "currency", "type": "currency_event"}, 
+        {"name": "exchange", "type": "exchange_event"}, 
+        {"name": "fee", "type": "fee_event"}
+    ], 
+    "tables": [{
+            "name": "accounts", "type": "account_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "balance._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "globalparam", "type": "globalparam_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "lock", "type": "lock_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "param", "type": "param_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "max_supply._sym", "order": "asc"}
+                    ]
+                }, {
+                    "name": "byissuer", "unique": true, 
+                    "orders": [
+                        {"field": "issuer", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "safe", "type": "safe_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "unlocked._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "safemod", "type": "safemod_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }, {
+                    "name": "bysymbolcode", "unique": true, 
+                    "orders": [
+                        {"field": "commun_code", "order": "asc"}, 
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "stat", "type": "stat_struct", "scope_type": "symbol_code", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "supply._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ], 
+    "variants": []
+}
