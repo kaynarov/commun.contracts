@@ -3,18 +3,30 @@ set -euo pipefail
 
 REVISION=$(git rev-parse HEAD)
 
-pushd cyberway.contracts
-SYSTEM_CONTRACTS_VERSION=$(git rev-parse HEAD)
-popd
-
 if [[ ${BUILDKITE_BRANCH} == "master" ]]; then
     BUILDTYPE="stable"
 else
     BUILDTYPE="latest"
 fi
 
-CDT_TAG=${CDT_TAG:-$BUILDTYPE}
-CW_TAG=${CW_TAG:-$BUILDTYPE}
-BUILDER_TAG=${BUILDER_TAG:-$BUILDTYPE}
+if [[ -z ${CDT_TAG+x} ]]; then 
+    CDT_TAG=${BUILDTYPE}
+    docker pull cyberway/cyberway.cdt:${CDT_TAG}
+fi
 
-docker build -t cyberway/commun.contracts:${REVISION} --build-arg=cw_tag=${CW_TAG} --build-arg=cdt_tag=${CDT_TAG} --build-arg=builder_tag=${BUILDER_TAG} --build-arg=version=${REVISION} --build-arg=sys_contracts_version=${SYSTEM_CONTRACTS_VERSION} -f Docker/Dockerfile .
+if [[ -z ${CW_TAG+x} ]]; then 
+    CW_TAG=${BUILDTYPE}
+    docker pull cyberway/cyberway:${CW_TAG}
+fi
+
+if [[ -z ${BUILDER_TAG+x} ]]; then 
+    BUILDER_TAG=${BUILDTYPE}
+    docker pull cyberway/builder:${BUILDER_TAG}
+fi
+
+if [[ -z ${SYSTEM_CONTRACTS_TAG+x} ]]; then 
+    SYSTEM_CONTRACTS_TAG=${BUILDTYPE}
+    docker pull cyberway/cyberway.contracts:${SYSTEM_CONTRACTS_TAG}
+fi
+
+docker build -t cyberway/commun.contracts:${REVISION} --build-arg=cw_tag=${CW_TAG} --build-arg=cdt_tag=${CDT_TAG} --build-arg=system_contracts_tag=${SYSTEM_CONTRACTS_TAG} --build-arg=builder_tag=${BUILDER_TAG} --build-arg=version=${REVISION}  -f Docker/Dockerfile .
