@@ -124,7 +124,7 @@ public:
         \param rules a set of rules for community members. The text length is not limited 
         \param avatar_image community avatar
         \param cover_image community profile cover
-        \param theme community theme
+        \param subject community subject
 
         All parameters except \a commun_code are optionally. So, each of them can be set via separate calling of this action.
         This action does not store any state in DB, it only checks an authority and community presence.
@@ -134,7 +134,7 @@ public:
     */
     [[eosio::action]] void setinfo(symbol_code commun_code,
         optional<std::string> description, optional<std::string> language, optional<std::string> rules,
-        optional<std::string> avatar_image, optional<std::string> cover_image, optional<std::string> theme);
+        optional<std::string> avatar_image, optional<std::string> cover_image, optional<std::string> subject);
 
     /**
         \brief The \ref follow action allows a user to follow (to track) the posts of specified community.
