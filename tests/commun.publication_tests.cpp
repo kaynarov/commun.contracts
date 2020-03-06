@@ -442,7 +442,7 @@ BOOST_FIXTURE_TEST_CASE(upvote, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(errgallery.no_community, post.upvote(N(chucknorris), {N(brucelee), permlink}, 1));
     init();
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()("refill_gem_enabled", true)));
-    BOOST_CHECK_EQUAL(err.simple_no_message, post.upvote(N(chucknorris), {N(brucelee), permlink}));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(chucknorris), {N(brucelee), permlink}));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, post.upvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent+1));
     BOOST_CHECK_EQUAL(err.custom_gem, post.upvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent));
@@ -460,7 +460,7 @@ BOOST_FIXTURE_TEST_CASE(downvote, commun_publication_tester) try {
     init();
     BOOST_CHECK_EQUAL(success(), community.setsysparams( point_code, community.sysparams()
         ("refill_gem_enabled", true)("custom_gem_size_enabled", true)));
-    BOOST_CHECK_EQUAL(err.simple_no_message, post.downvote(N(chucknorris), {N(brucelee), permlink}, 1));
+    BOOST_CHECK_EQUAL(success(), post.downvote(N(chucknorris), {N(brucelee), permlink}, 1));
     BOOST_CHECK_EQUAL(success(), post.create({N(brucelee), "permlink"}));
     BOOST_CHECK_EQUAL(err.vote_weight_gt100, post.downvote(N(chucknorris), {N(brucelee), permlink}, cfg::_100percent+1));
     BOOST_CHECK_EQUAL(err.author_vote, post.downvote(N(brucelee), {N(brucelee), permlink}, cfg::_100percent));
@@ -548,7 +548,7 @@ BOOST_FIXTURE_TEST_CASE(empty_votes, commun_publication_tester) try {
     BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink"}, 0));
     BOOST_CHECK(get_gem(_code, _point, mssgid{N(brucelee), "permlink"}.tracery(), N(jackiechan)).is_null());
 
-    BOOST_CHECK_EQUAL(err.simple_no_message, post.upvote(N(jackiechan), {N(brucelee), "permlink1"}));
+    BOOST_CHECK_EQUAL(success(), post.upvote(N(jackiechan), {N(brucelee), "permlink1"}));
 
     std::set<commun::structures::opus_info> new_opuses = {{
         commun::structures::opus_info{ cfg::post_opus_name, 100, 100, 100 },
