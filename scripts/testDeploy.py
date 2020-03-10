@@ -228,12 +228,12 @@ class CommunLeaderTests(TestCase):
             for (approver, approverKey) in self.smajor_approvers[:-1]:
                 testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey], output=True)
             with self.assertRaisesRegex(Exception, 'assertion failure with message: transaction authorization failed'):
-                testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey], output=True)
+                testnet.msigExec(proposer, proposer, 'recovery', providebw=[proposer+'/c@providebw','c.ctrl/c@providebw'], keys=[proposerKey, clientKey], output=True)
 
         with log_action("trying setcode with enough approvers"):
             (approver, approverKey) = self.smajor_approvers[-1]
             testnet.msigApprove(approver, proposer, 'recovery', providebw=approver+'/c@providebw', keys=[approverKey, clientKey], output=True)
-            testnet.msigExec(proposer, proposer, 'recovery', providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey], output=True)
+            testnet.msigExec(proposer, proposer, 'recovery', providebw=[proposer+'/c@providebw','c.ctrl/c@providebw'], keys=[proposerKey, clientKey], output=True)
 
         with log_action("checking duplicated setrecover not fails"):
             community.createAndExecProposal(
