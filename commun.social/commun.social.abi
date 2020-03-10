@@ -16,7 +16,7 @@
                 {"name": "last_name", "type": "string?"}, 
                 {"name": "country", "type": "string?"}, 
                 {"name": "city", "type": "string?"}, 
-                {"name": "birth_date", "type": "time_point_sec?"}, 
+                {"name": "birth_date", "type": "string?"},
                 {"name": "instagram", "type": "string?"}, 
                 {"name": "linkedin", "type": "string?"}, 
                 {"name": "twitter", "type": "string?"}, 

@@ -92,7 +92,7 @@
                 {"name": "rules", "type": "string?"}, 
                 {"name": "avatar_image", "type": "string?"}, 
                 {"name": "cover_image", "type": "string?"}, 
-                {"name": "theme", "type": "string?"}
+                {"name": "subject", "type": "string?"}
             ]
         }, {
             "name": "setparams", "base": "", 

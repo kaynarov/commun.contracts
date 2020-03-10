@@ -166,10 +166,10 @@ void commun_list::setparams(symbol_code commun_code,
 
 void commun_list::setinfo(symbol_code commun_code,
     optional<std::string> description, optional<std::string> language, optional<std::string> rules,
-    optional<std::string> avatar_image, optional<std::string> cover_image, optional<std::string> theme
+    optional<std::string> avatar_image, optional<std::string> cover_image, optional<std::string> subject
 ) {
     eosio::check(
-        description || language || rules || avatar_image || cover_image || theme,
+        description || language || rules || avatar_image || cover_image || subject,
         "No params changed");
 
     require_auth(point::get_issuer(commun_code));

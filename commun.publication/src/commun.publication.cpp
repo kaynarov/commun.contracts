@@ -206,8 +206,8 @@ void publication::claim(symbol_code commun_code, mssgid message_id, name gem_own
 void publication::set_vote(symbol_code commun_code, name voter, const mssgid& message_id, std::optional<uint16_t> weight, bool damn) {
     eosio::check(voter != message_id.author, "author can't vote");
     if (weight.has_value() && *weight == 0) {
-        require_client_auth("Weight equal to 0");   // empty votes are allowed only with a client signature
-        return;                                  // custom_gem_size_enabled is not checked in this case
+        // the client signature is already checked
+        return;
     }
     
     auto tracery = message_id.tracery();
@@ -216,10 +216,16 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid& me
 
     gallery_types::mosaics mosaics_table(_self, commun_code.raw());
     auto mosaic = mosaics_table.find(tracery);
-    eosio::check(mosaic != mosaics_table.end(), "Message does not exist.");
-    eosio::check(mosaic->status == gallery_types::mosaic_struct::ACTIVE, "Message is inactive.");
+    if (mosaic == mosaics_table.end()) {
+        // the client signature is already checked
+        return;
+    }
+    eosio::check(
+        mosaic->status != gallery_types::mosaic_struct::HIDDEN &&
+        mosaic->status != gallery_types::mosaic_struct::BANNED_AND_HIDDEN,
+        "Message is inactive.");
     if (eosio::current_time_point() > mosaic->collection_end_date) {
-        require_client_auth("Collection period is over");
+        // the client signature is already checked
         return;
     }
     auto gems_per_period = get_gems_per_period(commun_code);
@@ -235,7 +241,7 @@ void publication::set_vote(symbol_code commun_code, name voter, const mssgid& me
     auto providers = get_providers(commun_code, voter, gems_per_period, weight);
     
     if ((providers.size() + 1) * community.get_opus(mosaic->opus).min_gem_inclusion > get_points_sum(quantity.amount, providers)) {
-        require_client_auth("Points are not enough for gem inclusion");
+        // the client signature is already checked
         return;
     }
     
