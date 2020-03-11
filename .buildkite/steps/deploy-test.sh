@@ -24,8 +24,6 @@ done
 COMMUN_IMAGE=cyberway/commun.contracts:$IMAGETAG
 echo "Use ${COMMUN_IMAGE} image"
 
-docker pull ${COMMUN_IMAGE}
-
 if [[ "${BUILDKITE_BRANCH}" == "master" ]]; then
     BUILDTYPE="stable"
 else
@@ -36,6 +34,9 @@ CW_TAG=${CW_TAG:-$BUILDTYPE}
 
 export CW_TAG
 export COMMUN_IMAGE
+
+docker pull ${COMMUN_IMAGE}
+docker pull cyberway/cyberway:${CW_TAG}
 
 docker stop mongo nodeosd notifier || true
 docker rm mongo nodeosd notifier || true

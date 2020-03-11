@@ -17,67 +17,75 @@ logFile = None
 unlockTimeout = 999999999
 
 _communAccounts = [
-    # name           contract                warmup_code     permissions (name, keys, accounts, links)
+    # name           contract                warmup_code     permissions (layout, name, keys, accounts, links)
     #('c',        None),    # c - owner for CMN. Must be created outside of this script!
     # Account for commun.com site
     ('c.com',     None,                   None, [
-            ('c.com',     ['GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62'], [], ['cyber:newaccount'])
+            ('mainnet', 'owner',     ['GLS5UuLvruMSU6cvNX2kmBpc2c8rwBA4rbcMJ5cb1boNdPvuWoebk'], [], []),
+            ('mainnet', 'active',    ['GLS7WtstrTkLJCCfwzZdQT4vbuQ16fkhW5KiNE843WtdeLfXwuDv9'], [], []),
+            ('mainnet', 'c.com',     ['GLS6rCjhCGo4aEjWcKPerpnpAAB7moL5Sr9UQPFM3V3arx73SU36F'], [], ['cyber:newaccount']),
+            ('testnet', 'c.com',     ['GLS5a2eDuRETEg7uy8eHbiCqGZM3wnh2pLjiXrFduLWBKVZKCkB62'], [], ['cyber:newaccount'])
         ]),
 
     ('c',         None,                   None, [
-            ('lead.smajor',  [], ['c.ctrl@cyber.code'], []),
-            ('lead.major',   [], ['c.ctrl@cyber.code'], []),
-            ('lead.minor',   [], ['c.ctrl@cyber.code'], []),
-            ('lead.recover', [], ['c@active'], []), # empty auth, active is just filler
-            ('clients',      [], ['c.com@c.com'], ['cyber.domain:newusername']),
-            ('providebw',    [], ['c@clients'], ['cyber:providebw', 'c.point:open']),
+            (None,      'lead.smajor',  [], ['c.ctrl@cyber.code'], []),
+            (None,      'lead.major',   [], ['c.ctrl@cyber.code'], []),
+            (None,      'lead.minor',   [], ['c.ctrl@cyber.code'], []),
+            (None,      'lead.recover', [], ['c@active'], []), # empty auth, active is just filler
+            (None,      'clients',      [], ['c.com@c.com'], ['cyber.domain:newusername']),
+            (None,      'providebw',    [], ['c@clients'], ['cyber:providebw', 'c.point:open']),
         ]),
     ('c.issuer',  None,                   None, [
-            ('issue',        [], ['c@clients'], ['cyber.token:issue', 'cyber.token:transfer']),    # Only for testnet purposes
+            ('testnet', 'issue',        [], ['c@clients'], ['cyber.token:issue', 'cyber.token:transfer']),    # Only for testnet purposes
         ]),
 
     ('c.point',   'commun.point',         None, [
-            ('active',       [], ['c@active', 'c.point@cyber.code'], []),
-            ('issueperm',    [], ['c.emit@cyber.code'], [':issue']),
-            ('clients',      [], ['c@clients'], [':create']),
+            (None,      'active',       [], ['c@active', 'c.point@cyber.code'], []),
+            (None,      'issueperm',    [], ['c.emit@cyber.code'], [':issue']),
+            (None,      'clients',      [], ['c@clients'], [':create']),
         ]),
     ('c.ctrl',    'commun.ctrl',          None, [
-            ('changepoints', [], ['c.point@cyber.code'], [':changepoints']),
-            ('init',         [], ['c.list@cyber.code'], [':init']),
-            ('clients',      [], ['c@clients'], [':emit']),
-            ('transferperm', [], ['c.ctrl@cyber.code'], ['c.point:transfer']),
+            (None,      'changepoints', [], ['c.point@cyber.code'], [':changepoints']),
+            (None,      'init',         [], ['c.list@cyber.code'], [':init']),
+            (None,      'clients',      [], ['c@clients'], [':emit']),
+            (None,      'transferperm', [], ['c.ctrl@cyber.code'], ['c.point:transfer']),
         ]),
     ('c.emit',    'commun.emit',          None, [
-            ('rewardperm',   [], ['c.ctrl@cyber.code', 'c.gallery@cyber.code'], [':issuereward']),
-            ('init',         [], ['c.list@cyber.code'], [':init']),
+            (None,      'rewardperm',   [], ['c.ctrl@cyber.code', 'c.gallery@cyber.code'], [':issuereward']),
+            (None,      'init',         [], ['c.list@cyber.code'], [':init']),
         ]),
     ('c.list',    'commun.list',          None,                [
-            ('clients',      [], ['c@clients'], [':create',':setsysparams',':follow',':unfollow',':hide',':unhide']),
+            (None,      'clients',      [], ['c@clients'], [':create',':setsysparams',':follow',':unfollow',':hide',':unhide']),
         ]),
     ('c.gallery', 'commun.publication',   ['commun.gallery'],  [
-            ('clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog',':emit']),
-            ('init',         [], ['c.list@cyber.code'], [':init']),
-            ('transferperm', [], ['c.gallery@cyber.code'], ['c.point:transfer']),
+            (None,      'clients',      [], ['c@clients'], [':create',':update',':remove',':settags',':report',':upvote',':downvote',':unvote',':reblog',':erasereblog',':emit']),
+            (None,      'init',         [], ['c.list@cyber.code'], [':init']),
+            (None,      'transferperm', [], ['c.gallery@cyber.code'], ['c.point:transfer']),
         ]),
     ('c.social',  'commun.social',        None,                [
-            ('clients',      [], ['c@clients'], [':pin',':unpin',':block',':unblock',':updatemeta',':deletemeta']),
+            (None,      'clients',      [], ['c@clients'], [':pin',':unpin',':block',':unblock',':updatemeta',':deletemeta']),
         ]),
     ('c.recover', 'commun.recover',       None,                [
-            ('recover',      ['GLS71iAcPXAqzruvh1EFu28S89Cy8GoYNQXKSQ6UuaBYFuB7usyCB'], [], ['c.recover:recover']),
+            (None,      'recover',      ['GLS71iAcPXAqzruvh1EFu28S89Cy8GoYNQXKSQ6UuaBYFuB7usyCB'], [], ['c.recover:recover']),
         ]),
 ]
 
-communAccounts = []
-for (name, contract, warmup_code, permissions) in _communAccounts:
-    acc = Struct()
-    perms = []
-    for (pname, keys, accounts, links) in permissions:
-        perm = Struct()
-        parent = "owner" if pname == "active" else "active"
-        (perm.name, perm.parent, perm.keys, perm.accounts, perm.links) = (pname, parent, keys, accounts, links)
-        perms.append(perm)
-    (acc.name, acc.contract, acc.warmup_code, acc.permissions) = (name, contract, warmup_code, perms)
-    communAccounts.append(acc)
+def createPermInfo(name, parent, keys, accounts, links):
+    perm = Struct()
+    (perm.name, perm.parent, perm.keys, perm.accounts, perm.links) = (name, parent, keys, accounts, links)
+    return perm
+
+def parseAccountInfo(accountInfo, deployLayout):
+    layoutAccounts = []
+    for (name, contract, warmup_code, permissions) in accountInfo:
+        acc = Struct()
+        perms = []
+        for (layout, pname, keys, accounts, links) in permissions:
+            if layout is None or layout == deployLayout:
+                perms.append(createPermInfo(pname, "owner" if pname == "active" else "active", keys, accounts, links))
+        (acc.name, acc.contract, acc.warmup_code, acc.permissions) = (name, contract, warmup_code, perms)
+        layoutAccounts.append(acc)
+    return layoutAccounts
 
 # In case of large amount of tables transaction `set contract` failed due
 # timeout (`Transaction took too long`). In this case we split ABI-file
@@ -142,6 +150,109 @@ def importKeys():
 
 # -------------------- Commun functions ---------------------------------------
 
+def getPermLink(account, code, action, **kwargs):
+    result = json.loads(cleos("get table --limit 1 --index action -L {index} cyber '' permlink".format(
+            index=jsonArg({"account":account, "code":code, "message_type":action})), **kwargs))
+    if len(result['rows']) == 0: return None
+    link = result['rows'][0]
+    if link['account'] != account or link['code'] != code or link['message_type'] != action:
+        return None
+    return link
+
+def getBalance(account, symbol, **kwargs):
+    result = json.loads(cleos("get table --limit 1 -L {index} cyber.token {acc} accounts".format(
+            index=jsonArg({"balance":{"_sym":symbol}}), acc=account), **kwargs))
+    if len(result['rows']) == 0: return None
+    balance = result['rows'][0]
+    if balance['balance'].endswith(' '+symbol): return balance
+    else: None
+
+def getAbi(account, **kwargs):
+    try:
+        return cleos('get abi {acc}'.format(acc=account), **kwargs)
+    except CleosException as err:
+        if err.output.find('Failed with error: Key Not Found') != -1:
+            return None
+        else: raise
+
+def compareAbiFiles(first, second):
+    try:
+        subprocess.check_output(['/mnt/working/cyberway.cdt.git/build/bin/cyberway-abidiff', first, second], universal_newlines=True)
+        return True
+    except subprocess.CalledProcessError as err:
+        if err.returncode == 1:
+            return False
+        else: raise
+
+class DeployChanges:
+    def __init__(self):
+        self.diffCount = 0
+
+    def add(self, message):
+        print("[{id}] {message}".format(id=self.diffCount, message=message), file=sys.stderr)
+        self.diffCount += 1
+
+def checkCommunAccounts(changes):
+    for accInfo in communAccounts:
+        oldAccount = getAccount(accInfo.name, output=args.verbose)
+        if oldAccount is None:
+            changes.add("Missing account {acc}".format(acc=accInfo.name))
+            continue
+
+        permissions = {}
+        for perm in accInfo.permissions: permissions[perm.name] = perm
+
+        if accInfo.name != 'c':
+            if 'active' not in permissions: 
+                permissions['active'] = createPermInfo('active', 'owner', [], ['c@active'], [])
+            if 'owner' not in permissions:
+                permissions['owner'] = createPermInfo('owner', '', [], ['c@owner'], [])
+
+        for permInfo in permissions.values():
+            if permInfo.name not in oldAccount['permissions']:
+                changes.add("Missing '{pname}' permission for {acc}".format(acc=accInfo.name, pname=permInfo.name))
+                continue
+
+            actualPerm = oldAccount['permissions'][permInfo.name]
+            expectPerm = createAuthority(permInfo.keys, permInfo.accounts)
+            if actualPerm['required_auth'] != expectPerm:
+                changes.add("Invalid '{pname}' permission for {acc}:\n" \
+                      "    expect: {expect}\n" \
+                      "    actual: {actual}".format(acc=accInfo.name, pname=permInfo.name,
+                      expect=json.dumps(expectPerm,sort_keys=True), actual=json.dumps(actualPerm['required_auth'],sort_keys=True)))
+
+            for link in permInfo.links:
+                (code, action) = link.split(':',2)
+                if not code: code = accInfo.name
+                actualLink = getPermLink(accInfo.name, code, action, output=args.verbose)
+                if actualLink is None:
+                    changes.add("Missing permlink {code}:{action} for {acc}".format(acc=accInfo.name, code=code, action=action))
+                elif actualLink['required_permission'] != permInfo.name:
+                    changes.add("Invalid permlink {code}:{action} -> {chainPerm} for {acc}: {perm}".format(
+                            acc=accInfo.name, code=code, action=action, chainPerm=actualLink['required_permission'], perm=permInfo.name))
+
+        if accInfo.contract:
+            actualCode = cleos('get code {acc}'.format(acc=accInfo.name), output=args.verbose).split(' ')[2].rstrip('\n')
+            if actualCode == 64*'0':
+                changes.add('Code missing for {acc}'.format(acc=accInfo.name))
+            else:
+                filenameCode = os.path.join(args.contracts_dir, accInfo.contract, os.path.basename(accInfo.contract) + '.wasm')
+                expectCode = subprocess.check_output(['sha256sum', filenameCode], universal_newlines=True).split(' ')[0]
+    
+                if actualCode != expectCode:
+                    changes.add('Code different for {acc}: {actual} {expect}'.format(acc=accInfo.name, actual=actualCode, expect=expectCode))
+
+            actualAbiData = getAbi(accInfo.name, output=args.verbose)
+            if actualAbiData is None:
+                changes.add('ABI missing for {acc}'.format(acc=accInfo.name))
+            else:
+                expectAbi = os.path.join(args.contracts_dir, accInfo.contract, os.path.basename(accInfo.contract) + '.abi')
+                with tempfile.NamedTemporaryFile(mode='wt', delete=False) as f:
+                    f.write(actualAbiData)
+                    f.flush()
+                    if False == compareAbiFiles(f.name, expectAbi):
+                        changes.add('ABI different for {acc}: {actual} {expect}'.format(acc=accInfo.name, actual=f.name, expect=expectAbi))
+
 def createCommunAccounts():
     for acc in communAccounts:
         if not (acc.name == 'c' or acc.name == 'c.issuer'):
@@ -162,9 +273,10 @@ def installContracts():
 
 def configureCommun():
     # Only for testnet purposes
-    pushAction('c.list', 'setappparams', 'c.list', {
-            "leaders_num":5
-        }, providebw='c.list/c')
+    if deployLayout != 'mainnet':
+        pushAction('c.list', 'setappparams', 'c.list', {
+                "leaders_num":5
+            }, providebw='c.list/c')
 
     c = getAccount('c')
     updateAuth('c', 'active', 'owner', [], ['c@lead.smajor', 'c@lead.recover', 'c@owner'])
@@ -184,9 +296,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--private-key', metavar='', help="Golos Private Key", default='5KekbiEKS4bwNptEtSawUygRb5sQ33P6EUZ6c4k4rEyQg7sARqW', dest="private_key")
 parser.add_argument('--programs-dir', metavar='', help="Programs directory for cleos, nodeos, keosd", default='/mnt/working/eos-debug.git/build/programs');
 parser.add_argument('--keosd', metavar='', help="Path to keosd binary (default in programs-dir)", default='keosd/keosd')
-parser.add_argument('--contracts-dir', metavar='', help="Path to contracts directory", default='../../build/')
+parser.add_argument('--contracts-dir', metavar='', help="Path to contracts directory", default=os.environ.get("COMMUN_CONTRACTS", '../../build/'))
 parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
 parser.add_argument('--log-path', metavar='', help="Path to log file", default='./output.log')
+
+parser.add_argument('--update', help="Create proposals for update dApp contracts", action='store_true')
+parser.add_argument('--check', help="Check dApp contracts with current version", action='store_true')
+parser.add_argument('--verbose', help="Verbose cleos actions", action='store_true')
 
 args = parser.parse_args()
 
@@ -195,6 +311,24 @@ if (parser.get_default('keosd') == args.keosd):
 
 logFile = open(args.log_path, 'a')
 logFile.write('\n\n' + '*' * 80 + '\n\n\n')
+
+layouts = {
+    # links `chaind_id` with known layout
+    '591c8aa5cade588b1ce045d26e5f2a162c52486262bd2d7abcb7fa18247e17ec': 'mainnet'
+}
+chainInfo = json.loads(cleos('get info', output=args.verbose))
+deployLayout = layouts.get(chainInfo['chain_id'], 'testnet')
+print('Deploy layout: {layout}'.format(layout=deployLayout))
+
+communAccounts = parseAccountInfo(_communAccounts, deployLayout)
+
+if (args.check):
+    changes = DeployChanges()
+    checkCommunAccounts(changes)
+    if getBalance('cyber.null', 'CMN', output=args.verbose) is None:
+        changes.add("Missing 'CMN' balance for 'cyber.null'")
+
+    exit(0 if changes.diffCount==0 else 1)
 
 startWallet()
 importKeys()
