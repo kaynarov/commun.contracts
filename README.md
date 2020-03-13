@@ -31,7 +31,3 @@ Number of communities is not limited. In the future, the platform’s capabiliti
 * [gallery](https://doxygen.cyberway.io/group__gallery.html)
 * [publication](https://doxygen.cyberway.io/group__publish.html)
 * [social](https://doxygen.cyberway.io/group__social.html)
-
-
-
-
