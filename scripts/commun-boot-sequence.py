@@ -294,7 +294,7 @@ class DeployChanges:
 
 def checkCommunAccounts(changes):
     for accInfo in communAccounts:
-        oldAccount = getAccount(accInfo.name, output=False)
+        oldAccount = getAccount(accInfo.name)
         if oldAccount is None:
             with changes.difference("Missing account {acc}".format(acc=accInfo.name)) as diff:
                 diff.addCreateAccount(accInfo.name)
