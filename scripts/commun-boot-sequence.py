@@ -8,6 +8,8 @@ import sys
 import time
 import tempfile
 from deployutils.testnet import *
+from deployutils import JsonPrinter, ColoredConsole, Console
+from collections import OrderedDict
 
 class Struct(object): pass
 
@@ -90,34 +92,32 @@ def parseAccountInfo(accountInfo, deployLayout):
 # In case of large amount of tables transaction `set contract` failed due
 # timeout (`Transaction took too long`). In this case we split ABI-file
 # tables section in small portions and iteratively load ABI.
-def loadContract(account, contract, *, contracts_dir, providebw=None, keys=None, retry=None, warmup_code=None):
-    contract = os.path.join(contracts_dir, contract)
-    while os.path.basename(contract) == '':
-        contract = os.path.dirname(contract)
+def loadContract(account, contract, *, contracts_dir, warmup_code=None, resultReader=None, **kwargs):
+    contract = os.path.relpath(os.path.join(contracts_dir, contract))
     abi_file = os.path.join(contract, os.path.basename(contract) + '.abi')
 
     with open(abi_file) as json_file:
         abi = json.load(json_file)
         if len(abi['tables']) > 5:
             tables = abi['tables'].copy()
-            for x in range(3, len(tables), 3):
-                abi['tables'] = tables[:x]
+            for x in range(1, len(tables)//3, 1):
+                abi['tables'] = tables[:x*3]
                 with tempfile.NamedTemporaryFile(mode='w') as f:
                     json.dump(abi, f)
                     f.flush()
-                    cleos('set abi {account} {abi}'.format(account=account, abi=f.name),
-                            providebw=providebw, keys=keys, retry=retry)
-            cleos('set abi {account} {abi}'.format(account=account, abi=abi_file),
-                    providebw=providebw, keys=keys, retry=retry)
+                    result = cleos('set abi {account} {abi}'.format(account=account, abi=os.path.relpath(f.name)), **kwargs)
+                    if resultReader: resultReader(result, 'preabi{}'.format(x))
+            result = cleos('set abi {account} {abi}'.format(account=account, abi=abi_file), **kwargs)
+            if resultReader: resultReader(result, 'abi')
         if not warmup_code is None:
-            for code in warmup_code:
+            for (i,code) in enumerate(warmup_code):
                 while os.path.basename(code) == '':
                     code = os.path.dirname(code)
-                code_file = os.path.join(contracts_dir, code, os.path.basename(code) + '.wasm')
-                cleos('set code {account} {code_file}'.format(account=account, code_file=code_file),
-                        providebw=providebw, keys=keys, retry=retry)
-        return cleos('set contract {account} {contract_dir}'.format(account=account, contract_dir=contract),
-                providebw=providebw, keys=keys, retry=retry)
+                code_file = os.path.relpath(os.path.join(contracts_dir, code, os.path.basename(code) + '.wasm'))
+                result = cleos('set code {account} {code_file}'.format(account=account, code_file=code_file), **kwargs)
+                if resultReader: resultReader(result, 'precode{}'.format(i+1))
+        result = cleos('set contract {account} {contract_dir}'.format(account=account, contract_dir=contract), **kwargs)
+        if resultReader: resultReader(result, 'contract')
 
 
 def run(args):
@@ -151,8 +151,13 @@ def importKeys():
 # -------------------- Commun functions ---------------------------------------
 
 def getPermLink(account, code, action, **kwargs):
-    result = json.loads(cleos("get table --limit 1 --index action -L {index} cyber '' permlink".format(
-            index=jsonArg({"account":account, "code":code, "message_type":action})), **kwargs))
+    r = requests.post(params['nodeos_url']+'/v1/chain/get_table_rows',  json={
+            "json":True, "limit":1, "index":"action", "encode_type":"dec", "reverse":False,"show_payer":False,
+            "code":"cyber", "scope":"", "table":"permlink",
+            "lower_bound":{"account":account,"required_permission":"","code":code,"message_type":action},
+            "upper_bound":None})
+    if r.status_code != 200: raise RequestException(r)
+    result = r.json()
     if len(result['rows']) == 0: return None
     link = result['rows'][0]
     if link['account'] != account or link['code'] != code or link['message_type'] != action:
@@ -167,36 +172,138 @@ def getBalance(account, symbol, **kwargs):
     if balance['balance'].endswith(' '+symbol): return balance
     else: None
 
-def getAbi(account, **kwargs):
-    try:
-        return cleos('get abi {acc}'.format(acc=account), **kwargs)
-    except CleosException as err:
-        if err.output.find('Failed with error: Key Not Found') != -1:
-            return None
-        else: raise
-
-def compareAbiFiles(first, second):
-    try:
-        subprocess.check_output(['/mnt/working/cyberway.cdt.git/build/bin/cyberway-abidiff', first, second], universal_newlines=True)
-        return True
-    except subprocess.CalledProcessError as err:
-        if err.returncode == 1:
-            return False
-        else: raise
-
 class DeployChanges:
-    def __init__(self):
+    def __init__(self, *, skip=None, expiration=None):
         self.diffCount = 0
+        self.expiration = expiration
+        self.skip = set([int(a) for a in skip.split(',')]) if skip else set()
+        self.trxs = OrderedDict()
 
-    def add(self, message):
-        print("[{id}] {message}".format(id=self.diffCount, message=message), file=sys.stderr)
+    def difference(self, message):
+        diffId = self.diffCount
+        skipAction = diffId in self.skip
+        act = '-' if skipAction else '+'
         self.diffCount += 1
+        print("{act}[{id}] {message}".format(id=diffId, act=act, message=message), file=sys.stderr)
+        return self.Difference(self, diffId, skipAction)
+
+    def addAction(self, trxName, contract, action, actors, args):
+        if trxName not in self.trxs:
+            self.trxs[trxName] = Trx(expiration=self.expiration)
+            self.trxs[trxName].provided = set()
+        trx = self.trxs[trxName]
+        def addProviderAction(trx, account):
+            if account != 'c' and account not in trx.provided:
+                trx.provided.add(account)
+                trx.addAction('cyber', 'providebw', 'c', {'provider':'c', 'account': account})
+        actorsAuth = parseAuthority(actors)
+        if isinstance(actorsAuth, list):
+            for auth in acotrsAuth: addProviderAction(trx, auth['actor'])
+        else: addProviderAction(trx, actorsAuth['actor'])
+        trx.addAction(contract, action, actors, args)
+        return trx.trx['actions'][-1]
+
+    def addTrx(self, trxName, trx):
+        class TrxData:
+            def __init__(self, trx): self.trx = trx
+            def getTrx(self): return self.trx
+        if trxName in self.trxs.keys(): raise BaseException("Transaction already exists")
+        self.trxs[trxName] = TrxData(trx)
+
+    def fillActionArgs(self):
+        for trx in self.trxs.values():
+            for action in trx.getTrx()['actions']:
+                if 'args' in action: continue
+                try: action['args'] = unpackActionData(action['account'], action['name'], action['data'])
+                except: pass
+
+    def printTrx(self):
+        jsonPrinter = JsonPrinter(ColoredConsole())
+        trxItems = initTrxItems()
+        for (trxName,trx) in self.trxs.items():
+            print("Trx '{name}':\n{trx}".format(name=trxName, trx=jsonPrinter.format(trxItems, trx.getTrx())))
+
+    def saveTrx(self, path):
+        trxId = 0
+        jsonPrinter = JsonPrinter(Console(), maxstrlength=None)
+        trxItems = initTrxItems()
+        for (trxName, trx) in self.trxs.items():
+            with open(os.path.join(path, '{:0>3}-{}.trx'.format(trxId, trxName)), 'wt') as f:
+                f.write(jsonPrinter.format(trxItems, trx.getTrx()))
+            trxId += 1
+
+    class Difference:
+        def __init__(self, changes, diffId, skip):
+            self.changes = changes
+            self.diffId = diffId
+            self.skip = skip
+        
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return False
+
+        def _addTrx(self, trxName, trx):
+            if self.skip: return
+            for action in trx['actions']:
+                action['id'] = '[{id}]'.format(id=self.diffId)
+            self.changes.addTrx(trxName, trx)
+
+        def _addAction(self, trxName, code, action, actor, args):
+            if self.skip: return
+            action = self.changes.addAction(trxName, code, action, actor, args)
+            action['id'] = '[{id}]'.format(id=self.diffId)
+
+        def addCreateAccount(self, account):
+            self._addAction('accounts', 'cyber', 'newaccount', 'c@active', {
+                    'creator': 'c',
+                    'name': account,
+                    'owner': createAuthority([], ['c@owner']),
+                    'active': createAuthority([], ['c@active'])
+                })
+    
+        def addUpdateAuth(self, account, perm):
+            self._addAction('auth-{}'.format(account), 'cyber', 'updateauth', account, {
+                    'account': account,
+                    'permission': perm.name,
+                    'parent': perm.parent,
+                    'auth': createAuthority(perm.keys, perm.accounts)
+                })
+    
+        def addLinkAuth(self, account, perm, link):
+            (code, action) = link.split(':', 2)
+            self._addAction('auth-{}'.format(account), 'cyber', 'linkauth', account, {
+                    'account': account,
+                    'code': code or account,
+                    'type': action,
+                    'requirement': perm
+                })
+
+        @staticmethod
+        def extractTrx(info):
+            trx = json.loads(info[info.find('{'):])
+            return trx
+
+        def addLoadContractTrxs(self, account, contract, warmup_code):
+            def trxReader(info, desc):
+                self._addTrx('code-{account}-{desc}'.format(desc=desc, account=account), self.extractTrx(info))
+            loadContract(account, contract, additional=' --skip-sign --dont-broadcast',
+                    contracts_dir=args.contracts_dir, warmup_code=warmup_code,
+                    providebw=account+'/c', resultReader=trxReader)
 
 def checkCommunAccounts(changes):
     for accInfo in communAccounts:
-        oldAccount = getAccount(accInfo.name, output=args.verbose)
+        oldAccount = getAccount(accInfo.name, output=False)
         if oldAccount is None:
-            changes.add("Missing account {acc}".format(acc=accInfo.name))
+            with changes.difference("Missing account {acc}".format(acc=accInfo.name)) as diff:
+                diff.addCreateAccount(accInfo.name)
+                for perm in accInfo.permissions:
+                    diff.addUpdateAuth(accInfo.name, perm)
+                    for link in perm.links:
+                        diff.addLinkAuth(accInfo.name, perm.name, link)
+                if accInfo.contract:
+                    diff.addLoadContractTrxs(accInfo.name, accInfo.contract, accInfo.warmup_code)
             continue
 
         permissions = {}
@@ -210,48 +317,57 @@ def checkCommunAccounts(changes):
 
         for permInfo in permissions.values():
             if permInfo.name not in oldAccount['permissions']:
-                changes.add("Missing '{pname}' permission for {acc}".format(acc=accInfo.name, pname=permInfo.name))
+                with changes.difference("Missing '{pname}' permission for {acc}".format(acc=accInfo.name, pname=permInfo.name)) as diff:
+                    diff.addUpdateAuth(accInfo.name, permInfo)
+                    for link in perm.links:
+                        diff.addLinkAuth(accInfo.name, perm.name, link)
                 continue
 
-            actualPerm = oldAccount['permissions'][permInfo.name]
-            expectPerm = createAuthority(permInfo.keys, permInfo.accounts)
-            if actualPerm['required_auth'] != expectPerm:
-                changes.add("Invalid '{pname}' permission for {acc}:\n" \
-                      "    expect: {expect}\n" \
-                      "    actual: {actual}".format(acc=accInfo.name, pname=permInfo.name,
-                      expect=json.dumps(expectPerm,sort_keys=True), actual=json.dumps(actualPerm['required_auth'],sort_keys=True)))
+            actualAuth = oldAccount['permissions'][permInfo.name]['required_auth']
+            expectAuth = createAuthority(permInfo.keys, permInfo.accounts)
+            if actualAuth != expectAuth:
+                with changes.difference("Invalid '{pname}' permission for {acc}:\n" \
+                        "    expect: {expect}\n" \
+                        "    actual: {actual}".format(acc=accInfo.name, pname=permInfo.name,
+                        expect=json.dumps(expectAuth,sort_keys=True),
+                        actual=json.dumps(actualAuth,sort_keys=True))) as diff:
+                    diff.addUpdateAuth(accInfo.name, permInfo)
 
             for link in permInfo.links:
                 (code, action) = link.split(':',2)
                 if not code: code = accInfo.name
-                actualLink = getPermLink(accInfo.name, code, action, output=args.verbose)
+                actualLink = getPermLink(accInfo.name, code, action, output=False)
                 if actualLink is None:
-                    changes.add("Missing permlink {code}:{action} for {acc}".format(acc=accInfo.name, code=code, action=action))
+                    with changes.difference("Missing permlink {code}:{action} for {acc}".format(acc=accInfo.name, code=code, action=action)) as diff:
+                        diff.addLinkAuth(accInfo.name, perm.name, link)
                 elif actualLink['required_permission'] != permInfo.name:
-                    changes.add("Invalid permlink {code}:{action} -> {chainPerm} for {acc}: {perm}".format(
-                            acc=accInfo.name, code=code, action=action, chainPerm=actualLink['required_permission'], perm=permInfo.name))
+                    with changes.difference("Invalid permlink {code}:{action} -> {chainPerm} for {acc}: {perm}".format(
+                            acc=accInfo.name, code=code, action=action,
+                            chainPerm=actualLink['required_permission'], perm=permInfo.name)) as diff:
+                        diff.addLinkAuth(accInfo.name, perm.name, link)
 
         if accInfo.contract:
-            actualCode = cleos('get code {acc}'.format(acc=accInfo.name), output=args.verbose).split(' ')[2].rstrip('\n')
-            if actualCode == 64*'0':
-                changes.add('Code missing for {acc}'.format(acc=accInfo.name))
-            else:
-                filenameCode = os.path.join(args.contracts_dir, accInfo.contract, os.path.basename(accInfo.contract) + '.wasm')
-                expectCode = subprocess.check_output(['sha256sum', filenameCode], universal_newlines=True).split(' ')[0]
-    
-                if actualCode != expectCode:
-                    changes.add('Code different for {acc}: {actual} {expect}'.format(acc=accInfo.name, actual=actualCode, expect=expectCode))
+            filenameCode = os.path.join(args.contracts_dir, accInfo.contract, os.path.basename(accInfo.contract) + '.wasm')
+            expectCodeHash = Code.getHashFromFile(filenameCode)
+            filenameAbi = os.path.join(args.contracts_dir, accInfo.contract, os.path.basename(accInfo.contract) + '.abi')
+            expectAbiHash = ABI.getHashFromFile(filenameAbi)
 
-            actualAbiData = getAbi(accInfo.name, output=args.verbose)
-            if actualAbiData is None:
-                changes.add('ABI missing for {acc}'.format(acc=accInfo.name))
-            else:
-                expectAbi = os.path.join(args.contracts_dir, accInfo.contract, os.path.basename(accInfo.contract) + '.abi')
-                with tempfile.NamedTemporaryFile(mode='wt', delete=False) as f:
-                    f.write(actualAbiData)
-                    f.flush()
-                    if False == compareAbiFiles(f.name, expectAbi):
-                        changes.add('ABI different for {acc}: {actual} {expect}'.format(acc=accInfo.name, actual=f.name, expect=expectAbi))
+            actualCodeHash = Code.getHashFromChain(params['nodeos_url'], accInfo.name)
+            actualAbiHash = ABI.getHashFromChain(params['nodeos_url'], accInfo.name)
+
+            if actualCodeHash is None or actualAbiHash is None:
+                with changes.difference('Code or ABI missing for {acc}'.format(acc=accInfo.name)) as diff:
+                    diff.addLoadContractTrxs(accInfo.name, accInfo.contract, accInfo.warmup_code)
+            elif actualCodeHash != expectCodeHash or actualAbiHash != expectAbiHash:
+                with changes.difference('Code or ABI different for {acc}:\n'
+                        '   expect: {expectCode} {expectAbi}\n'
+                        '   actual: {actualCode} {actualAbi}'.format(acc=accInfo.name, 
+                        actualCode=actualCodeHash, expectCode=expectCodeHash,
+                        actualAbi=actualAbiHash, expectAbi=expectAbiHash)) as diff:
+                    contract = os.path.relpath(os.path.join(args.contracts_dir, accInfo.contract))
+                    result = cleos('set contract {account} {path}'.format(account=accInfo.name, path=contract),
+                            additional=' --dont-broadcast --skip-sign', providebw=accInfo.name+'/c', output=False)
+                    diff._addTrx('code-{}-update'.format(accInfo.name), diff.extractTrx(result))
 
 def createCommunAccounts():
     for acc in communAccounts:
@@ -293,16 +409,18 @@ def OpenNullCMN():
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--private-key', metavar='', help="Golos Private Key", default='5KekbiEKS4bwNptEtSawUygRb5sQ33P6EUZ6c4k4rEyQg7sARqW', dest="private_key")
+parser.add_argument('--private-key', metavar='', help="Commun Private Key", default='5KekbiEKS4bwNptEtSawUygRb5sQ33P6EUZ6c4k4rEyQg7sARqW', dest="private_key")
 parser.add_argument('--programs-dir', metavar='', help="Programs directory for cleos, nodeos, keosd", default='/mnt/working/eos-debug.git/build/programs');
 parser.add_argument('--keosd', metavar='', help="Path to keosd binary (default in programs-dir)", default='keosd/keosd')
 parser.add_argument('--contracts-dir', metavar='', help="Path to contracts directory", default=os.environ.get("COMMUN_CONTRACTS", '../../build/'))
 parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
 parser.add_argument('--log-path', metavar='', help="Path to log file", default='./output.log')
 
-parser.add_argument('--update', help="Create proposals for update dApp contracts", action='store_true')
-parser.add_argument('--check', help="Check dApp contracts with current version", action='store_true')
-parser.add_argument('--verbose', help="Verbose cleos actions", action='store_true')
+parser.add_argument('--check', help="Check dApp with current version", action='store_true')
+parser.add_argument('--output', help="Directory for created transactions for update dApp", default=None)
+parser.add_argument('--expiration', help='Expiration time for generated transactions (sec)', default=3600)
+parser.add_argument('--skip', help='Skip actions in update sequence (comma separated list of difference id)', default=None)
+parser.add_argument('--layout', help='Deploy layout', default=None)
 
 args = parser.parse_args()
 
@@ -316,19 +434,34 @@ layouts = {
     # links `chaind_id` with known layout
     '591c8aa5cade588b1ce045d26e5f2a162c52486262bd2d7abcb7fa18247e17ec': 'mainnet'
 }
-chainInfo = json.loads(cleos('get info', output=args.verbose))
-deployLayout = layouts.get(chainInfo['chain_id'], 'testnet')
+chainInfo = json.loads(cleos('get info', output=False))
+deployLayout = args.layout or layouts.get(chainInfo['chain_id'], 'testnet')
 print('Deploy layout: {layout}'.format(layout=deployLayout))
 
 communAccounts = parseAccountInfo(_communAccounts, deployLayout)
 
 if (args.check):
-    changes = DeployChanges()
-    checkCommunAccounts(changes)
-    if getBalance('cyber.null', 'CMN', output=args.verbose) is None:
-        changes.add("Missing 'CMN' balance for 'cyber.null'")
+    if args.output and os.path.exists(args.output):
+        print("Output directory '{}' already exists".format(args.output), file=sys.stderr)
+        exit(1)
 
-    exit(0 if changes.diffCount==0 else 1)
+    changes = DeployChanges(expiration=args.expiration, skip=args.skip)
+    checkCommunAccounts(changes)
+    if getBalance('cyber.null', 'CMN', output=False) is None:
+        with changes.difference("Missing 'CMN' balance for 'cyber.null'") as diff:
+            diff._addAction('other', 'cyber.token', 'open', 'c', {
+                    "owner": "cyber.null",
+                    "symbol": Symbol(4, 'CMN'),
+                    "ram_payer": "c"})
+
+    if args.output:
+        os.makedirs(args.output)
+        changes.fillActionArgs()
+        changes.saveTrx(args.output)
+        changes.printTrx()
+        exit(0)
+    else:
+        exit(0 if changes.diffCount==0 else 1)
 
 startWallet()
 importKeys()
