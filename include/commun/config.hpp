@@ -23,6 +23,9 @@ inline name operator ""_n() {
 using eosio::name;
 #endif
 
+#define CYBER_TOKEN "cyber.token"
+#define COMMUN_POINT "c.point"
+
 namespace commun { namespace config {
 
 // contracts

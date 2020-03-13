@@ -30,7 +30,7 @@ struct accountmeta {
     optional<std::string> last_name; /**< User's Last Name. */
     optional<std::string> country; /**< User's Country. */
     optional<std::string> city; /**< User's City. */
-    optional<time_point_sec> birth_date; /**< User's Birth date. */
+    optional<std::string> birth_date; /**< User's Birth date. */
     optional<std::string> instagram; /**< User's Instagram account. */
     optional<std::string> linkedin; /**< User's LinkedIN account. */
     optional<std::string> twitter; /**< User's Twitter account. */

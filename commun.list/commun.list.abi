@@ -1,0 +1,195 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ", 
+    "version": "cyberway::abi/1.1", 
+    "types": [], 
+    "structs": [{
+            "name": "ban", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "account", "type": "name"}, 
+                {"name": "reason", "type": "string"}
+            ]
+        }, {
+            "name": "community", "base": "", 
+            "fields": [
+                {"name": "commun_symbol", "type": "symbol"}, 
+                {"name": "community_hash", "type": "uint64"}, 
+                {"name": "control_param", "type": "control_param_t"}, 
+                {"name": "emission_rate", "type": "uint16"}, 
+                {"name": "emission_receivers", "type": "emission_receiver[]"}, 
+                {"name": "author_percent", "type": "uint16"}, 
+                {"name": "collection_period", "type": "int64"}, 
+                {"name": "moderation_period", "type": "int64"}, 
+                {"name": "extra_reward_period", "type": "int64"}, 
+                {"name": "gems_per_day", "type": "uint16"}, 
+                {"name": "rewarded_mosaic_num", "type": "uint16"}, 
+                {"name": "min_lead_rating", "type": "int64"}, 
+                {"name": "opuses", "type": "opus_info[]"}, 
+                {"name": "damned_gem_reward_enabled", "type": "bool"}, 
+                {"name": "refill_gem_enabled", "type": "bool"}, 
+                {"name": "custom_gem_size_enabled", "type": "bool"}
+            ]
+        }, {
+            "name": "control_param_t", "base": "", 
+            "fields": [
+                {"name": "leaders_num", "type": "uint8"}, 
+                {"name": "max_votes", "type": "uint8"}, 
+                {"name": "custom_thresholds", "type": "threshold[]"}
+            ]
+        }, {
+            "name": "create", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "community_name", "type": "string"}
+            ]
+        }, {
+            "name": "dapp", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "control_param", "type": "control_param_t"}
+            ]
+        }, {
+            "name": "emission_receiver", "base": "", 
+            "fields": [
+                {"name": "contract", "type": "name"}, 
+                {"name": "period", "type": "uint64"}, 
+                {"name": "percent", "type": "uint16"}
+            ]
+        }, {
+            "name": "follow", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "follower", "type": "name"}
+            ]
+        }, {
+            "name": "hide", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "follower", "type": "name"}
+            ]
+        }, {
+            "name": "opus_info", "base": "", 
+            "fields": [
+                {"name": "name", "type": "name"}, 
+                {"name": "mosaic_pledge", "type": "int64"}, 
+                {"name": "min_mosaic_inclusion", "type": "int64"}, 
+                {"name": "min_gem_inclusion", "type": "int64"}
+            ]
+        }, {
+            "name": "setappparams", "base": "", 
+            "fields": [
+                {"name": "leaders_num", "type": "uint8?"}, 
+                {"name": "max_votes", "type": "uint8?"}, 
+                {"name": "permission", "type": "name?"}, 
+                {"name": "required_threshold", "type": "uint8?"}
+            ]
+        }, {
+            "name": "setinfo", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "description", "type": "string?"}, 
+                {"name": "language", "type": "string?"}, 
+                {"name": "rules", "type": "string?"}, 
+                {"name": "avatar_image", "type": "string?"}, 
+                {"name": "cover_image", "type": "string?"}, 
+                {"name": "subject", "type": "string?"}
+            ]
+        }, {
+            "name": "setparams", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "leaders_num", "type": "uint8?"}, 
+                {"name": "max_votes", "type": "uint8?"}, 
+                {"name": "permission", "type": "name?"}, 
+                {"name": "required_threshold", "type": "uint8?"}, 
+                {"name": "emission_rate", "type": "uint16?"}, 
+                {"name": "leaders_percent", "type": "uint16?"}, 
+                {"name": "author_percent", "type": "uint16?"}
+            ]
+        }, {
+            "name": "setsysparams", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "community_name", "type": "string?"}, 
+                {"name": "permission", "type": "name?"}, 
+                {"name": "required_threshold", "type": "uint8?"}, 
+                {"name": "collection_period", "type": "int64?"}, 
+                {"name": "moderation_period", "type": "int64?"}, 
+                {"name": "extra_reward_period", "type": "int64?"}, 
+                {"name": "gems_per_day", "type": "uint16?"}, 
+                {"name": "rewarded_mosaic_num", "type": "uint16?"}, 
+                {"name": "opuses", "type": "opus_info[]"}, 
+                {"name": "remove_opuses", "type": "name[]"}, 
+                {"name": "min_lead_rating", "type": "int64?"}, 
+                {"name": "damned_gem_reward_enabled", "type": "bool?"}, 
+                {"name": "refill_gem_enabled", "type": "bool?"}, 
+                {"name": "custom_gem_size_enabled", "type": "bool?"}
+            ]
+        }, {
+            "name": "threshold", "base": "", 
+            "fields": [
+                {"name": "permission", "type": "name"}, 
+                {"name": "required", "type": "uint8"}
+            ]
+        }, {
+            "name": "unban", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "account", "type": "name"}, 
+                {"name": "reason", "type": "string"}
+            ]
+        }, {
+            "name": "unfollow", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "follower", "type": "name"}
+            ]
+        }, {
+            "name": "unhide", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "follower", "type": "name"}
+            ]
+        }
+    ], 
+    "actions": [
+        {"name": "ban", "type": "ban"}, 
+        {"name": "create", "type": "create"}, 
+        {"name": "follow", "type": "follow"}, 
+        {"name": "hide", "type": "hide"}, 
+        {"name": "setappparams", "type": "setappparams"}, 
+        {"name": "setinfo", "type": "setinfo"}, 
+        {"name": "setparams", "type": "setparams"}, 
+        {"name": "setsysparams", "type": "setsysparams"}, 
+        {"name": "unban", "type": "unban"}, 
+        {"name": "unfollow", "type": "unfollow"}, 
+        {"name": "unhide", "type": "unhide"}
+    ], 
+    "events": [], 
+    "tables": [{
+            "name": "community", "type": "community", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "commun_symbol._sym", "order": "asc"}
+                    ]
+                }, {
+                    "name": "byhash", "unique": true, 
+                    "orders": [
+                        {"field": "community_hash", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "dapp", "type": "dapp", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ], 
+    "variants": []
+}

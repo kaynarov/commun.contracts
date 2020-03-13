@@ -1,0 +1,336 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ", 
+    "version": "cyberway::abi/1.1", 
+    "types": [
+        {"new_type_name": "providers_t", "type": "pair_name_int64[]"}
+    ], 
+    "structs": [{
+            "name": "addtomosaic", "base": "", 
+            "fields": [
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "quantity", "type": "asset"}, 
+                {"name": "damn", "type": "bool"}, 
+                {"name": "gem_creator", "type": "name"}, 
+                {"name": "providers", "type": "providers_t"}
+            ]
+        }, {
+            "name": "advice_struct", "base": "", 
+            "fields": [
+                {"name": "leader", "type": "name"}, 
+                {"name": "favorites", "type": "uint64[]"}
+            ]
+        }, {
+            "name": "ban", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "tracery", "type": "uint64"}
+            ]
+        }, {
+            "name": "claim", "base": "", 
+            "fields": [
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "gem_owner", "type": "name"}, 
+                {"name": "gem_creator", "type": "name?"}, 
+                {"name": "eager", "type": "bool?"}
+            ]
+        }, {
+            "name": "createmosaic", "base": "", 
+            "fields": [
+                {"name": "creator", "type": "name"}, 
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "opus", "type": "name"}, 
+                {"name": "quantity", "type": "asset"}, 
+                {"name": "royalty", "type": "uint16"}, 
+                {"name": "providers", "type": "providers_t"}
+            ]
+        }, {
+            "name": "emit", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}
+            ]
+        }, {
+            "name": "gem_chop_event", "base": "", 
+            "fields": [
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "owner", "type": "name"}, 
+                {"name": "creator", "type": "name"}, 
+                {"name": "reward", "type": "asset"}, 
+                {"name": "unfrozen", "type": "asset"}
+            ]
+        }, {
+            "name": "gem_state_event", "base": "", 
+            "fields": [
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "owner", "type": "name"}, 
+                {"name": "creator", "type": "name"}, 
+                {"name": "points", "type": "asset"}, 
+                {"name": "pledge_points", "type": "asset"}, 
+                {"name": "damn", "type": "bool"}, 
+                {"name": "shares", "type": "int64"}
+            ]
+        }, {
+            "name": "gem_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "claim_date", "type": "time_point"}, 
+                {"name": "points", "type": "int64"}, 
+                {"name": "shares", "type": "int64"}, 
+                {"name": "pledge_points", "type": "int64"}, 
+                {"name": "owner", "type": "name"}, 
+                {"name": "creator", "type": "name"}
+            ]
+        }, {
+            "name": "hide", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "tracery", "type": "uint64"}
+            ]
+        }, {
+            "name": "inclusion_state_event", "base": "", 
+            "fields": [
+                {"name": "account", "type": "name"}, 
+                {"name": "quantity", "type": "asset"}
+            ]
+        }, {
+            "name": "inclusion_struct", "base": "", 
+            "fields": [
+                {"name": "quantity", "type": "asset"}
+            ]
+        }, {
+            "name": "init", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}
+            ]
+        }, {
+            "name": "lock", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "leader", "type": "name"}, 
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "reason", "type": "string"}
+            ]
+        }, {
+            "name": "mosaic_chop_event", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "tracery", "type": "uint64"}
+            ]
+        }, {
+            "name": "mosaic_state_event", "base": "", 
+            "fields": [
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "creator", "type": "name"}, 
+                {"name": "collection_end_date", "type": "time_point"}, 
+                {"name": "gem_count", "type": "uint16"}, 
+                {"name": "shares", "type": "int64"}, 
+                {"name": "damn_shares", "type": "int64"}, 
+                {"name": "reward", "type": "asset"}, 
+                {"name": "banned", "type": "bool"}
+            ]
+        }, {
+            "name": "mosaic_struct", "base": "", 
+            "fields": [
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "creator", "type": "name"}, 
+                {"name": "opus", "type": "name"}, 
+                {"name": "royalty", "type": "uint16"}, 
+                {"name": "lock_date", "type": "time_point"}, 
+                {"name": "collection_end_date", "type": "time_point"}, 
+                {"name": "gem_count", "type": "uint16"}, 
+                {"name": "points", "type": "int64"}, 
+                {"name": "shares", "type": "int64"}, 
+                {"name": "damn_points", "type": "int64"}, 
+                {"name": "damn_shares", "type": "int64"}, 
+                {"name": "pledge_points", "type": "int64"}, 
+                {"name": "reward", "type": "int64"}, 
+                {"name": "comm_rating", "type": "int64"}, 
+                {"name": "lead_rating", "type": "int64"}, 
+                {"name": "status", "type": "uint8"}, 
+                {"name": "last_top_date", "type": "time_point"}, 
+                {"name": "deactivated_xor_locked", "type": "bool"}
+            ]
+        }, {
+            "name": "mosaic_top_event", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "place", "type": "uint16"}, 
+                {"name": "comm_rating", "type": "int64"}, 
+                {"name": "lead_rating", "type": "int64"}
+            ]
+        }, {
+            "name": "pair_name_int64", "base": "", 
+            "fields": [
+                {"name": "first", "type": "name"}, 
+                {"name": "second", "type": "int64"}
+            ]
+        }, {
+            "name": "provision_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "grantor", "type": "name"}, 
+                {"name": "recipient", "type": "name"}, 
+                {"name": "fee", "type": "uint16"}, 
+                {"name": "total", "type": "int64"}, 
+                {"name": "frozen", "type": "int64"}
+            ]
+        }, {
+            "name": "stat_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "unclaimed", "type": "int64"}, 
+                {"name": "retained", "type": "int64"}, 
+                {"name": "last_reward_date", "type": "time_point"}
+            ]
+        }, {
+            "name": "unlock", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "leader", "type": "name"}, 
+                {"name": "tracery", "type": "uint64"}, 
+                {"name": "reason", "type": "string"}
+            ]
+        }, {
+            "name": "update", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "tracery", "type": "uint64"}
+            ]
+        }
+    ], 
+    "actions": [
+        {"name": "addtomosaic", "type": "addtomosaic"}, 
+        {"name": "ban", "type": "ban"}, 
+        {"name": "claim", "type": "claim"}, 
+        {"name": "createmosaic", "type": "createmosaic"}, 
+        {"name": "emit", "type": "emit"}, 
+        {"name": "hide", "type": "hide"}, 
+        {"name": "init", "type": "init"}, 
+        {"name": "lock", "type": "lock"}, 
+        {"name": "unlock", "type": "unlock"}, 
+        {"name": "update", "type": "update"}
+    ], 
+    "events": [
+        {"name": "gemchop", "type": "gem_chop_event"}, 
+        {"name": "gemstate", "type": "gem_state_event"}, 
+        {"name": "inclstate", "type": "inclusion_state_event"}, 
+        {"name": "mosaicchop", "type": "mosaic_chop_event"}, 
+        {"name": "mosaicstate", "type": "mosaic_state_event"}, 
+        {"name": "mosaictop", "type": "mosaic_top_event"}
+    ], 
+    "tables": [{
+            "name": "advice", "type": "advice_struct", "scope_type": "symbol_code", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "leader", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "gem", "type": "gem_struct", "scope_type": "symbol_code", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }, {
+                    "name": "bykey", "unique": true, 
+                    "orders": [
+                        {"field": "tracery", "order": "asc"}, 
+                        {"field": "owner", "order": "asc"}, 
+                        {"field": "creator", "order": "asc"}
+                    ]
+                }, {
+                    "name": "bycreator", "unique": true, 
+                    "orders": [
+                        {"field": "tracery", "order": "asc"}, 
+                        {"field": "creator", "order": "asc"}, 
+                        {"field": "owner", "order": "asc"}
+                    ]
+                }, {
+                    "name": "byclaim", "unique": false, 
+                    "orders": [
+                        {"field": "owner", "order": "asc"}, 
+                        {"field": "claim_date", "order": "asc"}
+                    ]
+                }, {
+                    "name": "byclaimjoint", "unique": false, 
+                    "orders": [
+                        {"field": "claim_date", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "inclusion", "type": "inclusion_struct", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "quantity._sym", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "mosaic", "type": "mosaic_struct", "scope_type": "symbol_code", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "tracery", "order": "asc"}
+                    ]
+                }, {
+                    "name": "bycommrating", "unique": false, 
+                    "orders": [
+                        {"field": "status", "order": "asc"}, 
+                        {"field": "comm_rating", "order": "desc"}, 
+                        {"field": "lead_rating", "order": "desc"}
+                    ]
+                }, {
+                    "name": "byleadrating", "unique": false, 
+                    "orders": [
+                        {"field": "lead_rating", "order": "desc"}, 
+                        {"field": "comm_rating", "order": "desc"}
+                    ]
+                }, {
+                    "name": "bydate", "unique": false, 
+                    "orders": [
+                        {"field": "deactivated_xor_locked", "order": "desc"}, 
+                        {"field": "collection_end_date", "order": "asc"}
+                    ]
+                }, {
+                    "name": "bystatus", "unique": false, 
+                    "orders": [
+                        {"field": "status", "order": "desc"}, 
+                        {"field": "collection_end_date", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "provision", "type": "provision_struct", "scope_type": "symbol_code", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }, {
+                    "name": "bykey", "unique": true, 
+                    "orders": [
+                        {"field": "grantor", "order": "asc"}, 
+                        {"field": "recipient", "order": "asc"}
+                    ]
+                }
+            ]
+        }, {
+            "name": "stat", "type": "stat_struct", "scope_type": "symbol_code", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ], 
+    "variants": []
+}

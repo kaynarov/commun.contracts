@@ -4,7 +4,6 @@
 #include "commun.emit/commun.emit.hpp"
 //#include <golos.vesting/golos.vesting.hpp>
 #include <commun/parameter_ops.hpp>
-#include <commun/dispatchers.hpp>
 //#include <cyber.system/native.hpp>
 #include <eosio/transaction.hpp>
 #include <eosio/event.hpp>
@@ -514,13 +513,3 @@ void control::setrecover() {
 }
 
 } // commun
-
-DISPATCH_WITH_TRANSFER(commun::control, commun::config::point_name, on_points_transfer,
-    (init)
-    (regleader)(unregleader)
-    (startleader)(stopleader)
-    (voteleader)(unvotelead)
-    (clearvotes)
-    (claim)(emit)(changepoints)
-    (propose)(approve)(unapprove)(cancel)(exec)(invalidate)(setrecover)
-    )

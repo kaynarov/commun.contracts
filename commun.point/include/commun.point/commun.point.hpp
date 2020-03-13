@@ -13,6 +13,7 @@
 #include <string>
 #include <cmath>
 #include <commun/bancor.hpp>
+#include <commun/dispatchers.hpp>
 #include <commun/util.hpp>
 #include "commun.point/asset_from_string.hpp"
 
@@ -27,7 +28,11 @@ using share_type = int64_t;
  * \brief This class implements the \a c.point contract functionality.
  * \ingroup point_class
  */
-class [[eosio::contract]] point : public contract {
+class
+/// @cond
+[[eosio::contract("commun.point")]]
+/// @endcond
+point : public contract {
 public:
     using contract::contract;
 
@@ -178,6 +183,7 @@ public:
     [[eosio::action]]
     void close(name owner, symbol_code commun_code);
 
+    ON_TRANSFER(CYBER_TOKEN)
     void on_reserve_transfer(name from, name to, asset quantity, std::string memo);
 
     /**
@@ -402,7 +408,7 @@ struct structures {
       \ingroup point_tables
     */
     // DOCS_TABLE: account_struct
-    struct [[eosio::table]] account {
+    struct account_struct {
         asset    balance; //!< Number of points or of system ones on the account balance
         uint64_t primary_key()const { return balance.symbol.code().raw(); }
     };
@@ -412,7 +418,7 @@ struct structures {
       \ingroup point_tables
     */
     // DOCS_TABLE: stat_struct
-    struct [[eosio::table]] stat {
+    struct stat_struct {
         asset    supply; //!< Number of points that are in circulation in the system
         asset    reserve; //!< Number of CMN tokens that are not in circulation in the system and are used for exchange
         uint64_t primary_key()const { return supply.symbol.code().raw(); }
@@ -424,7 +430,7 @@ struct structures {
       \ingroup point_tables
     */
     // DOCS_TABLE: param_struct
-    struct [[eosio::table]] param {
+    struct param_struct {
         asset max_supply; //!< Maximum allowable number of the points supplied
         int16_t  cw; //!< Connector weight showing the exchange rate between the point and the CMN token
         int16_t fee; //!< Amount of commission that is charged from the \a issuer when exchanging the issued points for the CMN tokens
@@ -441,7 +447,7 @@ struct structures {
       \ingroup point_tables
     */
     // DOCS_TABLE: globalparam_struct
-    struct [[eosio::table]] global_param {
+    struct globalparam_struct {
         name point_freezer; //!< A name of contract that has the ability to freeze points of accounts
     };
 
@@ -450,7 +456,7 @@ struct structures {
         \ingroup point_tables
     */
     // DOCS_TABLE: safe_struct
-    struct [[eosio::table]] safe {
+    struct safe_struct {
         asset unlocked; //!< Number of unlocked points in the safe
         name trusted; //!< Trusted account, disabled if empty
         uint32_t delay; //!< Delay in seconds of unlock/modify period
@@ -463,7 +469,7 @@ struct structures {
         \ingroup point_tables
     */
     // DOCS_TABLE: safemod_struct
-    struct [[eosio::table]] safemod {
+    struct safemod_struct {
         name id;                //!< modification id of the safe
         symbol_code commun_code;//!< commun code of the safe (points symbol code)
         time_point_sec date;    //!< time when delayed changes become ready to apply
@@ -476,7 +482,7 @@ struct structures {
         key_t by_symbol_code() const { return std::make_tuple(commun_code, id); }
 
 #ifndef UNIT_TEST_ENV
-        EOSLIB_SERIALIZE(safemod, (id)(commun_code)(date)(unlock)(delay)(trusted))
+        EOSLIB_SERIALIZE(safemod_struct, (id)(commun_code)(date)(unlock)(delay)(trusted))
 #endif
     };
 
@@ -485,37 +491,36 @@ struct structures {
         \ingroup point_tables
     */
     // DOCS_TABLE: lock_struct
-    struct [[eosio::table]] lock {
+    struct lock_struct {
         time_point_sec unlocks; //!< time when lock becomes ineffective
     };
 };
 
-    using param_id_index = eosio::indexed_by<"paramid"_n, eosio::const_mem_fun<structures::param, uint64_t, &structures::param::primary_key> >;
-    using param_issuer_index = eosio::indexed_by<"byissuer"_n, eosio::const_mem_fun<structures::param, name, &structures::param::by_issuer> >;
-    using params = eosio::multi_index<"param"_n, structures::param, param_id_index, param_issuer_index>;
+    using param_issuer_index [[eosio::order("issuer","asc")]] = eosio::indexed_by<"byissuer"_n, eosio::const_mem_fun<structures::param_struct, name, &structures::param_struct::by_issuer> >;
+    using params [[eosio::order("max_supply._sym","asc")]] = eosio::multi_index<"param"_n, structures::param_struct, param_issuer_index>;
+    
+    using stats [[using eosio: order("supply._sym","asc"), scope_type("symbol_code")]] = eosio::multi_index<"stat"_n,  structures::stat_struct>;
+    using accounts [[eosio::order("balance._sym","asc")]] = eosio::multi_index<"accounts"_n,  structures::account_struct>;
 
-    using stats = eosio::multi_index<"stat"_n, structures::stat>;
-    using accounts = eosio::multi_index<"accounts"_n, structures::account>;
+    using global_params [[eosio::order("id","asc")]] = eosio::singleton<"globalparam"_n, structures::globalparam_struct>;
 
-    using global_params = eosio::singleton<"globalparam"_n, structures::global_param>;
+    using safe_tbl [[eosio::order("unlocked._sym","asc")]] = eosio::multi_index<"safe"_n, structures::safe_struct>;
 
-    using safe_tbl = eosio::multi_index<"safe"_n, structures::safe>;
+    using safemod_sym_idx [[using eosio: order("commun_code","asc"), order("id","asc")]] = eosio::indexed_by<"bysymbolcode"_n,
+        eosio::const_mem_fun<structures::safemod_struct, structures::safemod_struct::key_t, &structures::safemod_struct::by_symbol_code>>;
+    using safemod_tbl [[eosio::order("id","asc")]] = eosio::multi_index<"safemod"_n, structures::safemod_struct, safemod_sym_idx>;
 
-    using safemod_sym_idx = eosio::indexed_by<"bysymbolcode"_n,
-        eosio::const_mem_fun<structures::safemod, structures::safemod::key_t, &structures::safemod::by_symbol_code>>;
-    using safemod_tbl = eosio::multi_index<"safemod"_n, structures::safemod, safemod_sym_idx>;
-
-    using lock_singleton = eosio::singleton<"lock"_n, structures::lock>;
+    using lock_singleton [[eosio::order("id","asc")]] = eosio::singleton<"lock"_n, structures::lock_struct>;
 
     void notify_balance_change(name owner, asset diff);
     void sub_balance(name owner, asset value);
     void add_balance(name owner, asset value, name ram_payer);
 
-    static inline double get_cw(const structures::param& param) {
+    static inline double get_cw(const structures::param_struct& param) {
         return static_cast<double>(param.cw) / static_cast<double>(commun::config::_100percent);
     }
 
-    static inline asset calc_reserve_quantity(const structures::param& param, const structures::stat& stat, asset token_quantity, asset* fee_quantity) {
+    static inline asset calc_reserve_quantity(const structures::param_struct& param, const structures::stat_struct& stat, asset token_quantity, asset* fee_quantity) {
         check(token_quantity.amount >= 0, "can't convert negative quantity");
         check(token_quantity.amount <= stat.supply.amount, "can't convert more than supply");
         if (token_quantity.amount == 0)
@@ -543,7 +548,7 @@ struct structures {
         return asset(ret, stat.reserve.symbol);
     }
 
-    static inline asset calc_token_quantity(const structures::param& param, const structures::stat& stat, asset reserve_quantity) {
+    static inline asset calc_token_quantity(const structures::param_struct& param, const structures::stat_struct& stat, asset reserve_quantity) {
         return asset(calc_bancor_amount(stat.reserve.amount, stat.supply.amount, get_cw(param), reserve_quantity.amount), stat.supply.symbol);
     }
 
@@ -583,7 +588,7 @@ struct structures {
       \brief The structure representing the event related to change of point state. Such event occurs if at least one of the two values (supply or reserve) changes during execution of the actions \ref create, \ref issue and \ref retire as well as during the reserve tokens transfer via performing \ref transfer.
       \ingroup point_events
     */
-    struct currency_event {
+    struct [[eosio::event]] currency_event {
         asset   supply; //!< Number of points (with a specific symbol) supplied
         asset   reserve; //!< Number of reserve CMN tokens
         asset   max_supply; //!< Maximum allowable number of the points supplied
@@ -598,7 +603,7 @@ struct structures {
       \brief The structure representing the event related to change of account balance. Such event occurs during execution of the actions \ref retire, \ref withdraw, \ref transfer and \ref issue, as well as during a transfer of CMN tokens to \a c.point account.
       \ingroup point_events
     */
-    struct balance_event {
+    struct [[eosio::event]] balance_event {
         name    account; //!< Account name whose balance is changing
         asset   balance; //!< Balance opened by the account for a concrete token
     };
@@ -607,7 +612,7 @@ struct structures {
       \brief The structure representing the event related to the purchase of a certain amount of CMN tokens in exchange for points, as well as the event related to the purchase of a certain amount of points. The first event occurs during the \ref transfer execution while the second one occurs during transfering CMN tokens to \a c.point account.
       \ingroup point_events
     */
-    struct exchange_event {
+    struct [[eosio::event]] exchange_event {
         asset   amount; //!< This parameter is either amount of CMN tokens when points are selling or amount of points when they are buying
     };
 
@@ -617,13 +622,13 @@ struct structures {
        - amount of reserve CMN tokens is to be debited as a fee for the purchase of CMN tokens when selling points.
       \ingroup point_events
     */
-    struct fee_event {
+    struct [[eosio::event]] fee_event {
         asset   amount; //!< Amount of points or CMN tokens is to be debited as a fee
     };
 
-    void send_currency_event(const structures::stat& st, const structures::param& par);
+    void send_currency_event(const structures::stat_struct& st, const structures::param_struct& par);
 
-    void send_balance_event(name acc, const structures::account& accinfo);
+    void send_balance_event(name acc, const structures::account_struct& accinfo);
 
     void send_exchange_event(const asset& amount);
 

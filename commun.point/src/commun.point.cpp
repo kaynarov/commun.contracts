@@ -12,12 +12,12 @@
 
 namespace commun {
 
-void point::send_currency_event(const structures::stat& st, const structures::param& par) {
+void point::send_currency_event(const structures::stat_struct& st, const structures::param_struct& par) {
     currency_event data{st.supply, st.reserve, par.max_supply, par.cw, par.fee, par.issuer, par.transfer_fee, par.min_transfer_fee_points};
     eosio::event(_self, "currency"_n, data).send();
 }
 
-void point::send_balance_event(name acc, const structures::account& accinfo) {
+void point::send_balance_event(name acc, const structures::account_struct& accinfo) {
     balance_event data{acc, accinfo.balance};
     eosio::event(_self, "balance"_n, data).send();
 }
@@ -599,8 +599,3 @@ void point::globallock(name owner, uint32_t period) {
 }
 
 } /// namespace commun
-
-DISPATCH_WITH_TRANSFER(commun::point, commun::config::token_name, on_reserve_transfer,
-    (create)(setparams)(setfreezer)(issue)(transfer)(withdraw)(open)(close)(retire)
-    (enablesafe)(disablesafe)(unlocksafe)(locksafe)(modifysafe)(applysafemod)(cancelsafemod)(globallock)
-)

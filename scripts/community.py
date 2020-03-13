@@ -1,27 +1,29 @@
-from testnet import *
+from deployutils.testnet import *
+from deployutils import log_action
+from copy import deepcopy
 
 
-def issueCommunToken(owner, quantity, clientKey):
+def issueCommunToken(owner, quantity, clientKey, **kwargs):
     pushAction('cyber.token', 'issue', 'c.issuer@issue', {
             'to':'c.issuer',
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, providebw='c.issuer/c@providebw', keys=clientKey)
+        }, providebw='c.issuer/c@providebw', keys=clientKey, **kwargs)
     pushAction('cyber.token', 'transfer', 'c.issuer@issue', {
             'from':'c.issuer',
             'to':owner,
             'quantity':quantity,
             'memo':'issue for '+owner
-        }, providebw='c.issuer/c@providebw', keys=clientKey)
+        }, providebw='c.issuer/c@providebw', keys=clientKey, **kwargs)
 
-def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey):
-    issueCommunToken(owner, quantity, clientKey)
+def buyCommunityPoints(owner, quantity, community, ownerKey, clientKey, **kwargs):
+    issueCommunToken(owner, quantity, clientKey, **kwargs)
     return pushAction('cyber.token', 'transfer', owner, {
             'from':owner,
             'to':'c.point',
             'quantity':quantity,
             'memo':community
-        }, providebw=owner+'/c@providebw', keys=[ownerKey, clientKey])
+        }, providebw=owner+'/c@providebw', keys=[ownerKey, clientKey], **kwargs)
 
 def createCommunityUser(community, creator, creatorKey, clientKey, *, buyPointsOn=None, leaderUrl=None):
     (private, public) = createKey()
@@ -34,7 +36,7 @@ def createCommunityUser(community, creator, creatorKey, clientKey, *, buyPointsO
                 providebw=account+'/'+creator, keys=[private, creatorKey])
     return (account, private)
 
-def recover(account, active_key=None, owner_key=None, *, provider=None, keys=None):
+def recover(account, active_key=None, owner_key=None, provider=None, **kwargs):
     args = {'account':account}
     if active_key: args['active_key'] = active_key
     if owner_key: args['owner_key'] = owner_key
@@ -42,15 +44,13 @@ def recover(account, active_key=None, owner_key=None, *, provider=None, keys=Non
     providebw = ['c.recover/'+provider] if provider else None
     if active_key and provider: providebw.append(account+'/'+provider)
 
-    return pushAction('c.recover', 'recover', 'c.recover@recover', args, providebw=providebw, keys=keys)
+    return pushAction('c.recover', 'recover', 'c.recover@recover', args, providebw=providebw, **kwargs)
 
-def applyOwner(account, providebw=None, keys=None):
-    return pushAction('c.recover', 'applyowner', account, {'account': account},
-            providebw=providebw, keys=keys)
+def applyOwner(account, **kwargs):
+    return pushAction('c.recover', 'applyowner', account, {'account': account}, **kwargs)
 
-def cancelOwner(account, providebw=None, keys=None):
-    return pushAction('c.recover', 'cancelowner', account, {'account': account},
-            providebw=providebw, keys=keys)
+def cancelOwner(account, **kwargs):
+    return pushAction('c.recover', 'cancelowner', account, {'account': account}, **kwargs)
 
 def getUnusedPointSymbol():
     while True:
@@ -79,48 +79,48 @@ def getPointBalance(point, account):
     return res
 
 
-def transferPoints(sender, recipient, amount, memo='', *, keys=None):
+def transferPoints(sender, recipient, amount, memo='', **kwargs):
     args = {'from':sender, 'to':recipient, 'quantity':amount, 'memo':memo}
-    return pushAction('c.point', 'transfer', sender, args, providebw=sender+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'transfer', sender, args, providebw=sender+'/c@providebw', **kwargs)
 
-def lockPoints(owner, period, *, keys=None):
+def lockPoints(owner, period, **kwargs):
     args = {'owner':owner, 'period':period}
-    return pushAction('c.point', 'globallock', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'globallock', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def enableSafe(owner, unlock, delay, trusted = "", *, keys=None):
+def enableSafe(owner, unlock, delay, trusted="", **kwargs):
     args = {'owner':owner, 'unlock':unlock, 'delay':delay, 'trusted':trusted}
-    return pushAction('c.point', 'enablesafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'enablesafe', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def disableSafe(owner, modId, point, *, keys=None, signer=None):
+def disableSafe(owner, modId, point, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
-    return pushAction('c.point', 'disablesafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'disablesafe', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def unlockSafe(owner, modId, unlock, *, keys=None, signer=None):
+def unlockSafe(owner, modId, unlock, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     provide = [owner+'/c@providebw', signer+'/c@providebw'] if signer else owner+'/c@providebw'
     args = {'owner':owner, 'mod_id':modId, 'unlock':unlock}
-    return pushAction('c.point', 'unlocksafe', actor, args, providebw=provide, keys=keys)
+    return pushAction('c.point', 'unlocksafe', actor, args, providebw=provide, **kwargs)
 
-def lockSafe(owner, lock, *, keys=None):
+def lockSafe(owner, lock, **kwargs):
     args = {'owner':owner, 'lock':lock}
-    return pushAction('c.point', 'locksafe', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'locksafe', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
-def modifySafe(owner, modId, point, delay = None, trusted = None, *, keys=None, signer=None):
+def modifySafe(owner, modId, point, delay=None, trusted=None, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId, 'commun_code':point}
     if delay is not None: args["delay"] = delay
     if trusted is not None: args["trusted"] = trusted
-    return pushAction('c.point', 'modifysafe', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'modifysafe', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def applySafeMod(owner, modId, *, keys=None, signer=None):
+def applySafeMod(owner, modId, signer=None, **kwargs):
     actor = [owner, signer] if signer else owner
     args = {'owner':owner, 'mod_id':modId}
-    return pushAction('c.point', 'applysafemod', actor, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'applysafemod', actor, args, providebw=owner+'/c@providebw', **kwargs)
 
-def cancelSafeMod(owner, modId, *, keys=None):
+def cancelSafeMod(owner, modId, **kwargs):
     args = {'owner':owner, 'mod_id':modId}
-    return pushAction('c.point', 'cancelsafemod', owner, args, providebw=owner+'/c@providebw', keys=keys)
+    return pushAction('c.point', 'cancelsafemod', owner, args, providebw=owner+'/c@providebw', **kwargs)
 
 
 def getPointGlobalLock(account):
@@ -136,36 +136,7 @@ def getPointSafeMod(point, account, modId):
     return mongoClient["_CYBERWAY_c_point"]["safemod"].find_one({"id":modId,"commun_code":point,"_SERVICE_.scope":account})
 
 
-def createAndExecProposal(commun_code, permission, trx, leaders, clientKey, *, providebw=None, keys=None):
-    (proposer, proposerKey) = leaders[0]
-    proposal = randomName()
-
-    pushAction('c.ctrl', 'propose', proposer, {
-            'commun_code': commun_code,
-            'proposer': proposer,
-            'proposal_name': proposal,
-            'permission': permission,
-            'trx': trx
-        }, providebw=proposer+'/c@providebw', keys=[proposerKey, clientKey])
-
-    for (leaderName, leaderKey) in leaders:
-        pushAction('c.ctrl', 'approve', leaderName, {
-                'proposer': proposer,
-                'proposal_name': proposal,
-                'approver': leaderName
-            }, providebw=leaderName+'/c@providebw', keys=[leaderKey, clientKey])
-
-    providebw = [] if providebw is None else (providebw if type(providebw)==type([]) else [providebw])
-    providebw.append(proposer+'/c@providebw')
-
-    pushAction('c.ctrl', 'exec', proposer, {
-            'proposer': proposer,
-            'proposal_name': proposal,
-            'executer': proposer
-        }, providebw=providebw, keys=[proposerKey, clientKey])
-
-
-def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=3333, fee=100, owner_account=None):
+def createCommunity(community_name, creator_auth, creator_key, maximum_supply, reserve_amount, *, cw=3333, fee=100, owner_account=None, output=False):
     symbol = maximum_supply.symbol
     initial_supply = Asset.fromstr(str(maximum_supply))
     initial_supply.amount //= 1000
@@ -174,140 +145,140 @@ def createCommunity(community_name, creator_auth, creator_key, maximum_supply, r
     (creator_account, creator_permission) = (c['actor'],c['permission'])
     creator_auth = '{acc}@{perm}'.format(acc=creator_account, perm=creator_permission)
 
-    # 0. Create owner account
-    if owner_account:
+    if owner_account is None: owner_account = getRandomAccount()
+    with log_action("0. Create <Owner> account '{}'".format(owner_account)):
         createAccount(creator_auth, owner_account, 'c@active', creator_auth,
-                providebw=creator_account+'/c@providebw', keys=creator_key)
-    else:
-        owner_account = createRandomAccount('c@active', creator_auth, creator=creator_auth,
-                providebw=creator_account+'/c@providebw', keys=creator_key)
+                providebw=creator_account+'/c@providebw', keys=creator_key, output=output)
 
-    trx = Trx()
-    for auth in ('lead.smajor', 'lead.major', 'lead.minor'):
+        trx = Trx()
+        for auth in ('lead.smajor', 'lead.major', 'lead.minor'):
+            trx.addAction('cyber', 'updateauth', owner_account, {
+                    'account': owner_account,
+                    'permission': auth,
+                    'parent': 'active',
+                    'auth': createAuthority([], ['c.ctrl@cyber.code'])})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.gallery',
+                'type': 'ban',
+                'requirement': 'lead.minor'})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.list',
+                'type': 'ban',
+                'requirement': 'lead.minor'})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.list',
+                'type': 'unban',
+                'requirement': 'lead.minor'})
+    
         trx.addAction('cyber', 'updateauth', owner_account, {
                 'account': owner_account,
-                'permission': auth,
+                'permission': 'transferperm',
                 'parent': 'active',
-                'auth': createAuthority([], ['c.ctrl@cyber.code'])})
+                'auth': createAuthority([], ['c.emit@cyber.code'])})
+    
+        trx.addAction('cyber', 'linkauth', owner_account, {
+                'account': owner_account,
+                'code': 'c.point',
+                'type': 'transfer',
+                'requirement': 'transferperm'})
+    
+        trx.addAction('cyber', 'providebw', 'c@providebw', {
+                'provider': 'c',
+                'account': owner_account})
+    
+        pushTrx(trx, keys=[creator_key], output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.gallery',
-            'type': 'ban',
-            'requirement': 'lead.minor'})
+    with log_action('1. Buy some value of CMN tokens (for testing purposes c.issuer@issue)'):
+        trx = Trx()
+        trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {
+            'to':'c.issuer',
+            'quantity':reserve_amount,
+            'memo':"Reserve for {c}".format(c=community_name)
+        })
+        trx.addAction('cyber.token', 'transfer', 'c.issuer@issue', {
+            'from':'c.issuer',
+            'to':owner_account,
+            'quantity':reserve_amount,
+            'memo':"Reserve for {c}".format(c=community_name)
+        })
+        trx.addAction('cyber', 'providebw', 'c@providebw', {
+                'provider': 'c',
+                'account': 'c.issuer'})
+        pushTrx(trx, keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.list',
-            'type': 'ban',
-            'requirement': 'lead.minor'})
+    with log_action('2. Create community points'):
+        pushAction('c.point', 'create', 'c.point@clients', {
+            'issuer': owner_account,
+            'initial_supply': initial_supply,
+            'maximum_supply': maximum_supply,
+            'cw': cw,
+            'fee': fee
+        }, providebw='c.point/c@providebw', keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.list',
-            'type': 'unban',
-            'requirement': 'lead.minor'})
+    with log_action('3. Restock CMN tokens for community points'):
+        transfer(owner_account, 'c.point', reserve_amount, 'restock: {code}'.format(code=symbol.code),
+            providebw=owner_account+'/c@providebw', keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'updateauth', owner_account, {
-            'account': owner_account,
-            'permission': 'transferperm',
-            'parent': 'active',
-            'auth': createAuthority([], ['c.emit@cyber.code'])})
+    with log_action('4. Open point balance for c.gallery & c.ctrl'):
+        trx = Trx()
+        for acc in ('c.gallery', 'c.ctrl'):
+            trx.addAction('c.point', 'open', 'c@providebw', {
+                "owner": acc,
+                "commun_code": symbol.code,
+                "ram_payer": "c"
+            })
+        pushTrx(trx, keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'linkauth', owner_account, {
-            'account': owner_account,
-            'code': 'c.point',
-            'type': 'transfer',
-            'requirement': 'transferperm'})
+    with log_action('5. Register community (c.list:create)'):
+        pushAction('c.list', 'create', 'c.list@clients', {
+                "commun_code": symbol.code,
+                "community_name": community_name
+            }, providebw=['c.list/c@providebw', 'c.emit/c@providebw', 'c.ctrl/c@providebw', 'c.gallery/c@providebw'],
+            keys=creator_key, output=output)
 
-    trx.addAction('cyber', 'providebw', 'c@providebw', {
-            'provider': 'c',
-            'account': owner_account})
-
-    pushTrx(trx, keys=[creator_key])
-
-    # 1. Buy some value of CMN tokens (for testing purposes c.issuer@issue)
-    trx = Trx()
-    trx.addAction('cyber.token', 'issue', 'c.issuer@issue', {
-        'to':'c.issuer',
-        'quantity':reserve_amount,
-        'memo':"Reserve for {c}".format(c=community_name)
-    })
-    trx.addAction('cyber.token', 'transfer', 'c.issuer@issue', {
-        'from':'c.issuer',
-        'to':owner_account,
-        'quantity':reserve_amount,
-        'memo':"Reserve for {c}".format(c=community_name)
-    })
-    trx.addAction('cyber', 'providebw', 'c@providebw', {
-            'provider': 'c',
-            'account': 'c.issuer'})
-    pushTrx(trx, keys=creator_key)
-
-    # 2. Create community points
-    pushAction('c.point', 'create', 'c.point@clients', {
-        'issuer': owner_account,
-        'initial_supply': initial_supply,
-        'maximum_supply': maximum_supply,
-        'cw': cw,
-        'fee': fee
-    }, providebw='c.point/c@providebw', keys=creator_key)
-
-    # 3. Restock CMN tokens for community points
-    transfer(owner_account, 'c.point', reserve_amount, 'restock: {code}'.format(code=symbol.code),
-        providebw=owner_account+'/c@providebw', keys=creator_key)
-
-    # 4. Open point balance for c.gallery & c.ctrl
-    for acc in ('c.gallery', 'c.ctrl'):
-        pushAction('c.point', 'open', 'c@providebw', {
-            "owner": acc,
-            "commun_code": symbol.code,
-            "ram_payer": "c"
-        }, keys=creator_key)
-
-    # 5. Register community (c.list:create)
-    pushAction('c.list', 'create', 'c.list@clients', {
-        "commun_code": symbol.code,
-        "community_name": community_name
-    }, providebw=['c.list/c@providebw', 'c.emit/c@providebw', 'c.ctrl/c@providebw', 'c.gallery/c@providebw'], keys=creator_key)
-
-    # 6. Pass account to community
-    updateAuth(owner_account, 'active', 'owner', [], [owner_account+'@lead.smajor'],
-            providebw=owner_account+'/c@providebw', keys=creator_key)
+    with log_action('6. Pass account to community'):
+        updateAuth(owner_account, 'active', 'owner', [], [owner_account+'@lead.smajor'],
+                providebw=owner_account+'/c@providebw', keys=creator_key, output=output)
 
     return owner_account
 
-def openBalance(owner, commun_code, payer, *, providebw=None, keys=None):
+def openBalance(owner, commun_code, payer, **kwargs):
     return pushAction('c.point', 'open', payer, {
             'owner':owner,
             'commun_code':commun_code,
             'ram_payer':payer
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def regLeader(commun_code, leader, url, *, providebw=None, keys=None):
+def regLeader(commun_code, leader, url, **kwargs):
     return pushAction('c.ctrl', 'regleader', leader, {
             'commun_code': commun_code,
             'leader': leader,
             'url': url
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def voteLeader(commun_code, voter, leader, pct, *, providebw=None, keys=None):
+def voteLeader(commun_code, voter, leader, pct, **kwargs):
     return pushAction('c.ctrl', 'voteleader', voter, {
             'commun_code': commun_code,
             'voter': parseAuthority(voter)['actor'],
             'leader': leader,
             'pct': pct
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def unvoteLeader(commun_code, voter, leader, *, providebw=None, keys=None):
+def unvoteLeader(commun_code, voter, leader, **kwargs):
     return pushAction('c.ctrl', 'unvotelead', voter, {
             'commun_code': commun_code,
             'voter': voter,
             'leader': leader,
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
 
-def createPost(commun_code, author, permlink, category, header, body, *, client=None, providebw=None, keys=None):
+def createPost(commun_code, author, permlink, category, header, body, *, client=None, **kwargs):
     actors=[author,client] if client else [author]
     return pushAction('c.gallery', 'create', actors, {
             'commun_code':commun_code,
@@ -317,27 +288,27 @@ def createPost(commun_code, author, permlink, category, header, body, *, client=
             'body':body,
             'tags':[],
             'metadata':''
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def upvotePost(commun_code, voter, author, permlink, *, client=None, providebw=None, keys=None):
+def upvotePost(commun_code, voter, author, permlink, *, client=None, **kwargs):
     actors=[voter,client] if client else [voter]
     return pushAction('c.gallery', 'upvote', actors, {
             'commun_code':commun_code,
             'voter':voter,
             'message_id':{'author':author, 'permlink':permlink}
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def downvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):
+def downvotePost(commun_code, voter, author, permlink, **kwargs):
     return pushAction('c.gallery', 'downvote', voter, {
             'commun_code':commun_code,
             'voter':voter,
             'message_id':{'author':author, 'permlink':permlink}
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 
-def unvotePost(commun_code, voter, author, permlink, *, providebw=None, keys=None):
+def unvotePost(commun_code, voter, author, permlink, **kwargs):
     return pushAction('c.gallery', 'unvote', voter, {
             'commun_code':commun_code,
             'voter':voter,
             'message_id':{'author':author, 'permlink':permlink}
-        }, providebw=providebw, keys=keys)
+        }, **kwargs)
 

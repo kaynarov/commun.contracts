@@ -93,7 +93,7 @@ struct control_param_t {
  */
 // DOCS_TABLE: dapp
 struct dapp {
-    uint64_t pk = primary_key();
+    uint64_t id = primary_key();
     control_param_t control_param = control_param_t{ .leaders_num = config::def_dapp_leaders_num, .max_votes = config::def_dapp_max_votes }; //!< Parameters of leadership
 
     static uint64_t primary_key() {
@@ -181,8 +181,8 @@ private:
 namespace commun::tables {
     using namespace eosio;
 
-    using comn_hash_index = eosio::indexed_by<"byhash"_n, eosio::member<structures::community, uint64_t, &structures::community::community_hash>>;
-    using community = eosio::multi_index<"community"_n, structures::community, comn_hash_index>;
+    using comn_hash_index [[eosio::order("community_hash","asc")]] = eosio::indexed_by<"byhash"_n, eosio::member<structures::community, uint64_t, &structures::community::community_hash>>;
+    using community [[using eosio: order("commun_symbol._sym","asc"), contract("commun.list")]] = eosio::multi_index<"community"_n, structures::community, comn_hash_index>;
 
-    using dapp = eosio::multi_index<"dapp"_n, structures::dapp>;
+    using dapp [[using eosio: order("id","asc"), contract("commun.list")]] = eosio::multi_index<"dapp"_n, structures::dapp>;
 }

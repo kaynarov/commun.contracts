@@ -7,11 +7,11 @@
 using namespace commun;
 namespace cfg = commun::config;
 
-structures::params commun_recover::getParams() const {
+structures::params_struct commun_recover::getParams() const {
     return tables::params_table(_self, _self.value).get_or_default();
 }
 
-void commun_recover::setParams(const structures::params &params) {
+void commun_recover::setParams(const structures::params_struct& params) {
     tables::params_table(_self, _self.value).set(params, _self);
 }
 
@@ -101,5 +101,3 @@ void commun_recover::cancelowner(name account) {
     eosio::check(owner_request.exists(), "Request for change owner key doesn't exists");
     owner_request.remove();
 }
-
-EOSIO_DISPATCH(commun::commun_recover, (setparams)(recover)(applyowner)(cancelowner))

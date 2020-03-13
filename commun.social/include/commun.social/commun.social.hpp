@@ -1,4 +1,5 @@
 #include "types.h"
+#include <commun/dispatchers.hpp>
 
 namespace commun {
 
@@ -8,7 +9,11 @@ using namespace eosio;
  * \brief This class implements the \a c.social contract behaviour.
  * \ingroup social_class
  */
-class commun_social: public contract {
+class
+/// @cond
+[[eosio::contract("commun.social")]]
+/// @endcond
+commun_social: public contract {
 public:
     using contract::contract;
 

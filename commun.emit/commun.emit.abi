@@ -1,0 +1,47 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ", 
+    "version": "cyberway::abi/1.1", 
+    "types": [], 
+    "structs": [{
+            "name": "init", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}
+            ]
+        }, {
+            "name": "issuereward", "base": "", 
+            "fields": [
+                {"name": "commun_code", "type": "symbol_code"}, 
+                {"name": "to_contract", "type": "name"}
+            ]
+        }, {
+            "name": "reward_struct", "base": "", 
+            "fields": [
+                {"name": "contract", "type": "name"}, 
+                {"name": "time", "type": "time_point"}
+            ]
+        }, {
+            "name": "stat_struct", "base": "", 
+            "fields": [
+                {"name": "id", "type": "uint64"}, 
+                {"name": "reward_receivers", "type": "reward_struct[]"}
+            ]
+        }
+    ], 
+    "actions": [
+        {"name": "init", "type": "init"}, 
+        {"name": "issuereward", "type": "issuereward"}
+    ], 
+    "events": [], 
+    "tables": [{
+            "name": "stat", "type": "stat_struct", "scope_type": "symbol_code", 
+            "indexes": [{
+                    "name": "primary", "unique": true, 
+                    "orders": [
+                        {"field": "id", "order": "asc"}
+                    ]
+                }
+            ]
+        }
+    ], 
+    "variants": []
+}

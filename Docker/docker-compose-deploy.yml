@@ -24,7 +24,7 @@ services:
 
   nodeosd:
     container_name: nodeosd
-    image: cyberway/cyberway:${BUILDTYPE}
+    image: cyberway/cyberway:${CW_TAG}
     depends_on:
       mongo:
         condition: service_healthy
